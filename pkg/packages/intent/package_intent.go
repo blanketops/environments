@@ -1,7 +1,7 @@
 package intent
 
 import (
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/packages/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/packages/domain"
 )
 
 // PackageIntent is the compiled, immutable execution plan.

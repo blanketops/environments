@@ -3,8 +3,8 @@ package intent
 import (
 	"fmt"
 
-	"github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/packages"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/packages/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/packages/domain"
+	"github.com/ntlaletsi70/blanketops-environments/resolution/packages"
 )
 
 // BuildPackageIntent compiles a RESOLVED Package into an immutable execution plan.

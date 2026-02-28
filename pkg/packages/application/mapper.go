@@ -3,8 +3,8 @@ package application
 import (
 	"fmt"
 
-	pkgResolution "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/packages"
 	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/packages/domain"
+	pkgResolution "github.com/ntlaletsi70/blanketops-environments/resolution/packages"
 )
 
 type Mapper struct{}

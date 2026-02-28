@@ -3,8 +3,8 @@ package application
 import (
 	"context"
 
-	pkgResolution "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/packages"
-	pkgintent "github.com/ntlaletsi70/blanketops-environments-mvp/pkg/packages/intent"
+	pkgintent "github.com/ntlaletsi70/blanketops-environments/pkg/packages/intent"
+	pkgResolution "github.com/ntlaletsi70/blanketops-environments/resolution/packages"
 )
 
 type PackageService struct {
