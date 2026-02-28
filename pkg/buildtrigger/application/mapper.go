@@ -1,8 +1,8 @@
 package application
 
 import (
-	buildtriggerResolution "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/buildtrigger"
 	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/buildtrigger/domain"
+	buildtriggerResolution "github.com/ntlaletsi70/blanketops-environments/resolution/buildtrigger"
 )
 
 // Mapper converts resolved BuildTriggers into pure domain models.

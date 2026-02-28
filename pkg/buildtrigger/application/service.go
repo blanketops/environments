@@ -3,9 +3,9 @@ package application
 import (
 	"context"
 
-	buildtriggerResolution "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/buildtrigger"
 	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/buildtrigger/api"
 	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/buildtrigger/domain"
+	buildtriggerResolution "github.com/ntlaletsi70/blanketops-environments/resolution/buildtrigger"
 )
 
 type BuildTriggerService struct {

@@ -3,8 +3,8 @@ package api
 import (
 	"context"
 
-	buildResolution "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/build"
 	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/build/domain"
+	buildResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
 )
 
 type Provider interface {

@@ -3,8 +3,8 @@ package application
 import (
 	"strings"
 
-	githubeventResolution "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/githubevent"
 	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/githubevent/domain"
+	githubeventResolution "github.com/ntlaletsi70/blanketops-environments/resolution/githubevent"
 )
 
 // Mapper converts resolved GitHubEvents into pure domain models.

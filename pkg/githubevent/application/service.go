@@ -3,7 +3,7 @@ package application
 import (
 	"context"
 
-	githubeventResolution "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/githubevent"
+	githubeventResolution "github.com/ntlaletsi70/blanketops-environments/resolution/githubevent"
 )
 
 // GitHubEventService orchestrates resolved GitHubEvent reconciliation.

@@ -3,8 +3,8 @@ package api
 import (
 	"context"
 
-	buildtriggerResolution "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/buildtrigger"
 	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/buildtrigger/domain"
+	buildtriggerResolution "github.com/ntlaletsi70/blanketops-environments/resolution/buildtrigger"
 )
 
 // Provider is the contract between the application layer

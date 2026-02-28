@@ -3,7 +3,7 @@ package application
 import (
 	"context"
 
-	bldResolution "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/build"
+	bldResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
 )
 
 type BuildService struct {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/buildtrigger/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/buildtrigger/domain"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"

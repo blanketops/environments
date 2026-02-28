@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	githubeventResolution "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/githubevent"
 	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/githubevent/domain"
+	githubeventResolution "github.com/ntlaletsi70/blanketops-environments/resolution/githubevent"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
