@@ -48,6 +48,10 @@ jobs:
           go env -w GOPRIVATE=github.com/ntlaletsi70/*
           go env -w GONOSUMDB=github.com/ntlaletsi70/*
           go env -w GOPROXY=direct
+      - name: Debug SSH access
+        run: |
+          ssh -T git@github.com || true
+          git ls-remote git@github.com:ntlaletsi70/blanketops-environments-api.git
       - name: Verify go.mod tidy
         run: |
           go mod tidy
