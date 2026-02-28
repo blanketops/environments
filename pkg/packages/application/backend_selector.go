@@ -1,8 +1,8 @@
 package application
 
 import (
-	packageapi "github.com/ntlaletsi70/blanketops-environments-mvp/pkg/packages/api"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/packages/intent"
+	packageapi "github.com/ntlaletsi70/blanketops-environments/pkg/packages/api"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/packages/intent"
 )
 
 // BackendSelector is intentionally boring.
