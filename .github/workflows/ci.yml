@@ -39,9 +39,6 @@ jobs:
           go env -w GONOSUMDB=github.com/ntlaletsi70/*
           go env -w GOPROXY=direct
 
-      - name: Go Mod Tidy
-        run: go mod tidy
-
       - name: Verify go.mod tidy
         run: |
           go mod tidy
