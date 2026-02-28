@@ -28,9 +28,6 @@ jobs:
           go-version: ${{ matrix.go-version }}
           cache: true
 
-      # - name: Go Mod Tidy
-      #   run: go mod tidy
-
       - name: Disable Go auto toolchain
         run: go env -w GOTOOLCHAIN=local
 
@@ -41,6 +38,9 @@ jobs:
           go env -w GOPRIVATE=github.com/ntlaletsi70/*
           go env -w GONOSUMDB=github.com/ntlaletsi70/*
           go env -w GOPROXY=direct
+
+      - name: Go Mod Tidy
+        run: go mod tidy
 
       - name: Verify go.mod tidy
         run: |
