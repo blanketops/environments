@@ -3,8 +3,8 @@ package application
 import (
 	"strings"
 
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/gitrepository/api"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/gitrepository/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/gitrepository/api"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/gitrepository/domain"
 )
 
 // BackendSelector selects the appropriate repository provider.

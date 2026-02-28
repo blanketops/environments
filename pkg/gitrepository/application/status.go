@@ -5,7 +5,7 @@ import (
 	"time"
 
 	sourcesv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/sources/v1alpha1"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/gitrepository/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/gitrepository/domain"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

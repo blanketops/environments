@@ -6,7 +6,6 @@ import (
 	eventsv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/events/v1alpha1"
 
 	"github.com/ntlaletsi70/blanketops-environments/resolution/githubevent"
-	//"github.com/ntlaletsi70/blanketops-environments-mvp/operator/internal/resolution/githubevent"
 )
 
 //

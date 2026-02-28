@@ -8,7 +8,7 @@ import (
 	deploymentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
 	serviceunitResolution "github.com/ntlaletsi70/blanketops-environments/resolution/serviceunit"
 
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/deployment/intent"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/intent"
 )
 
 type IntentBuilder struct{}
