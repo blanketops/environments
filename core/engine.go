@@ -78,7 +78,7 @@ func (e *Engine) StartWorkers() {
 	}
 	e.logger.Info("starting engine workers", "workers", workers)
 	for i := 0; i < workers; i++ {
-		e.workerGroup.Add(1)
+		e.workerGroup.Add(1) // add more workers when deployed to prod
 		go func(id int) {
 			defer e.workerGroup.Done()
 			e.workerLoop(id)
