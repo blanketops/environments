@@ -8,7 +8,6 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/ntlaletsi70/blanketops-environments-api v0.0.8
 	github.com/ntlaletsi70/blanketops-environments-contract v0.0.8
-	github.com/ntlaletsi70/blanketops-environments-mvp v0.0.0-20260228172329-7abe01b2b4f2
 	github.com/redis/go-redis/v9 v9.18.0
 	github.com/shipwright-io/build v0.18.4
 	go.uber.org/zap v1.27.1
@@ -45,6 +44,8 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/onsi/ginkgo/v2 v2.28.1 // indirect
+	github.com/onsi/gomega v1.39.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.23.2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
