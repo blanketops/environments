@@ -7,8 +7,8 @@ import (
 	"github.com/go-logr/logr"
 
 	"github.com/ntlaletsi70/blanketops-environments/pkg/build/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/utils"
 	buildResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
-	"github.com/ntlaletsi70/blanketops-environments/utils"
 
 	shipwrightv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 

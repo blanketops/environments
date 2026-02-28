@@ -2,7 +2,7 @@ package api
 
 import (
 	buildv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/build/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/build/domain"
 )
 
 // ExtractTriggerContext derives execution trigger metadata from Build annotations.
