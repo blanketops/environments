@@ -102,8 +102,6 @@ type BuildStatus struct {
 
 	OnFailure bool
 
-	maxAttempts uint32
-
 	// Last failure timestamp (optional, observability only)
 	LastFailureAt *metav1.Time
 }
