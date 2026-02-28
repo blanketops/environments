@@ -28,30 +28,14 @@ jobs:
           go-version: ${{ matrix.go-version }}
           cache: true
 
-      - name: Setup SSH Agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Add GitHub to known_hosts
+      # 🔐 Configure access to private modules (PAT-based)
+      - name: Configure Git for private modules
         run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-
-      - name: Force Git to use SSH for GitHub
-        run: |
-          git config --global url."git@github.com:".insteadOf "https://github.com/"
-          git config --global url."git@github.com:".insteadOf "http://github.com/"
-
-      - name: Force Go to use SSH (no proxy)
-        run: |
+          git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
           go env -w GOPRIVATE=github.com/ntlaletsi70/*
           go env -w GONOSUMDB=github.com/ntlaletsi70/*
           go env -w GOPROXY=direct
-      - name: Debug SSH access
-        run: |
-          ssh -T git@github.com || true
-          git ls-remote git@github.com:ntlaletsi70/blanketops-environments-api.git
+
       - name: Verify go.mod tidy
         run: |
           go mod tidy
