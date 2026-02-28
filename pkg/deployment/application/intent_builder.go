@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	deploymentResolution "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/deployment"
-	serviceunitResolution "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/serviceunit"
+	deploymentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
+	serviceunitResolution "github.com/ntlaletsi70/blanketops-environments/resolution/serviceunit"
 
 	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/deployment/intent"
 )

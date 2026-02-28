@@ -3,8 +3,8 @@ package application
 import (
 	"fmt"
 
-	deploymentResolution "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/deployment"
 	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/deployment/domain"
+	deploymentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
 )
 
 type Mapper struct{}

@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	deployment "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/deployment"
 	"github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/environment"
 	gitRepository "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/gitrepository"
 	build "github.com/ntlaletsi70/blanketops-environments/resolution/build"
 	"github.com/ntlaletsi70/blanketops-environments/resolution/buildtrigger"
+	deployment "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
 	gitHubEvent "github.com/ntlaletsi70/blanketops-environments/resolution/githubevent"
 
 	events1 "github.com/ntlaletsi70/blanketops-environments-api/api/events/v1alpha1"

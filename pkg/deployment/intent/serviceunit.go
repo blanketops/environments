@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	contractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/serviceunit"
+	"github.com/ntlaletsi70/blanketops-environments/resolution/serviceunit"
 )
 
 type ServiceUnitIntent struct {

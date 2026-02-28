@@ -5,8 +5,8 @@ import (
 	"time"
 
 	contractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
-	deploymentResolution "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/deployment"
-	serviceunitResolution "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/serviceunit"
+	deploymentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
+	serviceunitResolution "github.com/ntlaletsi70/blanketops-environments/resolution/serviceunit"
 )
 
 func ResolveDeploymentIntent(
