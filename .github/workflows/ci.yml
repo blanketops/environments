@@ -28,6 +28,9 @@ jobs:
           go-version: ${{ matrix.go-version }}
           cache: true
 
+      - name: Disable Go auto toolchain
+        run: go env -w GOTOOLCHAIN=local
+
       # 🔐 Configure access to private modules (PAT-based)
       - name: Configure Git for private modules
         run: |
