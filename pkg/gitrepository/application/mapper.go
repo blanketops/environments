@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/gitrepository/domain"
-	gitrepoResolution "github.com/ntlaletsi70/blanketops-environments/internal/resolution/gitrepository"
+	gitrepoResolution "github.com/ntlaletsi70/blanketops-environments/resolution/gitrepository"
 )
 
 type Mapper struct{}
