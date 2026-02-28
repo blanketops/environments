@@ -1,8 +1,8 @@
 package application
 
 import (
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/githubevent/api"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/githubevent/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/githubevent/api"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/githubevent/domain"
 )
 
 // BackendSelector selects the backend responsible for handling GitHub events.

@@ -7,7 +7,7 @@ import (
 
 	eventsv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/events/v1alpha1"
 
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/githubevent/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/githubevent/domain"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"

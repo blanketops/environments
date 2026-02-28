@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/deployment/domain"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/deployment/intent"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/intent"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"

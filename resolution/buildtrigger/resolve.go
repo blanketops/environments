@@ -8,7 +8,7 @@ import (
 	"time"
 
 	environmentv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/buildtrigger/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/buildtrigger/domain"
 )
 
 //

@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/build/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/build/domain"
 	buildResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
 )
 

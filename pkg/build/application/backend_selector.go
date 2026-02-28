@@ -3,8 +3,8 @@ package application
 import (
 	"strings"
 
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/build/api"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/build/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/build/api"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/build/domain"
 )
 
 type BackendSelector struct {

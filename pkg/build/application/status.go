@@ -6,7 +6,7 @@ import (
 	"time"
 
 	buildv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/build/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/build/domain"
 
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

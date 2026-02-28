@@ -3,8 +3,8 @@ package application
 import (
 	"fmt"
 
-	gitrepoResolution "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/gitrepository"
 	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/gitrepository/domain"
+	gitrepoResolution "github.com/ntlaletsi70/blanketops-environments/internal/resolution/gitrepository"
 )
 
 type Mapper struct{}

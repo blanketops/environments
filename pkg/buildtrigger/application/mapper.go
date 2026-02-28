@@ -1,7 +1,7 @@
 package application
 
 import (
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/buildtrigger/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/buildtrigger/domain"
 	buildtriggerResolution "github.com/ntlaletsi70/blanketops-environments/resolution/buildtrigger"
 )
 

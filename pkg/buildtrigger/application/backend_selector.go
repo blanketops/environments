@@ -2,8 +2,8 @@
 package application
 
 import (
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/buildtrigger/api"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/buildtrigger/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/buildtrigger/api"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/buildtrigger/domain"
 )
 
 // BackendSelector selects the provider responsible for evaluating BuildTriggers.

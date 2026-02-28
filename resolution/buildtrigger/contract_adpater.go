@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	contractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/buildtrigger/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/buildtrigger/domain"
 )
 
 // ToBuildTriggerContract converts a resolved runtime trigger into a CONTRACT spec

@@ -3,8 +3,8 @@ package application
 import (
 	"fmt"
 
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/deployment/api"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/deployment/intent"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/api"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/intent"
 )
 
 type BackendSelector struct {
