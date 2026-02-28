@@ -3,8 +3,8 @@ package api
 import (
 	"context"
 
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/deployment/domain"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/deployment/intent"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/intent"
 )
 
 // Provider executes a DeploymentIntent against a runtime backend.

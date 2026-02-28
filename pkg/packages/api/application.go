@@ -17,8 +17,8 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/packages/domain"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/packages/intent"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/packages/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/packages/intent"
 )
 
 type ApplicationProvider struct {

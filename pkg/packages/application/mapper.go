@@ -3,7 +3,7 @@ package application
 import (
 	"fmt"
 
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/packages/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/packages/domain"
 	pkgResolution "github.com/ntlaletsi70/blanketops-environments/resolution/packages"
 )
 

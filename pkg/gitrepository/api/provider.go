@@ -4,7 +4,7 @@ import (
 	"context"
 
 	sourcesv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/sources/v1alpha1"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/gitrepository/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/gitrepository/domain"
 )
 
 // Provider defines a backend capable of realizing a GitRepository declaration.
