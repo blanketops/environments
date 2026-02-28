@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/ntlaletsi70/blanketops-environments/deployment/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/domain"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/intent"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
