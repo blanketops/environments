@@ -1,10 +1,10 @@
-package secrets
+package registry
 
 import (
 	"context"
 
 	"github.com/go-logr/logr"
-	buildResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
+	buildResolution "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/build"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -12,16 +12,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-type RegistryExternalSecretReconciler struct {
+type BuildRegistryExternalSecretReconciler struct {
 	Client client.Client
 	Log    logr.Logger
 }
 
-func NewRegistryExternalSecretReconciler(
+func NewBuildRegistryExternalSecretReconciler(
 	c client.Client,
 	log logr.Logger,
-) *RegistryExternalSecretReconciler {
-	return &RegistryExternalSecretReconciler{
+) *BuildRegistryExternalSecretReconciler {
+	return &BuildRegistryExternalSecretReconciler{
 		Client: c,
 		Log:    log,
 	}
@@ -29,7 +29,7 @@ func NewRegistryExternalSecretReconciler(
 
 // Reconcile ensures an ExternalSecret exists for registry credentials
 // requested by the Build contract.
-func (r *RegistryExternalSecretReconciler) Reconcile(
+func (r *BuildRegistryExternalSecretReconciler) Reconcile(
 	ctx context.Context,
 	build *buildResolution.ResolvedBuild,
 ) error {
@@ -56,7 +56,7 @@ func (r *RegistryExternalSecretReconciler) Reconcile(
 	// ---------------------------------------------------------------------
 	desired := &unstructured.Unstructured{
 		Object: map[string]any{
-			"apiVersion": "external-secrets.io/v1beta1",
+			"apiVersion": "external-secrets.io/v1",
 			"kind":       "ExternalSecret",
 			"metadata": map[string]any{
 				"name":      secretName,
