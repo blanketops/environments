@@ -1,11 +1,11 @@
-package secrets
+package git
 
 import (
 	"context"
 	"reflect"
 
 	"github.com/go-logr/logr"
-	packageResolution "github.com/ntlaletsi70/blanketops-environments/resolution/packages"
+	packageResolution "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/packages"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -13,22 +13,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-type PackageRegistrySecretReconciler struct {
+type PackageStateRepositorySecretReconciler struct {
 	Client client.Client
 	Log    logr.Logger
 }
 
-func NewPackageRegistrySecretReconciler(
+func NewPackageStateRepositorySecretReconciler(
 	c client.Client,
 	log logr.Logger,
-) *PackageRegistrySecretReconciler {
-	return &PackageRegistrySecretReconciler{
+) *PackageStateRepositorySecretReconciler {
+	return &PackageStateRepositorySecretReconciler{
 		Client: c,
 		Log:    log,
 	}
 }
 
-func (r *PackageRegistrySecretReconciler) Reconcile(
+func (r *PackageStateRepositorySecretReconciler) Reconcile(
 	ctx context.Context,
 	resolvedPackage *packageResolution.ResolvedPackage,
 ) error {
@@ -40,7 +40,7 @@ func (r *PackageRegistrySecretReconciler) Reconcile(
 	pkg := resolvedPackage.Package
 
 	// 🔑 Secret name is authoritative from Package contract
-	secretName := resolvedPackage.Spec.PackageRepository.CredentialsSecret
+	secretName := resolvedPackage.Spec.StateRepository.CloneSecret
 	if secretName == "" {
 		return nil
 	}
@@ -50,7 +50,7 @@ func (r *PackageRegistrySecretReconciler) Reconcile(
 	// ---------------------------------------------------------------------
 	desired := &unstructured.Unstructured{
 		Object: map[string]any{
-			"apiVersion": "external-secrets.io/v1beta1",
+			"apiVersion": "external-secrets.io/v1",
 			"kind":       "ExternalSecret",
 			"metadata": map[string]any{
 				"name":      secretName,
@@ -70,17 +70,31 @@ func (r *PackageRegistrySecretReconciler) Reconcile(
 				"target": map[string]any{
 					"name": secretName,
 					"template": map[string]any{
-						"type": "kubernetes.io/dockerconfigjson",
+						"type": "Opaque",
 						"data": map[string]any{
-							".dockerconfigjson": "{{ .dockerconfigjson }}",
+							"ssh-privatekey": "{{ .ssh_privatekey }}",
+							"ssh-publickey":  "{{ .ssh_publickey }}",
+							"known_hosts":    "{{ .known_hosts }}",
 						},
 					},
 				},
 				"data": []any{
 					map[string]any{
-						"secretKey": "dockerconfigjson",
+						"secretKey": "ssh_privatekey",
 						"remoteRef": map[string]any{
-							"key": "/blanketops/registry/config",
+							"key": "/blanketops/git/ssh-privatekey",
+						},
+					},
+					map[string]any{
+						"secretKey": "ssh_publickey",
+						"remoteRef": map[string]any{
+							"key": "/blanketops/git/ssh-publickey",
+						},
+					},
+					map[string]any{
+						"secretKey": "known_hosts",
+						"remoteRef": map[string]any{
+							"key": "/blanketops/git/known-hosts",
 						},
 					},
 				},
@@ -114,7 +128,7 @@ func (r *PackageRegistrySecretReconciler) Reconcile(
 	// ---------------------------------------------------------------------
 	if apierrors.IsNotFound(err) {
 		r.Log.Info(
-			"Creating ExternalSecret for package registry credentials",
+			"Creating ExternalSecret for package state repository (git ssh)",
 			"package", pkg.Name,
 			"secret", secretName,
 		)
@@ -141,7 +155,7 @@ func (r *PackageRegistrySecretReconciler) Reconcile(
 		}
 
 		r.Log.Info(
-			"Updating ExternalSecret for package registry credentials",
+			"Updating ExternalSecret for package state repository (git ssh)",
 			"package", pkg.Name,
 			"secret", secretName,
 		)
@@ -153,7 +167,7 @@ func (r *PackageRegistrySecretReconciler) Reconcile(
 	// NO-OP
 	// ---------------------------------------------------------------------
 	r.Log.V(1).Info(
-		"ExternalSecret for package registry credentials already up-to-date",
+		"ExternalSecret for package state repository already up-to-date",
 		"package", pkg.Name,
 		"secret", secretName,
 	)
