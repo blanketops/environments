@@ -1,57 +1,53 @@
-package secrets
+package github
 
 import (
 	"context"
 	"reflect"
 
 	"github.com/go-logr/logr"
-	buildResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-type GitSSHSecretReconciler struct {
+type GitHubProviderSecretReconciler struct {
 	Client client.Client
 	Log    logr.Logger
 }
 
-func NewGitSSHSecretReconciler(
+func NewGitHubProviderSecretReconciler(
 	c client.Client,
 	log logr.Logger,
-) *GitSSHSecretReconciler {
-	return &GitSSHSecretReconciler{
+) *GitHubProviderSecretReconciler {
+	return &GitHubProviderSecretReconciler{
 		Client: c,
 		Log:    log,
 	}
 }
 
-func (r *GitSSHSecretReconciler) Reconcile(
+func (r *GitHubProviderSecretReconciler) Reconcile(
 	ctx context.Context,
-	build *buildResolution.ResolvedBuild,
 ) error {
 
-	source := build.Spec.Source
-
-	secretName := source.CloneSecret
-	namespace := build.Build.Namespace
+	const (
+		externalSecretName = "github-upjet-creds"
+		namespace          = "crossplane-system"
+	)
 
 	// -------------------------------------------------------------------------
 	// Desired ExternalSecret (UNSTRUCTURED)
 	// -------------------------------------------------------------------------
 	desired := &unstructured.Unstructured{
 		Object: map[string]any{
-			"apiVersion": "external-secrets.io/v1beta1",
+			"apiVersion": "external-secrets.io/v1",
 			"kind":       "ExternalSecret",
 			"metadata": map[string]any{
-				"name":      secretName,
+				"name":      externalSecretName,
 				"namespace": namespace,
 				"labels": map[string]any{
 					"blanketops.dev/managed": "true",
-					"blanketops.dev/purpose": "git-ssh",
-					"blanketops.dev/build":   build.Build.Name,
+					"blanketops.dev/purpose": "crossplane-github-provider",
 				},
 			},
 			"spec": map[string]any{
@@ -61,44 +57,28 @@ func (r *GitSSHSecretReconciler) Reconcile(
 					"kind": "ClusterSecretStore",
 				},
 				"target": map[string]any{
-					"name": secretName,
+					"name":           "example-creds",
+					"creationPolicy": "Owner",
 					"template": map[string]any{
-						"type": "kubernetes.io/ssh-auth",
+						"type":          "Opaque",
+						"engineVersion": "v2",
+						"data": map[string]any{
+							"credentials": `{
+  "token": "{{ .token }}"
+}`,
+						},
 					},
 				},
 				"data": []any{
 					map[string]any{
-						"secretKey": "ssh-privatekey",
+						"secretKey": "token",
 						"remoteRef": map[string]any{
-							"key": "/blanketops/git/ssh-privatekey",
-						},
-					},
-					map[string]any{
-						"secretKey": "ssh-publickey",
-						"remoteRef": map[string]any{
-							"key": "/blanketops/git/ssh-publickey",
-						},
-					},
-					map[string]any{
-						"secretKey": "known_hosts",
-						"remoteRef": map[string]any{
-							"key": "/blanketops/git/known-hosts",
+							"key": "/blanketops/crossplane/github/token",
 						},
 					},
 				},
 			},
 		},
-	}
-
-	// -------------------------------------------------------------------------
-	// Ownership (Build → ExternalSecret)
-	// -------------------------------------------------------------------------
-	if err := controllerutil.SetControllerReference(
-		build.Build,
-		desired,
-		r.Client.Scheme(),
-	); err != nil {
-		return err
 	}
 
 	// -------------------------------------------------------------------------
@@ -110,7 +90,7 @@ func (r *GitSSHSecretReconciler) Reconcile(
 	err := r.Client.Get(
 		ctx,
 		client.ObjectKey{
-			Name:      secretName,
+			Name:      externalSecretName,
 			Namespace: namespace,
 		},
 		&existing,
@@ -121,9 +101,8 @@ func (r *GitSSHSecretReconciler) Reconcile(
 	// -------------------------------------------------------------------------
 	if apierrors.IsNotFound(err) {
 		r.Log.Info(
-			"Creating ExternalSecret for Git SSH",
-			"build", build.Build.Name,
-			"secret", secretName,
+			"Creating ExternalSecret for GitHub Upjet provider",
+			"secret", externalSecretName,
 		)
 		return r.Client.Create(ctx, desired)
 	}
@@ -142,9 +121,8 @@ func (r *GitSSHSecretReconciler) Reconcile(
 		existing.Object["spec"] = desired.Object["spec"]
 
 		r.Log.Info(
-			"Updating ExternalSecret for Git SSH",
-			"build", build.Build.Name,
-			"secret", secretName,
+			"Updating ExternalSecret for GitHub Upjet provider",
+			"secret", externalSecretName,
 		)
 
 		return r.Client.Update(ctx, &existing)
@@ -154,9 +132,8 @@ func (r *GitSSHSecretReconciler) Reconcile(
 	// No-op
 	// -------------------------------------------------------------------------
 	r.Log.V(1).Info(
-		"ExternalSecret already up-to-date",
-		"build", build.Build.Name,
-		"secret", secretName,
+		"ExternalSecret for GitHub Upjet provider already up-to-date",
+		"secret", externalSecretName,
 	)
 
 	return nil
