@@ -6,8 +6,8 @@ import (
 
 	kappctrlv1alpha1 "carvel.dev/kapp-controller/pkg/apis/kappctrl/v1alpha1"
 	"github.com/go-logr/logr"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/packages/domain"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/packages/intent"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/packages/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/packages/intent"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"

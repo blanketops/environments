@@ -14,11 +14,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/packages/domain"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/packages/intent"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/packages/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/packages/intent"
 )
 
 type ApplicationProvider struct {
@@ -122,7 +122,7 @@ func ApplyApplication(
 		client.Apply,
 		&client.PatchOptions{
 			FieldManager: "blanketops-packages",
-			Force:        pointer.Bool(true),
+			Force:        ptr.To(true),
 		},
 	)
 }

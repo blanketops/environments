@@ -1,0 +1,43 @@
+name: Release
+
+on:
+    push:
+        tags:
+            - "v*"
+
+permissions:
+    contents: write
+
+jobs:
+    release:
+        name: Generate Changelog & Release
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0 # REQUIRED for changelog history
+
+            - name: Install git-cliff
+              run: |
+                  curl -L https://github.com/orhun/git-cliff/releases/latest/download/git-cliff-x86_64-unknown-linux-gnu.tar.gz \
+                    | tar xz
+                  sudo mv git-cliff /usr/local/bin/
+
+            - name: Generate changelog
+              run: |
+                  git-cliff --config .cliff.toml --output CHANGELOG.md
+
+            - name: Commit updated changelog
+              run: |
+                  git config user.name "Neo Tlaletsi"
+                  git config user.email "ntlaletsi86@gmail.com"
+                  git add CHANGELOG.md
+                  git commit -m "chore: update changelog for ${{ github.ref_name }}" || echo "No changes"
+                  git push origin HEAD:main
+
+            - name: Create GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  body_path: CHANGELOG.md
