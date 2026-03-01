@@ -1,11 +1,12 @@
-package secrets
+package github
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	"github.com/go-logr/logr"
-	packageResolution "github.com/ntlaletsi70/blanketops-environments/resolution/packages"
+	sourcesv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/sources/v1alpha1"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -13,52 +14,54 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-type PackageStateRepositorySecretReconciler struct {
+const (
+	HookURLSecretName = "hookurl"
+	HookURLSecretKey  = "url"
+)
+
+type HookURLExternalSecretReconciler struct {
 	Client client.Client
 	Log    logr.Logger
 }
 
-func NewPackageStateRepositorySecretReconciler(
+func NewHookURLExternalSecretReconciler(
 	c client.Client,
 	log logr.Logger,
-) *PackageStateRepositorySecretReconciler {
-	return &PackageStateRepositorySecretReconciler{
+) *HookURLExternalSecretReconciler {
+	return &HookURLExternalSecretReconciler{
 		Client: c,
 		Log:    log,
 	}
 }
 
-func (r *PackageStateRepositorySecretReconciler) Reconcile(
+func (r *HookURLExternalSecretReconciler) Reconcile(
 	ctx context.Context,
-	resolvedPackage *packageResolution.ResolvedPackage,
+	repo *sourcesv1alpha1.GitRepository,
 ) error {
 
-	if resolvedPackage == nil || resolvedPackage.Package == nil {
-		return nil
+	if repo == nil {
+		return fmt.Errorf("nil GitRepository provided to HookURLExternalSecretReconciler")
 	}
 
-	pkg := resolvedPackage.Package
-
-	// 🔑 Secret name is authoritative from Package contract
-	secretName := resolvedPackage.Spec.StateRepository.CloneSecret
-	if secretName == "" {
-		return nil
-	}
+	remoteKey := fmt.Sprintf(
+		"/blanketops/sources/%s/hookurl",
+		repo.Name,
+	)
 
 	// ---------------------------------------------------------------------
 	// Desired ExternalSecret (UNSTRUCTURED)
 	// ---------------------------------------------------------------------
 	desired := &unstructured.Unstructured{
 		Object: map[string]any{
-			"apiVersion": "external-secrets.io/v1beta1",
+			"apiVersion": "external-secrets.io/v1",
 			"kind":       "ExternalSecret",
 			"metadata": map[string]any{
-				"name":      secretName,
-				"namespace": pkg.Namespace,
+				"name":      HookURLSecretName,
+				"namespace": repo.Namespace,
 				"labels": map[string]any{
-					"blanketops.dev/managed": "true",
-					"blanketops.dev/domain":  "package",
-					"blanketops.dev/package": pkg.Name,
+					"sources.blanketops.dev/gitrepository": repo.Name,
+					"blanketops.dev/managed":               "true",
+					"blanketops.dev/purpose":               "webhook",
 				},
 			},
 			"spec": map[string]any{
@@ -68,33 +71,13 @@ func (r *PackageStateRepositorySecretReconciler) Reconcile(
 					"kind": "ClusterSecretStore",
 				},
 				"target": map[string]any{
-					"name": secretName,
-					"template": map[string]any{
-						"type": "Opaque",
-						"data": map[string]any{
-							"ssh-privatekey": "{{ .ssh_privatekey }}",
-							"ssh-publickey":  "{{ .ssh_publickey }}",
-							"known_hosts":    "{{ .known_hosts }}",
-						},
-					},
+					"name": HookURLSecretName,
 				},
 				"data": []any{
 					map[string]any{
-						"secretKey": "ssh_privatekey",
+						"secretKey": HookURLSecretKey,
 						"remoteRef": map[string]any{
-							"key": "/blanketops/git/ssh-privatekey",
-						},
-					},
-					map[string]any{
-						"secretKey": "ssh_publickey",
-						"remoteRef": map[string]any{
-							"key": "/blanketops/git/ssh-publickey",
-						},
-					},
-					map[string]any{
-						"secretKey": "known_hosts",
-						"remoteRef": map[string]any{
-							"key": "/blanketops/git/known-hosts",
+							"key": remoteKey,
 						},
 					},
 				},
@@ -104,7 +87,7 @@ func (r *PackageStateRepositorySecretReconciler) Reconcile(
 
 	// 🔑 OWN the ExternalSecret (never the Secret)
 	if err := controllerutil.SetControllerReference(
-		pkg,
+		repo,
 		desired,
 		r.Client.Scheme(),
 	); err != nil {
@@ -128,9 +111,9 @@ func (r *PackageStateRepositorySecretReconciler) Reconcile(
 	// ---------------------------------------------------------------------
 	if apierrors.IsNotFound(err) {
 		r.Log.Info(
-			"Creating ExternalSecret for package state repository (git ssh)",
-			"package", pkg.Name,
-			"secret", secretName,
+			"Creating ExternalSecret for GitRepository hook URL",
+			"repository", repo.Name,
+			"namespace", repo.Namespace,
 		)
 		return r.Client.Create(ctx, desired)
 	}
@@ -155,9 +138,9 @@ func (r *PackageStateRepositorySecretReconciler) Reconcile(
 		}
 
 		r.Log.Info(
-			"Updating ExternalSecret for package state repository (git ssh)",
-			"package", pkg.Name,
-			"secret", secretName,
+			"Updating ExternalSecret for GitRepository hook URL",
+			"repository", repo.Name,
+			"namespace", repo.Namespace,
 		)
 
 		return r.Client.Update(ctx, &existing)
@@ -167,9 +150,8 @@ func (r *PackageStateRepositorySecretReconciler) Reconcile(
 	// NO-OP
 	// ---------------------------------------------------------------------
 	r.Log.V(1).Info(
-		"ExternalSecret for package state repository already up-to-date",
-		"package", pkg.Name,
-		"secret", secretName,
+		"ExternalSecret for GitRepository hook URL already up-to-date",
+		"repository", repo.Name,
 	)
 
 	return nil
