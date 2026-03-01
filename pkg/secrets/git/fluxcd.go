@@ -9,7 +9,7 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-	deploymentResolution "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/deployment"
+	deploymentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
 	"golang.org/x/crypto/ssh"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
