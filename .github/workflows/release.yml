@@ -13,7 +13,7 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - name: Checkout
+            - name: Checkout tag
               uses: actions/checkout@v4
               with:
                   fetch-depth: 0
@@ -24,22 +24,26 @@ jobs:
                   tar -xzf cliff.tar.gz
                   sudo mv git-cliff-2.4.0/git-cliff /usr/local/bin/git-cliff
 
-            # 🔥 Generate full changelog file
+            # 🔥 Switch to main branch before committing
+            - name: Checkout main
+              run: |
+                  git checkout main
+                  git pull origin main
+
+            # 🔥 Generate full changelog
             - name: Generate CHANGELOG.md
               run: git-cliff --config .cliff.toml --output CHANGELOG.md
 
-            # 🔥 Commit changelog back to main
+            # 🔥 Commit changelog properly on main
             - name: Commit changelog
               run: |
-                  git config user.name "Neo Tlaletsi"
-                  git config user.email "ntlaletsi86@gmail.com"
+                  git config user.name "github-actions"
+                  git config user.email "actions@github.com"
                   git add CHANGELOG.md
                   git commit -m "chore(release): update changelog for ${{ github.ref_name }}" || echo "No changes"
-                  git push origin HEAD:main
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  git push origin main
 
-            # 🔥 Generate only latest section for release body
+            # 🔥 Generate latest section for release body
             - name: Generate release notes
               run: git-cliff --config .cliff.toml --latest --output RELEASE_NOTES.md
 
