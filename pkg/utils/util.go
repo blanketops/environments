@@ -144,3 +144,14 @@ func ShortHash(hash string) string {
 	}
 	return hash
 }
+
+// RunGitWithEnv runs a git command with additional environment variables.
+func RunGitWithEnv(dir string, env []string, args ...string) (string, error) {
+	cmd := exec.Command("git", args...)
+	if dir != "" {
+		cmd.Dir = dir
+	}
+	cmd.Env = append(os.Environ(), env...)
+	out, err := cmd.CombinedOutput()
+	return string(out), err
+}
