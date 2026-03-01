@@ -10,30 +10,15 @@ permissions:
 
 jobs:
     release:
-        name: Generate Changelog & Release
         runs-on: ubuntu-latest
 
         steps:
             - name: Checkout
               uses: actions/checkout@v4
               with:
-                  fetch-depth: 0 # REQUIRED for changelog history
-
-            - name: Generate changelog
-              uses: orhun/git-cliff-action@v3
-              with:
-                  config: .cliff.toml
-                  args: --verbose
-
-            - name: Commit updated changelog
-              run: |
-                  git config user.name "Neo Tlaletsi"
-                  git config user.email "ntlaletsi86@gmail.com"
-                  git add CHANGELOG.md
-                  git commit -m "chore: update changelog for ${{ github.ref_name }}" || echo "No changes"
-                  git push origin HEAD:main
+                  fetch-depth: 0
 
             - name: Create GitHub Release
               uses: softprops/action-gh-release@v2
               with:
-                  body_path: CHANGELOG.md
+                  generate_release_notes: true
