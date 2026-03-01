@@ -5,7 +5,7 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-	deploymentResolution "github.com/ntlaletsi70/blanketops-environments-mvp/internal/resolution/deployment"
+	deploymentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
