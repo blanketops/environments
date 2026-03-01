@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/ntlaletsi70/blanketops-environments/deployment/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/domain"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/intent"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -152,7 +152,7 @@ func (p *K8SProvider) applyDeployment(
 		client.Apply,
 		&client.PatchOptions{
 			FieldManager: "blanketops-k8s-provider",
-			Force:        pointer.Bool(true),
+			Force:        ptr.To(true),
 		},
 	)
 }
@@ -193,7 +193,7 @@ func (p *K8SProvider) applyService(
 		client.Apply,
 		&client.PatchOptions{
 			FieldManager: "blanketops-k8s-provider",
-			Force:        pointer.Bool(true),
+			Force:        ptr.To(true),
 		},
 	)
 }

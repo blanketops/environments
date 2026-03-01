@@ -7,7 +7,6 @@ import (
 	build "github.com/ntlaletsi70/blanketops-environments/resolution/build"
 	"github.com/ntlaletsi70/blanketops-environments/resolution/buildtrigger"
 	deployment "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
-	"github.com/ntlaletsi70/blanketops-environments/resolution/environment"
 	gitHubEvent "github.com/ntlaletsi70/blanketops-environments/resolution/githubevent"
 	gitRepository "github.com/ntlaletsi70/blanketops-environments/resolution/gitrepository"
 
@@ -25,7 +24,6 @@ type Adapter struct {
 	deployment    *deployment.Adapter
 	gitrepository *gitRepository.Adapter
 	githubevent   *gitHubEvent.Adapter
-	environment   *environment.Adapter
 }
 
 func NewAdapter() *Adapter {

@@ -26,7 +26,5 @@ type BuildResult struct {
 
 	OnFailure bool
 
-	maxAttempts uint32
-
 	LastFailureAt *metav1.Time
 }

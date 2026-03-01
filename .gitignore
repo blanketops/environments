@@ -9,6 +9,14 @@
 # Test binary, built with `go test -c`
 *.test
 
+
+#Certs
+
+*.crt
+*.key
+*.pub
+*key
+
 # Output of the go coverage tool
 *.out
 *.cover
