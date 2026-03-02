@@ -64,32 +64,32 @@ go get github.com/ntlaletsi70/blanketops-environments@v0.0.1
 ## 🏗 Project Structure
 
 ```tree
-core/           → Engine and orchestration logic
-pkg/            → Domain modules (build, deployment, packages, etc.)
-resolution/     → Resolution contracts and adapters
-runtime/        → Event runtime components
-logging/        → Structured logging abstractions
+core/           → Engine and orchestration logic.
+pkg/            → Domain modules (build, deployment, packages, etc.).
+resolution/     → Resolution contracts and adapters.
+runtime/        → Event runtime components.
+logging/        → Structured logging abstractions.
 ```
 
 ## ✨ Design Principles
 
 BlanketOps Environments follows strict architectural boundaries:
 
-- Deterministic resolution
-- Explicit domain modeling
-- Clear state transitions
-- Separation of domain and infrastructure
-- Reproducible outcomes
-- No hidden side effects
+- Deterministic resolution.
+- Explicit domain modeling.
+- Clear state transitions.
+- Separation of domain and infrastructure.
+- Reproducible outcomes.
+- No hidden side effects.
 
 The goal is to reduce delivery entropy through structured reconciliation.
 
 ## 🚧 Stability
 
 - Current Version: v0.0.1
-  - API is unstable
-  - Breaking changes may occur
-  - Intended for alpha integration with BlanketOps controllers
+  - API is unstable.
+  - Breaking changes may occur.
+  - Intended for alpha integration with BlanketOps controllers.
   - This module follows Semantic Versioning.
   - v1.0.0 will signal a stable public contract.
 
@@ -97,9 +97,9 @@ The goal is to reduce delivery entropy through structured reconciliation.
 
 This module powers:
 
-BlanketOps Controllers
-Delivery orchestration layers
-Reconciliation engines
+BlanketOps Controllers.
+Delivery orchestration layers.
+Reconciliation engines.
 
 If you are looking for the controller runtime, see the BlanketOps Controller repository .
 
