@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -22,10 +22,10 @@ type K8SProvider struct {
 	Client   client.Client
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
-	Recorder record.EventRecorder
+	Recorder events.EventRecorder
 }
 
-func NewK8SProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec record.EventRecorder) *K8SProvider {
+func NewK8SProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *K8SProvider {
 	return &K8SProvider{
 		Client:   c,
 		Scheme:   scheme,
