@@ -8,17 +8,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// EventRecorder wraps controller-runtime's recorder with simplified helpers.
+// EventRecorder wraps controller-runtime's recorder
+// and provides simplified helpers for emitting Kubernetes events.
 type EventRecorder struct {
 	recorder record.EventRecorder
 }
 
-// NewEventRecorder returns a wrapped EventRecorder.
+// NewEventRecorder creates a new EventRecorder wrapper.
 func NewEventRecorder(rec record.EventRecorder) *EventRecorder {
-	return &EventRecorder{recorder: rec}
+	if rec == nil {
+		return &EventRecorder{}
+	}
+
+	return &EventRecorder{
+		recorder: rec,
+	}
 }
 
-// Event emits a Kubernetes event with the provided type.
+// Event emits a Kubernetes event with formatting support.
 func (er *EventRecorder) Event(
 	obj client.Object,
 	eventType string,
@@ -30,7 +37,12 @@ func (er *EventRecorder) Event(
 		return
 	}
 
-	er.recorder.Eventf(obj, eventType, reason, msg, args...)
+	if len(args) > 0 {
+		er.recorder.Eventf(obj, eventType, reason, msg, args...)
+		return
+	}
+
+	er.recorder.Event(obj, eventType, reason, msg)
 }
 
 // Normal emits a Kubernetes Normal event.
@@ -43,7 +55,7 @@ func (er *EventRecorder) Normal(
 	er.Event(obj, corev1.EventTypeNormal, reason, msg, args...)
 }
 
-// Info is kept for backward compatibility (alias of Normal).
+// Info is an alias for Normal (kept for compatibility).
 func (er *EventRecorder) Info(
 	obj client.Object,
 	reason string,
@@ -63,7 +75,7 @@ func (er *EventRecorder) Warn(
 	er.Event(obj, corev1.EventTypeWarning, reason, msg, args...)
 }
 
-// FromError emits a Warning event derived from an error.
+// FromError emits a Warning event from an error.
 func (er *EventRecorder) FromError(
 	obj client.Object,
 	reason string,
@@ -88,6 +100,9 @@ func (er *EventRecorder) FromErrorf(
 		return
 	}
 
-	full := fmt.Sprintf(msg, args...)
-	er.Warn(obj, reason, "%s: %v", full, err)
+	if len(args) > 0 {
+		msg = fmt.Sprintf(msg, args...)
+	}
+
+	er.Warn(obj, reason, "%s: %v", msg, err)
 }
