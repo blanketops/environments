@@ -2,7 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.6] - 2026-03-07
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.1.5
+
 ## [0.1.5] - 2026-03-07
+
+### 🐛 Bug Fixes
+
+- *(core/events)* Add compatibility for new Kubernetes structured event recorder
+- *(core/events)* Add compatibility for new Kubernetes structured event recorder
 
 ### ⚙️ Miscellaneous Tasks
 
