@@ -10,7 +10,7 @@ import (
 	"github.com/ntlaletsi70/blanketops-environments/pkg/packages/intent"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -18,10 +18,10 @@ type PackageProvider struct {
 	Client   client.Client
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
-	Recorder record.EventRecorder // optional; may be nil
+	Recorder events.EventRecorder // optional; may be nil
 }
 
-func NewPackageProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec record.EventRecorder) *PackageProvider {
+func NewPackageProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *PackageProvider {
 	// recorder may be nil in unit tests; keep it optional
 	return &PackageProvider{
 		Client:   c,
