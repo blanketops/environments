@@ -12,8 +12,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/events"
 
-	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -25,7 +25,7 @@ type ApplicationProvider struct {
 	Client   client.Client
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
-	Recorder record.EventRecorder // optional
+	Recorder events.EventRecorder // optional
 }
 
 // Compile-time contract check
@@ -35,7 +35,7 @@ func NewApplicationProvider(
 	c client.Client,
 	scheme *runtime.Scheme,
 	log logr.Logger,
-	rec record.EventRecorder,
+	rec events.EventRecorder,
 ) *ApplicationProvider {
 	return &ApplicationProvider{
 		Client:   c,

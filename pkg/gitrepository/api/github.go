@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -25,14 +25,14 @@ type GitHubProvider struct {
 	Client   ctrlclient.Client
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
-	Recorder record.EventRecorder // optional
+	Recorder events.EventRecorder // optional
 }
 
 func NewGitHubProvider(
 	c ctrlclient.Client,
 	scheme *runtime.Scheme,
 	log logr.Logger,
-	rec record.EventRecorder,
+	rec events.EventRecorder,
 ) *GitHubProvider {
 	return &GitHubProvider{
 		Client:   c,
