@@ -2,11 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [0.1.3] - 2026-03-07
 
 ### 🚀 Features
 
 - *(update)* Update pk deployment, events core normal
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.1.2
+
+### Bugfix
+
+- *(eventing)* Fix eventing core to use latest GetRecorder on call in controller
 
 ## [0.1.2] - 2026-03-07
 
