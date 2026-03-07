@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [unreleased]
+
+### 🚀 Features
+
+- *(update)* Update pk deployment, events core normal
+
+## [0.1.2] - 2026-03-07
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.1.1
+
 ## [0.1.1] - 2026-03-02
 
 ### ⚙️ Miscellaneous Tasks
