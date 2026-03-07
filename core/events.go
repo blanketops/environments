@@ -4,28 +4,32 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/record"
+	eventsv1 "k8s.io/client-go/tools/events"
+	recordv1 "k8s.io/client-go/tools/record"
+
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// EventRecorder wraps controller-runtime's recorder
-// and provides simplified helpers for emitting Kubernetes events.
 type EventRecorder struct {
-	recorder record.EventRecorder
+	recordRecorder recordv1.EventRecorder
+	eventsRecorder eventsv1.EventRecorder
 }
 
-// NewEventRecorder creates a new EventRecorder wrapper.
-func NewEventRecorder(rec record.EventRecorder) *EventRecorder {
-	if rec == nil {
-		return &EventRecorder{}
+func NewEventRecorder(rec interface{}) *EventRecorder {
+
+	switch r := rec.(type) {
+
+	case recordv1.EventRecorder:
+		return &EventRecorder{recordRecorder: r}
+
+	case eventsv1.EventRecorder:
+		return &EventRecorder{eventsRecorder: r}
 	}
 
-	return &EventRecorder{
-		recorder: rec,
-	}
+	return &EventRecorder{}
 }
 
-// Event emits a Kubernetes event with formatting support.
 func (er *EventRecorder) Event(
 	obj client.Object,
 	eventType string,
@@ -33,19 +37,53 @@ func (er *EventRecorder) Event(
 	msg string,
 	args ...interface{},
 ) {
-	if er == nil || er.recorder == nil || obj == nil {
+
+	if er == nil || obj == nil {
 		return
 	}
 
+	message := msg
 	if len(args) > 0 {
-		er.recorder.Eventf(obj, eventType, reason, msg, args...)
+		message = fmt.Sprintf(msg, args...)
+	}
+
+	//------------------------------------------------
+	// OLD recorder (client-go/tools/record)
+	//------------------------------------------------
+
+	if er.recordRecorder != nil {
+
+		if len(args) > 0 {
+			er.recordRecorder.Eventf(obj, eventType, reason, msg, args...)
+			return
+		}
+
+		er.recordRecorder.Event(obj, eventType, reason, message)
 		return
 	}
 
-	er.recorder.Event(obj, eventType, reason, msg)
+	//------------------------------------------------
+	// NEW structured recorder (client-go/tools/events)
+	//------------------------------------------------
+
+	if er.eventsRecorder != nil {
+
+		runtimeObj, ok := obj.(runtime.Object)
+		if !ok {
+			return
+		}
+
+		er.eventsRecorder.Eventf(
+			runtimeObj,
+			nil,       // related
+			eventType, // Normal / Warning
+			reason,    // reason
+			reason,    // action
+			message,   // note
+		)
+	}
 }
 
-// Normal emits a Kubernetes Normal event.
 func (er *EventRecorder) Normal(
 	obj client.Object,
 	reason string,
@@ -55,7 +93,6 @@ func (er *EventRecorder) Normal(
 	er.Event(obj, corev1.EventTypeNormal, reason, msg, args...)
 }
 
-// Info is an alias for Normal (kept for compatibility).
 func (er *EventRecorder) Info(
 	obj client.Object,
 	reason string,
@@ -65,7 +102,6 @@ func (er *EventRecorder) Info(
 	er.Normal(obj, reason, msg, args...)
 }
 
-// Warn emits a Kubernetes Warning event.
 func (er *EventRecorder) Warn(
 	obj client.Object,
 	reason string,
@@ -75,12 +111,12 @@ func (er *EventRecorder) Warn(
 	er.Event(obj, corev1.EventTypeWarning, reason, msg, args...)
 }
 
-// FromError emits a Warning event from an error.
 func (er *EventRecorder) FromError(
 	obj client.Object,
 	reason string,
 	err error,
 ) {
+
 	if err == nil {
 		return
 	}
@@ -88,7 +124,6 @@ func (er *EventRecorder) FromError(
 	er.Warn(obj, reason, "%v", err)
 }
 
-// FromErrorf emits a Warning event with formatted context.
 func (er *EventRecorder) FromErrorf(
 	obj client.Object,
 	reason string,
@@ -96,6 +131,7 @@ func (er *EventRecorder) FromErrorf(
 	msg string,
 	args ...interface{},
 ) {
+
 	if err == nil {
 		return
 	}
