@@ -9,7 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -18,14 +18,14 @@ type GitHubProvider struct {
 	Client   client.Client
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
-	Recorder record.EventRecorder
+	Recorder events.EventRecorder
 }
 
 func NewGitHubProvider(
 	c client.Client,
 	scheme *runtime.Scheme,
 	log logr.Logger,
-	rec record.EventRecorder,
+	rec events.EventRecorder,
 ) *GitHubProvider {
 	return &GitHubProvider{
 		Client:   c,
@@ -293,6 +293,7 @@ func (p *GitHubProvider) apply(
 		if p.Recorder != nil {
 			p.Recorder.Eventf(
 				obj,
+				nil,
 				"Normal",
 				"Created",
 				"%s %s created",
@@ -317,6 +318,7 @@ func (p *GitHubProvider) apply(
 		if p.Recorder != nil {
 			p.Recorder.Eventf(
 				obj,
+				nil,
 				"Normal",
 				"Updated",
 				"%s %s updated",

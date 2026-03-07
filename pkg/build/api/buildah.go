@@ -20,21 +20,21 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 )
 
 type BuildahProvider struct {
 	Client   client.Client
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
-	Recorder record.EventRecorder // optional; may be nil
+	Recorder events.EventRecorder // optional; may be nil
 }
 
 func NewBuildahProvider(
 	c client.Client,
 	scheme *runtime.Scheme,
 	log logr.Logger,
-	rec record.EventRecorder,
+	rec events.EventRecorder,
 ) *BuildahProvider {
 	return &BuildahProvider{
 		Client:   c,
