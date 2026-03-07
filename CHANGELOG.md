@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.4] - 2026-03-07
+
+### 🐛 Bug Fixes
+
+- *(core/events)* Add compatibility for new Kubernetes structured event recorder
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.1.3
+
 ## [0.1.3] - 2026-03-07
 
 ### 🚀 Features
