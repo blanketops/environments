@@ -1,10 +1,8 @@
 package intent
 
 import (
-	"fmt"
 	"time"
 
-	contractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
 	deploymentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
 	serviceunitResolution "github.com/ntlaletsi70/blanketops-environments/resolution/serviceunit"
 )
@@ -21,8 +19,6 @@ func ResolveDeploymentIntent(
 	intent := &DeploymentIntent{
 		Name:      deploy.Deployment.Name,
 		Namespace: deploy.Deployment.Namespace,
-
-		Runtime: mapRuntime(deploy.Spec.Runtime),
 
 		GeneratedAt: time.Now(),
 	}
@@ -43,30 +39,4 @@ func ResolveDeploymentIntent(
 	}
 
 	return intent, nil
-}
-
-func mapRuntime(rt contractv1.DeploymentRuntime) Runtime {
-	switch rt {
-
-	case contractv1.DeploymentRuntime_DEPLOYMENT_RUNTIME_KUBERNETES_CONTAINER:
-		return RuntimeKubernetes
-
-	case contractv1.DeploymentRuntime_DEPLOYMENT_RUNTIME_KNATIVE_SERVICE:
-		return RuntimeKnative
-
-	case contractv1.DeploymentRuntime_DEPLOYMENT_RUNTIME_AWS_ECS:
-		return RuntimeECS
-
-	case contractv1.DeploymentRuntime_DEPLOYMENT_RUNTIME_WASM:
-		return RuntimeWASM
-
-	case contractv1.DeploymentRuntime_DEPLOYMENT_RUNTIME_AZURE_CONTAINER:
-		return RuntimeAzure
-
-	default:
-		panic(fmt.Sprintf(
-			"unsupported deployment runtime %q (resolver bug)",
-			rt,
-		))
-	}
 }

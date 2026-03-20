@@ -34,14 +34,14 @@ func (Mapper) MapResolvedToDomain(
 	// INVARIANTS (resolver-owned guarantees)
 	// ---------------------------------------------------------------------
 
-	if len(spec.ServiceUnits) == 0 {
-		panic(fmt.Sprintf(
-			"resolved deployment %q has no service units (resolver bug)",
-			rd.Deployment.Name,
-		))
-	}
+	// if len(spec.ServiceUnits) == 0 {
+	// 	panic(fmt.Sprintf(
+	// 		"resolved deployment %q has no service units (resolver bug)",
+	// 		rd.Deployment.Name,
+	// 	))
+	// }
 
-	// if spec.Runtime == "" {
+	// if spec.Runtime == 0 {
 	// 	panic(fmt.Sprintf(
 	// 		"resolved deployment %q has empty runtime (resolver bug)",
 	// 		rd.Deployment.Name,

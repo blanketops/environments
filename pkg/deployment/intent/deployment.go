@@ -1,8 +1,14 @@
 package intent
 
-import "time"
+import (
+	environmentv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+
+	"time"
+)
 
 type DeploymentIntent struct {
+	Source *environmentv1.Deployment // ← IMPORTANT
+
 	Name      string
 	Namespace string
 
@@ -11,9 +17,9 @@ type DeploymentIntent struct {
 
 	ServiceUnits []ServiceUnitIntent
 
-	ImageAutomation bool
-
-	ManifestsRepo *ManifestsRepo
+	ReconciliationStrategy ReconciliationStrategy
+	ImageAutomation        bool
+	ManifestsRepo          *ManifestsRepo
 
 	GitOwner    string
 	GeneratedAt time.Time
