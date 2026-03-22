@@ -23,6 +23,7 @@ func NewIntentBuilder() *IntentBuilder {
 // - No Kubernetes types allowed
 // - No string-to-enum logic allowed
 // - Any invalid state is a resolver bug
+
 func (b *IntentBuilder) Build(
 	ctx context.Context,
 	depl *deploymentResolution.ResolvedDeployment,
@@ -33,9 +34,9 @@ func (b *IntentBuilder) Build(
 		return nil, fmt.Errorf("nil ResolvedDeployment (resolver bug)")
 	}
 
-	// ---------------------------------------------------------------------
-	// Resolve ServiceUnit intents (already resolved inputs)
-	// ---------------------------------------------------------------------
+	// ------------------------------------------------------------
+	// Resolve ServiceUnit intents
+	// ------------------------------------------------------------
 
 	units := make([]intent.ServiceUnitIntent, 0, len(serviceUnits))
 
@@ -50,36 +51,19 @@ func (b *IntentBuilder) Build(
 		}
 		units = append(units, *suIntent)
 	}
-	var manifestsRepo *intent.ManifestsRepo
 
-	if depl.Spec.ManifestsRepo != nil {
-		manifestsRepo = &intent.ManifestsRepo{
-			URL:         depl.Spec.ManifestsRepo.URL,
-			Path:        depl.Spec.ManifestsRepo.Path,
-			CloneSecret: depl.Spec.ManifestsRepo.CloneSecret,
-		}
-	}
-
-	// ---------------------------------------------------------------------
-	// Build Deployment intent (semantic, domain-level)
-	// ---------------------------------------------------------------------
+	// ------------------------------------------------------------
+	// Build Deployment intent (pure semantic)
+	// ------------------------------------------------------------
 
 	return &intent.DeploymentIntent{
-		Name:      depl.Deployment.Name,
-		Namespace: depl.Deployment.Namespace,
-
-		Runtime:  intent.Runtime(depl.Spec.Runtime),
-		Strategy: intent.Strategy(depl.Spec.Strategy),
-
-		ReconciliationStrategy: intent.ReconciliationStrategy(
-			depl.Spec.ReconciliationStrategy,
-		),
-
-		ManifestsRepo: manifestsRepo,
-
+		Name:         depl.Deployment.Name,
+		Namespace:    depl.Deployment.Namespace,
+		Runtime:      intent.Runtime(depl.Spec.Runtime),
+		Strategy:     intent.Strategy(depl.Spec.Strategy),
 		ServiceUnits: units,
+		GeneratedAt:  time.Now(),
 
-		GeneratedAt: time.Now(),
+		Source: depl.Deployment, // ← REQUIRED
 	}, nil
-
 }

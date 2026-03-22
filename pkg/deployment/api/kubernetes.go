@@ -2,20 +2,21 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/go-logr/logr"
-	//"github.com/ntlaletsi70/blanketops-environments/deployment/domain"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/domain"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/intent"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	"k8s.io/client-go/tools/events"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/intent"
 )
 
 type K8SProvider struct {
@@ -25,7 +26,12 @@ type K8SProvider struct {
 	Recorder events.EventRecorder
 }
 
-func NewK8SProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *K8SProvider {
+func NewK8SProvider(
+	c client.Client,
+	scheme *runtime.Scheme,
+	log logr.Logger,
+	rec events.EventRecorder,
+) *K8SProvider {
 	return &K8SProvider{
 		Client:   c,
 		Scheme:   scheme,
@@ -34,7 +40,58 @@ func NewK8SProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, re
 	}
 }
 
+//
+// Provider Interface Implementation
+//
+
+func (p *K8SProvider) Runtime() intent.Runtime {
+	return intent.RuntimeKubernetes
+}
+
+func (p *K8SProvider) Supports(
+	strategy intent.Strategy,
+) bool {
+
+	switch strategy {
+	case intent.StrategyRolling,
+		intent.StrategyBlueGreen:
+		return true
+	default:
+		return false
+	}
+}
+
 func (p *K8SProvider) Execute(
+	ctx context.Context,
+	intent *intent.DeploymentIntent,
+) (*domain.DeploymentResult, error) {
+
+	if !p.Supports(intent.Strategy) {
+		return nil, fmt.Errorf(
+			"strategy %s not supported for runtime %s",
+			intent.Strategy,
+			p.Runtime(),
+		)
+	}
+
+	switch intent.Strategy {
+
+	case intent.Strategy:
+		return p.executeRolling(ctx, intent)
+
+	case intent.Strategy:
+		return p.executeBlueGreen(ctx, intent)
+
+	default:
+		return nil, fmt.Errorf("unknown strategy: %s", intent.Strategy)
+	}
+}
+
+//
+// Strategy Implementations
+//
+
+func (p *K8SProvider) executeRolling(
 	ctx context.Context,
 	intent *intent.DeploymentIntent,
 ) (*domain.DeploymentResult, error) {
@@ -65,6 +122,22 @@ func (p *K8SProvider) Execute(
 		LastUpdateTime: time.Now(),
 	}, nil
 }
+
+// For now BlueGreen reuses rolling behavior.
+// Later you can split traffic or manage dual deployments.
+func (p *K8SProvider) executeBlueGreen(
+	ctx context.Context,
+	intent *intent.DeploymentIntent,
+) (*domain.DeploymentResult, error) {
+
+	p.Log.Info("BlueGreen currently mapped to rolling behavior")
+
+	return p.executeRolling(ctx, intent)
+}
+
+//
+// Core Apply Logic
+//
 
 func (p *K8SProvider) applyServiceUnit(
 	ctx context.Context,
@@ -150,11 +223,8 @@ func (p *K8SProvider) applyDeployment(
 	return p.Client.Patch(
 		ctx,
 		deploy,
-		client.Apply,
-		&client.PatchOptions{
-			FieldManager: "blanketops-k8s-provider",
-			Force:        pointer.Bool(true),
-		},
+		client.Apply, //nolint:staticcheck
+		&client.PatchOptions{FieldManager: "blanketops-k8s-provider", Force: ptr.To(true)},
 	)
 }
 
@@ -191,11 +261,8 @@ func (p *K8SProvider) applyService(
 	return p.Client.Patch(
 		ctx,
 		svc,
-		client.Apply,
-		&client.PatchOptions{
-			FieldManager: "blanketops-k8s-provider",
-			Force:        pointer.Bool(true),
-		},
+		client.Apply, //nolint:staticcheck
+		&client.PatchOptions{FieldManager: "blanketops-k8s-provider", Force: ptr.To(true)},
 	)
 }
 
@@ -229,7 +296,6 @@ func deriveDeploymentPhase(
 ) domain.DeploymentPhase {
 
 	if len(results) == 0 {
-		// Defensive default — should not normally happen
 		return domain.DeploymentPhase("Pending")
 	}
 
@@ -237,6 +303,7 @@ func deriveDeploymentPhase(
 
 	for _, r := range results {
 		switch r.Phase {
+
 		case domain.ServiceUnitPhase("Failed"):
 			return domain.DeploymentPhase("Failed")
 

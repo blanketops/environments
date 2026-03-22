@@ -228,7 +228,7 @@ func (p *GitHubProvider) apply(
 	return p.Client.Patch(
 		ctx,
 		obj,
-		ctrlclient.Apply,
+		ctrlclient.Apply, //nolint:staticcheck
 		ctrlclient.ForceOwnership,
 		ctrlclient.FieldOwner("blanketops"),
 	)
