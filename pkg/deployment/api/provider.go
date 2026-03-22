@@ -2,21 +2,13 @@ package api
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/domain"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/intent"
 )
 
-// Provider executes a DeploymentIntent against a specific runtime backend.
+// Provider executes a DeploymentIntent against a runtime backend.
 type Provider interface {
-	// Runtime returns the runtime this provider supports.
-	Runtime() intent.Runtime
-
-	// Supports reports whether the provider supports the given strategy.
-	Supports(strategy intent.Strategy) bool
-
-	// Execute reconciles the DeploymentIntent.
 	Execute(
 		ctx context.Context,
 		intent *intent.DeploymentIntent,
@@ -28,32 +20,22 @@ type ProviderRegistry struct {
 	providers map[intent.Runtime]Provider
 }
 
-func NewProviderRegistry(providers ...Provider) *ProviderRegistry {
-	m := make(map[intent.Runtime]Provider)
-
-	for _, p := range providers {
-		m[p.Runtime()] = p
-	}
-
+func NewProviderRegistry() *ProviderRegistry {
 	return &ProviderRegistry{
-		providers: m,
+		providers: make(map[intent.Runtime]Provider),
 	}
 }
 
-// Register allows late registration (optional).
-func (r *ProviderRegistry) Register(provider Provider) {
-	r.providers[provider.Runtime()] = provider
-}
-
-// Resolve returns a provider for the given runtime.
-func (r *ProviderRegistry) Resolve(
+func (r *ProviderRegistry) Register(
 	runtime intent.Runtime,
-) (Provider, error) {
+	provider Provider,
+) {
+	r.providers[runtime] = provider
+}
 
+func (r *ProviderRegistry) Get(
+	runtime intent.Runtime,
+) (Provider, bool) {
 	p, ok := r.providers[runtime]
-	if !ok {
-		return nil, fmt.Errorf("unsupported runtime: %s", runtime)
-	}
-
-	return p, nil
+	return p, ok
 }

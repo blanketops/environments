@@ -3,30 +3,25 @@ package application
 import (
 	"context"
 
-	"github.com/go-logr/logr"
-
-	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/api"
 	deploymentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
 	serviceunitResolution "github.com/ntlaletsi70/blanketops-environments/resolution/serviceunit"
 )
 
 type DeploymentService struct {
-	intentBuilder          *IntentBuilder
-	status                 *StatusWriter
-	reconciliationExecutor *api.ReconciliationExecutor
-	log                    logr.Logger
+	intentBuilder *IntentBuilder
+	status        *StatusWriter
+	backend       *BackendSelector
 }
 
 func NewDeploymentService(
 	intentBuilder *IntentBuilder,
 	status *StatusWriter,
-	reconciliationExecutor *api.ReconciliationExecutor,
-	log logr.Logger) *DeploymentService {
+	backend *BackendSelector,
+) *DeploymentService {
 	return &DeploymentService{
-		intentBuilder:          intentBuilder,
-		status:                 status,
-		reconciliationExecutor: reconciliationExecutor,
-		log:                    log,
+		intentBuilder: intentBuilder,
+		status:        status,
+		backend:       backend,
 	}
 }
 
@@ -34,31 +29,33 @@ func (s *DeploymentService) Reconcile(
 	ctx context.Context,
 	resolved *deploymentResolution.ResolvedDeployment,
 	serviceUnits []serviceunitResolution.ResolvedServiceUnit,
-	log logr.Logger,
 ) error {
 
-	// 1. Build intent
+	// ------------------------------------------------
+	// 1. Build intent from resolved inputs
+	// ------------------------------------------------
 	intent, err := s.intentBuilder.Build(ctx, resolved, serviceUnits)
 	if err != nil {
 		return err
 	}
-	log.Info("intent built",
-		"manifestsRepoNil", intent.ManifestsRepo == nil,
-		"reconciliationStrategy", intent.ReconciliationStrategy,
-	)
 
-	// 2. Execute via reconciliation axis
-	result, execErr := s.reconciliationExecutor.Execute(
-		ctx,
-		resolved.Deployment, // ← real CR
-		intent,
-	)
+	// ------------------------------------------------
+	// 2. Select backend
+	// ------------------------------------------------
+	provider := s.backend.ForIntent(intent)
 
-	// 3. Write status
+	// ------------------------------------------------
+	// 3. Execute deployment
+	// ------------------------------------------------
+	result, err := provider.Execute(ctx, intent)
+
+	// ------------------------------------------------
+	// 4. Write status (still against CR)
+	// ------------------------------------------------
 	return s.status.WriteDeploymentResult(
 		ctx,
 		resolved.Deployment,
 		result,
-		execErr,
+		err,
 	)
 }

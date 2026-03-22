@@ -10,22 +10,23 @@ import (
 	"strings"
 	"time"
 
-	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
-	fluxmeta "github.com/fluxcd/pkg/apis/meta"
-	sourcev1 "github.com/fluxcd/source-controller/api/v1"
-	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
-	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
 	environmentv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/intent"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/render/builders"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/utils"
+	corev1 "k8s.io/api/core/v1"
+
+	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
+	fluxmeta "github.com/fluxcd/pkg/apis/meta"
+	sourcev1 "github.com/fluxcd/source-controller/api/v1"
+
+	"github.com/go-logr/logr"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const fieldManager = "blanketops-kustomize-provider"
@@ -364,7 +365,7 @@ func (m *KustomizeStrategyProvider) ensureGitRepository(
 		client.Apply,
 		&client.PatchOptions{
 			FieldManager: fieldManager,
-			Force:        ptr.To(true),
+			Force:        pointer.Bool(true),
 		},
 	)
 }
@@ -408,7 +409,7 @@ func (m *KustomizeStrategyProvider) ensureKustomization(
 		client.Apply,
 		&client.PatchOptions{
 			FieldManager: fieldManager,
-			Force:        ptr.To(true),
+			Force:        pointer.Bool(true),
 		},
 	)
 }

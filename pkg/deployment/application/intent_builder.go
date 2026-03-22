@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/intent"
 	deploymentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
 	serviceunitResolution "github.com/ntlaletsi70/blanketops-environments/resolution/serviceunit"
+
+	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/intent"
 )
 
 type IntentBuilder struct{}
@@ -50,15 +51,6 @@ func (b *IntentBuilder) Build(
 		}
 		units = append(units, *suIntent)
 	}
-	var manifestsRepo *intent.ManifestsRepo
-
-	if depl.Spec.ManifestsRepo != nil {
-		manifestsRepo = &intent.ManifestsRepo{
-			URL:         depl.Spec.ManifestsRepo.URL,
-			Path:        depl.Spec.ManifestsRepo.Path,
-			CloneSecret: depl.Spec.ManifestsRepo.CloneSecret,
-		}
-	}
 
 	// ---------------------------------------------------------------------
 	// Build Deployment intent (semantic, domain-level)
@@ -68,18 +60,11 @@ func (b *IntentBuilder) Build(
 		Name:      depl.Deployment.Name,
 		Namespace: depl.Deployment.Namespace,
 
-		Runtime:  intent.Runtime(depl.Spec.Runtime),
-		Strategy: intent.Strategy(depl.Spec.Strategy),
-
-		ReconciliationStrategy: intent.ReconciliationStrategy(
-			depl.Spec.ReconciliationStrategy,
-		),
-
-		ManifestsRepo: manifestsRepo,
+		// 🔒 Semantic enum — already resolved
+		Runtime: intent.Runtime(depl.Spec.Runtime),
 
 		ServiceUnits: units,
 
 		GeneratedAt: time.Now(),
 	}, nil
-
 }

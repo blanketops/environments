@@ -32,7 +32,12 @@ func (w *StatusWriter) Write(
 	// ------------------------------------------------
 	// 1. Build CONTRACT status (authoritative)
 	// ------------------------------------------------
-	contractStatus := result.ToStatus()
+	contractStatus := domain.GitHubEventStatus{
+		Accepted:     result.Accepted,
+		Triggered:    result.Triggered,
+		Message:      result.Message,
+		TriggeredRef: result.TriggeredRef,
+	}
 
 	if runErr != nil {
 		contractStatus.Accepted = false

@@ -7,52 +7,78 @@ import (
 	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/intent"
 )
 
-// BackendSelector resolves and prepares a Provider
-// for a given DeploymentIntent.
 type BackendSelector struct {
-	registry *api.ProviderRegistry
+	Kubernetes api.Provider
+	Knative    api.Provider
+	ECS        api.Provider
+	Flux       api.Provider
 }
 
-// NewBackendSelector wires the selector with a ProviderRegistry.
 func NewBackendSelector(
-	registry *api.ProviderRegistry,
+	k8s api.Provider,
+	knative api.Provider,
+	ecs api.Provider,
+	flux api.Provider,
 ) *BackendSelector {
-
 	return &BackendSelector{
-		registry: registry,
+		Kubernetes: k8s,
+		Knative:    knative,
+		ECS:        ecs,
+		Flux:       flux,
 	}
 }
-
-// Resolve returns a fully prepared Provider for the given intent.
-// It validates runtime + strategy compatibility and applies
-// optional delivery decorators (e.g., GitOps).
-func (b *BackendSelector) Resolve(
+func (b *BackendSelector) ForIntent(
 	deploymentIntent *intent.DeploymentIntent,
-) (api.Provider, error) {
+) api.Provider {
 
-	if b.registry == nil {
-		return nil, fmt.Errorf("provider registry is not initialized")
-	}
+	switch deploymentIntent.Runtime {
 
-	// 1️⃣ Resolve runtime
-	provider, err := b.registry.Resolve(deploymentIntent.Runtime)
-	if err != nil {
-		return nil, err
-	}
+	case intent.RuntimeKubernetes:
+		switch deploymentIntent.Strategy {
 
-	// 2️⃣ Validate strategy support
-	if !provider.Supports(deploymentIntent.Strategy) {
-		return nil, fmt.Errorf(
-			"strategy %s not supported for runtime %s",
-			deploymentIntent.Strategy,
+		case intent.StrategyRolling:
+			// GitOps-aware Kubernetes
+			if deploymentIntent.ManifestsRepo != nil {
+				return b.Flux
+			}
+			return b.Kubernetes
+
+		case intent.StrategyBlueGreen:
+			// Service-switch based orchestration on Kubernetes
+			return b.Kubernetes
+
+		case intent.StrategyCanary:
+			// Guarded by IntentBuilder, but never silently route
+			panic("canary strategy is not supported on kubernetes runtime")
+		}
+
+	case intent.RuntimeKnative:
+		switch deploymentIntent.Strategy {
+
+		case intent.StrategyRolling:
+			return b.Knative
+
+		case intent.StrategyCanary:
+			// Native traffic splitting
+			return b.Knative
+
+		case intent.StrategyBlueGreen:
+			panic("bluegreen strategy is not supported on knative runtime")
+		}
+
+	case intent.RuntimeECS:
+		panic("deployment strategies are not yet supported on ecs runtime")
+
+	default:
+		panic(fmt.Sprintf(
+			"unsupported runtime: %s",
 			deploymentIntent.Runtime,
-		)
+		))
 	}
 
-	// 3️⃣ Apply GitOps decoration if manifests repo defined
-	if deploymentIntent.ManifestsRepo != nil {
-		provider = NewGitOpsDecorator(provider)
-	}
-
-	return provider, nil
+	panic(fmt.Sprintf(
+		"no backend matched for runtime=%s strategy=%s",
+		deploymentIntent.Runtime,
+		deploymentIntent.Strategy,
+	))
 }

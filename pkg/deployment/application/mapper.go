@@ -41,19 +41,19 @@ func (Mapper) MapResolvedToDomain(
 		))
 	}
 
-	// if spec.Runtime == "" {
-	// 	panic(fmt.Sprintf(
-	// 		"resolved deployment %q has empty runtime (resolver bug)",
-	// 		rd.Deployment.Name,
-	// 	))
-	// }
+	if spec.Runtime == 0 {
+		panic(fmt.Sprintf(
+			"resolved deployment %q has empty runtime (resolver bug)",
+			rd.Deployment.Name,
+		))
+	}
 
-	// if spec.ReconciliationStrategy == 0 {
-	// 	panic(fmt.Sprintf(
-	// 		"resolved deployment %q has empty reconciliationStrategy (resolver bug)",
-	// 		rd.Deployment.Name,
-	// 	))
-	// }
+	if spec.ReconciliationStrategy == 0 {
+		panic(fmt.Sprintf(
+			"resolved deployment %q has empty reconciliationStrategy (resolver bug)",
+			rd.Deployment.Name,
+		))
+	}
 
 	// ---------------------------------------------------------------------
 	// ManifestsRepo (OPTIONAL – preserved exactly)

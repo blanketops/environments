@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"time"
 
+	env1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/domain"
+
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	env1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/domain"
 )
 
 type StatusWriter struct {

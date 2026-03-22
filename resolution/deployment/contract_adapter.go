@@ -1,22 +1,24 @@
 package deployment
 
-import (
-	contractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
-)
+import contractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
 
+// ToDeploymentContract converts a resolved runtime deployment spec into a
+// canonical Deployment CONTRACT spec.
+//
+// ⚠️ ONE-WAY ADAPTER
+// - For hashing, diffing, storage, and legacy consumers only
+// - Controllers must NEVER consume the returned value
 func (s *ResolvedDeploymentSpec) ToDeploymentContract() *contractv1.DeploymentSpec {
-
+	// Absolute guard: no spec, no contract
 	if s == nil {
 		return nil
 	}
 
 	out := &contractv1.DeploymentSpec{
-		ServiceUnits:    s.ServiceUnits,
-		ImageAutomation: s.ImageAutomation,
-		Runtime:         toContractRuntime(s.Runtime),
-		ReconciliationStrategy: toContractReconciliationStrategy(
-			s.ReconciliationStrategy,
-		),
+		ServiceUnits:           s.ServiceUnits,
+		Runtime:                s.Runtime,
+		ImageAutomation:        s.ImageAutomation,
+		ReconciliationStrategy: s.ReconciliationStrategy,
 	}
 
 	// ------------------------------------------------
@@ -33,39 +35,4 @@ func (s *ResolvedDeploymentSpec) ToDeploymentContract() *contractv1.DeploymentSp
 	}
 
 	return out
-}
-
-func toContractRuntime(rt Runtime) contractv1.DeploymentRuntime {
-
-	switch rt {
-
-	case RuntimeKubernetes:
-		return contractv1.DeploymentRuntime_DEPLOYMENT_RUNTIME_KUBERNETES_CONTAINER
-
-	case RuntimeKnative:
-		return contractv1.DeploymentRuntime_DEPLOYMENT_RUNTIME_KNATIVE_SERVICE
-
-	default:
-		return contractv1.DeploymentRuntime_DEPLOYMENT_RUNTIME_UNSPECIFIED
-	}
-}
-
-func toContractReconciliationStrategy(
-	rs ReconciliationStrategy,
-) contractv1.DeploymentReconciliationStrategy {
-
-	switch rs {
-
-	case ReconciliationKustomize:
-		return contractv1.DeploymentReconciliationStrategy_DEPLOYMENT_RECONCILIATION_STRATEGY_KUSTOMIZE
-
-	case ReconciliationHelm:
-		return contractv1.DeploymentReconciliationStrategy_DEPLOYMENT_RECONCILIATION_STRATEGY_HELM
-
-	case ReconciliationImperative:
-		return contractv1.DeploymentReconciliationStrategy_DEPLOYMENT_RECONCILIATION_STRATEGY_UNSPECIFIED
-
-	default:
-		return contractv1.DeploymentReconciliationStrategy_DEPLOYMENT_RECONCILIATION_STRATEGY_UNSPECIFIED
-	}
 }

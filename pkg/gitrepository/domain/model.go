@@ -36,7 +36,10 @@ type WebhookSpec struct {
 
 // IsValid validates the webhook specification.
 func (w WebhookSpec) IsValid() bool {
-	return len(w.Events) != 0
+	if len(w.Events) == 0 {
+		return false
+	}
+	return true
 }
 
 // GitRepository is the domain model representing a registered source repository.

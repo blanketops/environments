@@ -9,41 +9,9 @@ import (
 )
 
 //
-// ======================================================
-// DOMAIN TYPES (AUTHORITATIVE)
-// ======================================================
-//
-
-type Runtime string
-
-const (
-	RuntimeKubernetes Runtime = "kubernetes.io/container-runtime"
-	RuntimeKnative    Runtime = "knative.dev/service-runtime"
-	RuntimeWasm       Runtime = "blanketops.dev/wasm-runtime"
-	RuntimeECS        Runtime = "blanketops.dev/aws-ecs"
-	RuntimeAzure      Runtime = "blanketops.dev/azure-container"
-)
-
-type Strategy string
-
-const (
-	StrategyRolling   Strategy = "Rolling"
-	StrategyBlueGreen Strategy = "BlueGreen"
-	StrategyCanary    Strategy = "Canary"
-)
-
-type ReconciliationStrategy string
-
-const (
-	ReconciliationImperative ReconciliationStrategy = "Imperative"
-	ReconciliationKustomize  ReconciliationStrategy = "Kustomize"
-	ReconciliationHelm       ReconciliationStrategy = "Helm"
-)
-
-//
-// ======================================================
-// RESOLVED TYPES (DOMAIN SAFE)
-// ======================================================
+// ==============================
+// RUNTIME DEPLOYMENT (AUTHORITATIVE)
+// ==============================
 //
 
 type ResolvedDeployment struct {
@@ -53,15 +21,16 @@ type ResolvedDeployment struct {
 
 type ResolvedDeploymentSpec struct {
 	ServiceUnits []string
-	Runtime      Runtime
-	Strategy     Strategy
 
-	GitOwner        string
+	Runtime contractv1.DeploymentRuntime
+
+	GitOwner string
+
 	ImageAutomation bool
 
 	ManifestsRepo *ResolvedManifestsRepo
 
-	ReconciliationStrategy ReconciliationStrategy
+	ReconciliationStrategy contractv1.DeploymentReconciliationStrategy
 }
 
 type ResolvedManifestsRepo struct {
@@ -73,30 +42,30 @@ type ResolvedManifestsRepo struct {
 }
 
 //
-// ======================================================
+// ==============================
 // RESOLUTION ENTRY POINT
-// ======================================================
+// ==============================
 //
 
 func ResolveDeployment(depl *environmentv1.Deployment) (*ResolvedDeployment, error) {
-
 	if depl == nil {
 		return nil, fmt.Errorf("deployment is nil")
 	}
-
 	if len(depl.Spec.Contract.Raw) == 0 {
 		return nil, fmt.Errorf("spec.contract is required")
 	}
 
+	// ------------------------------------------------------------
+	// Decode RAW contract (DO NOT USE PROTO)
+	// ------------------------------------------------------------
 	var raw map[string]any
 	if err := json.Unmarshal(depl.Spec.Contract.Raw, &raw); err != nil {
 		return nil, fmt.Errorf("failed to decode deployment contract: %w", err)
 	}
 
 	// ------------------------------------------------------------
-	// ServiceUnits (MANDATORY)
+	// Resolve serviceUnits (MANDATORY)
 	// ------------------------------------------------------------
-
 	suRaw, ok := raw["serviceUnits"].([]any)
 	if !ok || len(suRaw) == 0 {
 		return nil, fmt.Errorf("serviceUnits is required and must be non-empty")
@@ -112,45 +81,38 @@ func ResolveDeployment(depl *environmentv1.Deployment) (*ResolvedDeployment, err
 	}
 
 	// ------------------------------------------------------------
-	// Runtime (MANDATORY)
+	// Resolve runtime (MANDATORY, NORMALIZED)
 	// ------------------------------------------------------------
-
-	enumRuntime, err := resolveDeploymentRuntime(raw["runtime"])
-	if err != nil {
-		return nil, err
-	}
-
-	domainRuntime, err := normalizeRuntime(enumRuntime)
+	runtime, err := resolveDeploymentRuntime(raw["runtime"])
 	if err != nil {
 		return nil, err
 	}
 
 	// ------------------------------------------------------------
-	// Strategy (MANDATORY)
+	// Resolve imageAutomation (OPTIONAL)
 	// ------------------------------------------------------------
-
-	domainStrategy, err := resolveDeploymentStrategy(raw["strategy"])
-	if err != nil {
-		return nil, err
-	}
-
-	// ------------------------------------------------------------
-	// Optional Fields
-	// ------------------------------------------------------------
-
 	imageAutomation := optionalBool(raw, "imageAutomation")
 
-	gitOwner := optionalString(raw, "gitOwner")
-	if _, declared := raw["gitOwner"]; declared && gitOwner == "" {
-		return nil, fmt.Errorf("gitOwner declared but empty")
+	// ------------------------------------------------------------
+	// Resolve gitOwner (OPTIONAL but validated if present)
+	// ------------------------------------------------------------
+	// gitOwner := optionalString(raw, "gitOwner")
+	// if _, declared := raw["gitOwner"]; declared && gitOwner == "" {
+	// 	return nil, fmt.Errorf("gitOwner declared but empty")
+	// }
+
+	// ------------------------------------------------------------
+	// Resolve reconciliationStrategy (MANDATORY)
+	// ------------------------------------------------------------
+	recon, err := resolveReconciliationStrategy(raw["reconciliationStrategy"])
+	if err != nil {
+		return nil, err
 	}
 
 	// ------------------------------------------------------------
-	// ManifestsRepo
+	// Resolve manifestsRepo (OPTIONAL)
 	// ------------------------------------------------------------
-
 	var repo *ResolvedManifestsRepo
-
 	if mrRaw, ok := raw["manifestsRepo"].(map[string]any); ok {
 
 		repo = &ResolvedManifestsRepo{
@@ -166,50 +128,12 @@ func ResolveDeployment(depl *environmentv1.Deployment) (*ResolvedDeployment, err
 		}
 	}
 
-	// ------------------------------------------------------------
-	// Reconciliation Strategy (DOMAIN SAFE)
-	// ------------------------------------------------------------
-
-	var recon ReconciliationStrategy
-
-	rawRecon, hasRecon := raw["reconciliationStrategy"]
-
-	if repo != nil {
-
-		if !hasRecon {
-			return nil, fmt.Errorf("reconciliationStrategy is required when manifestsRepo is defined")
-		}
-
-		enumRecon, err := resolveReconciliationStrategy(rawRecon)
-		if err != nil {
-			return nil, err
-		}
-
-		recon, err = normalizeReconciliationStrategy(enumRecon)
-		if err != nil {
-			return nil, err
-		}
-
-	} else {
-
-		if hasRecon {
-			return nil, fmt.Errorf("reconciliationStrategy cannot be set when manifestsRepo is not defined")
-		}
-
-		recon = ReconciliationImperative
-	}
-
-	// ------------------------------------------------------------
-	// Final Domain Object
-	// ------------------------------------------------------------
-
 	return &ResolvedDeployment{
 		Deployment: depl,
 		Spec: &ResolvedDeploymentSpec{
-			ServiceUnits:           serviceUnits,
-			Runtime:                domainRuntime,
-			Strategy:               domainStrategy,
-			GitOwner:               gitOwner,
+			ServiceUnits: serviceUnits,
+			Runtime:      runtime,
+			//GitOwner:               gitOwner,
 			ImageAutomation:        imageAutomation,
 			ManifestsRepo:          repo,
 			ReconciliationStrategy: recon,
@@ -218,9 +142,9 @@ func ResolveDeployment(depl *environmentv1.Deployment) (*ResolvedDeployment, err
 }
 
 //
-// ======================================================
-// NORMALIZATION HELPERS
-// ======================================================
+// ==============================
+// HELPERS (SAME PHILOSOPHY AS BUILD)
+// ==============================
 //
 
 func resolveDeploymentRuntime(raw any) (contractv1.DeploymentRuntime, error) {
@@ -228,10 +152,18 @@ func resolveDeploymentRuntime(raw any) (contractv1.DeploymentRuntime, error) {
 
 	case string:
 		switch v {
-		case "kubernetes", "kubernetes.io/container-runtime":
+
+		// canonical
+		case "kubernetes":
 			return contractv1.DeploymentRuntime_DEPLOYMENT_RUNTIME_KUBERNETES_CONTAINER, nil
+
+		// aliases (🔥 intentional)
+		case "kubernetes.io/container-runtime":
+			return contractv1.DeploymentRuntime_DEPLOYMENT_RUNTIME_KUBERNETES_CONTAINER, nil
+
 		case "knative":
 			return contractv1.DeploymentRuntime_DEPLOYMENT_RUNTIME_KNATIVE_SERVICE, nil
+
 		default:
 			return 0, fmt.Errorf("unsupported deployment.runtime %q", v)
 		}
@@ -244,23 +176,7 @@ func resolveDeploymentRuntime(raw any) (contractv1.DeploymentRuntime, error) {
 	}
 }
 
-func normalizeRuntime(rt contractv1.DeploymentRuntime) (Runtime, error) {
-
-	switch rt {
-
-	case contractv1.DeploymentRuntime_DEPLOYMENT_RUNTIME_KUBERNETES_CONTAINER:
-		return RuntimeKubernetes, nil
-
-	case contractv1.DeploymentRuntime_DEPLOYMENT_RUNTIME_KNATIVE_SERVICE:
-		return RuntimeKnative, nil
-
-	default:
-		return "", fmt.Errorf("unsupported deployment runtime enum %v", rt)
-	}
-}
-
 func resolveReconciliationStrategy(raw any) (contractv1.DeploymentReconciliationStrategy, error) {
-
 	switch v := raw.(type) {
 
 	case string:
@@ -278,53 +194,6 @@ func resolveReconciliationStrategy(raw any) (contractv1.DeploymentReconciliation
 
 	default:
 		return 0, fmt.Errorf("reconciliationStrategy is required")
-	}
-}
-
-func normalizeReconciliationStrategy(
-	rt contractv1.DeploymentReconciliationStrategy,
-) (ReconciliationStrategy, error) {
-
-	switch rt {
-
-	case contractv1.DeploymentReconciliationStrategy_DEPLOYMENT_RECONCILIATION_STRATEGY_KUSTOMIZE:
-		return ReconciliationKustomize, nil
-
-	case contractv1.DeploymentReconciliationStrategy_DEPLOYMENT_RECONCILIATION_STRATEGY_HELM:
-		return ReconciliationHelm, nil
-
-	case contractv1.DeploymentReconciliationStrategy_DEPLOYMENT_RECONCILIATION_STRATEGY_UNSPECIFIED:
-		return ReconciliationImperative, nil
-
-	default:
-		return "", fmt.Errorf("unsupported reconciliation strategy enum %v", rt)
-	}
-}
-
-//
-// ======================================================
-// GENERIC HELPERS
-// ======================================================
-//
-
-func resolveDeploymentStrategy(raw any) (Strategy, error) {
-
-	switch v := raw.(type) {
-
-	case string:
-		switch v {
-		case "Rolling":
-			return StrategyRolling, nil
-		case "BlueGreen":
-			return StrategyBlueGreen, nil
-		case "Canary":
-			return StrategyCanary, nil
-		default:
-			return "", fmt.Errorf("unsupported deployment.strategy %q", v)
-		}
-
-	default:
-		return "", fmt.Errorf("deployment.strategy is required")
 	}
 }
 

@@ -5,12 +5,11 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/domain"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/intent"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/events"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type RuntimeProvider struct {
@@ -20,7 +19,7 @@ type RuntimeProvider struct {
 	K8S    *K8SProvider
 }
 
-func NewRuntimeProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, Recorder record.EventRecorder) *RuntimeProvider {
+func NewRuntimeProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, Recorder events.EventRecorder) *RuntimeProvider {
 	return &RuntimeProvider{
 		Client: c,
 		Scheme: scheme,
