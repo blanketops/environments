@@ -2,25 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.1.7] - 2026-03-22
+## [0.1.9] - 2026-03-22
 
 ### 🎨 Styling
 
 - Auto-format and tidy [skip ci]
-
-## [0.1.8] - 2026-03-22
-
-### 🚀 Features
-
-- *(deployment)* Update to latest
-
-### 🎨 Styling
-
 - Auto-format and tidy [skip ci]
 
 ### ⚙️ Miscellaneous Tasks
 
-- *(release)* Update changelog for v0.1.7
+- *(release)* Update changelog for v0.1.8
+
+### Bugfix
+
+- *(staickcheck)* , update static check, add config, add ptr as required, staticheck through
+- *(ci)* Resolve staticcheck lint errors and update CI pipeline
+
+### Release
+
+- *(v0.1.8)* Merge release/v0.1.8 to develop
+
+## [0.1.8] - 2026-03-22
+
+### 🎨 Styling
+
+- Auto-format and tidy [skip ci]
 
 ### Bugfix
 
@@ -38,9 +44,14 @@ All notable changes to this project will be documented in this file.
 
 ## [0.1.7] - 2026-03-22
 
+### 🚀 Features
+
+- *(deployment)* Update to latest
+
 ### ⚙️ Miscellaneous Tasks
 
 - *(release)* Update changelog for v0.1.6
+- *(release)* Update changelog for v0.1.7
 - *(release)* Update changelog for v0.1.7
 
 ### Bugfix
