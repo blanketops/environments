@@ -11,6 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -219,11 +220,11 @@ func (p *K8SProvider) applyDeployment(
 
 	p.Log.Info("Applying Kubernetes Deployment", "name", su.Name)
 
-	return p.Client.Apply(
+	return p.Client.Patch(
 		ctx,
 		deploy,
-		client.ForceOwnership,
-		client.FieldOwner("blanketops-k8s-provider"),
+		client.Apply, //nolint:staticcheck
+		&client.PatchOptions{FieldManager: "blanketops-k8s-provider", Force: ptr.To(true)},
 	)
 }
 
@@ -257,11 +258,11 @@ func (p *K8SProvider) applyService(
 
 	p.Log.Info("Applying Kubernetes Service", "name", su.Name)
 
-	return p.Client.Apply(
+	return p.Client.Patch(
 		ctx,
 		svc,
-		client.ForceOwnership,
-		client.FieldOwner("blanketops-k8s-provider"),
+		client.Apply, //nolint:staticcheck
+		&client.PatchOptions{FieldManager: "blanketops-k8s-provider", Force: ptr.To(true)},
 	)
 }
 

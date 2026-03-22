@@ -20,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"k8s.io/utils/ptr"
 
 	environmentv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/intent"
@@ -357,11 +358,11 @@ func (m *KustomizeStrategyProvider) ensureGitRepository(
 		"secret", fluxSecret,
 	)
 
-	return m.Client.Apply(
+	return m.Client.Patch(
 		ctx,
 		repo,
-		client.ForceOwnership,
-		client.FieldOwner(fieldManager),
+		client.Apply, //nolint:staticcheck
+		&client.PatchOptions{FieldManager: fieldManager, Force: ptr.To(true)},
 	)
 }
 
@@ -398,10 +399,10 @@ func (m *KustomizeStrategyProvider) ensureKustomization(
 
 	m.Log.Info("Applying Kustomization", "name", kust.Name)
 
-	return m.Client.Apply(
+	return m.Client.Patch(
 		ctx,
 		kust,
-		client.ForceOwnership,
-		client.FieldOwner(fieldManager),
+		client.Apply, //nolint:staticcheck
+		&client.PatchOptions{FieldManager: fieldManager, Force: ptr.To(true)},
 	)
 }

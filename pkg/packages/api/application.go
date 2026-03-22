@@ -115,11 +115,11 @@ func ApplyApplication(
 	app *kappctrlv1alpha1.App,
 ) error {
 
-	return c.Apply(
+	return c.Patch(
 		ctx,
 		app,
-		client.ForceOwnership,
-		client.FieldOwner("blanketops-packages"),
+		client.Apply, //nolint:staticcheck
+		&client.PatchOptions{FieldManager: "blanketops-packages", Force: ptr.To(true)},
 	)
 }
 
