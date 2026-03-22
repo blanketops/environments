@@ -6,16 +6,16 @@ import (
 	"crypto/rand"
 	"encoding/pem"
 	"fmt"
-	"reflect"
 
 	"github.com/go-logr/logr"
-	deploymentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
 	"golang.org/x/crypto/ssh"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	deploymentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
 )
 
 const githubKnownHosts = "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl"
@@ -170,10 +170,4 @@ func generateSSHKeypair(comment string) ([]byte, []byte, error) {
 	publicKeyAuthorized := ssh.MarshalAuthorizedKey(sshPubKey)
 
 	return privateKeyPEM, publicKeyAuthorized, nil
-}
-
-// Ensure the spec drift check still works for anything calling the old unstructured path.
-// This is a no-op shim so callers don't break during transition.
-func specChanged(a, b map[string]any) bool {
-	return !reflect.DeepEqual(a, b)
 }

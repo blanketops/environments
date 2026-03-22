@@ -14,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/events"
 
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/ntlaletsi70/blanketops-environments/pkg/packages/domain"
@@ -119,11 +118,8 @@ func ApplyApplication(
 	return c.Patch(
 		ctx,
 		app,
-		client.Apply,
-		&client.PatchOptions{
-			FieldManager: "blanketops-packages",
-			Force:        ptr.To(true),
-		},
+		client.Apply, //nolint:staticcheck
+		&client.PatchOptions{FieldManager: "blanketops-packages", Force: ptr.To(true)},
 	)
 }
 

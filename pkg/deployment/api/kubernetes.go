@@ -11,8 +11,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/domain"
@@ -23,14 +23,14 @@ type K8SProvider struct {
 	Client   client.Client
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
-	Recorder record.EventRecorder
+	Recorder events.EventRecorder
 }
 
 func NewK8SProvider(
 	c client.Client,
 	scheme *runtime.Scheme,
 	log logr.Logger,
-	rec record.EventRecorder,
+	rec events.EventRecorder,
 ) *K8SProvider {
 	return &K8SProvider{
 		Client:   c,
@@ -223,11 +223,8 @@ func (p *K8SProvider) applyDeployment(
 	return p.Client.Patch(
 		ctx,
 		deploy,
-		client.Apply,
-		&client.PatchOptions{
-			FieldManager: "blanketops-k8s-provider",
-			Force:        pointer.Bool(true),
-		},
+		client.Apply, //nolint:staticcheck
+		&client.PatchOptions{FieldManager: "blanketops-k8s-provider", Force: ptr.To(true)},
 	)
 }
 
@@ -264,11 +261,8 @@ func (p *K8SProvider) applyService(
 	return p.Client.Patch(
 		ctx,
 		svc,
-		client.Apply,
-		&client.PatchOptions{
-			FieldManager: "blanketops-k8s-provider",
-			Force:        pointer.Bool(true),
-		},
+		client.Apply, //nolint:staticcheck
+		&client.PatchOptions{FieldManager: "blanketops-k8s-provider", Force: ptr.To(true)},
 	)
 }
 
