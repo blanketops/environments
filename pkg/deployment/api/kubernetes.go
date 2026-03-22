@@ -12,7 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/events"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/domain"
@@ -224,10 +223,8 @@ func (p *K8SProvider) applyDeployment(
 		ctx,
 		deploy,
 		client.Apply,
-		&client.PatchOptions{
-			FieldManager: "blanketops-k8s-provider",
-			Force:        ptr.To(true),
-		},
+		client.ForceOwnership,
+		client.FieldOwner("blanketops-k8s-provider"),
 	)
 }
 
@@ -265,10 +262,8 @@ func (p *K8SProvider) applyService(
 		ctx,
 		svc,
 		client.Apply,
-		&client.PatchOptions{
-			FieldManager: "blanketops-k8s-provider",
-			Force:        ptr.To(true),
-		},
+		client.ForceOwnership,
+		client.FieldOwner("blanketops-k8s-provider"),
 	)
 }
 
