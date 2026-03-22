@@ -76,10 +76,10 @@ func ResolveGitHubEvent(ev *eventsv1alpha1.GitHubEvent) (*ResolvedGitHubEvent, e
 	if err != nil {
 		return nil, err
 	}
-	eventID, err := requireString(raw, "eventId")
-	if err != nil {
-		return nil, err
-	}
+	// eventID, err := requireString(raw, "eventId")
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	webhook, err := resolveWebhook(raw)
 	if err != nil {
@@ -89,7 +89,7 @@ func ResolveGitHubEvent(ev *eventsv1alpha1.GitHubEvent) (*ResolvedGitHubEvent, e
 	spec := &ResolvedGitHubEventSpec{
 		Repository: repo,
 		EventType:  eventType,
-		EventID:    eventID,
+		//EventID:    eventID,
 
 		Ref:       optionalString(raw, "ref"),
 		CommitSHA: optionalString(raw, "commitSha"),
