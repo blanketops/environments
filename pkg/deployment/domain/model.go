@@ -53,13 +53,12 @@ type ManifestsRepo struct {
 	Path        string
 }
 
-type ReconciliationStrategy int32
+type ReconciliationStrategy string
 
-// ---- Enums ----
 const (
-	ReconciliationStrategyUnspecified ReconciliationStrategy = 0
-	ReconciliationStrategyKustomize   ReconciliationStrategy = 1
-	ReconciliationStrategyHelm        ReconciliationStrategy = 2
+	ReconciliationImperative ReconciliationStrategy = "Imperative"
+	ReconciliationKustomize  ReconciliationStrategy = "Kustomize"
+	ReconciliationHelm       ReconciliationStrategy = "Helm"
 )
 
 type Runtime string
