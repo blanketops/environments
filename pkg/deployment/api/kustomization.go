@@ -10,17 +10,17 @@ import (
 	"strings"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
 	fluxmeta "github.com/fluxcd/pkg/apis/meta"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"k8s.io/utils/ptr"
 
 	environmentv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/intent"
@@ -361,11 +361,8 @@ func (m *KustomizeStrategyProvider) ensureGitRepository(
 	return m.Client.Patch(
 		ctx,
 		repo,
-		client.Apply,
-		&client.PatchOptions{
-			FieldManager: fieldManager,
-			Force:        pointer.Bool(true),
-		},
+		client.Apply, //nolint:staticcheck
+		&client.PatchOptions{FieldManager: fieldManager, Force: ptr.To(true)},
 	)
 }
 
@@ -405,10 +402,7 @@ func (m *KustomizeStrategyProvider) ensureKustomization(
 	return m.Client.Patch(
 		ctx,
 		kust,
-		client.Apply,
-		&client.PatchOptions{
-			FieldManager: fieldManager,
-			Force:        pointer.Bool(true),
-		},
+		client.Apply, //nolint:staticcheck
+		&client.PatchOptions{FieldManager: fieldManager, Force: ptr.To(true)},
 	)
 }

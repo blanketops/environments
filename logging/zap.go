@@ -39,12 +39,11 @@ func buildZap(cfg Config) (*zap.Logger, error) {
 		)
 	}
 
-	core := zapcore.NewTee(cores...)
-
-	// 👇 ADD THIS
 	if pt := buildPapertrailCore(cfg, zapcore.NewJSONEncoder(encCfg)); pt != nil {
 		cores = append(cores, pt)
 	}
+
+	core := zapcore.NewTee(cores...)
 
 	return zap.New(
 		core,
