@@ -7,13 +7,12 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate:
     name: Lint, Vet, Test
     runs-on: self-hosted
-
     strategy:
       matrix:
         go-version: ["1.25.7", "1.26.0"]
@@ -21,6 +20,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
+          fetch-depth: 0
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -39,24 +41,29 @@ jobs:
           go env -w GONOSUMDB=github.com/ntlaletsi70/*
           go env -w GOPROXY=direct
 
-      - name: Verify go.mod tidy
-        run: |
-          go mod tidy
-          git diff --exit-code
+      - name: Tidy go.mod
+        run: go mod tidy
 
-      - name: Check formatting
-        run: |
-          if [ -n "$(gofmt -l .)" ]; then
-            echo "Files not formatted:"
-            gofmt -l .
-            exit 1
-          fi
+      # ✨ Auto-fix formatting and commit back — never a CI blocker
+      - name: Auto-fix formatting
+        run: gofmt -w .
+
+      - name: Commit formatting and tidy fixes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: auto-format and tidy [skip ci]"
+          branch: ${{ github.head_ref || github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
       - name: Vet
         run: go vet ./...
 
       - name: Install staticcheck
-        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+        run: |
+          if ! command -v staticcheck &> /dev/null; then
+            go install honnef.co/go/tools/cmd/staticcheck@latest
+          fi
 
       - name: Run staticcheck
         run: staticcheck ./...
