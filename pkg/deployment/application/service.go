@@ -5,9 +5,9 @@ import (
 
 	"github.com/go-logr/logr"
 
+	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/api"
 	deploymentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
 	serviceunitResolution "github.com/ntlaletsi70/blanketops-environments/resolution/serviceunit"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/api"
 )
 
 type DeploymentService struct {
