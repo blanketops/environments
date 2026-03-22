@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [unreleased]
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.1.6
+
+### Bugfix
+
+- *(actions)* , update actions, runs-on self-hosted
+
 ## [0.1.6] - 2026-03-07
 
 ### ⚙️ Miscellaneous Tasks
