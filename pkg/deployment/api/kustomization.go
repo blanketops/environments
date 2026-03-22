@@ -10,15 +10,15 @@ import (
 	"strings"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
 	fluxmeta "github.com/fluxcd/pkg/apis/meta"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -364,7 +364,7 @@ func (m *KustomizeStrategyProvider) ensureGitRepository(
 		client.Apply,
 		&client.PatchOptions{
 			FieldManager: fieldManager,
-			Force:        pointer.Bool(true),
+			Force:        ptr.To(true),
 		},
 	)
 }
@@ -408,7 +408,7 @@ func (m *KustomizeStrategyProvider) ensureKustomization(
 		client.Apply,
 		&client.PatchOptions{
 			FieldManager: fieldManager,
-			Force:        pointer.Bool(true),
+			Force:        ptr.To(true),
 		},
 	)
 }
