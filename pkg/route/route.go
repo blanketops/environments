@@ -69,47 +69,47 @@ func NewRouteReconciler(c client.Client, scheme *runtime.Scheme, log logr.Logger
 // 	return nil
 // }
 
-func (r *RouteReconciler) ensureDomainMapping(ctx context.Context, env *environmentv1.Environment, knativeService string) error {
-	// Create the DomainMapping object.
-	// domainMapping := &unstructured.Unstructured{
-	// 	Object: map[string]interface{}{
-	// 		"apiVersion": "serving.knative.dev/v1beta1",
-	// 		"kind":       "DomainMapping",
-	// 		"metadata": map[string]interface{}{
-	// 			"name":      env.Spec.Route.Spec.Host,
-	// 			"namespace": env.Namespace,
-	// 		},
-	// 		"spec": map[string]interface{}{
-	// 			"ref": map[string]interface{}{
-	// 				"name":       knativeService,
-	// 				"kind":       "Service",
-	// 				"apiVersion": "serving.knative.dev/v1",
-	// 			},
-	// 		},
-	// 	},
-	// }
+//func (r *RouteReconciler) ensureDomainMapping(ctx context.Context, env *environmentv1.Environment, knativeService string) error {
+// Create the DomainMapping object.
+// domainMapping := &unstructured.Unstructured{
+// 	Object: map[string]interface{}{
+// 		"apiVersion": "serving.knative.dev/v1beta1",
+// 		"kind":       "DomainMapping",
+// 		"metadata": map[string]interface{}{
+// 			"name":      env.Spec.Route.Spec.Host,
+// 			"namespace": env.Namespace,
+// 		},
+// 		"spec": map[string]interface{}{
+// 			"ref": map[string]interface{}{
+// 				"name":       knativeService,
+// 				"kind":       "Service",
+// 				"apiVersion": "serving.knative.dev/v1",
+// 			},
+// 		},
+// 	},
+// }
 
-	// // Set the owner reference.
-	// if err := controllerutil.SetControllerReference(env, domainMapping, r.Scheme); err != nil {
-	// 	return fmt.Errorf("setting owner reference on DomainMapping: %w", err)
-	// }
+// // Set the owner reference.
+// if err := controllerutil.SetControllerReference(env, domainMapping, r.Scheme); err != nil {
+// 	return fmt.Errorf("setting owner reference on DomainMapping: %w", err)
+// }
 
-	// // Use CreateOrUpdate to ensure the resource exists and is in the desired state.
-	// found := &unstructured.Unstructured{}
-	// found.SetGroupVersionKind(domainMapping.GroupVersionKind())
+// // Use CreateOrUpdate to ensure the resource exists and is in the desired state.
+// found := &unstructured.Unstructured{}
+// found.SetGroupVersionKind(domainMapping.GroupVersionKind())
 
-	// op, err := controllerutil.CreateOrUpdate(ctx, r.Client, found, func() error {
-	// 	found.Object = domainMapping.Object
-	// 	return nil
-	// })
+// op, err := controllerutil.CreateOrUpdate(ctx, r.Client, found, func() error {
+// 	found.Object = domainMapping.Object
+// 	return nil
+// })
 
-	// if err != nil {
-	// 	return fmt.Errorf("creating or updating DomainMapping: %w", err)
-	// }
+// if err != nil {
+// 	return fmt.Errorf("creating or updating DomainMapping: %w", err)
+// }
 
-	// if op != controllerutil.OperationResultNone {
-	// 	r.Log.Info("DomainMapping successfully created or updated", "operation", op)
-	// }
+// if op != controllerutil.OperationResultNone {
+// 	r.Log.Info("DomainMapping successfully created or updated", "operation", op)
+// }
 
-	return nil
-}
+//return nil
+//}

@@ -23,14 +23,14 @@ type K8SProvider struct {
 	Client   client.Client
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
-	Recorder record.EventRecorder
+	Recorder events.EventRecorder
 }
 
 func NewK8SProvider(
 	c client.Client,
 	scheme *runtime.Scheme,
 	log logr.Logger,
-	rec record.EventRecorder,
+	rec events.EventRecorder,
 ) *K8SProvider {
 	return &K8SProvider{
 		Client:   c,
