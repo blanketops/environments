@@ -219,10 +219,9 @@ func (p *K8SProvider) applyDeployment(
 
 	p.Log.Info("Applying Kubernetes Deployment", "name", su.Name)
 
-	return p.Client.Patch(
+	return p.Client.Apply(
 		ctx,
 		deploy,
-		client.Apply,
 		client.ForceOwnership,
 		client.FieldOwner("blanketops-k8s-provider"),
 	)
@@ -258,10 +257,9 @@ func (p *K8SProvider) applyService(
 
 	p.Log.Info("Applying Kubernetes Service", "name", su.Name)
 
-	return p.Client.Patch(
+	return p.Client.Apply(
 		ctx,
 		svc,
-		client.Apply,
 		client.ForceOwnership,
 		client.FieldOwner("blanketops-k8s-provider"),
 	)

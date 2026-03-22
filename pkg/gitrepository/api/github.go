@@ -225,10 +225,9 @@ func (p *GitHubProvider) apply(
 	// - Let Kubernetes merge fields safely
 	obj.SetManagedFields(nil)
 
-	return p.Client.Patch(
+	return p.Client.Apply(
 		ctx,
 		obj,
-		ctrlclient.Apply,
 		ctrlclient.ForceOwnership,
 		ctrlclient.FieldOwner("blanketops"),
 	)

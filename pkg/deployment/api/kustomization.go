@@ -357,10 +357,9 @@ func (m *KustomizeStrategyProvider) ensureGitRepository(
 		"secret", fluxSecret,
 	)
 
-	return m.Client.Patch(
+	return m.Client.Apply(
 		ctx,
 		repo,
-		client.Apply,
 		client.ForceOwnership,
 		client.FieldOwner(fieldManager),
 	)
@@ -399,10 +398,9 @@ func (m *KustomizeStrategyProvider) ensureKustomization(
 
 	m.Log.Info("Applying Kustomization", "name", kust.Name)
 
-	return m.Client.Patch(
+	return m.Client.Apply(
 		ctx,
 		kust,
-		client.Apply,
 		client.ForceOwnership,
 		client.FieldOwner(fieldManager),
 	)
