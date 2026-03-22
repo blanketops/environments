@@ -7,6 +7,11 @@ type GitHubEventResult struct {
 	TriggeredRef string // optional: Build name, Deployment, etc
 }
 
+// ToStatus converts a GitHubEventResult to a GitHubEventStatus.
+func (r GitHubEventResult) ToStatus() GitHubEventStatus {
+	return GitHubEventStatus(r)
+}
+
 func Accepted(msg string) GitHubEventResult {
 	return GitHubEventResult{
 		Accepted: true,
