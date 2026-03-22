@@ -24,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -365,7 +365,7 @@ func (m *KustomizeStrategyProvider) ensureGitRepository(
 		client.Apply,
 		&client.PatchOptions{
 			FieldManager: fieldManager,
-			Force:        pointer.Bool(true),
+			Force:        ptr.To(true),
 		},
 	)
 }
@@ -409,7 +409,7 @@ func (m *KustomizeStrategyProvider) ensureKustomization(
 		client.Apply,
 		&client.PatchOptions{
 			FieldManager: fieldManager,
-			Force:        pointer.Bool(true),
+			Force:        ptr.To(true),
 		},
 	)
 }

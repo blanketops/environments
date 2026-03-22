@@ -73,7 +73,6 @@ func NewRouteReconciler(c client.Client, scheme *runtime.Scheme, log logr.Logger
 // 	return nil
 // }
 
-// ensureDomainMapping ensures the DomainMapping resource exists and is correctly configured.
 func (r *RouteReconciler) ensureDomainMapping(ctx context.Context, env *environmentv1.Environment, knativeService string) error {
 	// Create the DomainMapping object.
 	// domainMapping := &unstructured.Unstructured{

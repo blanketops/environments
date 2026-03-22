@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/events"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -153,7 +153,7 @@ func (p *K8SProvider) applyDeployment(
 		client.Apply,
 		&client.PatchOptions{
 			FieldManager: "blanketops-k8s-provider",
-			Force:        pointer.Bool(true),
+			Force:        ptr.To(true),
 		},
 	)
 }
@@ -194,7 +194,7 @@ func (p *K8SProvider) applyService(
 		client.Apply,
 		&client.PatchOptions{
 			FieldManager: "blanketops-k8s-provider",
-			Force:        pointer.Bool(true),
+			Force:        ptr.To(true),
 		},
 	)
 }
