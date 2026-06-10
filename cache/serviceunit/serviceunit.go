@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package gitrepository
+package serviceunit
 
 import (
 	"context"
@@ -23,79 +23,123 @@ import (
 	"github.com/ntlaletsi70/blanketops-environments/core"
 )
 
-// GitRepositoryCache provides domain-specific, field-level caching for GitRepository resources.
-type GitRepositoryCache struct {
+// ServiceUnitCache provides domain-specific, field-level caching for ServiceUnit resources.
+type ServiceUnitCache struct {
 	cache *core.Cache
 }
 
-// NewGitRepositoryCache creates a new GitRepositoryCache instance.
-func NewGitRepositoryCache(c *core.Cache) *GitRepositoryCache {
-	return &GitRepositoryCache{cache: c}
+// NewServiceUnitCache creates a new ServiceUnitCache instance.
+func NewServiceUnitCache(c *core.Cache) *ServiceUnitCache {
+	return &ServiceUnitCache{cache: c}
 }
 
-// key generates a specific cache key for a single field of a GitRepository.
-func (g *GitRepositoryCache) key(name, field string) string {
-	return fmt.Sprintf("gitrepository:%s:%s", name, field)
+// key generates a specific cache key for a single field of a ServiceUnit.
+func (s *ServiceUnitCache) key(name, field string) string {
+	return fmt.Sprintf("serviceunit:%s:%s", name, field)
 }
 
 // SetField stores an individual CR value in the external cache.
-func (g *GitRepositoryCache) SetField(ctx context.Context, name, field string, val any) error {
-	return g.cache.External.Set(ctx, g.key(name, field), val, 1*time.Hour)
+func (s *ServiceUnitCache) SetField(ctx context.Context, name, field string, val any) error {
+	return s.cache.External.Set(ctx, s.key(name, field), val, 1*time.Hour)
 }
 
 // GetField retrieves an individual CR value from the external cache.
-func (g *GitRepositoryCache) GetField(ctx context.Context, name, field string, into any) (bool, error) {
-	return g.cache.External.Get(ctx, g.key(name, field), into)
+func (s *ServiceUnitCache) GetField(ctx context.Context, name, field string, into any) (bool, error) {
+	return s.cache.External.Get(ctx, s.key(name, field), into)
 }
 
 // -----------------------------------------------------------------------------
-// Typed Helpers: Provider
+// Typed Helpers: Type (static vs build)
 // -----------------------------------------------------------------------------
 
-func (g *GitRepositoryCache) SetProvider(ctx context.Context, name string, provider string) error {
-	return g.SetField(ctx, name, "provider", provider)
+func (s *ServiceUnitCache) SetType(ctx context.Context, name string, unitType string) error {
+	return s.SetField(ctx, name, "type", unitType)
 }
 
-func (g *GitRepositoryCache) GetProvider(ctx context.Context, name string) (string, bool, error) {
-	var p string
-	found, err := g.GetField(ctx, name, "provider", &p)
-	return p, found, err
-}
-
-// -----------------------------------------------------------------------------
-// Typed Helpers: HookUrl
-// -----------------------------------------------------------------------------
-
-func (g *GitRepositoryCache) SetHookUrl(ctx context.Context, name string, url string) error {
-	return g.SetField(ctx, name, "hookUrl", url)
-}
-
-func (g *GitRepositoryCache) GetHookUrl(ctx context.Context, name string) (string, bool, error) {
-	var u string
-	found, err := g.GetField(ctx, name, "hookUrl", &u)
-	return u, found, err
+func (s *ServiceUnitCache) GetType(ctx context.Context, name string) (string, bool, error) {
+	var t string
+	found, err := s.GetField(ctx, name, "type", &t)
+	return t, found, err
 }
 
 // -----------------------------------------------------------------------------
-// Typed Helpers: Repository
+// Typed Helpers: Image (for type: static)
 // -----------------------------------------------------------------------------
 
-func (g *GitRepositoryCache) SetRepository(ctx context.Context, name string, repo any) error {
-	return g.SetField(ctx, name, "repository", repo)
+func (s *ServiceUnitCache) SetImage(ctx context.Context, name string, image string) error {
+	return s.SetField(ctx, name, "image", image)
 }
 
-func (g *GitRepositoryCache) GetRepository(ctx context.Context, name string, into any) (bool, error) {
-	return g.GetField(ctx, name, "repository", into)
+func (s *ServiceUnitCache) GetImage(ctx context.Context, name string) (string, bool, error) {
+	var img string
+	found, err := s.GetField(ctx, name, "image", &img)
+	return img, found, err
 }
 
 // -----------------------------------------------------------------------------
-// Typed Helpers: Webhooks
+// Typed Helpers: BuildRef (for type: build)
 // -----------------------------------------------------------------------------
 
-func (g *GitRepositoryCache) SetWebhooks(ctx context.Context, name string, webhooks any) error {
-	return g.SetField(ctx, name, "webhooks", webhooks)
+func (s *ServiceUnitCache) SetBuildRef(ctx context.Context, name string, buildRef any) error {
+	return s.SetField(ctx, name, "buildRef", buildRef)
 }
 
-func (g *GitRepositoryCache) GetWebhooks(ctx context.Context, name string, into any) (bool, error) {
-	return g.GetField(ctx, name, "webhooks", into)
+func (s *ServiceUnitCache) GetBuildRef(ctx context.Context, name string, into any) (bool, error) {
+	return s.GetField(ctx, name, "buildRef", into)
+}
+
+// -----------------------------------------------------------------------------
+// Typed Helpers: ContainerPort
+// -----------------------------------------------------------------------------
+
+func (s *ServiceUnitCache) SetContainerPort(ctx context.Context, name string, port int) error {
+	return s.SetField(ctx, name, "containerPort", port)
+}
+
+func (s *ServiceUnitCache) GetContainerPort(ctx context.Context, name string) (int, bool, error) {
+	var port int
+	found, err := s.GetField(ctx, name, "containerPort", &port)
+	return port, found, err
+}
+
+// -----------------------------------------------------------------------------
+// Typed Helpers: Size
+// -----------------------------------------------------------------------------
+
+func (s *ServiceUnitCache) SetSize(ctx context.Context, name string, size int) error {
+	return s.SetField(ctx, name, "size", size)
+}
+
+func (s *ServiceUnitCache) GetSize(ctx context.Context, name string) (int, bool, error) {
+	var size int
+	found, err := s.GetField(ctx, name, "size", &size)
+	return size, found, err
+}
+
+// -----------------------------------------------------------------------------
+// Typed Helpers: AppType
+// -----------------------------------------------------------------------------
+
+func (s *ServiceUnitCache) SetAppType(ctx context.Context, name string, appType string) error {
+	return s.SetField(ctx, name, "appType", appType)
+}
+
+func (s *ServiceUnitCache) GetAppType(ctx context.Context, name string) (string, bool, error) {
+	var at string
+	found, err := s.GetField(ctx, name, "appType", &at)
+	return at, found, err
+}
+
+// -----------------------------------------------------------------------------
+// Typed Helpers: StackType
+// -----------------------------------------------------------------------------
+
+func (s *ServiceUnitCache) SetStackType(ctx context.Context, name string, stackType string) error {
+	return s.SetField(ctx, name, "stackType", stackType)
+}
+
+func (s *ServiceUnitCache) GetStackType(ctx context.Context, name string) (string, bool, error) {
+	var st string
+	found, err := s.GetField(ctx, name, "stackType", &st)
+	return st, found, err
 }
