@@ -2,11 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.3] - 2026-06-11
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.2.2
+
 ## [0.2.2] - 2026-06-10
+
+### 🚀 Features
+
+- *(cache)* Add stubs for cache layer
+- *(cache)* Memcached at core
+- *(cache)* Enabled across
+- *(cache)* Enabled across
 
 ### ⚙️ Miscellaneous Tasks
 
 - *(release)* Update changelog for v0.2.1
+
+### Bugfix
+
+- *(housekeeping)* License and package to stubs
 
 ### Release
 
@@ -27,7 +44,6 @@ All notable changes to this project will be documented in this file.
 - *(docs)* Readme
 - *(workflows)* Add for release managment
 - *(docs)* Remove license-headers
-- *(housekeeping)* License and package to stubs
 
 ## [0.2.0] - 2026-04-05
 
