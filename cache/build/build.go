@@ -30,6 +30,7 @@ type BuildCache struct {
 	*bocache.ObjectCache
 }
 
+// NewBuildCache constructs a new BuildCache with the provided core.Cache.
 func NewBuildCache(c *core.Cache) *BuildCache {
 	return &BuildCache{ObjectCache: bocache.NewObjectCache(c, "build", 0)}
 }
