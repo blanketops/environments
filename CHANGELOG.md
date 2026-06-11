@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.4] - 2026-06-11
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.2.3
+
+### Bugfix
+
+- *(cache)* Realign, stub as factory
+- *(cache)* Realign, stub as factory
+- *(cache)* Realign, stub as factory
+
+### Release
+
+- Merge release/v0.2.4 into main
+
 ## [0.2.3] - 2026-06-11
 
 ### ⚙️ Miscellaneous Tasks
