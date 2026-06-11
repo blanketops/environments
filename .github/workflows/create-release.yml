@@ -51,8 +51,10 @@ jobs:
       - name: Release Summary
         run: |
           cat >> $GITHUB_STEP_SUMMARY <<EOF 
-          # 🚀 Release Branch Created **Version:** \`${{ github.event.inputs.version }}\`
-          ## Completed - Checked out \`develop\`
+          # 🚀 Release Branch Created 
+          **Version:** \`${{ github.event.inputs.version }}\`
+          ## Completed 
+           - Checked out \`develop\`
            - Created \`release/${{ github.event.inputs.version }}\` 
            - Pushed release branch to origin 
            - Opened (or attempted to open) a PR to \`main\` 
