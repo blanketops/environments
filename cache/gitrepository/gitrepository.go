@@ -30,7 +30,7 @@ type GitRepositoryCache struct {
 	*bocache.ObjectCache
 }
 
-// NewGitRepositoryCache creates a new GitRepositoryCache instance.
+// NewGitRepositoryCache constructs a new GitRepositoryCache with the provided core.Cache.
 func NewGitRepositoryCache(c *core.Cache) *GitRepositoryCache {
 	return &GitRepositoryCache{ObjectCache: bocache.NewObjectCache(c, "gitrepository", 0)}
 

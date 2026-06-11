@@ -30,7 +30,7 @@ type DeploymentCache struct {
 	*bocache.ObjectCache
 }
 
-// NewDeploymentCache creates a new DeploymentCache instance.
+// NewDeploymentCache constructs a new DeploymentCache with the provided core.Cache.
 func NewDeploymentCache(c *core.Cache) *DeploymentCache {
 	return &DeploymentCache{ObjectCache: bocache.NewObjectCache(c, "deployment", 0)}
 }

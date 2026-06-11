@@ -30,7 +30,7 @@ type ServiceUnitCache struct {
 	*bocache.ObjectCache
 }
 
-// NewServiceUnitCache creates a new ServiceUnitCache instance.
+// NewServiceUnitCache constructs a new ServiceUnitCache with the provided core.Cache.
 func NewServiceUnitCache(c *core.Cache) *ServiceUnitCache {
 	return &ServiceUnitCache{ObjectCache: bocache.NewObjectCache(c, "serviceunit", 0)}
 }
