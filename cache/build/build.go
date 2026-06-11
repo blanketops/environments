@@ -22,6 +22,7 @@ import (
 
 	bocache "github.com/ntlaletsi70/blanketops-environments/cache"
 	"github.com/ntlaletsi70/blanketops-environments/core"
+	buildResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
 )
 
 // BuildCache provides domain-specific, field-level caching for Build resources.
@@ -77,4 +78,30 @@ func (b *BuildCache) SetPolicy(ctx context.Context, nn types.NamespacedName, gen
 
 func (b *BuildCache) GetPolicy(ctx context.Context, nn types.NamespacedName, gen int64, into any) (bool, error) {
 	return b.GetField(ctx, nn, gen, "policy", into)
+}
+
+// PublishResolved writes the resolved contract as a generation-scoped,
+// field-level projection. All writes are best-effort: failures cost
+// queryability, never correctness. Returns the first error encountered
+// for optional logging; callers should not fail reconciliation on it.
+func (b *BuildCache) PublishResolved(ctx context.Context, nn types.NamespacedName, gen int64, r *buildResolution.ResolvedBuild) error {
+	if r == nil || r.Spec == nil {
+		return nil
+	}
+	var firstErr error
+	record := func(err error) {
+		if err != nil && firstErr == nil {
+			firstErr = err
+		}
+	}
+	record(b.SetImage(ctx, nn, gen, r.Spec.Image))
+	record(b.SetSource(ctx, nn, gen, r.Spec.Source))
+	record(b.SetStrategy(ctx, nn, gen, r.Spec.Strategy))
+	if r.Spec.ServiceAccount != nil {
+		record(b.SetServiceAccount(ctx, nn, gen, r.Spec.ServiceAccount))
+	}
+	if r.Spec.Policy != nil {
+		record(b.SetPolicy(ctx, nn, gen, r.Spec.Policy))
+	}
+	return firstErr
 }

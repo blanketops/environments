@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	bocache "github.com/ntlaletsi70/blanketops-environments/cache"
+	githubeventResolution "github.com/ntlaletsi70/blanketops-environments/resolution/githubevent"
 )
 
 // GitHubEventCache provides domain-specific, field-level caching for GitHubEvent resources.
@@ -81,4 +82,28 @@ func (g *GitHubEventCache) SetWebhook(ctx context.Context, nn types.NamespacedNa
 
 func (g *GitHubEventCache) GetWebhook(ctx context.Context, nn types.NamespacedName, gen int64, name string, into any) (bool, error) {
 	return g.GetField(ctx, nn, gen, "webhook", into)
+}
+
+// PublishResolved writes the resolved event contract as a
+// generation-scoped, field-level projection. All writes are best-effort:
+// failures cost queryability, never correctness. Returns the first error
+// encountered for optional logging; callers should not fail
+// reconciliation on it.
+func (g *GitHubEventCache) PublishResolved(ctx context.Context, nn types.NamespacedName, gen int64, r *githubeventResolution.ResolvedGitHubEvent) error {
+	if r == nil || r.Spec == nil {
+		return nil
+	}
+	var firstErr error
+	record := func(err error) {
+		if err != nil && firstErr == nil {
+			firstErr = err
+		}
+	}
+	record(g.SetRepository(ctx, nn, gen, nn.Name, r.Spec.Repository))
+	record(g.SetEventType(ctx, nn, gen, nn.Name, r.Spec.EventType))
+	record(g.SetRef(ctx, nn, gen, nn.Name, r.Spec.Ref))
+	if r.Spec.Webhook != (githubeventResolution.ResolvedWebhook{}) {
+		record(g.SetWebhook(ctx, nn, gen, nn.Name, r.Spec.Webhook))
+	}
+	return firstErr
 }

@@ -22,6 +22,7 @@ import (
 
 	bocache "github.com/ntlaletsi70/blanketops-environments/cache"
 	"github.com/ntlaletsi70/blanketops-environments/core"
+	gitrepositoryResolution "github.com/ntlaletsi70/blanketops-environments/resolution/gitrepository"
 )
 
 // GitRepositoryCache provides domain-specific, field-level caching for GitRepository resources.
@@ -85,4 +86,30 @@ func (g *GitRepositoryCache) SetWebhooks(ctx context.Context, nn types.Namespace
 
 func (g *GitRepositoryCache) GetWebhooks(ctx context.Context, nn types.NamespacedName, gen int64, name string, into any) (bool, error) {
 	return g.GetField(ctx, nn, gen, "webhooks", into)
+}
+
+// PublishResolved writes the resolved repository contract as a
+// generation-scoped, field-level projection. All writes are best-effort:
+// failures cost queryability, never correctness. Returns the first error
+// encountered for optional logging; callers should not fail
+// reconciliation on it.
+func (g *GitRepositoryCache) PublishResolved(ctx context.Context, nn types.NamespacedName, gen int64, r *gitrepositoryResolution.ResolvedGitRepository) error {
+	if r == nil || r.Spec == nil {
+		return nil
+	}
+	var firstErr error
+	record := func(err error) {
+		if err != nil && firstErr == nil {
+			firstErr = err
+		}
+	}
+	record(g.SetProvider(ctx, nn, gen, "", r.Spec.Provider))
+	record(g.SetRepository(ctx, nn, gen, "", r.Spec.Repository))
+	if r.Spec.HookURL != "" {
+		record(g.SetHookUrl(ctx, nn, gen, "", r.Spec.HookURL))
+	}
+	if r.Spec.Webhooks != nil {
+		record(g.SetWebhooks(ctx, nn, gen, "", r.Spec.Webhooks))
+	}
+	return firstErr
 }
