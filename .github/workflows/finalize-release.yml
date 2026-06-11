@@ -59,7 +59,9 @@ jobs:
           - Created Git tag \`${{ github.event.inputs.version }}\` 
           - Synced \`main\` back into \`develop\`
           - Deleted release branch 
-          ## Branch Flow release/${{ github.event.inputs.version }} ↓ main ↓ develop 
+          ## Branch Flow 
+          -  release/${{ github.event.inputs.version }} ↓ main ↓ develop 
           ## Release Tag \`${{ github.event.inputs.version }}\` 
-          ## Next Step Pushing the tag triggers the **Release** workflow which generates the changelog and GitHub Release. 
+          ## Next Steps
+          - Pushing the tag triggers the **Release** workflow which generates the changelog and GitHub Release. 
           EOF
