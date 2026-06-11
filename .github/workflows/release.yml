@@ -24,17 +24,14 @@ jobs:
                   tar -xzf cliff.tar.gz
                   sudo mv git-cliff-2.4.0/git-cliff /usr/local/bin/git-cliff
 
-            # 🔥 Switch to main branch before committing
             - name: Checkout main
               run: |
                   git checkout main
                   git pull origin main
 
-            # 🔥 Generate full changelog
             - name: Generate CHANGELOG.md
               run: git-cliff --config .cliff.toml --output CHANGELOG.md
 
-            # 🔥 Commit changelog properly on main
             - name: Commit changelog
               run: |
                   git config user.name "github-actions"
@@ -43,7 +40,6 @@ jobs:
                   git commit -m "chore(release): update changelog for ${{ github.ref_name }}" || echo "No changes"
                   git push origin main
 
-            # 🔥 Generate latest section for release body
             - name: Generate release notes
               run: git-cliff --config .cliff.toml --latest --output RELEASE_NOTES.md
 
@@ -53,3 +49,29 @@ jobs:
                   body_path: RELEASE_NOTES.md
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Release Summary
+              run: |
+                  cat >> $GITHUB_STEP_SUMMARY <<EOF
+                  # 📦 GitHub Release Published
+
+                  **Version:** \`${{ github.ref_name }}\`
+
+                  ## Completed
+
+                  - Generated CHANGELOG.md using git-cliff
+                  - Committed changelog updates to main
+                  - Generated release notes
+                  - Published GitHub Release
+
+                  ## Artifacts
+
+                  - CHANGELOG.md
+                  - RELEASE_NOTES.md
+                  - GitHub Release
+
+                  ## Source Tag
+
+                  \`${{ github.ref_name }}\`
+
+                  EOF

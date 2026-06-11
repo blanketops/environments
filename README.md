@@ -215,7 +215,7 @@ The full BlanketOps Environments documentation is available at:
 ## 📦 Installation
 
 ```bash
-go get github.com/ntlaletsi70/blanketops-environments@v0.1.9
+go get github.com/ntlaletsi70/blanketops-environments@v0.2.7
 ```
 
 ---
@@ -224,6 +224,7 @@ go get github.com/ntlaletsi70/blanketops-environments@v0.1.9
 
 ```
 core/           → Engine and orchestration logic
+cache/          → caching implementation factory
 pkg/            → Domain modules (build, deployment, packages, etc.)
 resolution/     → Resolution contracts and adapters
 runtime/        → Event runtime components
@@ -251,7 +252,7 @@ The goal is to reduce delivery entropy through structured reconciliation.
 
 | | |
 |---|---|
-| **Current Version** | `v0.1.9` |
+| **Current Version** | `v0.2.7` |
 | **API Status** | Evolving — breaking changes may occur |
 | **Intended Use** | Alpha integration with BlanketOps Environments controllers |
 | **Versioning** | Semantic Versioning — `v1.0.0` will signal a stable public contract |
