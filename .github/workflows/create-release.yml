@@ -47,3 +47,17 @@ jobs:
 
           **Next step:** once all fixes are merged, run the _Finalize Release_ workflow." \
           || echo "::warning::PR creation failed — branch release/${{ github.event.inputs.version }} was created successfully. Open the PR manually."
+
+      - name: Release Summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF 
+          # 🚀 Release Branch Created **Version:** \`${{ github.event.inputs.version }}\`
+          ## Completed - Checked out \`develop\`
+           - Created \`release/${{ github.event.inputs.version }}\` 
+           - Pushed release branch to origin 
+           - Opened (or attempted to open) a PR to \`main\` ## Release Flow develop → release/${{ github.event.inputs.version }} → main 
+           ## Next Steps 
+           1. Merge any release fixes into the release branch 
+           2. Validate the release candidate 
+           3. Run the **Finalize Release** workflow 
+          EOF

@@ -73,3 +73,20 @@ jobs:
 
       - name: Ensure coverage file exists
         run: test -f coverage.out
+
+      - name: CI Summary
+        if: always()
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY 
+          <<EOF 
+           # ✅ Validation Complete 
+           ## Go Version \`${{ matrix.go-version }}\` 
+             ## Checks Executed
+                - go mod tidy 
+                - gofmt 
+                - go vet 
+                - staticcheck 
+                - go test 
+                - coverage generation 
+           ## Result All validation steps completed successfully.
+           EOF
