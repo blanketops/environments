@@ -22,6 +22,7 @@ import (
 
 	bocache "github.com/ntlaletsi70/blanketops-environments/cache"
 	"github.com/ntlaletsi70/blanketops-environments/core"
+	buildtriggerResolution "github.com/ntlaletsi70/blanketops-environments/resolution/buildtrigger"
 )
 
 // BuildTriggerCache provides domain-specific, field-level caching for BuildTrigger resources.
@@ -111,4 +112,28 @@ func (b *BuildTriggerCache) SetPayloadPolicy(ctx context.Context, nn types.Names
 
 func (b *BuildTriggerCache) GetPayloadPolicy(ctx context.Context, nn types.NamespacedName, gen int64, into any) (bool, error) {
 	return b.GetField(ctx, nn, gen, "payloadPolicy", into)
+}
+
+// PublishResolved writes the resolved trigger contract as a
+// generation-scoped, field-level projection. All writes are best-effort:
+// failures cost queryability, never correctness. Returns the first error
+// encountered for optional logging; callers should not fail
+// reconciliation on it.
+func (b *BuildTriggerCache) PublishResolved(ctx context.Context, nn types.NamespacedName, gen int64, r *buildtriggerResolution.ResolvedBuildTrigger) error {
+	if r == nil || r.Spec == nil {
+		return nil
+	}
+	var firstErr error
+	record := func(err error) {
+		if err != nil && firstErr == nil {
+			firstErr = err
+		}
+	}
+	record(b.SetSource(ctx, nn, gen, string(r.Spec.Source)))
+	record(b.SetRef(ctx, nn, gen, r.Spec.Ref))
+	record(b.SetRepository(ctx, nn, gen, r.Spec.Repository))
+	if r.Spec.PayloadPolicy != nil {
+		record(b.SetPayloadPolicy(ctx, nn, gen, r.Spec.PayloadPolicy))
+	}
+	return firstErr
 }
