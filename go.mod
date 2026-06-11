@@ -11,7 +11,6 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/ntlaletsi70/blanketops-environments-api v0.0.8
 	github.com/ntlaletsi70/blanketops-environments-contract v0.0.8
-	github.com/redis/go-redis/v9 v9.18.0
 	github.com/shipwright-io/build v0.18.4
 	go.uber.org/zap v1.27.1
 	golang.org/x/crypto v0.48.0
@@ -27,10 +26,8 @@ require (
 require (
 	carvel.dev/vendir v0.45.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bradfitz/gomemcache v0.0.0-20260422231931-4d751bb6e37c // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/emicklei/go-restful/v3 v3.12.2 // indirect
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/fluxcd/pkg/apis/acl v0.9.0 // indirect
@@ -60,7 +57,6 @@ require (
 	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
