@@ -14,7 +14,6 @@ limitations under the License.
 */
 
 package serviceunit
-<<<<<<< HEAD
 
 import (
 	"context"
@@ -144,5 +143,3 @@ func (s *ServiceUnitCache) GetStackType(ctx context.Context, name string) (strin
 	found, err := s.GetField(ctx, name, "stackType", &st)
 	return st, found, err
 }
-=======
->>>>>>> main
