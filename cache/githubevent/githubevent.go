@@ -21,12 +21,18 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	bocache "github.com/ntlaletsi70/blanketops-environments/cache"
+	"github.com/ntlaletsi70/blanketops-environments/core"
 	githubeventResolution "github.com/ntlaletsi70/blanketops-environments/resolution/githubevent"
 )
 
 // GitHubEventCache provides domain-specific, field-level caching for GitHubEvent resources.
 type GitHubEventCache struct {
 	*bocache.ObjectCache
+}
+
+// NewGitHubEventCache constructs a new GitHubEventCache with the provided core.Cache.
+func NewGitHubEventCache(c *core.Cache) *GitHubEventCache {
+	return &GitHubEventCache{ObjectCache: bocache.NewObjectCache(c, "githubevent", 0)}
 }
 
 // -----------------------------------------------------------------------------
