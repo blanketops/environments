@@ -215,7 +215,7 @@ The full BlanketOps Environments documentation is available at:
 ## 📦 Installation
 
 ```bash
-go get github.com/ntlaletsi70/blanketops-environments@v0.3.1
+go get github.com/ntlaletsi70/blanketops-environments@v0.3.4
 ```
 
 ---
@@ -252,7 +252,7 @@ The goal is to reduce delivery entropy through structured reconciliation.
 
 | | |
 |---|---|
-| **Current Version** | `v0.3.1` |
+| **Current Version** | `v0.3.4` |
 | **API Status** | Evolving — breaking changes may occur |
 | **Intended Use** | Alpha integration with BlanketOps Environments controllers |
 | **Versioning** | Semantic Versioning — `v1.0.0` will signal a stable public contract |
