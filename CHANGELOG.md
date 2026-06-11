@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.8] - 2026-06-11
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.2.7
+- *(release)* Update changelog for v0.2.7
+
+### Bugfix
+
+- *(ci)* Create release minor
+- *(ci)* Update to 1.25.8 as per mod
+
+### Release
+
+- Merge release/v0.2.8 into main
+
 ## [0.2.7] - 2026-06-11
 
 ### ⚙️ Miscellaneous Tasks
