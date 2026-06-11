@@ -55,9 +55,11 @@ jobs:
           ## Completed - Checked out \`develop\`
            - Created \`release/${{ github.event.inputs.version }}\` 
            - Pushed release branch to origin 
-           - Opened (or attempted to open) a PR to \`main\` ## Release Flow develop → release/${{ github.event.inputs.version }} → main 
+           - Opened (or attempted to open) a PR to \`main\` 
+           ## Release Flow 
+           -  develop → release/${{ github.event.inputs.version }} → main 
            ## Next Steps 
-           1. Merge any release fixes into the release branch 
-           2. Validate the release candidate 
-           3. Run the **Finalize Release** workflow 
+           1. Merge any release fixes into the release branch.
+           2. Validate the release candidate .
+           3. Run the **Finalize Release** workflow. 
           EOF
