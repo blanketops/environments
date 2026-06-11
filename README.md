@@ -36,19 +36,19 @@ This repository implements the **resolution engine** that powers those primitive
 
 This module is:
 
-* A pure Go library
-* Infrastructure-agnostic
-* Transport-agnostic
-* Deterministic by design
-* Intended to be embedded in controllers or services
+* A pure Go library.
+* Infrastructure-agnostic.
+* Transport-agnostic.
+* Deterministic by design.
+* Intended to be embedded in controllers or services.
 
 It is designed to be imported by:
 
-* Kubernetes controllers
-* Delivery operators
-* API backends
-* CLI tools
-* Platform orchestration layers
+* Kubernetes controllers.
+* Delivery operators.
+* API backends.
+* CLI tools.
+* Platform orchestration layers.
 
 > **This module is not intended to be executed directly.**
 
@@ -191,10 +191,10 @@ From there:
 
 This ensures:
 
-* Consistent behaviour across all clients
-* Deterministic execution
-* Observable state transitions
-* No hidden side effects
+* Consistent behaviour across all clients.
+* Deterministic execution.
+* Observable state transitions.
+* No hidden side effects.
 
 ---
 
@@ -215,7 +215,7 @@ The full BlanketOps Environments documentation is available at:
 ## 📦 Installation
 
 ```bash
-go get github.com/ntlaletsi70/blanketops-environments@v0.2.9
+go get github.com/ntlaletsi70/blanketops-environments@v0.3.1
 ```
 
 ---
@@ -237,12 +237,12 @@ logging/        → Structured logging abstractions
 
 BlanketOps Environments follows strict architectural boundaries:
 
-* Deterministic resolution
-* Explicit domain modeling
-* Clear state transitions
-* Separation of domain and infrastructure
-* Reproducible outcomes
-* No hidden side effects
+* Deterministic resolution.
+* Explicit domain modeling.
+* Clear state transitions.
+* Separation of domain and infrastructure.
+* Reproducible outcomes.
+* No hidden side effects.
 
 The goal is to reduce delivery entropy through structured reconciliation.
 
@@ -252,7 +252,7 @@ The goal is to reduce delivery entropy through structured reconciliation.
 
 | | |
 |---|---|
-| **Current Version** | `v0.2.9` |
+| **Current Version** | `v0.3.1` |
 | **API Status** | Evolving — breaking changes may occur |
 | **Intended Use** | Alpha integration with BlanketOps Environments controllers |
 | **Versioning** | Semantic Versioning — `v1.0.0` will signal a stable public contract |
@@ -263,9 +263,9 @@ The goal is to reduce delivery entropy through structured reconciliation.
 
 This module powers:
 
-* BlanketOps Environments Controllers
-* Delivery orchestration layers
-* Reconciliation engines
+* BlanketOps Environments Controllers.
+* Delivery orchestration layers.
+* Reconciliation engines.
 
 If you are looking for the controller runtime, see the BlanketOps Environments Controller repository.
 
