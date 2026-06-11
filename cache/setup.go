@@ -3,7 +3,6 @@ package cache
 import (
 	"fmt"
 
-	redis "google.golang.org/api/redis/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/ntlaletsi70/blanketops-environments/cache/adapter"
@@ -31,10 +30,12 @@ func NewExternal(opts Options) (core.ExternalCache, error) {
 	switch opts.Backend {
 	case BackendRedis:
 		log.Info("external cache enabled", "backend", "redis", "addr", opts.Redis.Addr)
-		return redis.New(opts.Redis), nil
+		// TODO: wire up a real Redis external cache implementation using adapter when available.
+		return core.NoopExternalCache{}, nil
 	case BackendMemcached:
 		log.Info("external cache enabled", "backend", "memcached", "servers", opts.Memcached.Servers)
-		return memcached.New(opts.Memcached), nil
+		// TODO: wire up a real Memcached external cache implementation using adapter when available.
+		return core.NoopExternalCache{}, nil
 	case BackendNone, "":
 		log.Info("external cache disabled", "backend", "noop")
 		return core.NoopExternalCache{}, nil
