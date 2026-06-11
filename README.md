@@ -252,7 +252,7 @@ The goal is to reduce delivery entropy through structured reconciliation.
 
 | | |
 |---|---|
-| **Current Version** | `v0.1.9` |
+| **Current Version** | `v0.2.7` |
 | **API Status** | Evolving — breaking changes may occur |
 | **Intended Use** | Alpha integration with BlanketOps Environments controllers |
 | **Versioning** | Semantic Versioning — `v1.0.0` will signal a stable public contract |
