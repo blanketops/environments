@@ -22,6 +22,7 @@ import (
 
 	bocache "github.com/ntlaletsi70/blanketops-environments/cache"
 	"github.com/ntlaletsi70/blanketops-environments/core"
+	deploymentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
 )
 
 // DeploymentCache provides domain-specific, field-level caching for Deployment resources.
@@ -129,4 +130,40 @@ func (d *DeploymentCache) SetManifestsRepo(ctx context.Context, nn types.Namespa
 
 func (d *DeploymentCache) GetManifestsRepo(ctx context.Context, nn types.NamespacedName, gen int64, into any) (bool, error) {
 	return d.GetField(ctx, nn, gen, "manifestsRepo", into)
+}
+
+// PublishResolved writes the resolved deployment contract as a
+// generation-scoped, field-level projection. All writes are best-effort:
+// failures cost queryability, never correctness. Returns the first error
+// encountered for optional logging; callers should not fail
+// reconciliation on it.
+func (d *DeploymentCache) PublishResolved(ctx context.Context, nn types.NamespacedName, gen int64, r *deploymentResolution.ResolvedDeployment) error {
+	if r == nil || r.Spec == nil {
+		return nil
+	}
+	var firstErr error
+	record := func(err error) {
+		if err != nil && firstErr == nil {
+			firstErr = err
+		}
+	}
+
+	// Mandatory: present whenever resolution succeeds.
+	record(d.SetRuntime(ctx, nn, gen, string(r.Spec.Runtime)))
+	record(d.SetStrategy(ctx, nn, gen, string(r.Spec.Strategy)))
+	record(d.SetReconciliationStrategy(ctx, nn, gen, string(r.Spec.ReconciliationStrategy)))
+
+	// Conditional: publish only when resolved to something meaningful.
+	if len(r.Spec.ServiceUnits) > 0 {
+		record(d.SetServiceUnits(ctx, nn, gen, r.Spec.ServiceUnits))
+	}
+	record(d.SetImageAutomation(ctx, nn, gen, r.Spec.ImageAutomation))
+	if r.Spec.GitOwner != "" {
+		record(d.SetGitOwner(ctx, nn, gen, r.Spec.GitOwner))
+	}
+	if r.Spec.ManifestsRepo != nil {
+		record(d.SetManifestsRepo(ctx, nn, gen, r.Spec.ManifestsRepo))
+	}
+
+	return firstErr
 }
