@@ -2,13 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [0.2.2] - 2026-06-10
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.2.1
+
+### Release
+
+- Merge release/v0.2.2 into main
+
+## [0.2.1] - 2026-04-17
 
 ### 🚀 Features
 
 - *(environments)* Rebase
-
-## [0.2.1] - 2026-04-17
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -19,6 +27,7 @@ All notable changes to this project will be documented in this file.
 - *(docs)* Readme
 - *(workflows)* Add for release managment
 - *(docs)* Remove license-headers
+- *(housekeeping)* License and package to stubs
 
 ## [0.2.0] - 2026-04-05
 
