@@ -17,48 +17,35 @@ package gitrepository
 
 import (
 	"context"
-	"fmt"
-	"time"
 
+	"k8s.io/apimachinery/pkg/types"
+
+	bocache "github.com/ntlaletsi70/blanketops-environments/cache"
 	"github.com/ntlaletsi70/blanketops-environments/core"
 )
 
 // GitRepositoryCache provides domain-specific, field-level caching for GitRepository resources.
 type GitRepositoryCache struct {
-	cache *core.Cache
+	*bocache.ObjectCache
 }
 
 // NewGitRepositoryCache creates a new GitRepositoryCache instance.
 func NewGitRepositoryCache(c *core.Cache) *GitRepositoryCache {
-	return &GitRepositoryCache{cache: c}
-}
+	return &GitRepositoryCache{ObjectCache: bocache.NewObjectCache(c, "gitrepository", 0)}
 
-// key generates a specific cache key for a single field of a GitRepository.
-func (g *GitRepositoryCache) key(name, field string) string {
-	return fmt.Sprintf("gitrepository:%s:%s", name, field)
-}
-
-// SetField stores an individual CR value in the external cache.
-func (g *GitRepositoryCache) SetField(ctx context.Context, name, field string, val any) error {
-	return g.cache.External.Set(ctx, g.key(name, field), val, 1*time.Hour)
-}
-
-// GetField retrieves an individual CR value from the external cache.
-func (g *GitRepositoryCache) GetField(ctx context.Context, name, field string, into any) (bool, error) {
-	return g.cache.External.Get(ctx, g.key(name, field), into)
 }
 
 // -----------------------------------------------------------------------------
 // Typed Helpers: Provider
 // -----------------------------------------------------------------------------
 
-func (g *GitRepositoryCache) SetProvider(ctx context.Context, name string, provider string) error {
-	return g.SetField(ctx, name, "provider", provider)
+func (g *GitRepositoryCache) SetProvider(ctx context.Context, nn types.NamespacedName, gen int64, name string, provider string) error {
+	return g.SetField(ctx, nn, gen, "provider", provider)
 }
 
-func (g *GitRepositoryCache) GetProvider(ctx context.Context, name string) (string, bool, error) {
+func (g *GitRepositoryCache) GetProvider(ctx context.Context, nn types.NamespacedName, gen int64, name string) (string, bool, error) {
 	var p string
-	found, err := g.GetField(ctx, name, "provider", &p)
+	found, err := g.GetField(ctx, nn, gen, "provider", &p)
 	return p, found, err
 }
 
@@ -66,13 +53,13 @@ func (g *GitRepositoryCache) GetProvider(ctx context.Context, name string) (stri
 // Typed Helpers: HookUrl
 // -----------------------------------------------------------------------------
 
-func (g *GitRepositoryCache) SetHookUrl(ctx context.Context, name string, url string) error {
-	return g.SetField(ctx, name, "hookUrl", url)
+func (g *GitRepositoryCache) SetHookUrl(ctx context.Context, nn types.NamespacedName, gen int64, name string, url string) error {
+	return g.SetField(ctx, nn, gen, "hookUrl", url)
 }
 
-func (g *GitRepositoryCache) GetHookUrl(ctx context.Context, name string) (string, bool, error) {
+func (g *GitRepositoryCache) GetHookUrl(ctx context.Context, nn types.NamespacedName, gen int64, name string) (string, bool, error) {
 	var u string
-	found, err := g.GetField(ctx, name, "hookUrl", &u)
+	found, err := g.GetField(ctx, nn, gen, "hookUrl", &u)
 	return u, found, err
 }
 
@@ -80,22 +67,22 @@ func (g *GitRepositoryCache) GetHookUrl(ctx context.Context, name string) (strin
 // Typed Helpers: Repository
 // -----------------------------------------------------------------------------
 
-func (g *GitRepositoryCache) SetRepository(ctx context.Context, name string, repo any) error {
-	return g.SetField(ctx, name, "repository", repo)
+func (g *GitRepositoryCache) SetRepository(ctx context.Context, nn types.NamespacedName, gen int64, name string, repo any) error {
+	return g.SetField(ctx, nn, gen, "repository", repo)
 }
 
-func (g *GitRepositoryCache) GetRepository(ctx context.Context, name string, into any) (bool, error) {
-	return g.GetField(ctx, name, "repository", into)
+func (g *GitRepositoryCache) GetRepository(ctx context.Context, nn types.NamespacedName, gen int64, name string, into any) (bool, error) {
+	return g.GetField(ctx, nn, gen, "repository", into)
 }
 
 // -----------------------------------------------------------------------------
 // Typed Helpers: Webhooks
 // -----------------------------------------------------------------------------
 
-func (g *GitRepositoryCache) SetWebhooks(ctx context.Context, name string, webhooks any) error {
-	return g.SetField(ctx, name, "webhooks", webhooks)
+func (g *GitRepositoryCache) SetWebhooks(ctx context.Context, nn types.NamespacedName, gen int64, name string, webhooks any) error {
+	return g.SetField(ctx, nn, gen, "webhooks", webhooks)
 }
 
-func (g *GitRepositoryCache) GetWebhooks(ctx context.Context, name string, into any) (bool, error) {
-	return g.GetField(ctx, name, "webhooks", into)
+func (g *GitRepositoryCache) GetWebhooks(ctx context.Context, nn types.NamespacedName, gen int64, name string, into any) (bool, error) {
+	return g.GetField(ctx, nn, gen, "webhooks", into)
 }

@@ -17,48 +17,35 @@ package deployment
 
 import (
 	"context"
-	"fmt"
-	"time"
 
+	"k8s.io/apimachinery/pkg/types"
+
+	bocache "github.com/ntlaletsi70/blanketops-environments/cache"
 	"github.com/ntlaletsi70/blanketops-environments/core"
 )
 
 // DeploymentCache provides domain-specific, field-level caching for Deployment resources.
 type DeploymentCache struct {
-	cache *core.Cache
+	*bocache.ObjectCache
 }
 
 // NewDeploymentCache creates a new DeploymentCache instance.
 func NewDeploymentCache(c *core.Cache) *DeploymentCache {
-	return &DeploymentCache{cache: c}
-}
-
-// key generates a specific cache key for a single field of a Deployment.
-func (d *DeploymentCache) key(name, field string) string {
-	return fmt.Sprintf("deployment:%s:%s", name, field)
-}
-
-// SetField stores an individual CR value in the external cache.
-func (d *DeploymentCache) SetField(ctx context.Context, name, field string, val any) error {
-	return d.cache.External.Set(ctx, d.key(name, field), val, 1*time.Hour)
-}
-
-// GetField retrieves an individual CR value from the external cache.
-func (d *DeploymentCache) GetField(ctx context.Context, name, field string, into any) (bool, error) {
-	return d.cache.External.Get(ctx, d.key(name, field), into)
+	return &DeploymentCache{ObjectCache: bocache.NewObjectCache(c, "deployment", 0)}
 }
 
 // -----------------------------------------------------------------------------
 // Typed Helpers: ServiceUnits
 // -----------------------------------------------------------------------------
 
-func (d *DeploymentCache) SetServiceUnits(ctx context.Context, name string, units []string) error {
-	return d.SetField(ctx, name, "serviceUnits", units)
+func (d *DeploymentCache) SetServiceUnits(ctx context.Context, nn types.NamespacedName, gen int64, units []string) error {
+	return d.SetField(ctx, nn, gen, "serviceUnits", units)
+
 }
 
-func (d *DeploymentCache) GetServiceUnits(ctx context.Context, name string) ([]string, bool, error) {
+func (d *DeploymentCache) GetServiceUnits(ctx context.Context, nn types.NamespacedName, gen int64) ([]string, bool, error) {
 	var units []string
-	found, err := d.GetField(ctx, name, "serviceUnits", &units)
+	found, err := d.GetField(ctx, nn, gen, "serviceUnits", &units)
 	return units, found, err
 }
 
@@ -66,13 +53,13 @@ func (d *DeploymentCache) GetServiceUnits(ctx context.Context, name string) ([]s
 // Typed Helpers: Runtime
 // -----------------------------------------------------------------------------
 
-func (d *DeploymentCache) SetRuntime(ctx context.Context, name string, runtime string) error {
-	return d.SetField(ctx, name, "runtime", runtime)
+func (d *DeploymentCache) SetRuntime(ctx context.Context, nn types.NamespacedName, gen int64, runtime string) error {
+	return d.SetField(ctx, nn, gen, "runtime", runtime)
 }
 
-func (d *DeploymentCache) GetRuntime(ctx context.Context, name string) (string, bool, error) {
+func (d *DeploymentCache) GetRuntime(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error) {
 	var r string
-	found, err := d.GetField(ctx, name, "runtime", &r)
+	found, err := d.GetField(ctx, nn, gen, "runtime", &r)
 	return r, found, err
 }
 
@@ -80,13 +67,13 @@ func (d *DeploymentCache) GetRuntime(ctx context.Context, name string) (string, 
 // Typed Helpers: Strategy
 // -----------------------------------------------------------------------------
 
-func (d *DeploymentCache) SetStrategy(ctx context.Context, name string, strategy string) error {
-	return d.SetField(ctx, name, "strategy", strategy)
+func (d *DeploymentCache) SetStrategy(ctx context.Context, nn types.NamespacedName, gen int64, strategy string) error {
+	return d.SetField(ctx, nn, gen, "strategy", strategy)
 }
 
-func (d *DeploymentCache) GetStrategy(ctx context.Context, name string) (string, bool, error) {
+func (d *DeploymentCache) GetStrategy(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error) {
 	var s string
-	found, err := d.GetField(ctx, name, "strategy", &s)
+	found, err := d.GetField(ctx, nn, gen, "strategy", &s)
 	return s, found, err
 }
 
@@ -94,13 +81,13 @@ func (d *DeploymentCache) GetStrategy(ctx context.Context, name string) (string,
 // Typed Helpers: ImageAutomation
 // -----------------------------------------------------------------------------
 
-func (d *DeploymentCache) SetImageAutomation(ctx context.Context, name string, enabled bool) error {
-	return d.SetField(ctx, name, "imageAutomation", enabled)
+func (d *DeploymentCache) SetImageAutomation(ctx context.Context, nn types.NamespacedName, gen int64, enabled bool) error {
+	return d.SetField(ctx, nn, gen, "imageAutomation", enabled)
 }
 
-func (d *DeploymentCache) GetImageAutomation(ctx context.Context, name string) (bool, bool, error) {
+func (d *DeploymentCache) GetImageAutomation(ctx context.Context, nn types.NamespacedName, gen int64) (bool, bool, error) {
 	var auto bool
-	found, err := d.GetField(ctx, name, "imageAutomation", &auto)
+	found, err := d.GetField(ctx, nn, gen, "imageAutomation", &auto)
 	return auto, found, err
 }
 
@@ -108,13 +95,13 @@ func (d *DeploymentCache) GetImageAutomation(ctx context.Context, name string) (
 // Typed Helpers: ReconciliationStrategy
 // -----------------------------------------------------------------------------
 
-func (d *DeploymentCache) SetReconciliationStrategy(ctx context.Context, name string, strategy string) error {
-	return d.SetField(ctx, name, "reconciliationStrategy", strategy)
+func (d *DeploymentCache) SetReconciliationStrategy(ctx context.Context, nn types.NamespacedName, gen int64, strategy string) error {
+	return d.SetField(ctx, nn, gen, "reconciliationStrategy", strategy)
 }
 
-func (d *DeploymentCache) GetReconciliationStrategy(ctx context.Context, name string) (string, bool, error) {
+func (d *DeploymentCache) GetReconciliationStrategy(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error) {
 	var rs string
-	found, err := d.GetField(ctx, name, "reconciliationStrategy", &rs)
+	found, err := d.GetField(ctx, nn, gen, "reconciliationStrategy", &rs)
 	return rs, found, err
 }
 
@@ -122,13 +109,13 @@ func (d *DeploymentCache) GetReconciliationStrategy(ctx context.Context, name st
 // Typed Helpers: GitOwner
 // -----------------------------------------------------------------------------
 
-func (d *DeploymentCache) SetGitOwner(ctx context.Context, name string, owner string) error {
-	return d.SetField(ctx, name, "gitOwner", owner)
+func (d *DeploymentCache) SetGitOwner(ctx context.Context, nn types.NamespacedName, gen int64, owner string) error {
+	return d.SetField(ctx, nn, gen, "gitOwner", owner)
 }
 
-func (d *DeploymentCache) GetGitOwner(ctx context.Context, name string) (string, bool, error) {
+func (d *DeploymentCache) GetGitOwner(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error) {
 	var owner string
-	found, err := d.GetField(ctx, name, "gitOwner", &owner)
+	found, err := d.GetField(ctx, nn, gen, "gitOwner", &owner)
 	return owner, found, err
 }
 
@@ -136,10 +123,10 @@ func (d *DeploymentCache) GetGitOwner(ctx context.Context, name string) (string,
 // Typed Helpers: ManifestsRepo
 // -----------------------------------------------------------------------------
 
-func (d *DeploymentCache) SetManifestsRepo(ctx context.Context, name string, repo any) error {
-	return d.SetField(ctx, name, "manifestsRepo", repo)
+func (d *DeploymentCache) SetManifestsRepo(ctx context.Context, nn types.NamespacedName, gen int64, repo any) error {
+	return d.SetField(ctx, nn, gen, "manifestsRepo", repo)
 }
 
-func (d *DeploymentCache) GetManifestsRepo(ctx context.Context, name string, into any) (bool, error) {
-	return d.GetField(ctx, name, "manifestsRepo", into)
+func (d *DeploymentCache) GetManifestsRepo(ctx context.Context, nn types.NamespacedName, gen int64, into any) (bool, error) {
+	return d.GetField(ctx, nn, gen, "manifestsRepo", into)
 }
