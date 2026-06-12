@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BlanketOps Environments — Ecosystem Roadmap</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #080c10;
+    --surface: #0d1117;
+    --surface2: #131920;
+    --border: #1e2d3d;
+    --accent: #00d4ff;
+    --accent2: #7b61ff;
+    --accent3: #00ff88;
+    --accent4: #ff6b35;
+    --text: #e6edf3;
+    --muted: #4a6274;
+    --muted2: #2a3f52;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  .wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+    position: relative;
+  }
+
+  /* Header */
+  .header {
+    margin-bottom: 56px;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  .header-tag {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .header-tag::before {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+
+  h1 span {
+    color: var(--accent);
+  }
+
+  .header-sub {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  /* Section labels */
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Core stream */
+  .core-stream {
+    margin-bottom: 48px;
+    animation: fadeUp 0.5s ease 0.1s both;
+  }
+
+  .stream-box {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .stream-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+
+  .stream-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .stream-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+  }
+
+  .badge {
+    font-size: 9px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .badge-core { background: rgba(0,212,255,0.12); color: var(--accent); border: 1px solid rgba(0,212,255,0.25); }
+  .badge-plugin { background: rgba(123,97,255,0.12); color: var(--accent2); border: 1px solid rgba(123,97,255,0.25); }
+  .badge-triage { background: rgba(255,107,53,0.12); color: var(--accent4); border: 1px solid rgba(255,107,53,0.25); }
+  .badge-proposal { background: rgba(0,255,136,0.1); color: var(--accent3); border: 1px solid rgba(0,255,136,0.2); }
+
+  /* Repo grid */
+  .repo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1px;
+    background: var(--border);
+  }
+
+  .repo-card {
+    background: var(--surface);
+    padding: 16px 18px;
+    transition: background 0.2s;
+    cursor: default;
+    position: relative;
+  }
+
+  .repo-card:hover {
+    background: var(--surface2);
+  }
+
+  .repo-name {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .repo-name .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .dot-active { background: var(--accent3); box-shadow: 0 0 6px var(--accent3); }
+  .dot-build { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .dot-triage { background: var(--accent4); box-shadow: 0 0 6px var(--accent4); }
+  .dot-proposal { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+  .dot-debate { background: #ffcc00; box-shadow: 0 0 6px #ffcc00; }
+
+  .repo-desc {
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .repo-status {
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* Flow diagram */
+  .flow-section {
+    margin-bottom: 48px;
+    animation: fadeUp 0.5s ease 0.2s both;
+  }
+
+  .flow-diagram {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    padding: 28px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .flow-diagram::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent3), var(--accent));
+  }
+
+  .flow-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+
+  .flow-node {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+    position: relative;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .flow-node:hover {
+    transform: translateY(-2px);
+  }
+
+  .flow-node.contract { border-color: var(--accent); color: var(--accent); }
+  .flow-node.api { border-color: #ffcc00; color: #ffcc00; }
+  .flow-node.controller { border-color: var(--accent3); color: var(--accent3); }
+  .flow-node.consume { border-color: var(--accent2); color: var(--accent2); }
+  .flow-node.install { border-color: var(--accent4); color: var(--accent4); }
+  .flow-node.future { border-color: var(--muted2); color: var(--muted); border-style: dashed; }
+  .flow-node.tests { border-color: #ff4d6a; color: #ff4d6a; }
+
+  .arrow {
+    color: var(--muted);
+    font-size: 14px;
+    padding: 0 6px;
+    flex-shrink: 0;
+  }
+
+  .flow-split {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .flow-label {
+    font-size: 9px;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .flow-tests-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .flow-tests-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  /* Plugins section */
+  .plugins-section {
+    margin-bottom: 48px;
+    animation: fadeUp 0.5s ease 0.3s both;
+  }
+
+  .plugin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+  }
+
+  .plugin-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .plugin-card:hover { border-color: var(--accent2); }
+
+  .plugin-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent2), transparent);
+  }
+
+  .plugin-card.future-card::before {
+    background: linear-gradient(90deg, var(--muted2), transparent);
+  }
+
+  .plugin-card.future-card {
+    opacity: 0.6;
+    border-style: dashed;
+  }
+
+  .plugin-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .plugin-repo {
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 10px;
+    font-weight: 400;
+  }
+
+  .plugin-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .tag {
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  /* Install section */
+  .install-section {
+    animation: fadeUp 0.5s ease 0.4s both;
+    margin-bottom: 48px;
+  }
+
+  .install-box {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .install-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent4), var(--accent3));
+  }
+
+  .terminal {
+    padding: 20px 24px;
+    font-size: 12px;
+    line-height: 2;
+  }
+
+  .terminal .prompt { color: var(--accent3); }
+  .terminal .cmd { color: var(--text); }
+  .terminal .comment { color: var(--muted); }
+  .terminal .highlight { color: var(--accent); }
+  .terminal .plugin-highlight { color: var(--accent2); }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 8px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  /* Maturity axis */
+  .maturity-section {
+    animation: fadeUp 0.5s ease 0.5s both;
+  }
+
+  .maturity-bar {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .maturity-bar::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent), var(--accent3));
+  }
+
+  .maturity-track {
+    position: relative;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 32px 0 48px;
+  }
+
+  .maturity-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: linear-gradient(90deg, var(--accent2), var(--accent), var(--accent3));
+    border-radius: 2px;
+    width: 60%;
+  }
+
+  .maturity-points {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+  }
+
+  .maturity-point {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    position: relative;
+  }
+
+  .maturity-point::before {
+    content: '';
+    position: absolute;
+    top: -36px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--bg);
+  }
+
+  .maturity-point.done::before { background: var(--accent3); border-color: var(--accent3); box-shadow: 0 0 8px var(--accent3); }
+  .maturity-point.active::before { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .maturity-point.next::before { background: var(--surface2); border-color: var(--accent2); }
+  .maturity-point.future::before { background: var(--surface); border-color: var(--muted2); }
+
+  .maturity-name {
+    font-size: 10px;
+    color: var(--muted);
+    text-align: center;
+    font-weight: 500;
+  }
+
+  .maturity-point.done .maturity-name { color: var(--accent3); }
+  .maturity-point.active .maturity-name { color: var(--accent); }
+  .maturity-point.next .maturity-name { color: var(--accent2); }
+
+  .maturity-repos {
+    font-size: 9px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  /* Animations */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Pulse on dots */
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .dot-active { animation: pulse 2s ease infinite; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-tag">Ecosystem Roadmap</div>
+    <h1>BlanketOps <span>Environments</span></h1>
+    <div class="header-sub">// Core Stream + Plugin Architecture · April 2026</div>
+  </div>
+
+  <!-- Core Stream -->
+  <div class="core-stream">
+    <div class="section-label">Core Stream</div>
+    <div class="stream-box">
+      <div class="stream-header">
+        <div class="stream-title">blanketops-environments</div>
+        <div class="badge badge-core">Core</div>
+      </div>
+      <div class="repo-grid">
+        <div class="repo-card">
+          <div class="repo-name"><span class="dot dot-active"></span>contract</div>
+          <div class="repo-desc">Protobuf source of truth. Buf codegen. All types flow from here.</div>
+          <div class="repo-status">● Active</div>
+        </div>
+        <div class="repo-card">
+          <div class="repo-name"><span class="dot dot-build"></span>api</div>
+          <div class="repo-desc">Generated types + OpenAPI stubs. Schema publication layer for clients.</div>
+          <div class="repo-status">● In debate</div>
+        </div>
+        <div class="repo-card">
+          <div class="repo-name"><span class="dot dot-active"></span>controller</div>
+          <div class="repo-desc">Core reconciliation engine. Thin controllers, logic in services. The test horse.</div>
+          <div class="repo-status">● Active</div>
+        </div>
+        <div class="repo-card">
+          <div class="repo-name"><span class="dot dot-active"></span>cli</div>
+          <div class="repo-desc">Primary user interface. Onboarding, plugin management, cluster ops.</div>
+          <div class="repo-status">● Active</div>
+        </div>
+        <div class="repo-card">
+          <div class="repo-name"><span class="dot dot-active"></span>sdk</div>
+          <div class="repo-desc">.NET, Java, TypeScript. CRUD against Environment CRs. Contract-driven codegen.</div>
+          <div class="repo-status">● Active</div>
+        </div>
+        <div class="repo-card">
+          <div class="repo-name"><span class="dot dot-active"></span>install</div>
+          <div class="repo-desc">The door. Cluster bootstrapping, deps, plugin installs. UX north star.</div>
+          <div class="repo-status">● Active</div>
+        </div>
+        <div class="repo-card">
+          <div class="repo-name"><span class="dot dot-active"></span>tests</div>
+          <div class="repo-desc">Dedicated e2e suite. Fires real CRs at the controller binary. No mocks.</div>
+          <div class="repo-status">● Active</div>
+        </div>
+        <div class="repo-card">
+          <div class="repo-name"><span class="dot dot-triage"></span>apiserver</div>
+          <div class="repo-desc">Aggregated API server. CRDs vs custom — still being decided. In triage.</div>
+          <div class="repo-status">⚠ Triage</div>
+        </div>
+        <div class="repo-card">
+          <div class="repo-name"><span class="dot dot-proposal"></span>mcp</div>
+          <div class="repo-desc">MCP exposure. AI agents drive environment lifecycle. Strong differentiator.</div>
+          <div class="repo-status">◎ Proposal</div>
+        </div>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><span class="dot dot-active" style="display:inline-block;width:6px;height:6px;border-radius:50%;flex-shrink:0"></span> Active</div>
+        <div class="legend-item"><span class="dot dot-build" style="display:inline-block;width:6px;height:6px;border-radius:50%;flex-shrink:0"></span> In debate</div>
+        <div class="legend-item"><span class="dot dot-triage" style="display:inline-block;width:6px;height:6px;border-radius:50%;flex-shrink:0"></span> Triage</div>
+        <div class="legend-item"><span class="dot dot-proposal" style="display:inline-block;width:6px;height:6px;border-radius:50%;flex-shrink:0"></span> Proposal</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dependency Flow -->
+  <div class="flow-section">
+    <div class="section-label">Dependency Flow</div>
+    <div class="flow-diagram">
+      <div class="flow-row">
+        <div class="flow-node contract">contract</div>
+        <div class="arrow">──►</div>
+        <div class="flow-node api">api</div>
+        <div class="arrow">──►</div>
+        <div class="flow-node controller">controller</div>
+        <div class="arrow">──►</div>
+        <div class="flow-split">
+          <div class="flow-node consume">cli</div>
+          <div class="flow-node consume">sdk</div>
+        </div>
+        <div class="arrow">──►</div>
+        <div class="flow-node install">install</div>
+        <div class="arrow" style="color:var(--muted2)">──►</div>
+        <div class="flow-split">
+          <div class="flow-node future">apiserver</div>
+          <div class="flow-node future">mcp</div>
+        </div>
+      </div>
+      <div class="flow-tests-row">
+        <div class="flow-tests-label">orthogonal:</div>
+        <div class="flow-node tests">tests</div>
+        <div class="flow-tests-label">↔ points at controller binary, validates entire stack</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Plugins -->
+  <div class="plugins-section">
+    <div class="section-label">Plugin Ecosystem</div>
+    <div class="plugin-grid">
+      <div class="plugin-card">
+        <div class="plugin-name">
+          <div class="badge badge-plugin">Plugin</div>
+          Supply Chain
+        </div>
+        <div class="plugin-repo">blanketops-environments-plugin-supplychain</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.6">
+          Security envelope for image builds. Tekton pipelines, Kaniko, Trivy scanning, Cosign signing, Grafeas attestation. Runs as a standalone operator — SupplyChain + ImageBuild CRs.
+        </div>
+        <div class="plugin-tags">
+          <div class="tag">Tekton</div>
+          <div class="tag">Kaniko</div>
+          <div class="tag">Trivy</div>
+          <div class="tag">Cosign</div>
+          <div class="tag">Grafeas</div>
+        </div>
+      </div>
+      <div class="plugin-card future-card">
+        <div class="plugin-name">
+          <div class="badge badge-plugin">Plugin</div>
+          Storage
+        </div>
+        <div class="plugin-repo">blanketops-environments-plugin-storage</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.6">
+          Persistent state, volume management, object storage integration for environments. Planned — not yet scoped.
+        </div>
+        <div class="plugin-tags">
+          <div class="tag">PVC</div>
+          <div class="tag">Object Storage</div>
+          <div class="tag">Planned</div>
+        </div>
+      </div>
+      <div class="plugin-card future-card">
+        <div class="plugin-name">
+          <div class="badge badge-plugin">Plugin</div>
+          ??? Future
+        </div>
+        <div class="plugin-repo">blanketops-environments-plugin-???</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.6">
+          Ecosystem is extensible. Each plugin is standalone engineering depth — not a sub-folder.
+        </div>
+        <div class="plugin-tags">
+          <div class="tag">Extensible</div>
+          <div class="tag">Open</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Install CLI -->
+  <div class="install-section">
+    <div class="section-label">Install — The Door</div>
+    <div class="install-box">
+      <div class="terminal">
+        <div><span class="comment"># bootstrap the platform</span></div>
+        <div><span class="prompt">$</span> <span class="cmd">blanketops environments <span class="highlight">install</span></span></div>
+        <div>&nbsp;</div>
+        <div><span class="comment"># manage plugins</span></div>
+        <div><span class="prompt">$</span> <span class="cmd">blanketops environments plugin <span class="plugin-highlight">install</span> supplychain</span></div>
+        <div><span class="prompt">$</span> <span class="cmd">blanketops environments plugin <span class="plugin-highlight">install</span> storage</span></div>
+        <div><span class="prompt">$</span> <span class="cmd">blanketops environments plugin <span class="highlight">list</span></span></div>
+        <div><span class="prompt">$</span> <span class="cmd">blanketops environments plugin <span class="accent4">remove</span> supplychain</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Maturity Axis -->
+  <div class="maturity-section">
+    <div class="section-label">Maturity Axis</div>
+    <div class="maturity-bar">
+      <div class="maturity-track">
+        <div class="maturity-fill"></div>
+      </div>
+      <div class="maturity-points">
+        <div class="maturity-point done">
+          <div class="maturity-name">Foundation</div>
+          <div class="maturity-repos">contract<br>controller<br>cli</div>
+        </div>
+        <div class="maturity-point done">
+          <div class="maturity-name">Distribution</div>
+          <div class="maturity-repos">sdk<br>install<br>tests</div>
+        </div>
+        <div class="maturity-point active">
+          <div class="maturity-name">Plugin Ecosystem</div>
+          <div class="maturity-repos">plugin-supplychain<br>api (debate)</div>
+        </div>
+        <div class="maturity-point next">
+          <div class="maturity-name">Surface</div>
+          <div class="maturity-repos">apiserver<br>plugin-storage</div>
+        </div>
+        <div class="maturity-point future">
+          <div class="maturity-name">AI Native</div>
+          <div class="maturity-repos">mcp<br>future plugins</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
