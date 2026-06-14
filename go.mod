@@ -1,6 +1,6 @@
 module github.com/ntlaletsi70/blanketops-environments
 
-go 1.25.8
+go 1.25.7
 
 require (
 	carvel.dev/kapp-controller v0.59.2
