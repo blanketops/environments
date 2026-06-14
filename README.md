@@ -3,8 +3,6 @@
 
 A Deterministic Software Delivery Engine for Kubernetes.
 
-BlanketOps Environments is the core resolution engine behind the BlanketOps platform.
-
 BlanketOps Environments is the core resolution engine behind the BlanketOps Environments platform.
 It provides deterministic domain logic for Kubernetes-native software delivery — transforming structured Custom Resources into stable, governed execution plans.
 
