@@ -2,11 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [0.3.5] - 2026-06-14
+
+### 🚀 Features
+
+- *(rebase)* Init rebase for v0.3.5
+- *(rebase)* Init rebase for v0.3.5, update spelling filename, ci pinned version test only with for now, TODO, support multiple images with differnt golang versions,
+
+### Release
+
+- Merge release/v0.3.5 into main
+
+## [0.2.6] - 2026-06-14
 
 ### ⚙️ Miscellaneous Tasks
 
 - *(release)* Update changelog for v0.3.4
+- *(release)* Update changelog for v0.2.6
+- Sync develop with main after release/v0.3.4
 
 ### Bugfix
 
