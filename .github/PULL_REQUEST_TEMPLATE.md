@@ -1,3 +1,4 @@
+
 ## What
 
 <!-- One or two sentences. What does this PR change? -->
@@ -15,6 +16,7 @@
 * [ ] `sources`
 * [ ] `networks`
 * [ ] `common`
+* [ ] Application / domain layer (no API surface change)
 * [ ] CI / tooling / docs
 
 ## API impact
@@ -29,13 +31,15 @@
 ## Checklist
 
 * [ ] `mage verify` passes locally
-* [ ] `buf lint` clean
 * [ ] `buf breaking` reviewed (failures justified above if pre-v1)
-* [ ] Generated code (`buf generate`) reflects the change — all targets (Go / C# / Java / TS)
+* [ ] Panic-free resolution — no `panic()` calls in resolution or domain layers
+* [ ] Import paths use `gen/go/blanketops/...` for contract types
 * [ ] BlanketOps labels present where required (`environments.blanketops.dev/*`)
-* [ ] Docs / ESP-0001 updated if the contract semantics changed
+* [ ] Conditions written via `core.SetCondition` at each domain pipeline stage
+* [ ] Events emitted via `core.EventRecorder` for terminal outcomes
+* [ ] ESP-0001 updated if contract semantics changed
 * [ ] Commit messages follow Conventional Commits
 
 ## Notes for reviewer
 
-<!-- Anything non-obvious: design trade-offs, follow-ups deferred, areas needing close eyes -->
+<!-- Anything non-obvious: design trade-offs, deferred follow-ups, areas needing close attention -->
