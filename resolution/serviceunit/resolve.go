@@ -18,9 +18,10 @@ package serviceunit
 import (
 	"fmt"
 
+	"google.golang.org/protobuf/encoding/protojson"
+
 	environmentv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
 	contractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // ResolvedServiceUnit is the SINGLE runtime representation of a ServiceUnit.

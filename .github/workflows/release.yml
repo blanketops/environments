@@ -18,12 +18,6 @@ jobs:
               with:
                   fetch-depth: 0
 
-            - name: Install git-cliff
-              run: |
-                  curl -L https://github.com/orhun/git-cliff/releases/download/v2.4.0/git-cliff-2.4.0-x86_64-unknown-linux-gnu.tar.gz -o cliff.tar.gz
-                  tar -xzf cliff.tar.gz
-                  sudo mv git-cliff-2.4.0/git-cliff /usr/local/bin/git-cliff
-
             - name: Checkout main
               run: |
                   git checkout main
@@ -54,24 +48,16 @@ jobs:
               run: |
                   cat >> $GITHUB_STEP_SUMMARY <<EOF
                   # 📦 GitHub Release Published
-
                   **Version:** \`${{ github.ref_name }}\`
-
                   ## Completed
-
                   - Generated CHANGELOG.md using git-cliff
                   - Committed changelog updates to main
                   - Generated release notes
                   - Published GitHub Release
-
                   ## Artifacts
-
                   - CHANGELOG.md
                   - RELEASE_NOTES.md
                   - GitHub Release
-
                   ## Source Tag
-
                   \`${{ github.ref_name }}\`
-
                   EOF

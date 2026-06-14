@@ -14,3 +14,7 @@ limitations under the License.
 */
 
 package domain
+
+import "errors"
+
+var ErrRouteFailed = errors.New("route failed")
