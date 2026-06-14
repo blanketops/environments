@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.6] - 2026-06-14
+
+### 🚀 Features
+
+- *(ci)* Add docs,. type issue templates,. update pr template to domain specific
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.3.5
+- *(release)* Update changelog for v0.3.5
+
+### Release
+
+- Merge release/v0.3.6 into main
+
 ## [0.3.5] - 2026-06-14
 
 ### 🚀 Features
