@@ -16,13 +16,13 @@ limitations under the License.
 package intent
 
 import (
-	environmentv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
-
 	"time"
+
+	environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
 )
 
 type DeploymentIntent struct {
-	Source *environmentv1.Deployment // ← IMPORTANT
+	Source *environmentv1alpha1.Deployment // ← IMPORTANT
 
 	Name      string
 	Namespace string

@@ -13,6 +13,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package core defines the foundational contracts and primitives shared across
+all BlanketOps Environments domains.
+
+This file owns controller-runtime predicate filtering. Predicates are the
+first line of defence against unnecessary reconciliation — they run in the
+informer goroutine before a reconcile request ever enters the work queue.
+
+The key filtering concern for BlanketOps is spec-only reconciliation: status
+updates and metadata changes (labels, annotations, finalizers) must not
+trigger domain execution. Without this filter, a status patch written by a
+domain at the end of reconciliation would re-enqueue the same object,
+creating a tight reconciliation loop.
+
+MeaningfulChangePredicate enforces this by type-switching on the concrete CR
+kind and comparing specs directly. All other event types (Create, Delete,
+Generic) pass through unconditionally — only Update events are filtered.
+*/
 package core
 
 import (
@@ -26,8 +44,18 @@ import (
 	sourcesv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/sources/v1alpha1"
 )
 
-// MeaningfulChangePredicate returns predicate funcs that ONLY
-// Other changes (status updates, metadata changes) are ignored.
+// MeaningfulChangePredicate returns a predicate.Funcs that suppresses Update
+// events where only status or metadata changed. Spec changes always pass
+// through; all other event types (Create, Delete, Generic) are unconditional.
+//
+// This predicate is registered at the manager level and applied to all
+// BlanketOps CR controllers. It is the primary guard against reconciliation
+// loops caused by status writes re-enqueuing the same object.
+//
+// The type switch covers all ten CR kinds managed by the platform. Unknown
+// types fall through to true (reconcile) as a safe default — an unknown kind
+// reaching this predicate indicates a registration gap, not a reason to drop
+// the event.
 func MeaningfulChangePredicate() predicate.Funcs {
 	return predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
@@ -84,11 +112,15 @@ func MeaningfulChangePredicate() predicate.Funcs {
 				return !reflect.DeepEqual(old.Spec, newObj.Spec)
 
 			default:
-				// Unknown type → reconcile (safe default)
+				// Unknown kind — reconcile as safe default. An unknown type
+				// reaching this predicate indicates a missing case, not a
+				// reason to silently drop the event.
 				return true
 			}
 		},
 
+		// Create, Delete, and Generic events always pass through — there is
+		// no spec-diff concern for these event types.
 		CreateFunc:  func(event.CreateEvent) bool { return true },
 		DeleteFunc:  func(event.DeleteEvent) bool { return true },
 		GenericFunc: func(event.GenericEvent) bool { return true },

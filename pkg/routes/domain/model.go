@@ -14,3 +14,22 @@ limitations under the License.
 */
 
 package domain
+
+// -----------------------------------------------------------------------------
+// RouteSpec
+// -----------------------------------------------------------------------------
+//
+// Pure internal specification of a Route.
+// This is NOT the CRD shape.
+// This is the canonical semantic input to execution.
+type RouteSpec struct {
+}
+
+// -----------------------------------------------------------------------------
+// RouteStatus
+// -----------------------------------------------------------------------------
+//
+// Internal domain status for a Route execution.
+// This is serialized into CRD status.contract.
+type RouteStatus struct {
+}

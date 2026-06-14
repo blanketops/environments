@@ -104,9 +104,7 @@ func normalizeGitProvider(p string) (contractv1.GitProvider, error) {
 
 // normalizeGitEvents maps runtime event strings to
 // blanketops.sources.v1alpha1.GitEventType enum VALUES.
-func normalizeGitEvents(
-	events []string,
-) ([]contractv1.GitEventType, error) {
+func normalizeGitEvents(events []string) ([]contractv1.GitEventType, error) {
 
 	var out []contractv1.GitEventType
 
