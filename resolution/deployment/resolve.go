@@ -19,8 +19,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	environmentv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
-	contractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
+	environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+	contractv1alpha1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
 )
 
 //
@@ -62,7 +62,7 @@ const (
 //
 
 type ResolvedDeployment struct {
-	Deployment *environmentv1.Deployment
+	Deployment *environmentv1alpha1.Deployment
 	Spec       *ResolvedDeploymentSpec
 }
 
@@ -93,7 +93,7 @@ type ResolvedManifestsRepo struct {
 // ======================================================
 //
 
-func ResolveDeployment(depl *environmentv1.Deployment) (*ResolvedDeployment, error) {
+func ResolveDeployment(depl *environmentv1alpha1.Deployment) (*ResolvedDeployment, error) {
 
 	if depl == nil {
 		return nil, fmt.Errorf("deployment is nil")
@@ -238,35 +238,35 @@ func ResolveDeployment(depl *environmentv1.Deployment) (*ResolvedDeployment, err
 // ======================================================
 //
 
-func resolveDeploymentRuntime(raw any) (contractv1.DeploymentRuntime, error) {
+func resolveDeploymentRuntime(raw any) (contractv1alpha1.DeploymentRuntime, error) {
 	switch v := raw.(type) {
 
 	case string:
 		switch v {
 		case "kubernetes", "kubernetes.io/container-runtime":
-			return contractv1.DeploymentRuntime_DEPLOYMENT_RUNTIME_KUBERNETES_CONTAINER, nil
+			return contractv1alpha1.DeploymentRuntime_DEPLOYMENT_RUNTIME_KUBERNETES_CONTAINER, nil
 		case "knative":
-			return contractv1.DeploymentRuntime_DEPLOYMENT_RUNTIME_KNATIVE_SERVICE, nil
+			return contractv1alpha1.DeploymentRuntime_DEPLOYMENT_RUNTIME_KNATIVE_SERVICE, nil
 		default:
 			return 0, fmt.Errorf("unsupported deployment.runtime %q", v)
 		}
 
 	case float64:
-		return contractv1.DeploymentRuntime(v), nil
+		return contractv1alpha1.DeploymentRuntime(v), nil
 
 	default:
 		return 0, fmt.Errorf("deployment.runtime is required")
 	}
 }
 
-func normalizeRuntime(rt contractv1.DeploymentRuntime) (Runtime, error) {
+func normalizeRuntime(rt contractv1alpha1.DeploymentRuntime) (Runtime, error) {
 
 	switch rt {
 
-	case contractv1.DeploymentRuntime_DEPLOYMENT_RUNTIME_KUBERNETES_CONTAINER:
+	case contractv1alpha1.DeploymentRuntime_DEPLOYMENT_RUNTIME_KUBERNETES_CONTAINER:
 		return RuntimeKubernetes, nil
 
-	case contractv1.DeploymentRuntime_DEPLOYMENT_RUNTIME_KNATIVE_SERVICE:
+	case contractv1alpha1.DeploymentRuntime_DEPLOYMENT_RUNTIME_KNATIVE_SERVICE:
 		return RuntimeKnative, nil
 
 	default:
@@ -274,41 +274,39 @@ func normalizeRuntime(rt contractv1.DeploymentRuntime) (Runtime, error) {
 	}
 }
 
-func resolveReconciliationStrategy(raw any) (contractv1.DeploymentReconciliationStrategy, error) {
+func resolveReconciliationStrategy(raw any) (contractv1alpha1.DeploymentReconciliationStrategy, error) {
 
 	switch v := raw.(type) {
 
 	case string:
 		switch v {
 		case "kustomize":
-			return contractv1.DeploymentReconciliationStrategy_DEPLOYMENT_RECONCILIATION_STRATEGY_KUSTOMIZE, nil
+			return contractv1alpha1.DeploymentReconciliationStrategy_DEPLOYMENT_RECONCILIATION_STRATEGY_KUSTOMIZE, nil
 		case "helm":
-			return contractv1.DeploymentReconciliationStrategy_DEPLOYMENT_RECONCILIATION_STRATEGY_HELM, nil
+			return contractv1alpha1.DeploymentReconciliationStrategy_DEPLOYMENT_RECONCILIATION_STRATEGY_HELM, nil
 		default:
 			return 0, fmt.Errorf("unsupported reconciliationStrategy %q", v)
 		}
 
 	case float64:
-		return contractv1.DeploymentReconciliationStrategy(v), nil
+		return contractv1alpha1.DeploymentReconciliationStrategy(v), nil
 
 	default:
 		return 0, fmt.Errorf("reconciliationStrategy is required")
 	}
 }
 
-func normalizeReconciliationStrategy(
-	rt contractv1.DeploymentReconciliationStrategy,
-) (ReconciliationStrategy, error) {
+func normalizeReconciliationStrategy(rt contractv1alpha1.DeploymentReconciliationStrategy) (ReconciliationStrategy, error) {
 
 	switch rt {
 
-	case contractv1.DeploymentReconciliationStrategy_DEPLOYMENT_RECONCILIATION_STRATEGY_KUSTOMIZE:
+	case contractv1alpha1.DeploymentReconciliationStrategy_DEPLOYMENT_RECONCILIATION_STRATEGY_KUSTOMIZE:
 		return ReconciliationKustomize, nil
 
-	case contractv1.DeploymentReconciliationStrategy_DEPLOYMENT_RECONCILIATION_STRATEGY_HELM:
+	case contractv1alpha1.DeploymentReconciliationStrategy_DEPLOYMENT_RECONCILIATION_STRATEGY_HELM:
 		return ReconciliationHelm, nil
 
-	case contractv1.DeploymentReconciliationStrategy_DEPLOYMENT_RECONCILIATION_STRATEGY_UNSPECIFIED:
+	case contractv1alpha1.DeploymentReconciliationStrategy_DEPLOYMENT_RECONCILIATION_STRATEGY_UNSPECIFIED:
 		return ReconciliationImperative, nil
 
 	default:

@@ -13,6 +13,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package core defines the foundational contracts and primitives shared across
+all BlanketOps Environments domains.
+
+This file owns the Registry — the runtime lookup table that wires Domains and
+strategies into the Engine. The Registry is populated once at manager startup
+and then read concurrently by the Engine during reconciliation. All methods
+are safe for concurrent use.
+
+Two registries are maintained in a single struct:
+
+  - Domain registry: maps GVK → Domain. The Engine uses this to route every
+    Command to the correct handler. One Domain per GVK — duplicate registration
+    silently overwrites, so startup order matters.
+
+  - Strategy registry: maps name → implementation (any). Used for pluggable
+    build strategies (e.g. "buildpacks-v3", "dockerfile"). Typed retrieval
+    is the caller's responsibility via a type assertion after GetStrategy.
+*/
 package core
 
 import (
@@ -21,14 +40,25 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// Registry holds runtime registrations for domains and optional strategies.
+// Registry is the runtime lookup table for Domains and strategies.
+// Populated at manager startup; read concurrently by the Engine thereafter.
+// All methods acquire the appropriate lock — callers need no external
+// synchronisation.
 type Registry struct {
-	mu         sync.RWMutex
-	domains    map[schema.GroupVersionKind]Domain
+	// mu guards both domains and strategies maps.
+	mu sync.RWMutex
+	
+	// domains maps GroupVersionKind → Domain for Engine routing.
+	// One Domain per GVK; duplicate registration overwrites silently.
+	domains map[schema.GroupVersionKind]Domain
+	
+	// strategies maps strategy name → implementation for pluggable
+	// build strategy dispatch. Typed access requires a caller-side assertion.
 	strategies map[string]any
 }
 
-// NewRegistry constructs an empty runtime registry.
+// NewRegistry constructs an empty Registry ready for domain and strategy
+// registration. Called once during manager setup before any controllers start.
 func NewRegistry() *Registry {
 	return &Registry{
 		domains:    make(map[schema.GroupVersionKind]Domain),
@@ -36,14 +66,17 @@ func NewRegistry() *Registry {
 	}
 }
 
-// RegisterDomain registers a domain in the runtime registry.
+// RegisterDomain registers a Domain for the given GVK. Called at startup for
+// each CR kind the platform manages. Duplicate registration overwrites the
+// previous entry — registration order is the caller's responsibility.
 func (r *Registry) RegisterDomain(gvk schema.GroupVersionKind, d Domain) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.domains[gvk] = d
 }
 
-// GetDomain retrieves a domain by its GroupVersionKind.
+// GetDomain retrieves the Domain registered for gvk. Returns false if no
+// Domain is registered — the Engine surfaces this as an error to the caller.
 func (r *Registry) GetDomain(gvk schema.GroupVersionKind) (Domain, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -51,14 +84,18 @@ func (r *Registry) GetDomain(gvk schema.GroupVersionKind) (Domain, bool) {
 	return d, ok
 }
 
-// RegisterStrategy registers a named strategy implementation (e.g., "buildpacks-v3").
+// RegisterStrategy registers a named strategy implementation. The name is
+// the lookup key used at reconciliation time (e.g. "buildpacks-v3",
+// "dockerfile"). Duplicate names overwrite silently.
 func (r *Registry) RegisterStrategy(name string, v any) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.strategies[name] = v
 }
 
-// GetStrategy retrieves a strategy by name.
+// GetStrategy retrieves a strategy by name. The caller is responsible for
+// type-asserting the returned value to the concrete strategy interface.
+// Returns false if no strategy is registered under name.
 func (r *Registry) GetStrategy(name string) (any, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -66,7 +103,9 @@ func (r *Registry) GetStrategy(name string) (any, bool) {
 	return v, ok
 }
 
-// ListDomains returns a slice of registered GVKs (for debugging/logging).
+// ListDomains returns the GVKs of all registered Domains. Order is
+// non-deterministic (map iteration). Intended for startup logging and
+// diagnostics only — not for routing decisions.
 func (r *Registry) ListDomains() []schema.GroupVersionKind {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -77,7 +116,9 @@ func (r *Registry) ListDomains() []schema.GroupVersionKind {
 	return out
 }
 
-// ListStrategies returns all registered strategy names (for debugging/logging).
+// ListStrategies returns the names of all registered strategies. Order is
+// non-deterministic (map iteration). Intended for startup logging and
+// diagnostics only.
 func (r *Registry) ListStrategies() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

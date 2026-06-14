@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlanketOps — Platform Roadmap</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0c;
+            --bg-secondary: #111116;
+            --bg-card: #16161c;
+            --bg-card-hover: #1c1c24;
+            --border: #2a2a35;
+            --border-active: #3d3d4d;
+            --text-primary: #e8e8ed;
+            --text-secondary: #8888a0;
+            --text-muted: #55556a;
+            --accent-environments: #22c55e;
+            --accent-organizations: #6366f1;
+            --accent-tenants: #f59e0b;
+            --accent-workstations: #06b6d4;
+            --accent-networking: #f43f5e;
+            --accent-admin: #e879f9;
+            --accent-guardrails: #14b8a6;
+            --accent-cloud: #3b82f6;
+            --status-active: #22c55e;
+            --status-planned: #f59e0b;
+            --status-concept: #8888a0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- Grid noise overlay --- */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 32px 80px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* --- Header --- */
+        .header {
+            margin-bottom: 64px;
+            animation: fadeUp 0.6s ease-out;
+        }
+
+        .header-eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-eyebrow::before {
+            content: '';
+            width: 24px;
+            height: 1px;
+            background: var(--text-muted);
+        }
+
+        .header h1 {
+            font-size: clamp(36px, 5vw, 56px);
+            font-weight: 700;
+            letter-spacing: -1.5px;
+            line-height: 1.1;
+            margin-bottom: 16px;
+        }
+
+        .header h1 span {
+            background: linear-gradient(135deg, #e8e8ed 0%, #8888a0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-sub {
+            font-size: 16px;
+            color: var(--text-secondary);
+            max-width: 640px;
+            line-height: 1.6;
+        }
+
+        .header-sub code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--text-primary);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 2px 7px;
+            border-radius: 4px;
+        }
+
+        /* --- Stats strip --- */
+        .stats-strip {
+            display: flex;
+            gap: 1px;
+            background: var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 56px;
+            animation: fadeUp 0.6s ease-out 0.1s both;
+        }
+
+        .stat-item {
+            flex: 1;
+            background: var(--bg-secondary);
+            padding: 20px 24px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        /* --- Section label --- */
+        .section-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: fadeUp 0.6s ease-out 0.15s both;
+        }
+
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* --- Domain cards grid --- */
+        .domains-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 56px;
+        }
+
+        @media (max-width: 768px) {
+            .domains-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .domain-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            animation: fadeUp 0.5s ease-out both;
+        }
+
+        .domain-card:nth-child(1) {
+            animation-delay: 0.2s;
+        }
+
+        .domain-card:nth-child(2) {
+            animation-delay: 0.28s;
+        }
+
+        .domain-card:nth-child(3) {
+            animation-delay: 0.36s;
+        }
+
+        .domain-card:nth-child(4) {
+            animation-delay: 0.44s;
+        }
+
+        .domain-card:hover {
+            border-color: var(--border-active);
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+        }
+
+        /* Accent glow top border */
+        .domain-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+        }
+
+        .domain-card[data-domain="environments"]::before {
+            background: var(--accent-environments);
+        }
+
+        .domain-card[data-domain="organizations"]::before {
+            background: var(--accent-organizations);
+        }
+
+        .domain-card[data-domain="tenants"]::before {
+            background: var(--accent-tenants);
+        }
+
+        .domain-card[data-domain="workstations"]::before {
+            background: var(--accent-workstations);
+        }
+
+        .domain-card[data-domain="networking"]::before {
+            background: var(--accent-networking);
+        }
+
+        .domain-card[data-domain="admin"]::before {
+            background: var(--accent-admin);
+        }
+
+        .domain-card[data-domain="guardrails"]::before {
+            background: var(--accent-guardrails);
+        }
+
+        .domain-card[data-domain="cloud"]::before {
+            background: var(--accent-cloud);
+        }
+
+        /* Corner glow */
+        .domain-card::after {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            opacity: 0.06;
+            transition: opacity 0.3s ease;
+        }
+
+        .domain-card:hover::after {
+            opacity: 0.1;
+        }
+
+        .domain-card[data-domain="environments"]::after {
+            background: var(--accent-environments);
+        }
+
+        .domain-card[data-domain="organizations"]::after {
+            background: var(--accent-organizations);
+        }
+
+        .domain-card[data-domain="tenants"]::after {
+            background: var(--accent-tenants);
+        }
+
+        .domain-card[data-domain="workstations"]::after {
+            background: var(--accent-workstations);
+        }
+
+        .domain-card[data-domain="networking"]::after {
+            background: var(--accent-networking);
+        }
+
+        .domain-card[data-domain="admin"]::after {
+            background: var(--accent-admin);
+        }
+
+        .domain-card[data-domain="guardrails"]::after {
+            background: var(--accent-guardrails);
+        }
+
+        .domain-card[data-domain="cloud"]::after {
+            background: var(--accent-cloud);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .domain-card[data-domain="environments"] .card-icon {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .domain-card[data-domain="organizations"] .card-icon {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .domain-card[data-domain="tenants"] .card-icon {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .domain-card[data-domain="workstations"] .card-icon {
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+        }
+
+        .domain-card[data-domain="networking"] .card-icon {
+            background: rgba(244, 63, 94, 0.1);
+            border: 1px solid rgba(244, 63, 94, 0.2);
+        }
+
+        .domain-card[data-domain="admin"] .card-icon {
+            background: rgba(232, 121, 249, 0.1);
+            border: 1px solid rgba(232, 121, 249, 0.2);
+        }
+
+        .domain-card[data-domain="guardrails"] .card-icon {
+            background: rgba(20, 184, 166, 0.1);
+            border: 1px solid rgba(20, 184, 166, 0.2);
+        }
+
+        .domain-card[data-domain="cloud"] .card-icon {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .status-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 100px;
+            font-weight: 600;
+        }
+
+        .status-badge.active {
+            color: var(--status-active);
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.25);
+        }
+
+        .status-badge.planned {
+            color: var(--status-planned);
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+
+        .status-badge.concept {
+            color: var(--status-concept);
+            background: rgba(136, 136, 160, 0.1);
+            border: 1px solid rgba(136, 136, 160, 0.25);
+        }
+
+        .license-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 100px;
+            font-weight: 500;
+        }
+
+        .license-badge.oss {
+            color: #22c55e;
+            background: rgba(34, 197, 94, 0.08);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .license-badge.commercial {
+            color: #a78bfa;
+            background: rgba(167, 139, 250, 0.08);
+            border: 1px solid rgba(167, 139, 250, 0.2);
+        }
+
+        .license-badge.internal {
+            color: #e879f9;
+            background: rgba(232, 121, 249, 0.08);
+            border: 1px solid rgba(232, 121, 249, 0.2);
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            letter-spacing: -0.3px;
+        }
+
+        .card-namespace {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .card-description {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.65;
+            margin-bottom: 24px;
+        }
+
+        /* Capabilities list */
+        .capabilities {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .capability {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .capability-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .capability-dot.done {
+            background: var(--status-active);
+        }
+
+        .capability-dot.wip {
+            background: var(--status-planned);
+        }
+
+        .capability-dot.todo {
+            background: var(--text-muted);
+            border: 1px solid var(--border-active);
+            background: transparent;
+        }
+
+        .capability.done {
+            color: var(--text-primary);
+        }
+
+        /* Progress bar */
+        .progress-section {
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 3px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1s ease-out;
+        }
+
+        .domain-card[data-domain="environments"] .progress-fill {
+            background: var(--accent-environments);
+        }
+
+        .domain-card[data-domain="organizations"] .progress-fill {
+            background: var(--accent-organizations);
+        }
+
+        .domain-card[data-domain="tenants"] .progress-fill {
+            background: var(--accent-tenants);
+        }
+
+        .domain-card[data-domain="workstations"] .progress-fill {
+            background: var(--accent-workstations);
+        }
+
+        .domain-card[data-domain="networking"] .progress-fill {
+            background: var(--accent-networking);
+        }
+
+        .domain-card[data-domain="admin"] .progress-fill {
+            background: var(--accent-admin);
+        }
+
+        .domain-card[data-domain="guardrails"] .progress-fill {
+            background: var(--accent-guardrails);
+        }
+
+        .domain-card[data-domain="cloud"] .progress-fill {
+            background: var(--accent-cloud);
+        }
+
+        .progress-pct {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+            min-width: 36px;
+            text-align: right;
+        }
+
+        /* --- Legend --- */
+        .legend {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            padding: 20px 24px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 56px;
+            animation: fadeUp 0.5s ease-out 0.5s both;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.done {
+            background: var(--status-active);
+        }
+
+        .legend-dot.wip {
+            background: var(--status-planned);
+        }
+
+        .legend-dot.todo {
+            border: 1.5px solid var(--text-muted);
+        }
+
+        /* --- Principles --- */
+        .principles {
+            animation: fadeUp 0.5s ease-out 0.55s both;
+        }
+
+        .principles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1px;
+            background: var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .principle {
+            background: var(--bg-secondary);
+            padding: 24px;
+        }
+
+        .principle-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .principle-value {
+            font-size: 14px;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        /* --- Deployment Modes --- */
+        .deploy-modes {
+            margin-bottom: 56px;
+            animation: fadeUp 0.5s ease-out 0.48s both;
+        }
+
+        .deploy-strip {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        @media (max-width: 768px) {
+            .deploy-strip {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .deploy-mode {
+            background: var(--bg-secondary);
+            padding: 28px 24px;
+            position: relative;
+        }
+
+        .deploy-mode::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+        }
+
+        .deploy-mode.cloud::before {
+            background: var(--accent-cloud);
+        }
+
+        .deploy-mode.self-hosted::before {
+            background: var(--accent-environments);
+        }
+
+        .deploy-mode.edge::before {
+            background: var(--accent-admin);
+        }
+
+        .deploy-mode-icon {
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .deploy-mode-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .deploy-mode-sub {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .deploy-mode-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .deploy-mode-status {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+
+        .deploy-mode.cloud .deploy-mode-status {
+            color: var(--accent-cloud);
+        }
+
+        .deploy-mode.self-hosted .deploy-mode-status {
+            color: var(--accent-environments);
+        }
+
+        .deploy-mode.edge .deploy-mode-status {
+            color: var(--accent-admin);
+        }
+
+        /* --- Footer --- */
+        .footer {
+            margin-top: 64px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            animation: fadeUp 0.5s ease-out 0.6s both;
+        }
+
+        .footer-brand {
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 1px;
+        }
+
+        /* --- Resource Blocks --- */
+        .resource-model {
+            margin-bottom: 20px;
+        }
+
+        .resource-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .resource-blocks {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .resource-block {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 5px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+
+        .resource-block.shipped {
+            border-color: rgba(34, 197, 94, 0.3);
+            background: rgba(34, 197, 94, 0.06);
+            color: #22c55e;
+        }
+
+        .resource-block.wip {
+            border-color: rgba(245, 158, 11, 0.3);
+            background: rgba(245, 158, 11, 0.06);
+            color: #f59e0b;
+        }
+
+        .resource-block.planned {
+            border-color: var(--border);
+            border-style: dashed;
+            color: var(--text-muted);
+        }
+
+        .resource-arrow {
+            color: var(--text-muted);
+            font-size: 11px;
+            opacity: 0.4;
+        }
+
+        /* --- Publications --- */
+        .publications {
+            margin-bottom: 56px;
+            animation: fadeUp 0.5s ease-out 0.52s both;
+        }
+
+        .pub-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .pub-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px 28px 24px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .pub-card:hover {
+            border-color: var(--border-active);
+            transform: translateY(-2px);
+        }
+
+        .pub-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+        }
+
+        .pub-card.book::before {
+            background: linear-gradient(90deg, #f59e0b, #f43f5e);
+        }
+
+        .pub-card.standard::before {
+            background: linear-gradient(90deg, #22c55e, #06b6d4);
+        }
+
+        .pub-type {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .pub-card.book .pub-type {
+            color: #f59e0b;
+        }
+
+        .pub-card.standard .pub-type {
+            color: #22c55e;
+        }
+
+        .pub-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            letter-spacing: -0.3px;
+        }
+
+        .pub-author {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+
+        .pub-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.65;
+            margin-bottom: 16px;
+        }
+
+        .pub-quote {
+            font-size: 13px;
+            font-style: italic;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            padding-left: 14px;
+            border-left: 2px solid var(--border-active);
+            margin-bottom: 16px;
+        }
+
+        .pub-stats {
+            display: flex;
+            gap: 16px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+
+        .pub-stat {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .pub-stat strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* --- Animations --- */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- Header -->
+        <div class="header">
+            <div class="header-eyebrow">Platform Roadmap</div>
+            <h1><span>BlanketOps</span></h1>
+            <p class="header-sub">
+                What if a platform didn't just deploy your software — but understood
+                your organization? BlanketOps is a 10-year bet that sovereignty starts
+                at the contract, not the cloud console. Unified orchestration across
+                identity, tenancy, networking, governance, and compute — not as
+                bolted-on integrations, but as a single reconciliation surface. Every
+                resource is declared. Every boundary is intentional. Every layer — from
+                org topology to node substrate — converges toward one thing:
+                deterministic software delivery at any scale, on any infrastructure,
+                on any edge, with or without internet, under your terms.
+                Environments is the door. The rest is the house.
+            </p>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-strip">
+            <div class="stat-item">
+                <div class="stat-value">7</div>
+                <div class="stat-label">Core Domains</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">1</div>
+                <div class="stat-label">Open Source</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">5</div>
+                <div class="stat-label">Commercial</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">1</div>
+                <div class="stat-label">Internal</div>
+            </div>
+        </div>
+
+        <!-- Deployment Modes -->
+        <div class="deploy-modes">
+            <div class="section-label">Run Anywhere</div>
+            <div class="deploy-strip">
+                <div class="deploy-mode cloud">
+                    <div class="deploy-mode-icon">☁️</div>
+                    <div class="deploy-mode-name">BlanketOps Cloud</div>
+                    <div class="deploy-mode-sub">blanketops-cloud</div>
+                    <div class="deploy-mode-desc">
+                        Managed runtime. Vendored cloud providers — AWS, Azure, GCP
+                        delivered through BlanketOps. The full domain model stack
+                        as a service. You bring the org, we bring the infrastructure.
+                    </div>
+                    <div class="deploy-mode-status">● Concept</div>
+                </div>
+                <div class="deploy-mode self-hosted">
+                    <div class="deploy-mode-icon">🏗️</div>
+                    <div class="deploy-mode-name">BlanketOps on K8s</div>
+                    <div class="deploy-mode-sub">Self-hosted</div>
+                    <div class="deploy-mode-desc">
+                        Your clusters, your infra. Full platform deployed on any
+                        Kubernetes cluster. Same domain model, same contracts,
+                        same CRs — you own the control plane.
+                    </div>
+                    <div class="deploy-mode-status">● Active</div>
+                </div>
+                <div class="deploy-mode edge">
+                    <div class="deploy-mode-icon">⚡</div>
+                    <div class="deploy-mode-name">Wick on K8s</div>
+                    <div class="deploy-mode-sub">Edge · Air-gapped · Zero internet</div>
+                    <div class="deploy-mode-desc">
+                        Decentralized runtime. Raft consensus, gossip membership,
+                        WASM execution. Runs at the edge with no connectivity.
+                        Signed immutable instructions. Sovereignty is the default.
+                    </div>
+                    <div class="deploy-mode-status">● In Progress</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Domain Cards -->
+        <div class="section-label">Core Domains</div>
+
+        <div class="domains-grid">
+
+            <!-- Environments -->
+            <div class="domain-card" data-domain="environments">
+                <div class="card-header">
+                    <div class="card-icon">⚙️</div>
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        <div class="license-badge oss">Open Source</div>
+                        <div class="status-badge active">Active</div>
+                    </div>
+                </div>
+                <div class="card-title">Environments</div>
+                <div class="card-namespace">blanketops-environments</div>
+                <p class="card-description">
+                    Software delivery engine. An Environment is defined by 5 core
+                    resources that flow through a reconciliation lifecycle — from
+                    source to running workload. Plugin architecture for extensibility.
+                </p>
+                <div class="resource-model">
+                    <div class="resource-label">Core Resources</div>
+                    <div class="resource-blocks">
+                        <div class="resource-block wip">Build</div>
+                        <span class="resource-arrow">→</span>
+                        <div class="resource-block planned">Deploy</div>
+                        <span class="resource-arrow">→</span>
+                        <div class="resource-block planned">ServiceUnit</div>
+                        <span class="resource-arrow">→</span>
+                        <div class="resource-block planned">Package</div>
+                        <span class="resource-arrow">→</span>
+                        <div class="resource-block planned">Route</div>
+                    </div>
+                </div>
+                <div class="capabilities">
+                    <div class="capability done">
+                        <span class="capability-dot done"></span>
+                        Core stream (contract, controller, CLI, SDK, install, tests)
+                    </div>
+                    <div class="capability done">
+                        <span class="capability-dot done"></span>
+                        Plugin: Supply Chain (Tekton, Kaniko, Trivy, Cosign, Grafeas)
+                    </div>
+                    <div class="capability done">
+                        <span class="capability-dot done"></span>
+                        E2E test suite — real CRs against controller binary
+                    </div>
+                    <div class="capability wip">
+                        <span class="capability-dot wip"></span>
+                        Build resource (reference pattern across SDK)
+                    </div>
+                    <div class="capability wip">
+                        <span class="capability-dot wip"></span>
+                        API layer + aggregated API server (in debate/triage)
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        Deploy, ServiceUnit, Package, Route resources
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        MCP exposure — AI-native environment lifecycle
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        Plugin: Storage (PVC, object storage)
+                    </div>
+                </div>
+                <div class="progress-section">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 55%;"></div>
+                    </div>
+                    <span class="progress-pct">55%</span>
+                </div>
+            </div>
+
+            <!-- Organizations -->
+            <div class="domain-card" data-domain="organizations">
+                <div class="card-header">
+                    <div class="card-icon">🏛️</div>
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        <div class="license-badge commercial">Commercial</div>
+                        <div class="status-badge active">Active</div>
+                    </div>
+                </div>
+                <div class="card-title">Organizations</div>
+                <div class="card-namespace">blanketops-organizations</div>
+                <p class="card-description">
+                    Multi-cloud control plane identity. Maps an org across GitHub,
+                    Grafana, AWS, Azure, and GCP. Infra topology via Equinix and
+                    Aviatrix, data residency via resource placement rules,
+                    multi-cluster orchestration through Open Cluster Manager.
+                </p>
+                <div class="resource-model">
+                    <div class="resource-label">Core Resources</div>
+                    <div class="resource-blocks">
+                        <div class="resource-block shipped">MultiClusterEnvironment</div>
+                        <div class="resource-block planned">KCPWorkspace</div>
+                    </div>
+                </div>
+                <div class="capabilities">
+                    <div class="capability done">
+                        <span class="capability-dot done"></span>
+                        Protobuf contract (Organization, AuthFlags, CloudProvider)
+                    </div>
+                    <div class="capability done">
+                        <span class="capability-dot done"></span>
+                        MultiClusterEnvironment CR (OCM + vCluster + ArgoCD apps)
+                    </div>
+                    <div class="capability done">
+                        <span class="capability-dot done"></span>
+                        AuthFlags capability matrix (create, deploy, release, scale)
+                    </div>
+                    <div class="capability done">
+                        <span class="capability-dot done"></span>
+                        Multi-cloud provider registry (AWS, Azure, GCP)
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        KCPWorkspace resource (repo scaffolded)
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        Organization CR & controller
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        Project scoping (Cluster Zenith, Zenith Runners)
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        Infra topology layer (Equinix, Aviatrix)
+                    </div>
+                </div>
+                <div class="progress-section">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 45%;"></div>
+                    </div>
+                    <span class="progress-pct">45%</span>
+                </div>
+            </div>
+
+            <!-- Tenants -->
+            <div class="domain-card" data-domain="tenants">
+                <div class="card-header">
+                    <div class="card-icon">🔐</div>
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        <div class="license-badge commercial">Commercial</div>
+                        <div class="status-badge planned">Planned</div>
+                    </div>
+                </div>
+                <div class="card-title">Tenants</div>
+                <div class="card-namespace">blanketops-tenants</div>
+                <p class="card-description">
+                    Multi-tenancy and isolation primitives. Namespace-per-tenant
+                    provisioning, network policy enforcement, secret scoping,
+                    and cross-tenant resource boundaries.
+                </p>
+                <div class="capabilities">
+                    <div class="capability done">
+                        <span class="capability-dot done"></span>
+                        Tenant model object
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        Tenant CR & namespace provisioning
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        Network policy generation
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        Secret scoping & isolation
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        Cross-tenant boundary enforcement
+                    </div>
+                </div>
+                <div class="progress-section">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 10%;"></div>
+                    </div>
+                    <span class="progress-pct">10%</span>
+                </div>
+            </div>
+
+            <!-- Workstations -->
+            <div class="domain-card" data-domain="workstations">
+                <div class="card-header">
+                    <div class="card-icon">🖥️</div>
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        <div class="license-badge commercial">Commercial</div>
+                        <div class="status-badge planned">Planned</div>
+                    </div>
+                </div>
+                <div class="card-title">Workstations</div>
+                <div class="card-namespace">blanketops-workstations</div>
+                <p class="card-description">
+                    Cloud development environments. On-demand, reproducible
+                    dev workspaces backed by Kubernetes pods with pre-configured
+                    toolchains, IDE access, and persistent state.
+                </p>
+                <div class="capabilities">
+                    <div class="capability done">
+                        <span class="capability-dot done"></span>
+                        Workstation model object
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        Workstation CR & lifecycle controller
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        Toolchain templating & image management
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        IDE integration (VS Code Server / JetBrains)
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        Persistent volume & dotfile sync
+                    </div>
+                </div>
+                <div class="progress-section">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 10%;"></div>
+                    </div>
+                    <span class="progress-pct">10%</span>
+                </div>
+            </div>
+
+            <!-- Networking -->
+            <div class="domain-card" data-domain="networking">
+                <div class="card-header">
+                    <div class="card-icon">🌐</div>
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        <div class="license-badge commercial">Commercial</div>
+                        <div class="license-badge internal">Internal</div>
+                        <div class="status-badge active">Active</div>
+                    </div>
+                </div>
+                <div class="card-title">Networking</div>
+                <div class="card-namespace">blanketops-networking</div>
+                <p class="card-description">
+                    Platform networking layer. WireGuard tunnels, mesh connectivity
+                    via Firezone, and gateway primitives. Secure overlay networking
+                    across clusters and tenants — reconciled, not stitched.
+                </p>
+                <div class="resource-model">
+                    <div class="resource-label">Core Resources</div>
+                    <div class="resource-blocks">
+                        <div class="resource-block wip">WireguardTunnel</div>
+                        <div class="resource-block wip">WireguardPeer</div>
+                        <div class="resource-block wip">FirezoneMesh</div>
+                        <div class="resource-block wip">FirezoneGateway</div>
+                    </div>
+                </div>
+                <div class="capabilities">
+                    <div class="capability wip">
+                        <span class="capability-dot wip"></span>
+                        WireguardTunnel & WireguardPeer CRs
+                    </div>
+                    <div class="capability wip">
+                        <span class="capability-dot wip"></span>
+                        FirezoneMesh & FirezoneGateway CRs
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        Networking controller & reconciliation
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        Cross-cluster tunnel orchestration
+                    </div>
+                </div>
+                <div class="progress-section">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 25%;"></div>
+                    </div>
+                    <span class="progress-pct">25%</span>
+                </div>
+            </div>
+
+            <!-- Admin -->
+            <div class="domain-card" data-domain="admin">
+                <div class="card-header">
+                    <div class="card-icon">🛠️</div>
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        <div class="license-badge internal">Internal</div>
+                        <div class="status-badge active">Active</div>
+                    </div>
+                </div>
+                <div class="card-title">Admin</div>
+                <div class="card-namespace">blanketops-admin</div>
+                <p class="card-description">
+                    Internal platform substrate and operator tooling. BlanketOpsD
+                    provides the distributed networking and node substrate — from
+                    multi-CNI automation to a full Go-based node OS. Wick and
+                    Command Center power the decentralized instruction layer.
+                </p>
+                <div class="resource-model">
+                    <div class="resource-label">Internal Tools</div>
+                    <div class="resource-blocks">
+                        <div class="resource-block wip">BlanketOpsD</div>
+                        <div class="resource-block wip">Wick</div>
+                        <div class="resource-block wip">Command Center</div>
+                    </div>
+                </div>
+                <div class="capabilities">
+                    <div class="capability wip">
+                        <span class="capability-dot wip"></span>
+                        BlanketOpsD Phase 1 — Network layer (Cilium + Multus, VLANs, WireGuard mesh)
+                    </div>
+                    <div class="capability wip">
+                        <span class="capability-dot wip"></span>
+                        Wick — Rust control plane (Raft, Gossip, WASM, .wick format)
+                    </div>
+                    <div class="capability wip">
+                        <span class="capability-dot wip"></span>
+                        Command Center — Zig + 9P2000 heterogeneous resource grid
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        BlanketOpsD Phase 2 — Node runtime (blanketd agent, pod sandbox)
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        BlanketOpsD Phase 3 — Substrate OS (gokrazy images, zero systemd)
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        BlanketOpsD Phase 4 — Control plane (API server, local KV, scheduler)
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        Wick as DaemonSet substrate beneath BlanketOps
+                    </div>
+                </div>
+                <div class="progress-section">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 25%;"></div>
+                    </div>
+                    <span class="progress-pct">25%</span>
+                </div>
+            </div>
+
+            <!-- Guardrails -->
+            <div class="domain-card" data-domain="guardrails">
+                <div class="card-header">
+                    <div class="card-icon">🛡️</div>
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        <div class="license-badge commercial">Commercial</div>
+                        <div class="status-badge active">Active</div>
+                    </div>
+                </div>
+                <div class="card-title">Guardrails</div>
+                <div class="card-namespace">golive.guardrails.io · standalone brand</div>
+                <p class="card-description">
+                    Cross-cutting governance and compliance layer. If it's not in the
+                    Guardrail CR, it doesn't exist in production. Zero-trust human
+                    access, declarative GitOps enforcement, proactive admission
+                    control, automated chaos engineering — all reconciled from a
+                    single source of truth.
+                </p>
+                <div class="resource-model">
+                    <div class="resource-label">Core Resources</div>
+                    <div class="resource-blocks">
+                        <div class="resource-block shipped">Guardrail</div>
+                        <div class="resource-block shipped">ContractGuard</div>
+                    </div>
+                </div>
+                <div class="capabilities">
+                    <div class="capability done">
+                        <span class="capability-dot done"></span>
+                        Guardrail CR — single source of truth for production policy
+                    </div>
+                    <div class="capability done">
+                        <span class="capability-dot done"></span>
+                        ContractGuard CR — auditable break-glass access requests
+                    </div>
+                    <div class="capability done" style="padding-left:16px;opacity:0.85;">
+                        <span class="capability-dot done"></span>
+                        Break-glass requestType with scoped duration & reason
+                    </div>
+                    <div class="capability done" style="padding-left:16px;opacity:0.85;">
+                        <span class="capability-dot done"></span>
+                        Per-user identity tracking (requestingUser)
+                    </div>
+                    <div class="capability done" style="padding-left:16px;opacity:0.85;">
+                        <span class="capability-dot done"></span>
+                        Guardrail binding (guardrailName → production policy ref)
+                    </div>
+                    <div class="capability done" style="padding-left:16px;opacity:0.85;">
+                        <span class="capability-dot done"></span>
+                        Time-bound access with auto-expiry (requestedDuration)
+                    </div>
+                    <div class="capability done">
+                        <span class="capability-dot done"></span>
+                        Zero-trust human access (read-only default, break-glass override)
+                    </div>
+                    <div class="capability done">
+                        <span class="capability-dot done"></span>
+                        mTLS API aggregation & extension server
+                    </div>
+                    <div class="capability wip">
+                        <span class="capability-dot wip"></span>
+                        Proactive admission control & image registry policies
+                    </div>
+                    <div class="capability wip">
+                        <span class="capability-dot wip"></span>
+                        Dynamic least-privilege RBAC generation
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        Declarative chaos engineering (pod-kill, network partition)
+                    </div>
+                    <div class="capability">
+                        <span class="capability-dot todo"></span>
+                        Disaster recovery automation
+                    </div>
+                </div>
+                <div class="progress-section">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 45%;"></div>
+                    </div>
+                    <span class="progress-pct">45%</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-item">
+                <span class="legend-dot done"></span>
+                Shipped
+            </div>
+            <div class="legend-item">
+                <span class="legend-dot wip"></span>
+                In Progress
+            </div>
+            <div class="legend-item">
+                <span class="legend-dot todo"></span>
+                Planned
+            </div>
+        </div>
+
+        <!-- Publications -->
+        <div class="publications">
+            <div class="section-label">Publications</div>
+            <div class="pub-grid">
+                <div class="pub-card book">
+                    <div class="pub-type">Book · In Progress</div>
+                    <div class="pub-title">The Environment Book</div>
+                    <div class="pub-author">Neo Tlaletsi</div>
+                    <div class="pub-desc">
+                        The operating manual for deterministic software delivery.
+                        From the unnamed problem — that the industry never defined what
+                        it's actually trying to deliver — to a complete model, architecture,
+                        and reference implementation.
+                    </div>
+                    <div class="pub-quote">
+                        "No one needs another tool. People struggle because the operational
+                        lifecycle is fragmented beyond recognition. The environment is
+                        the real abstraction."
+                    </div>
+                    <div class="pub-stats">
+                        <div class="pub-stat"><strong>39</strong> chapters</div>
+                        <div class="pub-stat"><strong>Draft</strong> status</div>
+                        <div class="pub-stat"><strong>ESP-0001</strong> foundation</div>
+                    </div>
+                </div>
+                <div class="pub-card standard">
+                    <div class="pub-type">Standard · Draft</div>
+                    <div class="pub-title">ESP-0001</div>
+                    <div class="pub-author">Environment Standardization Proposal</div>
+                    <div class="pub-desc">
+                        The formal definition the industry never wrote. An Environment
+                        is a versioned, isolated execution context where applications run.
+                        Canonical types, mutability rules, lifecycle states, and an API
+                        specification — infrastructure-agnostic, universally applicable.
+                    </div>
+                    <div class="pub-quote">
+                        "An Environment is a versioned, isolated execution context
+                        where applications run."
+                    </div>
+                    <div class="pub-stats">
+                        <div class="pub-stat"><strong>RFC</strong> format</div>
+                        <div class="pub-stat"><strong>5</strong> env types</div>
+                        <div class="pub-stat"><strong>3</strong> lifecycle states</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-label" style="margin-top:32px">Published Articles · Medium</div>
+            <div class="pub-grid">
+                <div class="pub-card standard">
+                    <div class="pub-type">Article · Published</div>
+                    <div class="pub-title">ArgoCD, Crossplane & LocalStack</div>
+                    <div class="pub-author">Neo Tlaletsi · @ntlaletsi86</div>
+                    <div class="pub-desc">
+                        Save on cloud costs by developing locally and deploying globally
+                        to the cloud. Local-first infrastructure provisioning with
+                        Crossplane and LocalStack, GitOps delivery with ArgoCD.
+                    </div>
+                    <div class="pub-stats">
+                        <div class="pub-stat"><strong>Medium</strong> platform</div>
+                        <div class="pub-stat"><strong>BlanketOps</strong> brand</div>
+                    </div>
+                </div>
+                <div class="pub-card standard">
+                    <div class="pub-type">Article · Published</div>
+                    <div class="pub-title">K8s Secrets with ESO & AWS</div>
+                    <div class="pub-author">Neo Tlaletsi · @ntlaletsi86</div>
+                    <div class="pub-desc">
+                        Managing Kubernetes secrets using External Secrets Operator and
+                        AWS Secrets Manager. Secure, reconciled secret management —
+                        the BlanketOps way.
+                    </div>
+                    <div class="pub-stats">
+                        <div class="pub-stat"><strong>Medium</strong> platform</div>
+                        <div class="pub-stat"><strong>BlanketOps</strong> brand</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Principles -->
+        <div class="principles">
+            <div class="section-label">Architecture Principles</div>
+            <div class="principles-grid">
+                <div class="principle">
+                    <div class="principle-label">Reconciliation</div>
+                    <div class="principle-value">Thin controllers, reconciliation logic in dedicated services. Desired
+                        state drives everything.</div>
+                </div>
+                <div class="principle">
+                    <div class="principle-label">Contracts</div>
+                    <div class="principle-value">Protobuf-first. Buf codegen. CR shapes derived from contracts, not the
+                        other way around.</div>
+                </div>
+                <div class="principle">
+                    <div class="principle-label">Auth Model</div>
+                    <div class="principle-value">No admission webhooks. SubjectAccessReviews + AuthFlags capability
+                        matrix at the org level.</div>
+                </div>
+                <div class="principle">
+                    <div class="principle-label">Networking</div>
+                    <div class="principle-value">Deterministic multi-network substrate. Cilium + Multus, WireGuard mesh,
+                        Firezone gateways. From VLAN to overlay.</div>
+                </div>
+                <div class="principle">
+                    <div class="principle-label">Multi-Cloud</div>
+                    <div class="principle-value">Org-level cloud provider registry. OCM for multi-cluster orchestration.
+                        vClusters for isolation. Resource placement rules for data residency.</div>
+                </div>
+                <div class="principle">
+                    <div class="principle-label">Sovereignty</div>
+                    <div class="principle-value">From protobuf contracts to bare metal. gokrazy node images, custom Go
+                        runtime, zero external dependencies. The goal is full stack ownership.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <span class="footer-brand">BLANKETOPS</span>
+            <span>Last updated — April 2026</span>
+        </div>
+
+    </div>
+
+</body>
+
+</html>
