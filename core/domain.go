@@ -13,6 +13,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package core defines the foundational contracts and primitives shared across
+all BlanketOps Environments domains.
+
+This file owns the Domain interface — the contract every resource domain must
+satisfy to participate in the CQRS engine. A Domain is the single authoritative
+handler for one CRD kind. It owns the reconciliation pipeline for that kind
+from command receipt through to status write.
+
+Registering a Domain with the Engine is the only wiring required — the Engine
+handles routing, predicate evaluation, and dispatch. Domains never call each
+other directly.
+*/
 package core
 
 import (
@@ -22,17 +35,42 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Domain defines the contract each domain must implement.
-// It operates on core.Command (defined in command.go).
+// Domain is the contract every resource domain must implement to participate
+// in the BlanketOps CQRS engine.
+//
+// Each Domain handles exactly one CRD kind, identified by GVK. The Engine
+// routes Commands to the matching Domain, evaluates the Domain's predicates
+// to determine whether reconciliation should proceed, and calls Handle with
+// the resulting Command.
+//
+// Implementations live under pkg/<domain>/ and follow the pattern:
+//
+//	type BuildDomain struct { ... }
+//	func (d *BuildDomain) GVK() schema.GroupVersionKind { ... }
+//	func (d *BuildDomain) Handle(ctx, cmd) error { ... }
+//	func (d *BuildDomain) CanCreate(obj) bool { ... }
+//	func (d *BuildDomain) CanUpdate(old, new) bool { ... }
+//	func (d *BuildDomain) CanDelete(obj) bool { ... }
 type Domain interface {
-	// Handle executes the command synchronously (core.Engine calls this).
+	// GVK identifies the CRD kind this Domain handles. The Engine uses this
+	// to route Commands — only one Domain may be registered per GVK.
+	GVK() schema.GroupVersionKind
+
+	// Handle executes the reconciliation pipeline for the given Command.
+	// Called synchronously by the Engine after predicate evaluation passes.
+	// Returning an error signals the Engine to requeue.
 	Handle(ctx context.Context, cmd Command) error
 
-	// Predicates (used by core.DomainPredicates)
+	// CanCreate reports whether the object should trigger a create pipeline.
+	// Implementations typically assert the object's concrete type.
 	CanCreate(obj client.Object) bool
-	CanUpdate(oldObj, newObj client.Object) bool
-	CanDelete(obj client.Object) bool
 
-	// GVK identifies which CRD type this Domain handles.
-	GVK() schema.GroupVersionKind
+	// CanUpdate reports whether the transition from oldObj to newObj should
+	// trigger an update pipeline. Implementations typically diff specs to
+	// suppress reconciliation on status-only or metadata-only changes.
+	CanUpdate(oldObj, newObj client.Object) bool
+
+	// CanDelete reports whether the object should trigger a delete pipeline.
+	// Implementations typically assert the object's concrete type.
+	CanDelete(obj client.Object) bool
 }

@@ -14,3 +14,8 @@ limitations under the License.
 */
 
 package domain
+
+// This is what *every* route provider returns.
+// Unified result regardless of KNative Kourier, Nginx Ingress, Kubernetes.
+type RouteResult struct {
+}

@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"time"
 
-	environmentv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+	environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/buildtrigger/domain"
 )
 
@@ -33,7 +33,7 @@ import (
 //
 
 type ResolvedBuildTrigger struct {
-	Trigger *environmentv1.BuildTrigger
+	Trigger *environmentv1alpha1.BuildTrigger
 	Spec    *ResolvedBuildTriggerSpec
 }
 
@@ -82,7 +82,7 @@ type ResolvedPayloadPolicy struct {
 //
 
 func ResolveBuildTrigger(
-	trigger *environmentv1.BuildTrigger,
+	trigger *environmentv1alpha1.BuildTrigger,
 ) (*ResolvedBuildTrigger, error) {
 
 	if trigger == nil {
