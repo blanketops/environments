@@ -71,7 +71,7 @@ func (s *ResolvedBuildTriggerSpec) ToBuildTriggerContract() (*contractv1alpha1.B
 		Type:       typeEnum,
 		Repository: s.Repository, // already "owner/name" — no transformation needed
 		Ref:        s.Ref,
-		Build: &contractv1alpha1.BuildTriggerBuildRef{
+		Build: &contractv1alpha1.BuildRef{
 			Name: s.Target.Name,
 		},
 	}
