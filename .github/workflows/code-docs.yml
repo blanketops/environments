@@ -1,0 +1,63 @@
+# Generate Go code documentation using gomarkdoc.
+# Runs on every push to main and on PRs — artifact is retained for 30 days.
+# Self-hosted runner uses the zenith-runner-toolchain image which has Go baked in.
+name: Code Docs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  godoc:
+    name: Generate Code Docs
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install gomarkdoc
+        run: GOBIN=/usr/local/bin go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+
+      - name: Generate docs
+        run: |
+          mkdir -p docs/code
+          gomarkdoc \
+            --output docs/code/{{.Dir}}.md \
+            ./core/... \
+            ./cache/... \
+            ./logging/... \
+            ./pkg/... \
+            ./resolution/... \
+            ./runtime/...
+
+      - name: Build summary
+        run: |
+          echo "## 📚 Code Documentation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Generated from commit \`${{ github.sha }}\` on branch \`${{ github.ref_name }}\`." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          for group in core cache logging pkg resolution runtime; do
+            files=$(find docs/code -name "*.md" | grep "/${group}" | sort)
+            if [ -n "$files" ]; then
+              echo "### \`${group}/\`" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              for f in $files; do
+                pkg=$(basename "$f" .md)
+                echo "- [\`${pkg}\`](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+              done
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+          echo "> 📦 Download the full artifact \`godoc-${{ github.sha }}\` from the [Actions run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) to browse all generated docs." >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload docs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: godoc-${{ github.sha }}
+          path: docs/code/
+          retention-days: 30
