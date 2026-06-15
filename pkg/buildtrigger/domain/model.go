@@ -36,7 +36,7 @@ const (
 type TriggerType string
 
 const (
-	TriggerTypePush        TriggerType = "push"
+	TriggerTypePush        TriggerType = "commit"
 	TriggerTypePullRequest TriggerType = "pull_request"
 	TriggerTypeManual      TriggerType = "manual"
 	TriggerTypeSchedule    TriggerType = "schedule"
