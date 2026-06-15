@@ -2,6 +2,8 @@ module github.com/ntlaletsi70/blanketops-environments
 
 go 1.25.7
 
+toolchain go1.25.8
+
 require (
 	carvel.dev/kapp-controller v0.59.2
 	github.com/bradfitz/gomemcache v0.0.0-20260422231931-4d751bb6e37c
