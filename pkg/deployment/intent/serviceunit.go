@@ -3,9 +3,7 @@ Copyright 2026 The BlanketOps Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
 	http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,19 +16,16 @@ package intent
 import (
 	"fmt"
 
-	contractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
+	commoncontractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/common/v1"
 	"github.com/ntlaletsi70/blanketops-environments/resolution/serviceunit"
 )
 
 type ServiceUnitIntent struct {
-	Name string
-
-	Image string
-	Port  int32
-	Size  int32
-
+	Name   string
+	Image  string
+	Port   int32
+	Size   int32
 	Routes []RouteIntent
-
 	// Filled after execution
 	Workload WorkloadIntent
 }
@@ -38,7 +33,6 @@ type ServiceUnitIntent struct {
 func ResolveServiceUnitIntent(
 	su *serviceunit.ResolvedServiceUnit,
 ) (*ServiceUnitIntent, error) {
-
 	if su == nil || su.Spec == nil {
 		return nil, fmt.Errorf("resolved serviceunit is nil")
 	}
@@ -46,18 +40,19 @@ func ResolveServiceUnitIntent(
 	spec := su.Spec
 
 	intent := &ServiceUnitIntent{
-		Name: su.ServiceUnit.Name, // ✅ metadata only
-
+		Name: su.ServiceUnit.Name,
 		Port: spec.ContainerPort,
 		Size: spec.Size,
 	}
 
 	// ------------------------------------------------
 	// Image (STATIC / BUILD already resolved upstream)
+	//
+	// spec.Type is commoncontractv1.ServiceUnitType_ServiceUnitType —
+	// the nested enum value stored by the resolver, not the wrapper message.
 	// ------------------------------------------------
 	switch spec.Type {
-
-	case contractv1.ServiceUnitType_SERVICE_UNIT_TYPE_STATIC:
+	case commoncontractv1.ServiceUnitType_SERVICE_UNIT_TYPE_STATIC:
 		if spec.Image == "" {
 			return nil, ErrInvalidServiceUnit(
 				intent.Name,
@@ -66,8 +61,8 @@ func ResolveServiceUnitIntent(
 		}
 		intent.Image = spec.Image
 
-	case contractv1.ServiceUnitType_SERVICE_UNIT_TYPE_BUILD:
-		// BUILD image MUST be injected during resolution
+	case commoncontractv1.ServiceUnitType_SERVICE_UNIT_TYPE_BUILD:
+		// BUILD image MUST be injected during resolution before reaching intent.
 		if spec.Image == "" {
 			return nil, ErrBuildNotReady(intent.Name)
 		}
@@ -82,10 +77,10 @@ func ResolveServiceUnitIntent(
 
 	// ------------------------------------------------
 	// Routes
-	// ------------------------------------------------
-	// NOTE:
-	// Routes must be resolved BEFORE intent layer.
+	//
+	// Routes must be resolved BEFORE the intent layer.
 	// Intent does not inspect CR route specs.
+	// ------------------------------------------------
 
 	return intent, nil
 }
