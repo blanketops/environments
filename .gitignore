@@ -27,6 +27,7 @@ go.work
 
 # Dependency directories
 vendor/
+docs/code/
 
 # IDEs
 .idea/
