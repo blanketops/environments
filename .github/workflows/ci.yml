@@ -161,15 +161,31 @@ jobs:
           branch: ${{ github.head_ref || github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
-
-      - name: Build
-        run: go build -mod=vendor ./...
+      - name: Mage Vendor
+        uses: magefile/mage-action@v4
+        with:
+          version: latest
+          args: vendor
+        env:
+          GOFLAGS: "-mod=mod"  
+      - name: Mage Build
+        uses: magefile/mage-action@v4
+        with:
+          version: latest
+          args: build
+        env:
+          GOFLAGS: "-mod=mod"
 
       - name: Vet
         run: go vet -mod=vendor ./...
 
-      - name: Lint
-        run: staticcheck -mod=vendor ./...
+      - name: Mage Lint
+        uses: magefile/mage-action@v4
+        with:
+          version: latest
+          args: lint
+        env:
+          GOFLAGS: "-mod=mod"  
 
       - name: Test
         run: go test -mod=vendor ./... -coverprofile=coverage.out -covermode=atomic
