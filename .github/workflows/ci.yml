@@ -136,7 +136,7 @@ jobs:
             ${{ runner.os }}-go-build-
 
       - name: Bootstrap mage from vendor
-        run: go install -mod=vendor github.com/magefile/mage
+        run: go install -mod=vendor github.com/magefile/mage/mage
 
       - name: Install tools from vendor
         run: mage tools
