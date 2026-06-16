@@ -81,6 +81,8 @@ jobs:
   # Job 2: Validate
   # Restores vendor/ from the snapshot image then
   # runs the full lint/vet/test pipeline with -mod=vendor.
+  # Tools (mage, staticcheck, gomarkdoc) are bootstrapped
+  # from vendor — zero network at tool install time.
   # ─────────────────────────────────────────────
   validate:
     name: Lint, Vet, Test
@@ -135,20 +137,14 @@ jobs:
             ${{ runner.os }}-go-build-${{ matrix.go-version }}-
             ${{ runner.os }}-go-build-
 
-      - name: Install mage
-        run: |
-          if ! command -v mage &> /dev/null; then
-            go install github.com/magefile/mage@latest
-          fi
+      - name: Bootstrap mage from vendor
+        run: go install -mod=vendor github.com/magefile/mage
 
-      - name: Install staticcheck
-        run: |
-          if ! command -v staticcheck &> /dev/null; then
-            go install honnef.co/go/tools/cmd/staticcheck@latest
-          fi
+      - name: Install tools from vendor
+        run: mage tools
 
       - name: Tidy
-        run: go mod tidy
+        run: mage tidy
 
       - name: Auto-fix formatting
         run: gofmt -w .
@@ -194,7 +190,7 @@ jobs:
           ## Checks Executed
           | Step | Tool |
           | --- | --- |
-          | Dependency tidy | \`go mod tidy\` |
+          | Dependency tidy | \`mage tidy\` |
           | Auto-format | \`gofmt\` |
           | Build | \`mage build\` |
           | Vet | \`mage vet\` |
