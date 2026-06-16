@@ -113,9 +113,9 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
+          username: ntlaletsi70
           password: ${{ secrets.GH_PAT }}
-
+          
       - name: Restore vendor from snapshot
         run: |
           IMAGE="${{ env.VENDOR_IMAGE }}:${{ needs.vendor-snapshot.outputs.vendor-tag }}"
