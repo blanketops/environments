@@ -23,7 +23,7 @@ jobs:
   # ─────────────────────────────────────────────
   vendor-snapshot:
     name: Vendor Snapshot
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     outputs:
       vendor-tag: ${{ steps.tag.outputs.tag }}
       cache-hit: ${{ steps.check.outputs.hit }}
@@ -86,7 +86,7 @@ jobs:
   # ─────────────────────────────────────────────
   validate:
     name: Lint, Vet, Test
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: vendor-snapshot
     strategy:
       matrix:
