@@ -38,8 +38,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/intent/deployment"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/render/builders"
+	intent "github.com/ntlaletsi70/blanketops-environments/pkg/intent/deployment"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/utils"
 )
 
@@ -87,8 +87,7 @@ func (m *KustomizeStrategyProvider) BuildKustomize(
 
 func (m *KustomizeStrategyProvider) ReconcileKustomization(
 	ctx context.Context,
-	cr *environmentv1alpha1
-.Deployment,
+	cr *environmentv1alpha1.Deployment,
 	intent *intent.DeploymentIntent,
 	repoURL string,
 	ref string,
@@ -320,8 +319,7 @@ func (m *KustomizeStrategyProvider) renderObject(
 
 func (m *KustomizeStrategyProvider) ensureGitRepository(
 	ctx context.Context,
-	cr *environmentv1alpha1
-.Deployment,
+	cr *environmentv1alpha1.Deployment,
 	repoURL string,
 	ref string,
 ) error {
@@ -385,8 +383,7 @@ func (m *KustomizeStrategyProvider) ensureGitRepository(
 
 func (m *KustomizeStrategyProvider) ensureKustomization(
 	ctx context.Context,
-	cr *environmentv1alpha1
-.Deployment,
+	cr *environmentv1alpha1.Deployment,
 	path string,
 ) error {
 

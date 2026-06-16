@@ -23,7 +23,7 @@ import (
 
 	environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/domain"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/intent/deployment"
+	intent "github.com/ntlaletsi70/blanketops-environments/pkg/intent/deployment"
 )
 
 type ReconciliationExecutor struct {
@@ -44,8 +44,7 @@ func NewReconciliationExecutor(
 	}
 }
 
-// Execute(ctx context.Context, sourceCR *environmentv1alpha1
-.Deployment, rIntent *intent.DeploymentIntent)
+// Execute(ctx context.Context, sourceCR *environmentv1alpha1.Deployment, rIntent *intent.DeploymentIntent)
 
 func (r *ReconciliationExecutor) Execute(
 	ctx context.Context,
