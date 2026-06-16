@@ -29,13 +29,8 @@ dereferencing a pointer to read the enum.
 package serviceunit
 
 import (
-	"fmt"
-
-	"google.golang.org/protobuf/encoding/protojson"
-
-	environmentv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+	environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
 	commoncontractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/common/v1"
-	environmentscontractv1alpha1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
 )
 
 // -----------------------------------------------------------------------------
@@ -45,7 +40,7 @@ import (
 // ResolvedServiceUnit is the single runtime representation of a ServiceUnit CR.
 // All downstream domain and application logic MUST use this type.
 type ResolvedServiceUnit struct {
-	ServiceUnit *environmentv1.ServiceUnit
+	ServiceUnit *environmentv1alpha1.ServiceUnit
 	Spec        *ResolvedServiceUnitSpec
 }
 
@@ -82,68 +77,68 @@ type ResolvedBuildRef struct {
 // ResolveServiceUnit decodes the raw JSON contract from the ServiceUnit CR
 // spec into a ResolvedServiceUnit. Returns an error if the CR is nil, the
 // contract is absent, or the type-specific required fields are missing.
-func ResolveServiceUnit(su *environmentv1.ServiceUnit) (*ResolvedServiceUnit, error) {
-	if su == nil {
-		return nil, fmt.Errorf("serviceunit is nil")
-	}
+func ResolveServiceUnit(su *environmentv1alpha1.ServiceUnit) (*ResolvedServiceUnit, error) {
+	// if su == nil {
+	// 	return nil, fmt.Errorf("serviceunit is nil")
+	// }
 
-	if len(su.Spec.Contract.Raw) == 0 {
-		return nil, fmt.Errorf("spec.contract is required")
-	}
+	// if len(su.Spec.Contract.Raw) == 0 {
+	// 	return nil, fmt.Errorf("spec.contract is required")
+	// }
 
-	// Decode canonical ServiceUnit contract (JSON → proto).
-	var contract environmentscontractv1alpha1.ServiceUnit
-	if err := protojson.Unmarshal(su.Spec.Contract.Raw, &contract); err != nil {
-		return nil, fmt.Errorf("failed to decode serviceunit contract: %w", err)
-	}
+	// // Decode canonical ServiceUnit contract (JSON → proto).
+	// 	var raw map[string]any
+	// if err := json.Unmarshal(depl.Spec.Contract.Raw, &raw); err != nil {
+	// 	return nil, fmt.Errorf("failed to decode deployment contract: %w", err)
+	// }
+	// spec := contract.GetSpec()
+	// if spec == nil {
+	// 	return nil, fmt.Errorf("serviceunit.spec missing in contract")
+	// }
 
-	spec := contract.GetSpec()
-	if spec == nil {
-		return nil, fmt.Errorf("serviceunit.spec missing in contract")
-	}
+	// // Extract the nested enum value from the wrapper message.
+	// // GetType() returns *v1.ServiceUnitType; GetType().GetType() returns
+	// // the ServiceUnitType_ServiceUnitType enum value we store in the resolved spec.
+	// var unitType commoncontractv1.ServiceUnitType_ServiceUnitType
+	// if t := spec.GetType(); t != nil {
+	// 	unitType = t.GetType()
+	// }
 
-	// Extract the nested enum value from the wrapper message.
-	// GetType() returns *v1.ServiceUnitType; GetType().GetType() returns
-	// the ServiceUnitType_ServiceUnitType enum value we store in the resolved spec.
-	var unitType commoncontractv1.ServiceUnitType_ServiceUnitType
-	if t := spec.GetType(); t != nil {
-		unitType = t.GetType()
-	}
+	// resolved := &ResolvedServiceUnit{
+	// 	ServiceUnit: su,
+	// 	Spec: &ResolvedServiceUnitSpec{
+	// 		Type:          unitType,
+	// 		ContainerPort: spec.GetContainerPort(),
+	// 		Size:          spec.GetSize(),
+	// 		AppType:       spec.GetAppType(),
+	// 		StackType:     spec.GetStackType(),
+	// 	},
+	// }
 
-	resolved := &ResolvedServiceUnit{
-		ServiceUnit: su,
-		Spec: &ResolvedServiceUnitSpec{
-			Type:          unitType,
-			ContainerPort: spec.GetContainerPort(),
-			Size:          spec.GetSize(),
-			AppType:       spec.GetAppType(),
-			StackType:     spec.GetStackType(),
-		},
-	}
+	// // ------------------------------------------------
+	// // Type-specific field validation and extraction.
+	// // ------------------------------------------------
+	// switch unitType {
+	// case commoncontractv1.ServiceUnitType_SERVICE_UNIT_TYPE_STATIC:
+	// 	if spec.GetImage() == "" {
+	// 		return nil, fmt.Errorf("static serviceunit.image is required")
+	// 	}
+	// 	resolved.Spec.Image = spec.GetImage()
 
-	// ------------------------------------------------
-	// Type-specific field validation and extraction.
-	// ------------------------------------------------
-	switch unitType {
-	case commoncontractv1.ServiceUnitType_SERVICE_UNIT_TYPE_STATIC:
-		if spec.GetImage() == "" {
-			return nil, fmt.Errorf("static serviceunit.image is required")
-		}
-		resolved.Spec.Image = spec.GetImage()
+	// case commoncontractv1.ServiceUnitType_SERVICE_UNIT_TYPE_BUILD:
+	// 	br := spec.GetBuildRef()
+	// 	if br == nil {
+	// 		return nil, fmt.Errorf("build serviceunit.buildRef is required")
+	// 	}
+	// 	resolved.Spec.BuildRef = &ResolvedBuildRef{
+	// 		Name:      br.GetName(),
+	// 		Namespace: br.GetNamespace(),
+	// 	}
 
-	case commoncontractv1.ServiceUnitType_SERVICE_UNIT_TYPE_BUILD:
-		br := spec.GetBuildRef()
-		if br == nil {
-			return nil, fmt.Errorf("build serviceunit.buildRef is required")
-		}
-		resolved.Spec.BuildRef = &ResolvedBuildRef{
-			Name:      br.GetName(),
-			Namespace: br.GetNamespace(),
-		}
+	// default:
+	// 	return nil, fmt.Errorf("unsupported ServiceUnit type %q", unitType.String())
+	// }
 
-	default:
-		return nil, fmt.Errorf("unsupported ServiceUnit type %q", unitType.String())
-	}
-
-	return resolved, nil
+	// return resolved, nil
+	return nil, nil
 }

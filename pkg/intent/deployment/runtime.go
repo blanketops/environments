@@ -13,13 +13,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package intent
+package deployment
 
-// WorkloadIntent points to the concrete runtime object created
-// (Deployment, Knative Service, ECS Service, etc)
-type WorkloadIntent struct {
-	APIVersion string
-	Kind       string
-	Name       string
-	Namespace  string
-}
+type Runtime string
+
+const (
+	RuntimeKubernetes Runtime = "kubernetes.io/container-runtime"
+	RuntimeKnative    Runtime = "knative.dev/service-runtime"
+	RuntimeWASM       Runtime = "blanketops.dev/wasm-runtime"
+	RuntimeECS        Runtime = "blanketops.dev/aws-ecs"
+	RuntimeAzure      Runtime = "blanketops.dev/azure-container"
+)
+
+type Strategy string
+
+const (
+	StrategyRolling   Strategy = "Rolling"
+	StrategyBlueGreen Strategy = "BlueGreen"
+	StrategyCanary    Strategy = "Canary"
+)
