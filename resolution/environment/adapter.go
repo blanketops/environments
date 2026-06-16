@@ -31,7 +31,7 @@ package environment
 import (
 	"context"
 
-	environmentv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+	environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
 )
 
 type Adapter struct {
@@ -46,7 +46,7 @@ func NewAdapter() *Adapter {
 
 func (a *Adapter) Resolve(
 	ctx context.Context,
-	environment *environmentv1.Environment,
+	environment *environmentv1alpha1.Environment,
 ) (*ResolvedEnvironment, error) {
 	return ResolveEnvironment(environment)
 }

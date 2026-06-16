@@ -30,7 +30,7 @@ package serviceunit
 import (
 	"context"
 
-	environmentv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+	environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
 )
 
 // Adapter wraps the ServiceUnit resolution function for interface-based injection.
@@ -54,7 +54,7 @@ func NewAdapter() *Adapter {
 // or an error if the CR spec fails validation.
 func (a *Adapter) Resolve(
 	ctx context.Context,
-	serviceunit *environmentv1.ServiceUnit,
+	serviceunit *environmentv1alpha1.ServiceUnit,
 ) (*ResolvedServiceUnit, error) {
 	return ResolveServiceUnit(serviceunit)
 }

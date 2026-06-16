@@ -31,7 +31,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	environmentv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+	environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
 )
 
 // -----------------------------------------------------------------------------
@@ -41,7 +41,7 @@ import (
 // ResolvedEnvironment pairs the original Kubernetes Environment object with
 // its fully decoded and validated spec. Spec is nil when the CR is nil.
 type ResolvedEnvironment struct {
-	Environment *environmentv1.Environment
+	Environment *environmentv1alpha1.Environment
 	Spec        *ResolvedEnvironmentSpec
 }
 
@@ -78,7 +78,7 @@ type ResolvedEnvironmentSpec struct {
 // A nil CR is accepted and returns a zero ResolvedEnvironment — callers that
 // need a non-nil CR should validate before calling. A missing or malformed
 // contract always returns an error.
-func ResolveEnvironment(environment *environmentv1.Environment) (*ResolvedEnvironment, error) {
+func ResolveEnvironment(environment *environmentv1alpha1.Environment) (*ResolvedEnvironment, error) {
 	if environment == nil {
 		return &ResolvedEnvironment{}, nil
 	}
