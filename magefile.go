@@ -65,7 +65,6 @@ func Tidy() error {
 func Tools() error {
 	fmt.Println(">> install tools")
 	tools := []string{
-		"github.com/magefile/mage",
 		"github.com/princjef/gomarkdoc/cmd/gomarkdoc",
 		"honnef.co/go/tools/cmd/staticcheck",
 	}
