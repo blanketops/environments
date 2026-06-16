@@ -131,15 +131,9 @@ jobs:
           path: ~/.cache/go-build
           key: ${{ runner.os }}-go-build-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-<<<<<<< Updated upstream
             ${{ runner.os }}-go-${{ matrix.go-version }}-
             ${{ runner.os }}-go-
 
-=======
-            ${{ runner.os }}-go-build-${{ matrix.go-version }}-
-            ${{ runner.os }}-go-build-
-              
->>>>>>> Stashed changes
       - name: Tidy
         run: mage tidy
 
