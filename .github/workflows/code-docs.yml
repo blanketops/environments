@@ -18,8 +18,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install gomarkdoc
-        run: GOBIN=/usr/local/bin go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+      # - name: Install gomarkdoc
+      #   run: GOBIN=/usr/local/bin go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
 
       - name: Generate docs
         run: |
