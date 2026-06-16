@@ -2,6 +2,52 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.8] - 2026-06-16
+
+### 🚀 Features
+
+- *(rebase)* Init rebase for v0.3.5, update spelling filename, ci pinned version test only with for now, TODO, support multiple images with differnt golang versions,
+- *(rebase)* Init rebase for v0.3.5, update spelling filename, ci pinned version test only with for now, TODO, support multiple images with differnt golang versions, ci do not install
+- *(docs)* Udpate comments
+- *(vendor)* Vendor mod, update ci to vendor, intent out to roo
+- *(vendor)* Vendor mod, update ci to vendor, intent out to roo
+- *(vendor)* Vendor mod, update ci to vendor, intent out to roo
+- *(vendor)* Vendor mod, update ci to vendor, intent out to roo
+- *(vendor)* Vendor mod, update ci to vendor, intent out to roo
+- *(vendor)* Vendor mod, update ci to vendor, intent out to roo
+- *(vendor)* Vendor mod, update ci to vendor, intent out to roo
+- *(vendor)* Vendor mod, update ci to vendor, intent out to roo
+- *(vendor)* Vendor mod, update ci to vendor, intent out to roo
+- *(vendor)* Vendor mod, update ci to vendor, intent out to roo
+- *(vendor)* Vendor mod, update ci to vendor, intent out to roo
+- *(vendor)* Vendor mod, update ci to vendor, intent out to roo
+- *(vendor)* Vendor mod, update ci to vendor, intent out to roo
+- *(vendor)* Vendor mod, update ci to vendor, intent out to roo
+- *(vendor)* Vendor mod, update ci to vendor, intent out to roo
+- *(vendor)* Vendor mod, update ci to vendor, intent out to roo
+- *(vendor)* Vendor mod, update ci to vendor, intent out to roo
+- *(vendor)* Vendor mod, update ci to vendor, intent out to roo
+- *(vendor)* Vendor mod, update ci to vendor, intent out to roo
+- *(vendor)* Vendor mod, update ci to vendor, intent out to roo
+
+### 🎨 Styling
+
+- Auto-format and tidy [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.3.7
+- Sync develop with main after release/v0.3.7
+
+### Release
+
+- Merge release/v0.3.8 into main
+
+### Support
+
+- *(rebase)* Add codedocs to ignore, add comments
+- *(rebase)* Add comments
+
 ## [0.3.7] - 2026-06-15
 
 ### 🚀 Features
