@@ -140,12 +140,16 @@ jobs:
         with:
           version: latest
           args: tools
+        env:
+          GOFLAGS: ""  
 
       - name: Mage Tidy
         uses: magefile/mage-action@v4
         with:
           version: latest
           args: tidy
+        env:
+          GOFLAGS: ""  
 
       - name: Auto-fix formatting
         run: gofmt -w .
@@ -169,12 +173,16 @@ jobs:
         with:
           version: latest
           args: vet
+        env:
+          GOFLAGS: ""  
 
       - name: Mage Lint
         uses: magefile/mage-action@v4
         with:
           version: latest
           args: lint
+        env:
+          GOFLAGS: ""  
 
       - name: Test
         run: go test -mod=vendor ./... -coverprofile=coverage.out -covermode=atomic
