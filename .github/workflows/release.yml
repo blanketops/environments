@@ -68,8 +68,8 @@ jobs:
           echo "vendor snapshot tarball: $(du -sh vendor-snapshot-${{ github.ref_name }}.tar.gz | cut -f1)"
 
       # ── Docs ─────────────────────────────────
-      - name: Install gomarkdoc from vendor
-        run: go install -mod=vendor github.com/princjef/gomarkdoc/cmd/gomarkdoc
+      - name: Install gomarkdoc
+        run: go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
 
       - name: Generate docs
         run: |
