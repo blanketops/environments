@@ -81,8 +81,6 @@ jobs:
   # Job 2: Validate
   # Restores vendor/ from the snapshot image then
   # runs the full lint/vet/test pipeline with -mod=vendor.
-  # Mage is installed via mage-action — no network needed
-  # for tools after vendor is restored.
   # ─────────────────────────────────────────────
   validate:
     name: Lint, Vet, Test
@@ -137,19 +135,17 @@ jobs:
             ${{ runner.os }}-go-build-${{ matrix.go-version }}-
             ${{ runner.os }}-go-build-
 
-      - name: Install mage
+      - name: Mage Tools
         uses: magefile/mage-action@v4
         with:
           version: latest
-          install-only: true
+          args: tools
 
-      - name: Install tools from vendor
-        run: mage tools
-        env:
-          GOFLAGS: ""
-
-      - name: Tidy
-        run: mage tidy
+      - name: Mage Tidy
+        uses: magefile/mage-action@v4
+        with:
+          version: latest
+          args: tidy
 
       - name: Auto-fix formatting
         run: gofmt -w .
@@ -162,14 +158,23 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
-      - name: Build
-        run: mage build
+      - name: Mage Build
+        uses: magefile/mage-action@v4
+        with:
+          version: latest
+          args: build
 
-      - name: Vet
-        run: mage vet
+      - name: Mage Vet
+        uses: magefile/mage-action@v4
+        with:
+          version: latest
+          args: vet
 
-      - name: Lint
-        run: mage lint
+      - name: Mage Lint
+        uses: magefile/mage-action@v4
+        with:
+          version: latest
+          args: lint
 
       - name: Test
         run: go test -mod=vendor ./... -coverprofile=coverage.out -covermode=atomic
