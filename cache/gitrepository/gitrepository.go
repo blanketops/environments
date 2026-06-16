@@ -54,11 +54,11 @@ func (g *GitRepositoryCache) GetProvider(ctx context.Context, nn types.Namespace
 // Typed Helpers: HookUrl
 // -----------------------------------------------------------------------------
 
-func (g *GitRepositoryCache) SetHookUrl(ctx context.Context, nn types.NamespacedName, gen int64, name string, url string) error {
+func (g *GitRepositoryCache) SetHookURL(ctx context.Context, nn types.NamespacedName, gen int64, name string, url string) error {
 	return g.SetField(ctx, nn, gen, "hookUrl", url)
 }
 
-func (g *GitRepositoryCache) GetHookUrl(ctx context.Context, nn types.NamespacedName, gen int64, name string) (string, bool, error) {
+func (g *GitRepositoryCache) GetHookURL(ctx context.Context, nn types.NamespacedName, gen int64, name string) (string, bool, error) {
 	var u string
 	found, err := g.GetField(ctx, nn, gen, "hookUrl", &u)
 	return u, found, err
@@ -106,7 +106,7 @@ func (g *GitRepositoryCache) PublishResolved(ctx context.Context, nn types.Names
 	record(g.SetProvider(ctx, nn, gen, "", r.Spec.Provider))
 	record(g.SetRepository(ctx, nn, gen, "", r.Spec.Repository))
 	if r.Spec.HookURL != "" {
-		record(g.SetHookUrl(ctx, nn, gen, "", r.Spec.HookURL))
+		record(g.SetHookURL(ctx, nn, gen, "", r.Spec.HookURL))
 	}
 	if r.Spec.Webhooks != nil {
 		record(g.SetWebhooks(ctx, nn, gen, "", r.Spec.Webhooks))
