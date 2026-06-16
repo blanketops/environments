@@ -48,15 +48,16 @@ jobs:
             ./pkg/... \
             ./resolution/... \
             ./runtime/...
-
+            
       - name: Commit and push docs
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "docs: auto-generate code documentation [skip ci]"
-          branch: main
-          file_pattern: docs/code/**
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/code/
+          if ! git diff-index --quiet HEAD; then
+            git commit -m "docs: auto-generate code documentation [skip ci]"
+            git push --force origin main
+          fi    
 
       - name: Build summary
         run: |
