@@ -13,8 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+This file owns the sentinel errors for the build domain.
+
+Sentinel errors allow callers to distinguish known build failures from
+unexpected infrastructure errors using errors.Is without importing
+implementation details from the provider layer.
+*/
 package domain
 
 import "errors"
 
+// ErrBuildFailed signals that a build execution completed with a failure
+// outcome. Use errors.Is(err, ErrBuildFailed) to match this error.
 var ErrBuildFailed = errors.New("build failed")

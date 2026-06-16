@@ -3,7 +3,9 @@ Copyright 2026 The BlanketOps Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
+
 	http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,16 +20,16 @@ BlanketOps Environments controller.
 This file owns Papertrail integration. Two distinct transport paths are
 provided:
 
-  1. Syslog (TCP) — buildPapertrailCore wires a zapcore.Core that sends
-     structured log entries to Papertrail over syslog/TCP. Integrated into
-     the zap pipeline via buildZap. Failure to connect is NON-FATAL — the
-     core returns nil and the pipeline continues without the Papertrail sink.
+ 1. Syslog (TCP) — buildPapertrailCore wires a zapcore.Core that sends
+    structured log entries to Papertrail over syslog/TCP. Integrated into
+    the zap pipeline via buildZap. Failure to connect is NON-FATAL — the
+    core returns nil and the pipeline continues without the Papertrail sink.
 
-  2. HTTP JSON ingest — SetupPapertrailJSONIngest returns a standalone send
-     function for the SolarWinds HTTP ingestion API. Intentionally decoupled
-     from zap: no global state, no side effects, safe to call from any
-     goroutine. Use this path when you need to ship a specific log line or
-     event payload directly to Papertrail outside the normal log pipeline.
+ 2. HTTP JSON ingest — SetupPapertrailJSONIngest returns a standalone send
+    function for the SolarWinds HTTP ingestion API. Intentionally decoupled
+    from zap: no global state, no side effects, safe to call from any
+    goroutine. Use this path when you need to ship a specific log line or
+    event payload directly to Papertrail outside the normal log pipeline.
 */
 package logging
 

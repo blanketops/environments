@@ -13,7 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// pkg/buildtrigger/application/backend_selector.go
+/*
+This file owns BackendSelector for the BuildTrigger domain — the routing layer
+that maps a resolved trigger source to the correct evaluation provider.
+
+Selection is pure: no side effects, no validation, no policy. The domain layer
+is responsible for validating the trigger source before ForTrigger is called.
+GitHub is the fallback for unrecognised sources.
+*/
 package application
 
 import (
@@ -21,50 +28,35 @@ import (
 	"github.com/ntlaletsi70/blanketops-environments/pkg/buildtrigger/domain"
 )
 
-// BackendSelector selects the provider responsible for evaluating BuildTriggers.
-//
-// IMPORTANT:
-// - Selection is PURE
-// - No side effects
-// - No validation
-// - No fallthrough logic hidden in providers
+// BackendSelector routes a BuildTrigger to the Provider responsible for
+// evaluating it. Selection is driven by the trigger source — one provider
+// per source kind.
 type BackendSelector struct {
 	GitHub api.Provider
 	Manual api.Provider
-	// GitLab api.Provider (future)
+	// GitLab api.Provider — future
 }
 
-// NewBackendSelector wires available providers.
-func NewBackendSelector(
-	github api.Provider,
-	manual api.Provider,
-) *BackendSelector {
-	return &BackendSelector{
-		GitHub: github,
-		Manual: manual,
-	}
+// NewBackendSelector constructs a BackendSelector with the registered providers.
+func NewBackendSelector(github api.Provider, manual api.Provider) *BackendSelector {
+	return &BackendSelector{GitHub: github, Manual: manual}
 }
 
-// ForTrigger returns the provider that can evaluate this trigger.
-func (b *BackendSelector) ForTrigger(
-	trigger domain.BuildTrigger,
-) api.Provider {
-
+// ForTrigger returns the Provider that should evaluate the given BuildTrigger.
+// Falls back to GitHub for unrecognised sources — the domain layer validates
+// the source before this is called.
+func (b *BackendSelector) ForTrigger(trigger domain.BuildTrigger) api.Provider {
 	switch trigger.Trigger.Source {
-
 	case domain.TriggerSourceGitHub:
 		return b.GitHub
-
 	case domain.TriggerSourceManual:
 		return b.Manual
-
 	default:
-		// Defensive default — domain should already validate this
 		return b.Default()
 	}
 }
 
-// Default returns the fallback provider.
+// Default returns the fallback provider (GitHub).
 func (b *BackendSelector) Default() api.Provider {
 	return b.GitHub
 }
