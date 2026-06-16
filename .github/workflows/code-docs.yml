@@ -1,64 +1,4 @@
 # Generate Go code documentation using gomarkdoc.
-# Runs on every push to main — commits generated docs back to the repo.
-name: Code Docs
-
-on:
-  push:
-    branches:
-      - main
-
-permissions:
-  contents: write
-
-jobs:
-  godoc:
-    name: Generate Code Docs
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GH_PAT }}
-          fetch-depth: 0
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.25.8"
-          cache: false
-
-      - name: Configure Git for private modules
-        run: |
-          git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
-          go env -w GOPRIVATE=github.com/ntlaletsi70/*
-          go env -w GONOSUMDB=github.com/ntlaletsi70/*
-          go env -w GOPROXY=https://proxy.golang.org,direct
-
-      - name: Install gomarkdoc
-        run: go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
-
-      - name: Generate docs
-        run: |
-          mkdir -p docs/code
-          gomarkdoc \
-            --output 'docs/code/{{.Dir}}.md' \
-            ./core/... \
-            ./cache/... \
-            ./logging/... \
-            ./pkg/... \
-            ./resolution/... \
-            ./runtime/...
-            
-      - name: Commit and push docs
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/code/ -f
-          if ! git diff-index --quiet HEAD; then
-            git commit -m "docs: auto-generate code documentation [skip ci]"
-            git push --force origin main
-          fi    
-      # Generate Go code documentation using gomarkdoc.
 # Runs on every push to main — commits generated docs back to the repo
 # and uploads them as a retained artifact.
 name: Code Docs
@@ -147,23 +87,4 @@ jobs:
               echo "" >> $GITHUB_STEP_SUMMARY
             fi
           done
-          echo "> 📦 Download artifact \`godoc-${{ github.sha }}\` from the [Actions run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) to browse all generated docs." >> $GITHUB_STEP_SUMMARY    
-
-      - name: Build summary
-        run: |
-          echo "## 📚 Code Documentation" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Generated from commit \`${{ github.sha }}\` on branch \`${{ github.ref_name }}\`." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          for group in core cache logging pkg resolution runtime; do
-            files=$(find docs/code -name "*.md" | grep "/${group}" | sort)
-            if [ -n "$files" ]; then
-              echo "### \`${group}/\`" >> $GITHUB_STEP_SUMMARY
-              echo "" >> $GITHUB_STEP_SUMMARY
-              for f in $files; do
-                pkg=$(basename "$f" .md)
-                echo "- \`${pkg}\`" >> $GITHUB_STEP_SUMMARY
-              done
-              echo "" >> $GITHUB_STEP_SUMMARY
-            fi
-          done
+          echo "> 📦 Download artifact \`godoc-${{ github.sha }}\` from the [Actions run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) to browse all generated docs." >> $GITHUB_STEP_SUMMARY
