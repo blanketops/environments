@@ -139,7 +139,7 @@ jobs:
         run: |
           go install github.com/magefile/mage@latest
         env:
-          GOFLAGS: ""
+          GOFLAGS: -mod=mod
 
       - name: Install tools from vendor
         run: mage tools
