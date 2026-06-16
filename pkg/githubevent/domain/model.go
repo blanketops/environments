@@ -3,9 +3,7 @@ Copyright 2026 The BlanketOps Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
 	http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,10 +11,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+This file owns the core domain types for the GitHubEvent domain — GitHubEvent,
+Repository, GitRef, Commit, Actor, and GitHubEventStatus.
+
+GitHubEvent is a pure domain fact: "something happened in a repository." It
+carries no Kubernetes object references and no policy — those belong to the
+provider and application layers respectively.
+
+GitHubEventStatus is serialised into the CR's status.contract field by the
+StatusWriter. It is the authoritative machine-readable outcome consumed by
+downstream automation.
+*/
 package domain
 
-// EventType is the semantic type of a GitHub event.
+// EventType is the semantic type of a GitHub webhook event.
 type EventType string
+
+// EventID is the provider-assigned delivery GUID.
 type EventID string
 
 const (
@@ -24,30 +36,30 @@ const (
 	EventPullRequest EventType = "pull_request"
 )
 
-// GitRef represents a Git reference.
+// GitRef represents a Git reference carried by the event.
 type GitRef struct {
-	Name string // e.g. refs/heads/main
+	Name string // e.g. refs/heads/main, refs/tags/v1.0.0
 }
 
-// Commit represents a commit involved in the event.
+// Commit represents the commit at the head of the event.
 type Commit struct {
 	SHA string
 }
 
-// Actor represents the identity that triggered the event.
+// Actor is the identity that triggered the event on the provider.
 type Actor struct {
 	Login string
 }
 
-// Repository identifies the source repository.
+// Repository identifies the source repository on the provider.
 type Repository struct {
-	FullName string // owner/name
+	FullName string // "owner/name" — the canonical identifier
 	Owner    string
 	Name     string
 }
 
-// GitHubEvent is a pure domain fact:
-// “Something happened in a repository”.
+// GitHubEvent is the pure domain representation of an observed GitHub webhook
+// event. It is produced by the Mapper and consumed by the Provider.
 type GitHubEvent struct {
 	EventID    string
 	Type       EventType
@@ -57,22 +69,15 @@ type GitHubEvent struct {
 	Actor      Actor
 }
 
-// -----------------------------------------------------------------------------
-// GitHubEventStatus
-// -----------------------------------------------------------------------------
-//
-// Internal domain status for a GitHubEvent decision.
-// This is serialized into CRD status.contract.
+// GitHubEventStatus is the internal domain status for a GitHubEvent decision.
+// Serialised into the CR's status.contract field by the StatusWriter.
 type GitHubEventStatus struct {
-	// Was the event accepted as valid?
+	// Accepted indicates the event passed validation and was admitted.
 	Accepted bool
-
-	// Did this event trigger downstream work?
+	// Triggered indicates the event caused downstream work to be dispatched.
 	Triggered bool
-
-	// Human-readable explanation
+	// Message is a human-readable explanation of the outcome.
 	Message string
-
-	// Reference to triggered resource (optional)
+	// TriggeredRef is the name of the downstream resource created, if any.
 	TriggeredRef string
 }
