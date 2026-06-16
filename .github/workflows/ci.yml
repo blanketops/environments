@@ -28,11 +28,11 @@ jobs:
       vendor-tag: ${{ steps.tag.outputs.tag }}
       cache-hit: ${{ steps.check.outputs.hit }}
     steps:
-      - name: Checkout
+      - name: Checkout develop
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GH_PAT }}
           fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
 
       - name: Compute vendor tag from go.sum
         id: tag
