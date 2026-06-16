@@ -145,8 +145,8 @@ jobs:
             ${{ runner.os }}-go-build-${{ matrix.go-version }}-
             ${{ runner.os }}-go-build-
 
-      # - name: Install staticcheck
-      #   run: go install -mod=vendor honnef.co/go/tools/cmd/staticcheck
+      - name: Install staticcheck
+        run: go install -mod=vendor honnef.co/go/tools/cmd/staticcheck
 
       - name: Tidy
         run: go mod tidy
@@ -161,31 +161,15 @@ jobs:
           branch: ${{ github.head_ref || github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
-      - name: Mage Vendor
-        uses: magefile/mage-action@v4
-        with:
-          version: latest
-          args: vendor
-        env:
-          GOFLAGS: "-mod=mod"  
-      - name: Mage Build
-        uses: magefile/mage-action@v4
-        with:
-          version: latest
-          args: build
-        env:
-          GOFLAGS: "-mod=mod"
+
+      - name: Build
+        run: go build -mod=vendor ./...
 
       - name: Vet
         run: go vet -mod=vendor ./...
 
-      - name: Mage Lint
-        uses: magefile/mage-action@v4
-        with:
-          version: latest
-          args: lint
-        env:
-          GOFLAGS: "-mod=mod"  
+      - name: Lint
+        run: staticcheck -mod=vendor ./...
 
       - name: Test
         run: go test -mod=vendor ./... -coverprofile=coverage.out -covermode=atomic
