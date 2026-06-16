@@ -19,8 +19,9 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	"github.com/ntlaletsi70/blanketops-environments-mvp/pkg/deployment/intent"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	intent "github.com/ntlaletsi70/blanketops-environments/pkg/intent/deployment"
 )
 
 type ECSReconciler struct {

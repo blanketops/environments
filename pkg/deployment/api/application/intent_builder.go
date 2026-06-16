@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"time"
 
-	intent "github.com/ntlaletsi70/blanketops-environments/intent/deployment"
+	intent "github.com/ntlaletsi70/blanketops-environments/pkg/intent/deployment"
 	deploymentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
 	serviceunitResolution "github.com/ntlaletsi70/blanketops-environments/resolution/serviceunit"
 )
