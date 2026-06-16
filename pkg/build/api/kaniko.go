@@ -13,6 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+This file owns the Kaniko provider — structurally identical to the Buildah
+provider but registered under the "kaniko" strategy name. Shipwright selects
+the ClusterBuildStrategy at run time; the provider layer constructs the spec
+and dispatches execution.
+
+See buildah.go for the canonical documentation of the shared pipeline pattern.
+TODO: consolidate Buildah, Buildpacks, and Kaniko into a single generic
+provider parameterised by strategy name once the provider interface is stable.
+*/
 package api
 
 import (
@@ -20,23 +30,22 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-
-	"github.com/ntlaletsi70/blanketops-environments/pkg/build/domain"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/utils"
-	buildResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
-
 	shipwrightv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/events"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	"github.com/ntlaletsi70/blanketops-environments/pkg/build/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/utils"
+	buildResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
 )
 
+// KanikoProvider orchestrates Shipwright Build and BuildRun resources
+// using the kaniko ClusterBuildStrategy.
 type KanikoProvider struct {
 	Client   client.Client
 	Scheme   *runtime.Scheme
@@ -44,31 +53,23 @@ type KanikoProvider struct {
 	Recorder events.EventRecorder // optional; may be nil
 }
 
+// NewKanikoProvider constructs a KanikoProvider with the given dependencies.
 func NewKanikoProvider(
 	c client.Client,
 	scheme *runtime.Scheme,
 	log logr.Logger,
 	rec events.EventRecorder,
 ) *KanikoProvider {
-	return &KanikoProvider{
-		Client:   c,
-		Scheme:   scheme,
-		Log:      log,
-		Recorder: rec,
-	}
+	return &KanikoProvider{Client: c, Scheme: scheme, Log: log, Recorder: rec}
 }
 
-//
-// -----------------------------------------------------------------------------
-// Shipwright BUILD Spec
-// -----------------------------------------------------------------------------
-//
-
+// CreateBuildSpec translates a domain.BuildSpec into a Shipwright Build object.
+// Validates SourceURL and Image — both are required by Shipwright.
+// Owner reference is applied by the caller before creation.
 func (p *KanikoProvider) CreateBuildSpec(
 	spec domain.BuildSpec,
 	build *buildResolution.ResolvedBuild,
 ) (*shipwrightv1alpha1.Build, error) {
-
 	if spec.SourceURL == "" {
 		return nil, fmt.Errorf("missing source URL")
 	}
@@ -78,7 +79,7 @@ func (p *KanikoProvider) CreateBuildSpec(
 
 	strategyKind := shipwrightv1alpha1.BuildStrategyKind(spec.StrategyKind)
 
-	ship := &shipwrightv1alpha1.Build{
+	return &shipwrightv1alpha1.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      build.Build.Name,
 			Namespace: build.Build.Namespace,
@@ -106,31 +107,23 @@ func (p *KanikoProvider) CreateBuildSpec(
 					Name: spec.ServiceAccountSecret,
 				},
 			},
-			// Timeout intentionally omitted (provider-level concern)
+			// Timeout intentionally omitted — enforced at BuildRun level.
 		},
-	}
-
-	return ship, nil
+	}, nil
 }
 
-//
-// -----------------------------------------------------------------------------
-// Shipwright BUILDRUN Spec
-// -----------------------------------------------------------------------------
-//
-
+// CreateBuildRunSpec constructs a Shipwright BuildRun for the given resolved
+// Build and execution hash. Run name is derived from the Build name and a
+// short hash suffix. Full hash is preserved in an annotation for audit.
 func (p *KanikoProvider) CreateBuildRunSpec(
 	build *buildResolution.ResolvedBuild,
 	shipwrightBuild *shipwrightv1alpha1.Build,
 	fullHash string,
 ) *shipwrightv1alpha1.BuildRun {
-
 	short := utils.ShortHash(fullHash)
-	name := fmt.Sprintf("%s-%s", build.Build.Name, short)
-
 	return &shipwrightv1alpha1.BuildRun{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
+			Name:      fmt.Sprintf("%s-%s", build.Build.Name, short),
 			Namespace: build.Build.Namespace,
 			Labels: map[string]string{
 				"build.blanketops.dev/name": build.Build.Name,
@@ -142,61 +135,39 @@ func (p *KanikoProvider) CreateBuildRunSpec(
 			},
 		},
 		Spec: shipwrightv1alpha1.BuildRunSpec{
-			BuildRef: &shipwrightv1alpha1.BuildRef{
-				Name: shipwrightBuild.Name,
-			},
+			BuildRef: &shipwrightv1alpha1.BuildRef{Name: shipwrightBuild.Name},
 		},
 	}
 }
 
-//
-// -----------------------------------------------------------------------------
-// Provider Run()
-// -----------------------------------------------------------------------------
-//
-
+// Run upserts the Shipwright Build and creates the BuildRun, then returns
+// immediately with Triggered=true, Success=false. Completion is observed
+// asynchronously by the buildrun observer.
 func (p *KanikoProvider) Run(
 	ctx context.Context,
 	build *buildResolution.ResolvedBuild,
 	spec domain.BuildSpec,
 ) (domain.BuildResult, error) {
+	res := domain.BuildResult{}
 
-	res := domain.BuildResult{
-		Success: false,
-		Message: "",
-	}
-
-	p.Log.Info(
-		"provider.run: starting orchestration",
+	p.Log.Info("provider.run: starting orchestration",
 		"build", client.ObjectKeyFromObject(build.Build).String(),
 		"strategy", spec.StrategyName,
 	)
 
-	// ------------------------------------------------
-	// 1. Create / Update Shipwright Build
-	// ------------------------------------------------
+	// Stage 1: upsert Shipwright Build.
 	shipBuild, err := p.CreateBuildSpec(spec, build)
 	if err != nil {
 		res.Message = err.Error()
 		return res, err
 	}
-
-	if err := controllerutil.SetControllerReference(
-		build.Build,
-		shipBuild,
-		p.Scheme,
-	); err != nil {
+	if err := controllerutil.SetControllerReference(build.Build, shipBuild, p.Scheme); err != nil {
 		res.Message = err.Error()
 		return res, err
 	}
 
 	foundBuild := &shipwrightv1alpha1.Build{}
-	getErr := p.Client.Get(
-		ctx,
-		client.ObjectKeyFromObject(shipBuild),
-		foundBuild,
-	)
-
+	getErr := p.Client.Get(ctx, client.ObjectKeyFromObject(shipBuild), foundBuild)
 	if apierrors.IsNotFound(getErr) {
 		if err := p.Client.Create(ctx, shipBuild); err != nil {
 			res.Message = err.Error()
@@ -213,45 +184,23 @@ func (p *KanikoProvider) Run(
 		return res, getErr
 	}
 
-	// ------------------------------------------------
-	// 2. Create BuildRun (idempotent)
-	// ------------------------------------------------
+	// Stage 2: create BuildRun (idempotent by execution hash).
 	tc := ExtractTriggerContext(build.Build)
-
-	hash, err := utils.ComputeExecutionHash(
-		build.Spec.ToBuildContract(),
-		tc,
-	)
-
-	p.Log.Info(
-		"execution identity",
-		"retryAttempt", tc.RetryAttempt,
-		"triggerType", tc.Type,
-	)
-
+	hash, err := utils.ComputeExecutionHash(build.Spec.ToBuildContract(), tc)
+	p.Log.Info("execution identity", "retryAttempt", tc.RetryAttempt, "triggerType", tc.Type)
 	if err != nil {
 		res.Message = err.Error()
 		return res, err
 	}
 
 	buildRun := p.CreateBuildRunSpec(build, shipBuild, hash)
-
-	if err := controllerutil.SetControllerReference(
-		build.Build,
-		buildRun,
-		p.Scheme,
-	); err != nil {
+	if err := controllerutil.SetControllerReference(build.Build, buildRun, p.Scheme); err != nil {
 		res.Message = err.Error()
 		return res, err
 	}
 
 	foundRun := &shipwrightv1alpha1.BuildRun{}
-	getErr = p.Client.Get(
-		ctx,
-		client.ObjectKeyFromObject(buildRun),
-		foundRun,
-	)
-
+	getErr = p.Client.Get(ctx, client.ObjectKeyFromObject(buildRun), foundRun)
 	if apierrors.IsNotFound(getErr) {
 		if err := p.Client.Create(ctx, buildRun); err != nil {
 			res.Message = err.Error()
@@ -262,26 +211,16 @@ func (p *KanikoProvider) Run(
 		return res, getErr
 	}
 
-	// ------------------------------------------------
-	// SUCCESS (execution triggered)
-	// ------------------------------------------------
-	res.Success = false
+	// Return intent result — Success=false until the buildrun observer
+	// confirms completion. Retry logic lives in the observer, not here.
 	res.Triggered = true
 	res.ExecutionRef = buildRun.Name
 	res.Message = "BuildRun created"
 
-	p.Log.Info(
-		"provider.run: orchestration complete",
+	p.Log.Info("provider.run: orchestration complete",
 		"build", build.Build.Name,
 		"buildRun", buildRun.Name,
 		"image", spec.Image,
 	)
-
-	//
-	// we must get if we need to retry from the BuildRun observer, the proceed as such
-	// ------------------------------------------------
-	// Return
-	// ------------------------------------------------
-
 	return res, nil
 }

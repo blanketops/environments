@@ -13,6 +13,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+This file owns BuildService — the application service that orchestrates the
+build reconciliation pipeline.
+
+BuildService is the single entry point called by the build domain after
+resolution. It sequences four steps in order:
+
+ 1. Map the resolved Build contract to a domain BuildSpec (Mapper).
+ 2. Select the correct build provider for the strategy (BackendSelector).
+ 3. Dispatch execution via the provider (Provider.Run).
+ 4. Write the outcome back to the Build CR status (StatusWriter).
+
+BuildService does not own retry logic, trigger evaluation, or condition
+management — those belong to the domain and observer layers respectively.
+*/
 package application
 
 import (
@@ -21,12 +36,15 @@ import (
 	bldResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
 )
 
+// BuildService orchestrates the build reconciliation pipeline.
+// It is stateless beyond its collaborators and safe for concurrent use.
 type BuildService struct {
 	mapper  *Mapper
 	status  *StatusWriter
 	backend *BackendSelector
 }
 
+// NewBuildService constructs a BuildService with the required collaborators.
 func NewBuildService(
 	mapper *Mapper,
 	status *StatusWriter,
@@ -39,28 +57,23 @@ func NewBuildService(
 	}
 }
 
+// Reconcile executes the full build pipeline for a resolved Build CR.
+// It maps, selects, executes, and writes status in sequence. An error from
+// any stage is forwarded to StatusWriter so the Build CR always reflects the
+// latest outcome, even on failure.
 func (s *BuildService) Reconcile(
 	ctx context.Context,
 	resolved *bldResolution.ResolvedBuild,
 ) error {
-
-	// ------------------------------------------------
-	// 1. Map → domain spec
-	// ------------------------------------------------
+	// Map resolved contract → domain spec.
 	spec := s.mapper.MapResolvedToDomain(resolved)
 
-	// ------------------------------------------------
-	// 2. Select backend
-	// ------------------------------------------------
+	// Select the provider for the strategy declared in spec.
 	provider := s.backend.ForSpec(spec)
 
-	// ------------------------------------------------
-	// 3. Execute build
-	// ------------------------------------------------
+	// Dispatch — returns immediately with Triggered=true, Success=false.
 	result, err := provider.Run(ctx, resolved, spec)
 
-	// ------------------------------------------------
-	// 4. Write status (still against CR)
-	// ------------------------------------------------
+	// Write outcome to the Build CR status regardless of error.
 	return s.status.Write(ctx, resolved.Build, result, err)
 }

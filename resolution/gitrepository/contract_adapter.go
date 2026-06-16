@@ -13,119 +13,150 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package gitrepository implements resolution for the GitRepository CR.
+
+This file owns the contract adapter — the one-way projection from the resolved
+runtime spec (ResolvedGitRepositorySpec) to the protobuf contract type
+(sourcescontractv1alpha1.GitRepositorySpec).
+
+The contract type is consumed by infrastructure-layer concerns only:
+  - Execution hash computation for repository deduplication
+  - Spec comparison across reconciliation cycles
+  - Audit pipelines
+
+Controllers and domain logic MUST NOT consume the returned contract value.
+
+The common proto wrapper pattern applies throughout:
+  - Provider → *v1.GitProvider{Provider: enumVal}
+  - Webhook events → []*v1.GitEventType{{Type: enumVal}}
+
+GitRepositoryRef and GitRepositoryWebhook are local messages in the
+sources v1alpha1 package, not common types.
+
+Provider mapping is fatal on unknown values — providers are a
+platform-controlled closed set. Event type mapping is also fatal —
+unknown event strings indicate a misconfigured webhook spec.
+*/
 package gitrepository
 
 import (
 	"fmt"
 
-	contractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/sources/v1alpha1"
+	commoncontractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/common/v1"
+	sourcescontractv1alpha1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/sources/v1alpha1"
 )
 
+// ToGitRepositoryContract projects the resolved runtime GitRepository spec
+// into a protobuf sourcescontractv1alpha1.GitRepositorySpec for infrastructure
+// consumers (hashing, comparison, audit).
 //
-// ==============================
-// CONTRACT PROJECTION (ONE-WAY)
-// ==============================
+// Provider and webhook event types are projected as wrapper message instances.
+// Returns an error when the provider string is unknown or any webhook event
+// string is unsupported.
 //
-// Resolved runtime → strict contract types
-// For infra / hashing / comparison ONLY.
-//
-// ⚠️ Controllers must NEVER consume the returned value.
-//
-
-func (s *ResolvedGitRepositorySpec) ToGitRepositoryContract() (*contractv1.GitRepositorySpec, error) {
+// ⚠️ ONE-WAY adapter. The returned value MUST NOT be fed back into any
+// controller or domain logic path.
+func (s *ResolvedGitRepositorySpec) ToGitRepositoryContract() (*sourcescontractv1alpha1.GitRepositorySpec, error) {
 	if s == nil {
 		return nil, nil
 	}
 
-	// ---------------------------------------------
-	// Provider normalization (string → enum VALUE)
-	// ---------------------------------------------
+	// Provider is required — unknown values fail the projection.
 	provider, err := normalizeGitProvider(s.Provider)
 	if err != nil {
 		return nil, err
 	}
 
-	out := &contractv1.GitRepositorySpec{
+	out := &sourcescontractv1alpha1.GitRepositorySpec{
 		Provider: provider,
-		Repository: &contractv1.GitRepositoryRef{
+		Repository: &sourcescontractv1alpha1.GitRepositoryRef{
 			Owner: s.Repository.Owner,
 			Name:  s.Repository.Name,
 		},
 	}
 
-	// ---------------------------------------------
-	// Webhooks normalization
-	// []string → []*GitRepositoryWebhook
-	// ---------------------------------------------
+	// ------------------------------------------------
+	// Webhook projection.
+	//
+	// Each event string maps to a *v1.GitEventType wrapper message.
+	// Webhooks that produce zero valid events are skipped — an empty
+	// events list is not a valid webhook configuration.
+	// ------------------------------------------------
 	for _, w := range s.Webhooks {
 		events, err := normalizeGitEvents(w.Events)
 		if err != nil {
 			return nil, err
 		}
-
 		if len(events) == 0 {
 			continue
 		}
-
-		out.Webhooks = append(
-			out.Webhooks,
-			&contractv1.GitRepositoryWebhook{
-				Events: events, // []GitEventType (VALUES)
-			},
-		)
+		out.Webhooks = append(out.Webhooks, &sourcescontractv1alpha1.GitRepositoryWebhook{
+			Events: events,
+		})
 	}
 
 	return out, nil
 }
 
-//
-// ==============================
-// NORMALIZERS (PROTO-ALIGNED)
-// ==============================
-//
+// -----------------------------------------------------------------------------
+// Normalizers: runtime string → proto wrapper message
+// -----------------------------------------------------------------------------
 
-// normalizeGitProvider maps runtime strings to
-// blanketops.sources.v1alpha1.GitProvider enum VALUES.
-func normalizeGitProvider(p string) (contractv1.GitProvider, error) {
+// normalizeGitProvider maps a runtime provider string to a
+// *v1.GitProvider wrapper message. Returns an error for unknown values —
+// providers are a platform-controlled closed set.
+//
+// "generic" and "git" are aliases for GIT_PROVIDER_GENERIC_GIT.
+func normalizeGitProvider(p string) (*commoncontractv1.GitProvider, error) {
 	switch p {
 	case "github":
-		return contractv1.GitProvider_GIT_PROVIDER_GITHUB, nil
+		return &commoncontractv1.GitProvider{
+			Provider: commoncontractv1.GitProvider_GIT_PROVIDER_GITHUB,
+		}, nil
 	case "gitlab":
-		return contractv1.GitProvider_GIT_PROVIDER_GITLAB, nil
+		return &commoncontractv1.GitProvider{
+			Provider: commoncontractv1.GitProvider_GIT_PROVIDER_GITLAB,
+		}, nil
 	case "bitbucket":
-		return contractv1.GitProvider_GIT_PROVIDER_BITBUCKET, nil
+		return &commoncontractv1.GitProvider{
+			Provider: commoncontractv1.GitProvider_GIT_PROVIDER_BITBUCKET,
+		}, nil
 	case "generic", "git":
-		return contractv1.GitProvider_GIT_PROVIDER_GENERIC_GIT, nil
+		return &commoncontractv1.GitProvider{
+			Provider: commoncontractv1.GitProvider_GIT_PROVIDER_GENERIC_GIT,
+		}, nil
 	default:
-		return contractv1.GitProvider_GIT_PROVIDER_UNSPECIFIED,
-			fmt.Errorf("unsupported git provider %q", p)
+		return nil, fmt.Errorf("unsupported git provider %q", p)
 	}
 }
 
-// normalizeGitEvents maps runtime event strings to
-// blanketops.sources.v1alpha1.GitEventType enum VALUES.
-func normalizeGitEvents(events []string) ([]contractv1.GitEventType, error) {
-
-	var out []contractv1.GitEventType
-
+// normalizeGitEvents maps a slice of runtime event strings to
+// []*v1.GitEventType wrapper message instances. Returns an error on the
+// first unsupported string — event types are a platform-controlled closed set.
+func normalizeGitEvents(events []string) ([]*commoncontractv1.GitEventType, error) {
+	var out []*commoncontractv1.GitEventType
 	for _, e := range events {
 		switch e {
 		case "push":
-			out = append(out, contractv1.GitEventType_GIT_EVENT_TYPE_PUSH)
-
+			out = append(out, &commoncontractv1.GitEventType{
+				Type: commoncontractv1.GitEventType_GIT_EVENT_TYPE_PUSH,
+			})
 		case "pull_request":
-			out = append(out, contractv1.GitEventType_GIT_EVENT_TYPE_PULL_REQUEST)
-
+			out = append(out, &commoncontractv1.GitEventType{
+				Type: commoncontractv1.GitEventType_GIT_EVENT_TYPE_PULL_REQUEST,
+			})
 		case "release":
-			out = append(out, contractv1.GitEventType_GIT_EVENT_TYPE_RELEASE)
-
+			out = append(out, &commoncontractv1.GitEventType{
+				Type: commoncontractv1.GitEventType_GIT_EVENT_TYPE_RELEASE,
+			})
 		case "tag":
-			out = append(out, contractv1.GitEventType_GIT_EVENT_TYPE_TAG)
-
+			out = append(out, &commoncontractv1.GitEventType{
+				Type: commoncontractv1.GitEventType_GIT_EVENT_TYPE_TAG,
+			})
 		default:
 			return nil, fmt.Errorf("unsupported git event %q", e)
 		}
 	}
-
 	return out, nil
 }

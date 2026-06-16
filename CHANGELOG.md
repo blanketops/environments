@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.6] - 2026-06-14
+
+### 🚀 Features
+
+- *(ci)* Add docs,. type issue templates,. update pr template to domain specific
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.3.5
+- *(release)* Update changelog for v0.3.5
+
+### Release
+
+- Merge release/v0.3.6 into main
+
+## [0.3.5] - 2026-06-14
+
+### 🚀 Features
+
+- *(rebase)* Init rebase for v0.3.5
+- *(rebase)* Init rebase for v0.3.5, update spelling filename, ci pinned version test only with for now, TODO, support multiple images with differnt golang versions,
+
+### Release
+
+- Merge release/v0.3.5 into main
+
+## [0.2.6] - 2026-06-14
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.3.4
+- *(release)* Update changelog for v0.2.6
+- Sync develop with main after release/v0.3.4
+
+### Bugfix
+
+- *(docs)* Add roadmap stubs
+
 ## [0.3.4] - 2026-06-11
 
 ### ⚙️ Miscellaneous Tasks
@@ -93,31 +131,20 @@ All notable changes to this project will be documented in this file.
 
 ### ⚙️ Miscellaneous Tasks
 
+- Sync develop with main after release/v0.2.5
+- *(release)* Update changelog for v0.2.5
 - Sync develop with main after release/v0.2.6
 - *(release)* Update changelog for v0.2.6
 
 ### Bugfix
 
+- *(cache)* # - cache/provider - housekeeping, sanitize
 - *(ci)* Update workflows, include summary always
 
 ### Release
 
-- Merge release/v0.2.7 into main
-
-## [0.2.6] - 2026-06-11
-
-### ⚙️ Miscellaneous Tasks
-
-- Sync develop with main after release/v0.2.5
-- *(release)* Update changelog for v0.2.5
-
-### Bugfix
-
-- *(cache)* # - cache/provider - housekeeping, sanitize
-
-### Release
-
 - Merge release/v0.2.6 into main
+- Merge release/v0.2.7 into main
 
 ## [0.2.5] - 2026-06-11
 

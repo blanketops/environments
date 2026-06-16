@@ -3,7 +3,9 @@ Copyright 2026 The BlanketOps Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
+
 	http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -35,29 +37,29 @@ type Config struct {
 	// Development switches the console sink to human-readable output
 	// (zap development mode). Set false in production for structured JSON.
 	Development bool
-	
+
 	// Console enables the console (stdout) sink.
 	Console bool
-	
+
 	// File enables the file sink. Output is appended to FilePath.
-	File     bool
-	
+	File bool
+
 	// FilePath is the log file destination when File is true.
 	// Defaults to /tmp/blanketops-environment-controller.log.
 	FilePath string
-	
+
 	// Level controls the minimum log level. One of: "debug", "info",
 	// "warn", "error". Case-insensitive. Defaults to "info".
 	Level string
 
 	// EnablePapertrail enables the remote Papertrail syslog sink.
 	EnablePapertrail bool
-	
+
 	// PapertrailAddr is the Papertrail destination in host:port form
 	// (e.g. "logs.papertrailapp.com:12345"). Required when EnablePapertrail
 	// is true.
 	PapertrailAddr string
-	
+
 	// PapertrailTag is the program tag attached to all Papertrail log
 	// entries. Typically the service name or environment identifier.
 	PapertrailTag string

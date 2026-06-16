@@ -2,6 +2,8 @@ module github.com/ntlaletsi70/blanketops-environments
 
 go 1.25.7
 
+toolchain go1.25.8
+
 require (
 	carvel.dev/kapp-controller v0.59.2
 	github.com/bradfitz/gomemcache v0.0.0-20260422231931-4d751bb6e37c
@@ -12,7 +14,7 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/magefile/mage v1.17.2
 	github.com/ntlaletsi70/blanketops-environments-api v0.1.8
-	github.com/ntlaletsi70/blanketops-environments-contract v0.2.9
+	github.com/ntlaletsi70/blanketops-environments-contract v0.3.3
 	github.com/redis/go-redis/v9 v9.20.1
 	github.com/shipwright-io/build v0.18.4
 	go.uber.org/zap v1.27.1

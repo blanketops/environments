@@ -13,6 +13,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package build implements resolution for the Environment CR.
+
+This file owns the Adapter — a thin struct wrapper around the package-level
+ResolveEnvironment function. The Adapter exists to satisfy interface-based injection
+points in the application layer where a concrete resolution dependency must be
+passed as a value rather than called as a free function.
+
+Current deps are intentionally empty — client and logger will be added here
+when resolution requires cross-CR reads or observability hooks. Until then,
+resolution is pure and stateless so no deps are needed.
+*/
+
 package environment
 
 import (
