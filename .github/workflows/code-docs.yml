@@ -34,8 +34,8 @@ jobs:
           go env -w GONOSUMDB=github.com/ntlaletsi70/*
           go env -w GOPROXY=https://proxy.golang.org,direct
 
-      - name: Install gomarkdoc from vendor
-        run: go install -mod=vendor github.com/princjef/gomarkdoc/cmd/gomarkdoc
+      - name: Install gomarkdoc
+        run: go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
 
       - name: Generate docs
         run: |
