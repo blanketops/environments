@@ -135,8 +135,11 @@ jobs:
             ${{ runner.os }}-go-build-${{ matrix.go-version }}-
             ${{ runner.os }}-go-build-
 
-      - name: Bootstrap mage from vendor
-        run: go install -mod=vendor github.com/magefile/mage/mage
+      - name: Bootstrap mage
+        run: |
+          go install github.com/magefile/mage@latest
+        env:
+          GOFLAGS: ""
 
       - name: Install tools from vendor
         run: mage tools
