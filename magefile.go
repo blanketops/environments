@@ -59,6 +59,25 @@ func Tidy() error {
 	return sh.Run("go", "mod", "tidy")
 }
 
+// Tools installs all development tools from the vendor directory.
+// Run this once after restoring vendor to make mage, staticcheck,
+// and gomarkdoc available on PATH.
+func Tools() error {
+	fmt.Println(">> install tools")
+	tools := []string{
+		"github.com/magefile/mage",
+		"github.com/princjef/gomarkdoc/cmd/gomarkdoc",
+		"honnef.co/go/tools/cmd/staticcheck",
+	}
+	for _, t := range tools {
+		fmt.Printf("   installing %s\n", t)
+		if err := sh.Run("go", "install", vendorFlags, t); err != nil {
+			return fmt.Errorf("failed to install %s: %w", t, err)
+		}
+	}
+	return nil
+}
+
 // Build compiles all packages. Uses vendor if present.
 func Build() error {
 	fmt.Println(">> build")
@@ -109,7 +128,7 @@ func buildFlags() string {
 // returning a clear error rather than a confusing exec failure.
 func ensureTool(name string) error {
 	if _, err := exec.LookPath(name); err != nil {
-		return fmt.Errorf("%s not found on PATH — install it first: go install honnef.co/go/tools/cmd/staticcheck@latest", name)
+		return fmt.Errorf("%s not found on PATH — run: mage tools", name)
 	}
 	return nil
 }
