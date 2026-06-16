@@ -38,7 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/intent"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/intent/deployment"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/render/builders"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/utils"
 )

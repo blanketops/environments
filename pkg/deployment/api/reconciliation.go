@@ -23,7 +23,7 @@ import (
 
 	environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/domain"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/intent"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/intent/deployment"
 )
 
 type ReconciliationExecutor struct {
