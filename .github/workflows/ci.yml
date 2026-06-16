@@ -12,7 +12,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  VENDOR_IMAGE: ghcr.io/${{ github.repository }}/vendor-snap
+  VENDOR_IMAGE: ghcr.io/${{ github.repository }}/vendor-snapshot
 
 jobs:
   # ─────────────────────────────────────────────
@@ -21,7 +21,7 @@ jobs:
   # go.sum has changed. All subsequent jobs restore
   # vendor/ from this image — zero network at build time.
   # ─────────────────────────────────────────────
-  vendor-snapshot:
+  vendor-snapshotshot:
     name: Vendor Snapshot
     runs-on: ubuntu-latest
     outputs:
@@ -69,7 +69,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: vendor-snap/Dockerfile
+          file: vendor-snapshot/Dockerfile
           push: true
           tags: |
             ${{ env.VENDOR_IMAGE }}:${{ steps.tag.outputs.tag }}
@@ -87,7 +87,7 @@ jobs:
   validate:
     name: Lint, Vet, Test
     runs-on: ubuntu-latest
-    needs: vendor-snapshot
+    needs: vendor-snapshotshot
     strategy:
       matrix:
         go-version: ["1.25.7"]
@@ -117,7 +117,7 @@ jobs:
 
       - name: Restore vendor from snapshot
         run: |
-          IMAGE="${{ env.VENDOR_IMAGE }}:${{ needs.vendor-snapshot.outputs.vendor-tag }}"
+          IMAGE="${{ env.VENDOR_IMAGE }}:${{ needs.vendor-snapshotshot.outputs.vendor-tag }}"
           echo "Restoring vendor from ${IMAGE}"
           docker pull "${IMAGE}"
           CONTAINER=$(docker create "${IMAGE}")
@@ -172,7 +172,7 @@ jobs:
       - name: CI Summary
         if: always()
         run: |
-          VENDOR_STATUS="${{ needs.vendor-snapshot.outputs.cache-hit == 'true' && '✅ Cache hit' || '🔨 Rebuilt' }}"
+          VENDOR_STATUS="${{ needs.vendor-snapshotshot.outputs.cache-hit == 'true' && '✅ Cache hit' || '🔨 Rebuilt' }}"
           cat >> $GITHUB_STEP_SUMMARY <<EOF
           # ✅ Validation Complete
           **Go Version:** \`${{ matrix.go-version }}\`
@@ -180,7 +180,7 @@ jobs:
           ## Vendor Snapshot
           | Key | Value |
           | --- | --- |
-          | Tag | \`${{ needs.vendor-snapshot.outputs.vendor-tag }}\` |
+          | Tag | \`${{ needs.vendor-snapshotshot.outputs.vendor-tag }}\` |
           | Status | ${VENDOR_STATUS} |
           | Image | \`${{ env.VENDOR_IMAGE }}\` |
 
