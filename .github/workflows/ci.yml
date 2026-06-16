@@ -139,7 +139,7 @@ jobs:
               go install github.com/magefile/mage@latest
           fi
       - name: Tidy
-        run: mage tidy
+        run: go mod tidy
 
       - name: Auto-fix formatting
         run: gofmt -w .
