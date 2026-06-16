@@ -141,8 +141,15 @@ jobs:
         env:
           GOFLAGS: -mod=mod
 
+      - name: Bootstrap mage
+        run: go install github.com/magefile/mage@latest
+        env:
+          GOFLAGS: ""
+
       - name: Install tools from vendor
         run: mage tools
+        env:
+          GOFLAGS: ""
 
       - name: Tidy
         run: mage tidy
