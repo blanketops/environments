@@ -13,6 +13,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+This file owns the Provider interface for the BuildTrigger domain — the
+contract between the application layer and trigger evaluation backends.
+
+A Provider answers one question: should this trigger be accepted, ignored,
+or rejected? It is a pure decision function — no side effects, no Kubernetes
+mutations, no external calls. All execution (BuildRun creation) is handled
+upstream by the application service after the Provider returns Accept.
+
+Concrete implementations include the GitHub provider
+(pkg/buildtrigger/api/github.go) which evaluates branch policy, event type
+allowlists, and duplicate event detection.
+*/
 package api
 
 import (
@@ -22,29 +35,19 @@ import (
 	buildtriggerResolution "github.com/ntlaletsi70/blanketops-environments/resolution/buildtrigger"
 )
 
-// Provider is the contract between the application layer
-// and the outside world (event sources, policies, rule engines).
-//
-// The application NEVER hard-codes policy.
-// It asks the provider to evaluate intent.
+// Provider evaluates a resolved BuildTrigger and returns a Decision.
+// Implementations must be pure — same inputs always produce the same Decision,
+// with no side effects and no Kubernetes mutations.
 type Provider interface {
-
-	// Evaluate determines whether a BuildTrigger
-	// should be accepted, ignored, or rejected.
+	// Evaluate determines whether a BuildTrigger should be accepted, ignored,
+	// or rejected based on policy and the resolved trigger facts.
 	//
-	// PARAMETERS:
-	// - resolved → authoritative runtime facts (CR, timestamps, IDs)
-	// - trigger  → pure domain projection
+	//   - resolved → authoritative runtime facts (CR, timestamps, event IDs)
+	//   - trigger  → pure domain projection for policy evaluation
 	//
-	// GUARANTEES:
-	// - Pure decision (no side effects)
-	// - Deterministic for same inputs
-	// - Idempotent
-	//
-	// DOES NOT:
-	// - Create BuildRuns
-	// - Mutate Kubernetes
-	// - Talk to external systems
+	// Returns a Decision and a non-nil error only when evaluation itself fails
+	// (e.g. policy backend unreachable). A rejected trigger is not an error —
+	// it is a valid Decision with Outcome=Reject.
 	Evaluate(
 		ctx context.Context,
 		resolved *buildtriggerResolution.ResolvedBuildTrigger,

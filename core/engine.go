@@ -3,7 +3,9 @@ Copyright 2026 The BlanketOps Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
+
 	http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,15 +24,15 @@ bridges the controller layer and the domain layer.
 
 The Engine supports two execution modes:
 
-  1. Synchronous (default) — Execute() dispatches directly to the Domain and
-     returns the error to the caller (controller-runtime requeue path). This is
-     the mode used in all current deployments.
+ 1. Synchronous (default) — Execute() dispatches directly to the Domain and
+    returns the error to the caller (controller-runtime requeue path). This is
+    the mode used in all current deployments.
 
-  2. Async worker pool (optional) — Queue() enqueues Commands into a buffered
-     channel; a configurable pool of goroutines drains it via workerLoop. This
-     mode is opt-in via SetWorkers() and StartWorkers(), intended for high-
-     throughput production deployments where controller goroutines should not
-     block on Domain execution.
+ 2. Async worker pool (optional) — Queue() enqueues Commands into a buffered
+    channel; a configurable pool of goroutines drains it via workerLoop. This
+    mode is opt-in via SetWorkers() and StartWorkers(), intended for high-
+    throughput production deployments where controller goroutines should not
+    block on Domain execution.
 
 When no workers are configured (workers == 0), Queue() falls through to
 Execute() so callers need not distinguish between modes.
@@ -52,24 +54,24 @@ import (
 type Engine struct {
 	// registry is the source of Domain lookups by GVK.
 	registry *Registry
-	
+
 	// mu guards workers and related fields.
 	mu sync.RWMutex
-	
+
 	// queue is the buffered command channel drained by the worker pool.
 	// Capacity 1024 provides backpressure headroom before Queue blocks.
 	queue chan Command
-	
+
 	// workers is the number of async goroutines draining the queue.
 	// Zero means synchronous execution (inline via Execute).
 	workers int
-	
+
 	// workerStop signals all workerLoop goroutines to exit cleanly.
 	workerStop chan struct{}
-	
+
 	// workerGroup tracks active workers for graceful shutdown.
 	workerGroup sync.WaitGroup
-	logger logr.Logger
+	logger      logr.Logger
 }
 
 // NewEngine constructs an Engine bound to the given Registry and logger.

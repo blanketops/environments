@@ -13,6 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+This file owns BuildResult — the unified return type from every build provider.
+
+BuildResult is provider-agnostic: Buildah, Kaniko, and Buildpacks all return
+the same type. The StatusWriter (pkg/build/application/status.go) consumes it
+to write contract status and conditions to the Build CR.
+
+Triggered=true, Success=false is the normal post-dispatch state — the build
+has been handed off to Shipwright but has not yet completed. The buildrun
+observer writes the terminal outcome asynchronously.
+*/
 package domain
 
 import (
@@ -20,26 +31,38 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// This is what *every* build provider returns.
-// Unified result regardless of Buildah, Kaniko, Buildpacks.
+// BuildResult is the unified return value from every build provider.
+// All fields are optional — providers populate only what is relevant to
+// their execution model.
 type BuildResult struct {
-	Success      bool
-	Triggered    bool
-	Message      string
-	Logs         []string
+	// Success is true only when the BuildRun completed successfully.
+	// False when Triggered=true — the build has been dispatched, not confirmed.
+	Success bool
+	// Triggered is true when a BuildRun was created or already existed for
+	// this execution hash.
+	Triggered bool
+	// Message is a human-readable summary set by the provider or observer.
+	Message string
+	// Logs captures any provider-level log lines. Optional — most providers
+	// rely on Shipwright's own log streaming.
+	Logs []string
+	// ExecutionRef is the name of the Shipwright BuildRun created for this
+	// execution cycle.
 	ExecutionRef string
-	BuildHash    string
-
+	// BuildHash is the deterministic execution identity. Set by the provider
+	// and carried through to BuildStatus for deduplication tracking.
+	BuildHash string
+	// ArtifactRef is the fully qualified image reference produced by the build,
+	// including digest when available. Populated by the buildrun observer after
+	// successful completion.
 	ArtifactRef string
-
+	// ShipwrightBuild and ShipwrightBuildRun carry the live Shipwright objects
+	// for callers that need to inspect them directly. Both are optional.
 	ShipwrightBuild    *shipwrightvbeta1.Build
 	ShipwrightBuildRun *shipwrightvbeta1.BuildRun
-
-	// --------------------
-	// Retry (AUTHORITATIVE)
-	// --------------------
-
+	// OnFailure mirrors the retry policy for observer-layer retry decisions.
 	OnFailure bool
-
+	// LastFailureAt is the timestamp of the most recent failure.
+	// Populated by the buildrun observer for observability only.
 	LastFailureAt *metav1.Time
 }
