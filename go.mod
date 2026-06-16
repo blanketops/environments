@@ -21,7 +21,7 @@ require (
 	go.uber.org/zap v1.27.1
 	golang.org/x/crypto v0.51.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
-	honnef.co/go/tools v0.0.1-2019.2.3
+	honnef.co/go/tools v0.7.0
 	k8s.io/api v0.35.2
 	k8s.io/apimachinery v0.35.2
 	k8s.io/client-go v0.35.2
@@ -32,7 +32,7 @@ require (
 require (
 	carvel.dev/vendir v0.45.2 // indirect
 	dario.cat/mergo v1.0.1 // indirect
-	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.1.6 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
@@ -110,6 +110,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20231108232855-2478ac86f678 // indirect
 	golang.org/x/mod v0.35.0 // indirect
 	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect

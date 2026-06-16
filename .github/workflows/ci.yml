@@ -147,14 +147,6 @@ jobs:
             ${{ runner.os }}-go-build-${{ matrix.go-version }}-
             ${{ runner.os }}-go-build-
 
-      - name: Mage Tools
-        uses: magefile/mage-action@v4
-        with:
-          version: latest
-          args: tools
-        env:
-          GOFLAGS: "-mod=mod"
-
       - name: Mage Tidy
         uses: magefile/mage-action@v4
         with:
