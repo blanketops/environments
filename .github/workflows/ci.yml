@@ -150,6 +150,9 @@ jobs:
 
       - name: Tidy
         run: go mod tidy
+        
+      - name: Vendor
+        run: go mod vendor
 
       - name: Auto-fix formatting
         run: gofmt -w .
