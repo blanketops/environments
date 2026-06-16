@@ -31,7 +31,7 @@ func NewKnativeReconciler(c client.Client, scheme *runtime.Scheme, log logr.Logg
 	return &KnativeReconciler{Client: c, Scheme: scheme, Log: log}
 }
 
-// func (r *KnativeReconciler) ReconcileKnative(ctx context.Context, env *environmentv1.Environment) (bool, error) {
+// func (r *KnativeReconciler) ReconcileKnative(ctx context.Context, env *environmentv1alpha1.Environment) (bool, error) {
 // 	for _, su := range env.Spec.ServiceUnits {
 // 		// Placeholder: override image if built from Buildpacks
 // 		if su.ImageFromBuild && env.Spec.Build.Image != "" {
@@ -88,7 +88,7 @@ func NewKnativeReconciler(c client.Client, scheme *runtime.Scheme, log logr.Logg
 
 // // Helper: translate ServiceUnit to Knative PodSpec
 // // envToKnativePodSpec converts a ServiceUnit to corev1.PodSpec for Knative Service
-// func envToKnativePodSpec(su environmentv1.ServiceUnit) corev1.PodSpec {
+// func envToKnativePodSpec(su environmentv1alpha1.ServiceUnit) corev1.PodSpec {
 // 	return corev1.PodSpec{
 // 		Containers: []corev1.Container{
 // 			{

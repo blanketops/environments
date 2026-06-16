@@ -13,110 +13,90 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+This file owns the core domain types for the build domain — BuildSpec,
+BuildPolicy, RetryPolicy, and BuildStatus.
+
+These types are the canonical semantic input and output of build execution.
+They are NOT the CRD shape. The Mapper (pkg/build/application/mapper.go)
+translates the resolved Build contract into a BuildSpec; the StatusWriter
+serialises BuildStatus back into the CR.
+
+All types are fully resolved and immutable at runtime — no defaults are
+applied after construction.
+*/
 package domain
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-// -----------------------------------------------------------------------------
-// BuildSpec
-// -----------------------------------------------------------------------------
-//
-// Pure internal specification of a Build.
-// This is NOT the CRD shape.
-// This is the canonical semantic input to execution.
+// BuildSpec is the canonical semantic input to build execution. It is produced
+// by the Mapper from a resolved Build contract and consumed by the provider layer.
 type BuildSpec struct {
-	// --------------------
-	// Source
-	// --------------------
+	// Source — the Git repository to build from.
 	SourceURL   string
 	ContextDir  string
 	Revision    string
-	CloneSecret string
+	CloneSecret string // optional; empty means public or default credentials
 
-	// --------------------
-	// Strategy
-	// --------------------
+	// Strategy — the Shipwright ClusterBuildStrategy to use.
 	StrategyName string
 	StrategyKind string
 
-	// --------------------
-	// Output
-	// --------------------
+	// Output — the fully qualified target image reference.
 	Image string
 
-	// --------------------
-	// Execution identity
-	// --------------------
+	// ServiceAccount — credentials for pushing the built image.
+	// Both fields are optional; empty means Shipwright uses the namespace default.
 	ServiceAccountName   string
 	ServiceAccountSecret string
 
-	// --------------------
-	// Execution controls
-	// --------------------
-	TimeoutSeconds *int64 // nil = provider default
+	// TimeoutSeconds is optional — nil defers to the provider default.
+	TimeoutSeconds *int64
 
-	// --------------------
-	// Parameters
-	// --------------------
+	// Params are strategy-specific parameters passed through to Shipwright.
 	Params map[string]string
 
-	// --------------------
-	// Policy (NEW)
-	// --------------------
+	// Policy controls retry behaviour for failed executions.
 	Policy *BuildPolicy
 }
 
-// -----------------------------------------------------------------------------
-// BuildPolicy
-// -----------------------------------------------------------------------------
-//
-// Pure domain-level execution policy.
-// Fully resolved, immutable at runtime.
+// BuildPolicy is the domain-level execution policy. Fully resolved and
+// immutable at runtime — constructed from the resolved Build contract by
+// the Mapper.
 type BuildPolicy struct {
 	Retry *RetryPolicy
 }
 
-// -----------------------------------------------------------------------------
-// RetryPolicy
-// -----------------------------------------------------------------------------
-//
-// Defines retry semantics for failed executions.
+// RetryPolicy defines retry semantics for failed build executions.
 type RetryPolicy struct {
-	// Retry only when execution fails
+	// OnFailure enables automatic retry when the BuildRun fails.
 	OnFailure bool
-
-	// Maximum total execution attempts (including first run)
+	// MaxAttempts is the total number of execution attempts including the
+	// first run. Must be > 0 when OnFailure is true — enforced at resolution.
 	MaxAttempts int32
 }
 
-// -----------------------------------------------------------------------------
-// BuildStatus
-// -----------------------------------------------------------------------------
-//
-// Internal domain status for a Build execution.
-// This is serialized into CRD status.contract.
+// BuildStatus is the internal domain status for a build execution. It is
+// serialised into the Build CR's status.contract field by the StatusWriter
+// and read by downstream automation (BuildTrigger, SupplyChain observers).
 type BuildStatus struct {
-	// Was an execution triggered?
+	// Triggered indicates that a BuildRun was dispatched.
 	Triggered bool
-
-	// Did the execution succeed?
+	// Success indicates that the BuildRun completed successfully.
+	// False when Triggered=true — the build has been dispatched but not yet
+	// confirmed. The buildrun observer sets Success=true on completion.
 	Success bool
-
-	// Human-readable message
+	// Message is a human-readable summary of the current state.
 	Message string
-
-	// Reference to the execution object (e.g. BuildRun name)
+	// ExecutionRef is the name of the Shipwright BuildRun created for this
+	// execution cycle.
 	ExecutionRef string
-
-	// Deterministic execution hash
+	// BuildHash is the deterministic execution identity computed from the
+	// resolved spec and trigger context. Used for BuildRun deduplication.
 	BuildHash string
-
-	// --------------------
-	// Retry (AUTHORITATIVE)
-	// --------------------
-
+	// OnFailure mirrors the retry policy for observer-layer retry decisions.
 	OnFailure bool
-
-	// Last failure timestamp (optional, observability only)
+	// LastFailureAt is the timestamp of the most recent failure.
+	// Optional — populated by the buildrun observer for observability only.
 	LastFailureAt *metav1.Time
 }

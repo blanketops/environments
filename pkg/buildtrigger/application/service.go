@@ -13,6 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+This file owns BuildTriggerService — the application service that orchestrates
+BuildTrigger evaluation.
+
+The pipeline is intentionally minimal: map, evaluate, write. The service does
+not make admission decisions itself — that belongs to the Provider. It does not
+dispatch BuildRuns — that belongs to the build domain after acceptance. It only
+sequences the three steps and ensures the BuildTrigger CR always reflects the
+outcome.
+*/
 package application
 
 import (
@@ -23,12 +33,17 @@ import (
 	buildtriggerResolution "github.com/ntlaletsi70/blanketops-environments/resolution/buildtrigger"
 )
 
+// BuildTriggerService orchestrates the BuildTrigger evaluation pipeline.
+// It is stateless beyond its collaborators and safe for concurrent use.
 type BuildTriggerService struct {
 	mapper   *Mapper
 	status   *StatusWriter
 	provider api.Provider
 }
 
+// NewBuildTriggerService constructs a BuildTriggerService with the required
+// collaborators. Provider is a single instance — BackendSelector routes to the
+// correct provider before construction if multiple sources are supported.
 func NewBuildTriggerService(
 	mapper *Mapper,
 	status *StatusWriter,
@@ -41,34 +56,25 @@ func NewBuildTriggerService(
 	}
 }
 
+// Evaluate maps the resolved trigger to a domain model, delegates admission
+// to the provider, then writes the decision back to the BuildTrigger CR.
+// Status is always written — even when evaluation fails — so the CR reflects
+// the latest outcome.
 func (s *BuildTriggerService) Evaluate(
 	ctx context.Context,
 	resolved *buildtriggerResolution.ResolvedBuildTrigger,
 ) error {
-
-	// ------------------------------------------------
-	// 1. Map → domain trigger (MUST stay)
-	// ------------------------------------------------
+	// Map resolved contract → domain trigger.
 	trigger := s.mapper.MapResolvedToDomain(resolved)
 
-	// ------------------------------------------------
-	// 2. Delegate evaluation (NO recursion)
-	// ------------------------------------------------
-	decision, err := s.provider.Evaluate(
-		ctx,
-		resolved,
-		trigger,
-	)
+	// Evaluate — pure decision, no side effects.
+	decision, err := s.provider.Evaluate(ctx, resolved, trigger)
 
-	// ------------------------------------------------
-	// 3. Write status (against BuildTrigger CR)
-	// ------------------------------------------------
+	// Write outcome to the BuildTrigger CR regardless of error.
 	return s.status.Write(
 		ctx,
 		resolved.Trigger,
-		domain.BuildTriggerStatus{
-			Accepted: decision.Accepted,
-		},
+		domain.BuildTriggerStatus{Accepted: decision.Accepted},
 		err,
 	)
 }

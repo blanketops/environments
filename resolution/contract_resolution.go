@@ -24,6 +24,7 @@ import (
 	environments1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
 	eventsv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/events/v1alpha1"
 	sourcesv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/sources/v1alpha1"
+
 	//networksv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/networks/v1alpha1"
 	build "github.com/ntlaletsi70/blanketops-environments/resolution/build"
 	buidtrigger "github.com/ntlaletsi70/blanketops-environments/resolution/buildtrigger"
@@ -44,18 +45,18 @@ type Adapter struct {
 	githubevent   *gitHubEvent.Adapter
 	packages      *packages.Adapter
 	// serviceunit   *serviceunit.Adapter
-	// domain        *domain.Adapter 
+	// domain        *domain.Adapter
 	// route         *route.Adapter
 }
 
 func NewAdapter() *Adapter {
 	return &Adapter{
-		build:           build.NewAdapter(),
-		buildtrigger:    buidtrigger.NewAdapter(),
-		deployment:      deployment.NewAdapter(),
-		gitrepository:   gitRepository.NewAdapter(),
-		githubevent:     gitHubEvent.NewAdapter(),
-		packages:        packages.NewAdapter(),
+		build:         build.NewAdapter(),
+		buildtrigger:  buidtrigger.NewAdapter(),
+		deployment:    deployment.NewAdapter(),
+		gitrepository: gitRepository.NewAdapter(),
+		githubevent:   gitHubEvent.NewAdapter(),
+		packages:      packages.NewAdapter(),
 		// serviceunit:     serviceunit.NewAdapter(),
 		// domain:          domain.NewAdapter(),
 		// route:           route.NewAdapter(),
@@ -71,13 +72,13 @@ func (a *Adapter) Resolve(ctx context.Context, obj client.Object) error {
 
 	case *environments1alpha1.BuildTrigger:
 		_, err := a.buildtrigger.Resolve(ctx, o)
-		return err	
+		return err
 
 	case *environments1alpha1.Deployment:
 		_, err := a.deployment.Resolve(ctx, o)
-		return err	
+		return err
 
-   // case *environments1alpha1.ServiceUnit:
+		// case *environments1alpha1.ServiceUnit:
 		// _, err := a.serviceunit.Resolve(ctx,o)
 		//return err
 
@@ -88,7 +89,6 @@ func (a *Adapter) Resolve(ctx context.Context, obj client.Object) error {
 	case *sourcesv1alpha1.GitRepository:
 		_, err := a.gitrepository.Resolve(ctx, o)
 		return err
-	
 
 	default:
 		return fmt.Errorf(
@@ -96,5 +96,4 @@ func (a *Adapter) Resolve(ctx context.Context, obj client.Object) error {
 			obj,
 		)
 	}
-	return nil
 }

@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/domain"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/intent"
+	intent "github.com/ntlaletsi70/blanketops-environments/pkg/intent/deployment"
 )
 
 type K8SProvider struct {

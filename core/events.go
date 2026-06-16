@@ -39,9 +39,9 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	eventsv1 "k8s.io/client-go/tools/events"
 	recordv1 "k8s.io/client-go/tools/record"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -124,10 +124,10 @@ func (er *EventRecorder) Event(
 		}
 		er.eventsRecorder.Eventf(
 			runtimeObj,
-			nil,       // related object — not used
+			nil, // related object — not used
 			eventType,
 			reason,
-			reason,  // action mirrors reason
+			reason, // action mirrors reason
 			message,
 		)
 	}

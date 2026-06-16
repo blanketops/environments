@@ -47,11 +47,11 @@ import (
 type Registry struct {
 	// mu guards both domains and strategies maps.
 	mu sync.RWMutex
-	
+
 	// domains maps GroupVersionKind → Domain for Engine routing.
 	// One Domain per GVK; duplicate registration overwrites silently.
 	domains map[schema.GroupVersionKind]Domain
-	
+
 	// strategies maps strategy name → implementation for pluggable
 	// build strategy dispatch. Typed access requires a caller-side assertion.
 	strategies map[string]any

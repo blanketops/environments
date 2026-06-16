@@ -20,7 +20,7 @@ import (
 
 	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/api"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/domain"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/deployment/intent"
+	intent "github.com/ntlaletsi70/blanketops-environments/pkg/intent/deployment"
 )
 
 type GitOpsDecorator struct {
