@@ -1,9 +1,11 @@
 name: CI
+
 on:
   push:
     branches:
       - main
   pull_request:
+
 permissions:
   contents: write
   packages: write
@@ -26,7 +28,7 @@ jobs:
       vendor-tag: ${{ steps.tag.outputs.tag }}
       cache-hit: ${{ steps.check.outputs.hit }}
     steps:
-      - name: Checkout develop
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -43,7 +45,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
+          username: ntlaletsi70
           password: ${{ secrets.GH_PAT }}
 
       - name: Check if vendor snapshot already exists
@@ -79,8 +81,8 @@ jobs:
   # Job 2: Validate
   # Restores vendor/ from the snapshot image then
   # runs the full lint/vet/test pipeline with -mod=vendor.
-  # Tools (mage, staticcheck, gomarkdoc) are bootstrapped
-  # from vendor — zero network at tool install time.
+  # Mage is installed via mage-action — no network needed
+  # for tools after vendor is restored.
   # ─────────────────────────────────────────────
   validate:
     name: Lint, Vet, Test
@@ -115,7 +117,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ntlaletsi70
           password: ${{ secrets.GH_PAT }}
-          
+
       - name: Restore vendor from snapshot
         run: |
           IMAGE="${{ env.VENDOR_IMAGE }}:${{ needs.vendor-snapshot.outputs.vendor-tag }}"
@@ -135,16 +137,11 @@ jobs:
             ${{ runner.os }}-go-build-${{ matrix.go-version }}-
             ${{ runner.os }}-go-build-
 
-      - name: Bootstrap mage
-        run: |
-          go install github.com/magefile/mage@latest
-        env:
-          GOFLAGS: -mod=mod
-
-      - name: Bootstrap mage
-        run: go install github.com/magefile/mage@latest
-        env:
-          GOFLAGS: ""
+      - name: Install mage
+        uses: magefile/mage-action@v4
+        with:
+          version: latest
+          install-only: true
 
       - name: Install tools from vendor
         run: mage tools
