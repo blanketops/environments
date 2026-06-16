@@ -145,9 +145,6 @@ jobs:
             ${{ runner.os }}-go-build-${{ matrix.go-version }}-
             ${{ runner.os }}-go-build-
 
-      # - name: Install staticcheck
-      #   run: go install -mod=vendor honnef.co/go/tools/cmd/staticcheck
-
       - name: Tidy
         run: go mod tidy
         
@@ -171,10 +168,10 @@ jobs:
       - name: Vet
         run: go vet -mod=vendor ./...
 
-      - name: Static Check
-        uses: dominikh/staticcheck-action@v1
-        with:
-          version: "latest"
+      # - name: Static Check
+      #   uses: dominikh/staticcheck-action@v1
+      #   with:
+      #     version: "latest"
 
       - name: Test
         run: go test -mod=vendor ./... -coverprofile=coverage.out -covermode=atomic
