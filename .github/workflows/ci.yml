@@ -152,8 +152,8 @@ jobs:
         with:
           version: latest
           args: tidy
-        env:
-          GOFLAGS: "-mod=mod"
+        # env:
+        #   GOFLAGS: "-mod=mod"
 
       - name: Auto-fix formatting
         run: gofmt -w .
@@ -171,8 +171,8 @@ jobs:
         with:
           version: latest
           args: build
-        env:
-          GOFLAGS: "-mod=mod"
+        # env:
+        #   GOFLAGS: "-mod=mod"
 
       - name: Mage Vet
         uses: magefile/mage-action@v4
@@ -187,15 +187,15 @@ jobs:
         with:
           version: latest
           args: lint
-        env:
-          GOFLAGS: "-mod=mod"
+        # env:
+        #   GOFLAGS: "-mod=mod"
       - name: Mage Vendor
         uses: magefile/mage-action@v4
         with:
           version: latest
           args: vendor
-        env:
-          GOFLAGS: "-mod=mod"    
+        # env:
+        #   GOFLAGS: "-mod=mod"    
 
       - name: Test
         run: go test -mod=vendor ./... -coverprofile=coverage.out -covermode=atomic
