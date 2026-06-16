@@ -80,10 +80,8 @@ jobs:
   # ─────────────────────────────────────────────
   # Job 2: Validate
   # Restores vendor/ from the snapshot image then
-  # runs the full lint/vet/test pipeline with -mod=vendor.
-  # Mage targets use -mod=vendor via buildFlags().
-  # Mage itself compiles the magefile with -mod=mod
-  # so it can resolve mg/sh from the module cache.
+  # runs the full lint/vet/test pipeline.
+  # Pure Go toolchain — no mage, no make.
   # ─────────────────────────────────────────────
   validate:
     name: Lint, Vet, Test
@@ -147,13 +145,11 @@ jobs:
             ${{ runner.os }}-go-build-${{ matrix.go-version }}-
             ${{ runner.os }}-go-build-
 
-      - name: Mage Tidy
-        uses: magefile/mage-action@v4
-        with:
-          version: latest
-          args: tidy
-        # env:
-        #   GOFLAGS: "-mod=mod"
+      - name: Install staticcheck
+        run: go install -mod=vendor honnef.co/go/tools/cmd/staticcheck
+
+      - name: Tidy
+        run: go mod tidy
 
       - name: Auto-fix formatting
         run: gofmt -w .
@@ -166,36 +162,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
-      - name: Mage Build
-        uses: magefile/mage-action@v4
-        with:
-          version: latest
-          args: build
-        # env:
-        #   GOFLAGS: "-mod=mod"
+      - name: Build
+        run: go build -mod=vendor ./...
 
-      - name: Mage Vet
-        uses: magefile/mage-action@v4
-        with:
-          version: latest
-          args: vet
-        env:
-          GOFLAGS: "-mod=mod"
+      - name: Vet
+        run: go vet -mod=vendor ./...
 
-      - name: Mage Lint
-        uses: magefile/mage-action@v4
-        with:
-          version: latest
-          args: lint
-        # env:
-        #   GOFLAGS: "-mod=mod"
-      - name: Mage Vendor
-        uses: magefile/mage-action@v4
-        with:
-          version: latest
-          args: vendor
-        # env:
-        #   GOFLAGS: "-mod=mod"    
+      - name: Lint
+        run: staticcheck -mod=vendor ./...
 
       - name: Test
         run: go test -mod=vendor ./... -coverprofile=coverage.out -covermode=atomic
@@ -221,11 +195,11 @@ jobs:
           ## Checks Executed
           | Step | Tool |
           | --- | --- |
-          | Dependency tidy | \`mage tidy\` |
+          | Dependency tidy | \`go mod tidy\` |
           | Auto-format | \`gofmt\` |
-          | Build | \`mage build\` |
-          | Vet | \`mage vet\` |
-          | Lint | \`mage lint\` (staticcheck) |
+          | Build | \`go build -mod=vendor\` |
+          | Vet | \`go vet -mod=vendor\` |
+          | Lint | \`staticcheck -mod=vendor\` |
           | Test | \`go test -mod=vendor\` |
           | Coverage | \`coverage.out\` |
           EOF
