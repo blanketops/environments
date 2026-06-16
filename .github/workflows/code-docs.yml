@@ -54,7 +54,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/code/
+          git add docs/code/ -f
           if ! git diff-index --quiet HEAD; then
             git commit -m "docs: auto-generate code documentation [skip ci]"
             git push --force origin main
