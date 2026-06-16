@@ -89,7 +89,7 @@ jobs:
     needs: vendor-snapshot
     strategy:
       matrix:
-        go-version: ["1.25.7"]
+        go-version: ["1.25.8"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
