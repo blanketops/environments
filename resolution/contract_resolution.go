@@ -24,6 +24,7 @@ import (
 	environments1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
 	eventsv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/events/v1alpha1"
 	sourcesv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/sources/v1alpha1"
+
 	//networksv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/networks/v1alpha1"
 	build "github.com/ntlaletsi70/blanketops-environments/resolution/build"
 	buidtrigger "github.com/ntlaletsi70/blanketops-environments/resolution/buildtrigger"
@@ -95,5 +96,4 @@ func (a *Adapter) Resolve(ctx context.Context, obj client.Object) error {
 			obj,
 		)
 	}
-	return nil
 }
