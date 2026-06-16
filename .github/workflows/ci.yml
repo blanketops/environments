@@ -133,7 +133,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-${{ matrix.go-version }}-
             ${{ runner.os }}-go-
-
+      - name: Install mage
+        run: |
+          if ! command -v mage &> /dev/null; then
+              go install github.com/magefile/mage@latest
+          fi
       - name: Tidy
         run: mage tidy
 
