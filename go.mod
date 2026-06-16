@@ -5,7 +5,7 @@ go 1.25.7
 toolchain go1.25.8
 
 require (
-	carvel.dev/kapp-controller v0.59.2
+	carvel.dev/kapp-controller v0.59.0
 	github.com/bradfitz/gomemcache v0.0.0-20260422231931-4d751bb6e37c
 	github.com/fluxcd/kustomize-controller/api v1.8.1
 	github.com/fluxcd/pkg/apis/meta v1.25.0
