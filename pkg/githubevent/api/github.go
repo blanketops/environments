@@ -79,7 +79,7 @@ func (p *GitHubProvider) createTypedEventBus() *argoeventsv1alpha1.EventBus {
 		ObjectMeta: metav1.ObjectMeta{Name: "default", Namespace: argoEventsNamespace},
 		Spec: argoeventsv1alpha1.EventBusSpec{
 			NATS: &argoeventsv1alpha1.NATSBus{
-				Native: &argoeventsv1alpha1.NativeStrategy{Replicas: &replicas},
+				Native: &argoeventsv1alpha1.NativeStrategy{Replicas: replicas},
 			},
 		},
 	}
@@ -91,10 +91,10 @@ func (p *GitHubProvider) createTypedGitHubEventSource(spec domain.GitHubEvent) *
 		Spec: argoeventsv1alpha1.EventSourceSpec{
 			Github: map[string]argoeventsv1alpha1.GithubEventSource{
 				"repo-events": {
-					Owner:      spec.Repository.Owner,
-					Repository: spec.Repository.Name,
-					Events:     []string{string(spec.Type)},
-					Webhook:    &argoeventsv1alpha1.WebhookContext{Endpoint: "/github", Port: "12000"},
+					//Owner:      spec.Repository.Owner,
+					//Repository: spec.Repository.Name,
+					Events:  []string{string(spec.Type)},
+					Webhook: &argoeventsv1alpha1.WebhookContext{Endpoint: "/github", Port: "12000"},
 					WebhookSecret: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{Name: "github-webhook-secret"},
 						Key:                  "secret",
@@ -108,13 +108,19 @@ func (p *GitHubProvider) createTypedGitHubEventSource(spec domain.GitHubEvent) *
 
 func (p *GitHubProvider) createTypedGitHubSensor(spec domain.GitHubEvent, crName string) (*argoeventsv1alpha1.Sensor, error) {
 	basePayload := map[string]interface{}{
-		"apiVersion": "events.blanketops.dev/v1alpha1",
-		"kind":       "GitHubPayload",
-		"metadata":   map[string]interface{}{"generateName": "github-payload-", "namespace": argoEventsNamespace},
-		"spec":       map[string]interface{}{},
+		"apiVersion": "v1",
+		"kind":       "ConfigMap",
+		"metadata": map[string]interface{}{
+			"generateName": "github-payload-",
+			"namespace":    argoEventsNamespace,
+		},
+		// Write-once audit record — never updated after creation, so mark
+		// it immutable. Also gives the API server a small perf win since it
+		// no longer needs to watch this object for changes.
+		"immutable": true,
+		"data":      map[string]interface{}{},
 	}
 	basePayloadBytes, _ := json.Marshal(basePayload)
-
 	return &argoeventsv1alpha1.Sensor{
 		ObjectMeta: metav1.ObjectMeta{Name: "github-sensor", Namespace: argoEventsNamespace},
 		Spec: argoeventsv1alpha1.SensorSpec{
@@ -135,15 +141,20 @@ func (p *GitHubProvider) createTypedGitHubSensor(spec domain.GitHubEvent, crName
 					Name: "emit-github-payload",
 					K8s: &argoeventsv1alpha1.StandardK8STrigger{
 						Operation: "create",
-						Source:    &argoeventsv1alpha1.ArtifactLocation{Resource: basePayloadBytes},
+						Source: &argoeventsv1alpha1.ArtifactLocation{
+							Resource: &argoeventsv1alpha1.K8SResource{Value: basePayloadBytes},
+						}, // dest paths are now data.X — ConfigMap.Data is a
+						// flat map[string]string, no nested contract object.
+						// Naming here is purely cosmetic now (no struct to
+						// match), unlike every prior attempt tonight.
 						Parameters: []argoeventsv1alpha1.TriggerParameter{
-							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataKey: "headers.X-Github-Event"}, Dest: "spec.contract.event_type"},
-							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataKey: "headers.X-Github-Delivery"}, Dest: "spec.contract.event_id"},
-							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataKey: "body.repository.full_name"}, Dest: "spec.contract.repository"},
-							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataKey: "body.ref"}, Dest: "spec.contract.ref"},
-							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataKey: "body.after"}, Dest: "spec.contract.commit_sha"},
-							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataKey: "body.sender.login"}, Dest: "spec.actor"},
-							{Src: &argoeventsv1alpha1.TriggerParameterSource{Value: &crName}, Dest: "spec.github_event_ref"},
+							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataKey: "headers.X-Github-Event"}, Dest: "data.eventType"},
+							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataKey: "headers.X-Github-Delivery"}, Dest: "data.eventId"},
+							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataKey: "body.repository.full_name"}, Dest: "data.repository"},
+							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataKey: "body.ref"}, Dest: "data.ref"},
+							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataKey: "body.after"}, Dest: "data.commitSHA"},
+							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataKey: "body.sender.login"}, Dest: "data.actor"},
+							{Src: &argoeventsv1alpha1.TriggerParameterSource{Value: &crName}, Dest: "data.githubEventRef"},
 						},
 					},
 				},
@@ -151,7 +162,6 @@ func (p *GitHubProvider) createTypedGitHubSensor(spec domain.GitHubEvent, crName
 		},
 	}, nil
 }
-
 func (p *GitHubProvider) apply(ctx context.Context, obj client.Object) error {
 	key := client.ObjectKeyFromObject(obj)
 	current := obj.DeepCopyObject().(client.Object)

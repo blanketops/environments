@@ -6,24 +6,6 @@
 import "github.com/ntlaletsi70/blanketops-environments/pkg/githubevent/api"
 ```
 
-This file owns GitHubProvider — the concrete provider that provisions the Argo Events stack required to receive GitHub webhook deliveries and emit GitHubEvent CRs into the cluster.
-
-All Argo Events infrastructure — EventBus, EventSource, and Sensor — lives in a single fixed namespace \(argoEventsNamespace, "argo\-events"\), following Argo Events' own convention of one shared stack per cluster rather than per\-tenant proliferation. GitHubEvent CRs are required to live in that same namespace: Kubernetes does not support cross\-namespace owner references for namespaced resources, so EventSource/Sensor can only be owned by \(and garbage\-collected with\) a GitHubEvent CR that lives alongside them.
-
-For each GitHubEvent CR the provider ensures three Argo resources exist, all in argoEventsNamespace:
-
-- EventBus \(not owned\) — shared NATS bus. Argo Events resolves EventBus by looking for a bus named "default" within the same namespace as the EventSource/Sensor that depend on it — it does NOT resolve cross\-namespace. Created once and left in place; never owned by any GitHubEvent CR.
-- EventSource \(owned\) — registers the GitHub webhook subscription and exposes the delivery endpoint.
-- Sensor \(owned\) — matches incoming payloads and emits GitHubEvent CRs via a Kubernetes trigger. The trigger's resource template targets githubEventAPIVersion — that must match whatever apiVersion the GitHubEvent CRD is actually served at, or the Sensor's create call 404s with "the server could not find the requested resource".
-
-GitHubEvent's spec.contract field is intentionally opaque to Kubernetes \(x\-kubernetes\-preserve\-unknown\-fields\) — the API server stores it verbatim without validating its internal shape. Its actual structure is defined by the GitHubEventSpec proto message, which uses snake\_case field names \(event\_type, commit\_sha, webhook\_secret\_ref, etc.\). The Sensor's trigger must populate those exact proto field names.
-
-Critically, Argo Events' Kubernetes trigger does NOT support inline Go\-template placeholders \(e.g. "\{\{ .Input.body.X \}\}"\) embedded in arbitrary string fields of the resource body — that syntax is not a real Argo Events feature for this trigger type and gets stored verbatim as a literal string, never substituted. The actual mechanism is the trigger's separate \`parameters\` array: a list of src/dest mappings that extract values from the matched event's body/headers \(via dependencyName \+ dataKey\) and inject them into specific JSON paths \(dest\) within the resource AFTER the base resource is built. createGitHubSensor builds an empty \`contract\` object as the base shape and lets \`parameters\` fill it in — this is the only correct way to get live payload data into the created GitHubEvent CR.
-
-EventSource and Sensor carry an ownerReference to the GitHubEvent CR so they are garbage\-collected when the CR is deleted. If a GitHubEvent CR is ever created outside argoEventsNamespace, Ensure\(\) rejects it rather than silently dropping the owner reference.
-
-apply\(\) is the shared upsert primitive — it creates or updates any Unstructured object with correct GVK assertion and ResourceVersion threading.
-
 This file owns the Provider interface for the GitHubEvent domain — the contract that all event ingress backends must satisfy.
 
 A Provider is responsible for ensuring the observability infrastructure required to receive and forward GitHub webhook deliveries exists and is healthy. The concrete implementation \(GitHubProvider in github.go\) provisions the Argo Events stack \(EventBus, EventSource, Sensor\).
@@ -41,14 +23,14 @@ Ensure is idempotent — calling it multiple times for the same GitHubEvent CR m
 <a name="GitHubProvider"></a>
 ## type GitHubProvider
 
-GitHubProvider provisions and maintains the Argo Events stack for a GitHubEvent CR. It is the only component in the platform that writes Argo Events API objects directly.
+
 
 ```go
 type GitHubProvider struct {
     Client   client.Client
     Scheme   *runtime.Scheme
     Log      logr.Logger
-    Recorder events.EventRecorder // optional; may be nil
+    Recorder events.EventRecorder
 }
 ```
 
@@ -59,7 +41,7 @@ type GitHubProvider struct {
 func NewGitHubProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *GitHubProvider
 ```
 
-NewGitHubProvider constructs a GitHubProvider with the given dependencies.
+
 
 <a name="GitHubProvider.Ensure"></a>
 ### func \(\*GitHubProvider\) Ensure
@@ -68,9 +50,7 @@ NewGitHubProvider constructs a GitHubProvider with the given dependencies.
 func (p *GitHubProvider) Ensure(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent, spec domain.GitHubEvent) (domain.GitHubEventResult, error)
 ```
 
-Ensure provisions or reconciles the full Argo Events stack for the given GitHubEvent CR. It creates or updates EventBus, EventSource, and Sensor in order, all in argoEventsNamespace. EventSource and Sensor are owned by the CR; EventBus is not.
-
-Returns Accepted on success and Rejected on the first apply failure, or if the GitHubEvent CR itself is not in argoEventsNamespace \(since the owner reference cannot be established cross\-namespace\).
+Ensure provisions or reconciles the Argo Events stack for the GitHubEvent CR.
 
 <a name="Provider"></a>
 ## type Provider
