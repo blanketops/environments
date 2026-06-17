@@ -2,6 +2,64 @@
 
 All notable changes to this project will be documented in this file.
 
+## [unreleased]
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+
+## [0.4.2] - 2026-06-17
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.4.1
+- Sync develop with main after release/v0.4.1
+
+### Bugfix
+
+- *(githubevent)* Api broken call payload in payload consumed
+
+### Release
+
+- Merge release/v0.4.2 into main
+
+## [0.4.1] - 2026-06-17
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.4.0
+
+### Bugfix
+
+- *(githubevent)* Api broken call v1 fix
+
+### Release
+
+- Merge release/v0.4.1 into main
+
+## [0.4.0] - 2026-06-17
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.3.9
+- Sync develop with main after release/v0.3.9
+
+### Bugfix
+
+- *(pkg/githubevent)* Eventsensor at cr ns
+
+### Release
+
+- Merge release/v0.4.0 into main
+
 ## [0.3.9] - 2026-06-17
 
 ### 🚀 Features
