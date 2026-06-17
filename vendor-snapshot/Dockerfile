@@ -3,5 +3,5 @@ WORKDIR /snapshot
 COPY go.mod go.sum ./
 RUN go mod vendor
 
-FROM scratch AS export
+FROM alpine:3.20
 COPY --from=vendor-snapshot /snapshot/vendor /vendor
