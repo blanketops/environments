@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.5] - 2026-06-17
+
+### 🚀 Features
+
+- *(githubevent)* Rewrite to use core argo-events apis,mod tidy,
+- *(githubevent)* Minor
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.4.4
+- Sync develop with main after release/v0.4.4
+
+### Bugfix
+
+- *(housekeeping)* Rebase for 0.4.5
+
+### Feaure
+
+- *(githubevent)* Type to be removed, in triage, init no resolution
+
+### Release
+
+- Merge release/v0.4.5 into main
+
 ## [0.4.4] - 2026-06-17
 
 ### ⚙️ Miscellaneous Tasks
