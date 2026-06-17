@@ -16,18 +16,29 @@ This file owns GitHubProvider — the concrete provider that provisions the Argo
 Events stack required to receive GitHub webhook deliveries and emit GitHubEvent
 CRs into the cluster.
 
-For each GitHubEvent CR the provider ensures three Argo resources exist:
+All Argo Events infrastructure — EventBus, EventSource, and Sensor — lives in
+a single fixed namespace (argoEventsNamespace, "argo-events"), following Argo
+Events' own convention of one shared stack per cluster rather than per-tenant
+proliferation. GitHubEvent CRs are required to live in that same namespace:
+Kubernetes does not support cross-namespace owner references for namespaced
+resources, so EventSource/Sensor can only be owned by (and garbage-collected
+with) a GitHubEvent CR that lives alongside them.
 
-  - EventBus (cluster-scoped, not owned) — shared NATS bus. Created once and
-    left in place; never owned by a GitHubEvent CR.
-  - EventSource (namespaced, owned) — registers the GitHub webhook subscription
-    and exposes the delivery endpoint.
-  - Sensor (namespaced, owned) — matches incoming payloads and emits
-    GitHubEvent CRs via a Kubernetes trigger.
+For each GitHubEvent CR the provider ensures three Argo resources exist,
+all in argoEventsNamespace:
+  - EventBus (not owned) — shared NATS bus. Argo Events resolves EventBus by
+    looking for a bus named "default" within the same namespace as the
+    EventSource/Sensor that depend on it — it does NOT resolve cross-namespace.
+    Created once and left in place; never owned by any GitHubEvent CR.
+  - EventSource (owned) — registers the GitHub webhook subscription and
+    exposes the delivery endpoint.
+  - Sensor (owned) — matches incoming payloads and emits GitHubEvent CRs via
+    a Kubernetes trigger.
 
 EventSource and Sensor carry an ownerReference to the GitHubEvent CR so they
-are garbage-collected when the CR is deleted. EventBus is cluster-scoped and
-intentionally not owned.
+are garbage-collected when the CR is deleted. If a GitHubEvent CR is ever
+created outside argoEventsNamespace, Ensure() rejects it rather than silently
+dropping the owner reference.
 
 apply() is the shared upsert primitive — it creates or updates any Unstructured
 object with correct GVK assertion and ResourceVersion threading.
@@ -48,6 +59,12 @@ import (
 	"github.com/ntlaletsi70/blanketops-environments/pkg/githubevent/domain"
 	githubeventResolution "github.com/ntlaletsi70/blanketops-environments/resolution/githubevent"
 )
+
+// argoEventsNamespace is the single namespace all Argo Events infrastructure
+// lives in for this platform — EventBus, EventSource, and Sensor are always
+// provisioned here, regardless of where any other resources in the cluster
+// live. GitHubEvent CRs are expected to be created in this namespace too.
+const argoEventsNamespace = "argo-events"
 
 // GitHubProvider provisions and maintains the Argo Events stack for a
 // GitHubEvent CR. It is the only component in the platform that writes
@@ -86,28 +103,26 @@ func newUnstructured(apiVersion, kind, namespace, name string) *unstructured.Uns
 	return obj
 }
 
-// createEventBus constructs the namespaced NATS EventBus. The bus is shared
-// across all GitHubEvent CRs within a namespace — it is not owned by any
-// single CR and is never deleted on CR removal, but it must live in the same
-// namespace as the EventSource/Sensor that depend on it (Argo Events does not
-// resolve EventBus cross-namespace).
-func createEventBus(namespace string) *unstructured.Unstructured {
-	obj := newUnstructured("argoproj.io/v1alpha1", "EventBus", namespace, "default")
+// createEventBus constructs the NATS EventBus in argoEventsNamespace. The bus
+// is shared across every GitHubEvent CR in the cluster — it is not owned by
+// any single CR and is never deleted on CR removal.
+func createEventBus() *unstructured.Unstructured {
+	obj := newUnstructured("argoproj.io/v1alpha1", "EventBus", argoEventsNamespace, "default")
 	unstructured.SetNestedMap(obj.Object, map[string]interface{}{
 		"nats": map[string]interface{}{
 			"native": map[string]interface{}{
-				"replicas": int64(1), // must be int64 — JSON numbers decode as float64
+				"replicas": int64(1), // unstructured requires int64/float64/string/bool/map/slice — plain int panics
 			},
 		},
 	}, "spec")
 	return obj
 }
 
-// createGitHubEventSource constructs the namespaced EventSource that registers
-// the GitHub webhook subscription. Owned by the GitHubEvent CR — deleted when
-// the CR is deleted.
+// createGitHubEventSource constructs the EventSource in argoEventsNamespace
+// that registers the GitHub webhook subscription. Owned by the GitHubEvent
+// CR — deleted when the CR is deleted.
 func createGitHubEventSource(
-	namespace, owner, repo string,
+	owner, repo string,
 	events []string,
 	secretName, secretKey string,
 ) *unstructured.Unstructured {
@@ -116,13 +131,11 @@ func createGitHubEventSource(
 	for i, e := range events {
 		eventList[i] = e
 	}
-
 	obj := &unstructured.Unstructured{}
 	obj.SetAPIVersion("argoproj.io/v1alpha1")
 	obj.SetKind("EventSource")
 	obj.SetName("github")
-	obj.SetNamespace(namespace)
-
+	obj.SetNamespace(argoEventsNamespace)
 	unstructured.SetNestedMap(obj.Object, map[string]interface{}{
 		"github": map[string]interface{}{
 			"repo-events": map[string]interface{}{
@@ -131,7 +144,13 @@ func createGitHubEventSource(
 				"events":     eventList,
 				"webhook": map[string]interface{}{
 					"endpoint": "/github",
-					"port":     int64(12000), // must be int64
+					// Argo Events' WebhookContext.Port is typed as a string in
+					// their Go API, despite looking numeric. Sending a JSON
+					// number here breaks decoding for this object AND poisons
+					// the eventsource-controller's shared List/Watch — every
+					// EventSource in the cluster fails to decode until this
+					// object is fixed, since they share one typed watch stream.
+					"port": "12000",
 				},
 				"webhookSecret": map[string]interface{}{
 					"name": secretName,
@@ -144,11 +163,12 @@ func createGitHubEventSource(
 	return obj
 }
 
-// createGitHubSensor constructs the namespaced Sensor that matches incoming
-// GitHub payloads and emits GitHubEvent CRs via a Kubernetes trigger.
-// Owned by the GitHubEvent CR — deleted when the CR is deleted.
-func createGitHubSensor(namespace string) *unstructured.Unstructured {
-	obj := newUnstructured("argoproj.io/v1alpha1", "Sensor", namespace, "github-sensor")
+// createGitHubSensor constructs the Sensor in argoEventsNamespace that
+// matches incoming GitHub payloads and emits GitHubEvent CRs via a
+// Kubernetes trigger. Owned by the GitHubEvent CR — deleted when the CR is
+// deleted.
+func createGitHubSensor() *unstructured.Unstructured {
+	obj := newUnstructured("argoproj.io/v1alpha1", "Sensor", argoEventsNamespace, "github-sensor")
 	obj.Object["spec"] = map[string]interface{}{
 		"dependencies": []interface{}{
 			map[string]interface{}{
@@ -169,7 +189,7 @@ func createGitHubSensor(namespace string) *unstructured.Unstructured {
 								"kind":       "GitHubEvent",
 								"metadata": map[string]interface{}{
 									"generateName": "github-event-",
-									"namespace":    namespace,
+									"namespace":    argoEventsNamespace,
 								},
 								"spec": map[string]interface{}{
 									"repository": "{{ .Input.body.repository.full_name }}",
@@ -194,43 +214,50 @@ func createGitHubSensor(namespace string) *unstructured.Unstructured {
 
 // Ensure provisions or reconciles the full Argo Events stack for the given
 // GitHubEvent CR. It creates or updates EventBus, EventSource, and Sensor in
-// order. EventSource and Sensor are owned by the CR; EventBus is not.
+// order, all in argoEventsNamespace. EventSource and Sensor are owned by the
+// CR; EventBus is not.
 //
-// Returns Accepted on success and Rejected on the first apply failure.
+// Returns Accepted on success and Rejected on the first apply failure, or if
+// the GitHubEvent CR itself is not in argoEventsNamespace (since the owner
+// reference cannot be established cross-namespace).
 func (p *GitHubProvider) Ensure(
 	ctx context.Context,
 	resolved *githubeventResolution.ResolvedGitHubEvent,
 	spec domain.GitHubEvent,
 ) (domain.GitHubEventResult, error) {
 	cr := resolved.Event
-
 	p.Log.Info("github.ensure: ensuring ingress",
 		"repo", spec.Repository.FullName,
 		"type", spec.Type,
 	)
 
-	bus := createEventBus(cr.Namespace)
+	bus := createEventBus()
 	src := createGitHubEventSource(
-		cr.Namespace,
 		spec.Repository.Owner,
 		spec.Repository.Name,
 		[]string{string(spec.Type)},
 		"github-webhook-secret",
 		"secret",
 	)
-	sensor := createGitHubSensor(cr.Namespace)
+	sensor := createGitHubSensor()
 
-	// EventSource and Sensor are owned — garbage-collected with the CR.
-	// EventBus is cluster-scoped and intentionally not owned.
-	_ = controllerutil.SetControllerReference(cr, src, p.Scheme)
-	_ = controllerutil.SetControllerReference(cr, sensor, p.Scheme)
+	// EventSource and Sensor are owned — garbage-collected with the CR. This
+	// only succeeds if cr itself lives in argoEventsNamespace; Kubernetes
+	// rejects cross-namespace owner references for namespaced resources, so
+	// a mismatch here surfaces as a hard error rather than a silently
+	// dropped owner reference.
+	if err := controllerutil.SetControllerReference(cr, src, p.Scheme); err != nil {
+		return domain.Rejected(err.Error()), err
+	}
+	if err := controllerutil.SetControllerReference(cr, sensor, p.Scheme); err != nil {
+		return domain.Rejected(err.Error()), err
+	}
 
 	for _, obj := range []*unstructured.Unstructured{bus, src, sensor} {
 		if err := p.apply(ctx, obj); err != nil {
 			return domain.Rejected(err.Error()), err
 		}
 	}
-
 	return domain.Accepted("github ingress ensured"), nil
 }
 
@@ -260,7 +287,6 @@ func (p *GitHubProvider) apply(ctx context.Context, obj *unstructured.Unstructur
 	case client.IgnoreNotFound(err) != nil:
 		p.Log.Error(err, "apply: get failed", "key", key, "gvk", obj.GroupVersionKind())
 		return err
-
 	case err != nil: // not found — create
 		p.Log.Info("apply: creating", "gvk", obj.GroupVersionKind(), "key", key)
 		if err := p.Client.Create(ctx, obj); err != nil {
@@ -271,7 +297,6 @@ func (p *GitHubProvider) apply(ctx context.Context, obj *unstructured.Unstructur
 			p.Recorder.Eventf(obj, nil, "Normal", "Created", "%s %s created", obj.GetKind(), key.Name)
 		}
 		return nil
-
 	default: // found — update
 		obj.SetResourceVersion(current.GetResourceVersion())
 		p.Log.Info("apply: updating", "gvk", obj.GroupVersionKind(), "key", key)
