@@ -34,9 +34,21 @@ all in argoEventsNamespace:
     exposes the delivery endpoint.
   - Sensor (owned) — matches incoming payloads and emits GitHubEvent CRs via
     a Kubernetes trigger. The trigger's resource template targets
-    events.blanketops.dev/v1alpha1 — that must match whatever apiVersion the
+    githubEventAPIVersion — that must match whatever apiVersion the
     GitHubEvent CRD is actually served at, or the Sensor's create call 404s
     with "the server could not find the requested resource".
+
+GitHubEvent's spec.contract field is intentionally opaque to Kubernetes
+(x-kubernetes-preserve-unknown-fields) — the API server stores it verbatim
+without validating its internal shape. Its actual structure is defined by
+the GitHubEventSpec proto message, which uses snake_case field names
+(event_type, commit_sha, webhook_secret_ref, etc.). The Sensor's trigger
+template must use those exact proto field names, since they're always
+accepted on unmarshal regardless of whether the resolution layer uses
+protojson (camelCase + original name both accepted) or a hand-rolled
+struct with json tags mirroring the proto directly. A near-miss name like
+"commitSHA" matches neither form and silently fails to populate the field —
+Kubernetes won't catch this, since contract's contents aren't schema-checked.
 
 EventSource and Sensor carry an ownerReference to the GitHubEvent CR so they
 are garbage-collected when the CR is deleted. If a GitHubEvent CR is ever
@@ -177,6 +189,10 @@ func createGitHubEventSource(
 // matches incoming GitHub payloads and emits GitHubEvent CRs via a
 // Kubernetes trigger. Owned by the GitHubEvent CR — deleted when the CR is
 // deleted.
+//
+// The trigger's emitted resource nests all observed-event fields under
+// spec.contract using the GitHubEventSpec proto's exact snake_case field
+// names — see the file-level doc comment for why this matters.
 func createGitHubSensor() *unstructured.Unstructured {
 	obj := newUnstructured("argoproj.io/v1alpha1", "Sensor", argoEventsNamespace, "github-sensor")
 	obj.Object["spec"] = map[string]interface{}{
@@ -202,11 +218,14 @@ func createGitHubSensor() *unstructured.Unstructured {
 									"namespace":    argoEventsNamespace,
 								},
 								"spec": map[string]interface{}{
-									"repository": "{{ .Input.body.repository.full_name }}",
-									"eventType":  "{{ .Input.headers.X-GitHub-Event }}",
-									"ref":        "{{ .Input.body.ref }}",
-									"commitSHA":  "{{ .Input.body.after }}",
-									"actor":      "{{ .Input.body.sender.login }}",
+									"contract": map[string]interface{}{
+										"repository": "{{ .Input.body.repository.full_name }}",
+										"event_type": "{{ .Input.headers.X-GitHub-Event }}",
+										"ref":        "{{ .Input.body.ref }}",
+										"commit_sha": "{{ .Input.body.after }}",
+										"actor":      "{{ .Input.body.sender.login }}",
+										"event_id":   "{{ .Input.headers.X-GitHub-Delivery }}",
+									},
 								},
 							},
 						},
