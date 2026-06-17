@@ -86,11 +86,13 @@ func newUnstructured(apiVersion, kind, namespace, name string) *unstructured.Uns
 	return obj
 }
 
-// createEventBus constructs the cluster-scoped NATS EventBus. The bus is
-// shared across all GitHubEvent CRs — it is not owned by any single CR and
-// is never deleted on CR removal.
-func createEventBus() *unstructured.Unstructured {
-	obj := newUnstructured("argoproj.io/v1alpha1", "EventBus", "default", "default")
+// createEventBus constructs the namespaced NATS EventBus. The bus is shared
+// across all GitHubEvent CRs within a namespace — it is not owned by any
+// single CR and is never deleted on CR removal, but it must live in the same
+// namespace as the EventSource/Sensor that depend on it (Argo Events does not
+// resolve EventBus cross-namespace).
+func createEventBus(namespace string) *unstructured.Unstructured {
+	obj := newUnstructured("argoproj.io/v1alpha1", "EventBus", namespace, "default")
 	unstructured.SetNestedMap(obj.Object, map[string]interface{}{
 		"nats": map[string]interface{}{
 			"native": map[string]interface{}{
@@ -207,7 +209,7 @@ func (p *GitHubProvider) Ensure(
 		"type", spec.Type,
 	)
 
-	bus := createEventBus()
+	bus := createEventBus(cr.Namespace)
 	src := createGitHubEventSource(
 		cr.Namespace,
 		spec.Repository.Owner,
