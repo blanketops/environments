@@ -8,6 +8,25 @@ All notable changes to this project will be documented in this file.
 
 - Auto-generate code documentation [skip ci]
 
+## [0.4.2] - 2026-06-17
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.4.1
+- Sync develop with main after release/v0.4.1
+
+### Bugfix
+
+- *(githubevent)* Api broken call payload in payload consumed
+
+### Release
+
+- Merge release/v0.4.2 into main
+
 ## [0.4.1] - 2026-06-17
 
 ### 📚 Documentation
