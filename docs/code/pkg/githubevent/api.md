@@ -14,7 +14,7 @@ For each GitHubEvent CR the provider ensures three Argo resources exist, all in 
 
 - EventBus \(not owned\) — shared NATS bus. Argo Events resolves EventBus by looking for a bus named "default" within the same namespace as the EventSource/Sensor that depend on it — it does NOT resolve cross\-namespace. Created once and left in place; never owned by any GitHubEvent CR.
 - EventSource \(owned\) — registers the GitHub webhook subscription and exposes the delivery endpoint.
-- Sensor \(owned\) — matches incoming payloads and emits GitHubEvent CRs via a Kubernetes trigger.
+- Sensor \(owned\) — matches incoming payloads and emits GitHubEvent CRs via a Kubernetes trigger. The trigger's resource template targets events.blanketops.dev/v1alpha1 — that must match whatever apiVersion the GitHubEvent CRD is actually served at, or the Sensor's create call 404s with "the server could not find the requested resource".
 
 EventSource and Sensor carry an ownerReference to the GitHubEvent CR so they are garbage\-collected when the CR is deleted. If a GitHubEvent CR is ever created outside argoEventsNamespace, Ensure\(\) rejects it rather than silently dropping the owner reference.
 
