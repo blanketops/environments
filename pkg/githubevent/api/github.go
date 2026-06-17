@@ -33,7 +33,10 @@ all in argoEventsNamespace:
   - EventSource (owned) — registers the GitHub webhook subscription and
     exposes the delivery endpoint.
   - Sensor (owned) — matches incoming payloads and emits GitHubEvent CRs via
-    a Kubernetes trigger.
+    a Kubernetes trigger. The trigger's resource template targets
+    events.blanketops.dev/v1alpha1 — that must match whatever apiVersion the
+    GitHubEvent CRD is actually served at, or the Sensor's create call 404s
+    with "the server could not find the requested resource".
 
 EventSource and Sensor carry an ownerReference to the GitHubEvent CR so they
 are garbage-collected when the CR is deleted. If a GitHubEvent CR is ever
@@ -65,6 +68,13 @@ import (
 // provisioned here, regardless of where any other resources in the cluster
 // live. GitHubEvent CRs are expected to be created in this namespace too.
 const argoEventsNamespace = "argo-events"
+
+// githubEventAPIVersion is the apiVersion the Sensor's trigger uses when
+// creating GitHubEvent CRs. Must match whatever version the CRD is actually
+// served at — a mismatch here produces a 404 from the API server at trigger
+// time, not at apply/install time, so it's easy to miss until a real event
+// fires.
+const githubEventAPIVersion = "events.blanketops.dev/v1alpha1"
 
 // GitHubProvider provisions and maintains the Argo Events stack for a
 // GitHubEvent CR. It is the only component in the platform that writes
@@ -185,7 +195,7 @@ func createGitHubSensor() *unstructured.Unstructured {
 						"operation": "create",
 						"source": map[string]interface{}{
 							"resource": map[string]interface{}{
-								"apiVersion": "events.blanketops.dev/v1",
+								"apiVersion": githubEventAPIVersion,
 								"kind":       "GitHubEvent",
 								"metadata": map[string]interface{}{
 									"generateName": "github-event-",
