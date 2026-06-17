@@ -43,12 +43,19 @@ GitHubEvent's spec.contract field is intentionally opaque to Kubernetes
 without validating its internal shape. Its actual structure is defined by
 the GitHubEventSpec proto message, which uses snake_case field names
 (event_type, commit_sha, webhook_secret_ref, etc.). The Sensor's trigger
-template must use those exact proto field names, since they're always
-accepted on unmarshal regardless of whether the resolution layer uses
-protojson (camelCase + original name both accepted) or a hand-rolled
-struct with json tags mirroring the proto directly. A near-miss name like
-"commitSHA" matches neither form and silently fails to populate the field —
-Kubernetes won't catch this, since contract's contents aren't schema-checked.
+must populate those exact proto field names.
+
+Critically, Argo Events' Kubernetes trigger does NOT support inline Go-template
+placeholders (e.g. "{{ .Input.body.X }}") embedded in arbitrary string fields
+of the resource body — that syntax is not a real Argo Events feature for this
+trigger type and gets stored verbatim as a literal string, never substituted.
+The actual mechanism is the trigger's separate `parameters` array: a list of
+src/dest mappings that extract values from the matched event's body/headers
+(via dependencyName + dataKey) and inject them into specific JSON paths
+(dest) within the resource AFTER the base resource is built. createGitHubSensor
+builds an empty `contract` object as the base shape and lets `parameters` fill
+it in — this is the only correct way to get live payload data into the
+created GitHubEvent CR.
 
 EventSource and Sensor carry an ownerReference to the GitHubEvent CR so they
 are garbage-collected when the CR is deleted. If a GitHubEvent CR is ever
@@ -190,9 +197,12 @@ func createGitHubEventSource(
 // Kubernetes trigger. Owned by the GitHubEvent CR — deleted when the CR is
 // deleted.
 //
-// The trigger's emitted resource nests all observed-event fields under
-// spec.contract using the GitHubEventSpec proto's exact snake_case field
-// names — see the file-level doc comment for why this matters.
+// The trigger's resource defines only the base shape of spec.contract — an
+// empty object. Real values are injected by the parameters block below,
+// which maps fields out of the matched event's body/headers into specific
+// dest paths in the created resource, using the GitHubEventSpec proto's
+// exact snake_case field names. See the file-level doc comment for why
+// inline templating in the resource body itself does not work here.
 func createGitHubSensor() *unstructured.Unstructured {
 	obj := newUnstructured("argoproj.io/v1alpha1", "Sensor", argoEventsNamespace, "github-sensor")
 	obj.Object["spec"] = map[string]interface{}{
@@ -218,15 +228,59 @@ func createGitHubSensor() *unstructured.Unstructured {
 									"namespace":    argoEventsNamespace,
 								},
 								"spec": map[string]interface{}{
-									"contract": map[string]interface{}{
-										"repository": "{{ .Input.body.repository.full_name }}",
-										"event_type": "{{ .Input.headers.X-GitHub-Event }}",
-										"ref":        "{{ .Input.body.ref }}",
-										"commit_sha": "{{ .Input.body.after }}",
-										"actor":      "{{ .Input.body.sender.login }}",
-										"event_id":   "{{ .Input.headers.X-GitHub-Delivery }}",
-									},
+									"contract": map[string]interface{}{},
 								},
+							},
+						},
+						"parameters": []interface{}{
+							map[string]interface{}{
+								"src": map[string]interface{}{
+									"dependencyName": "github-dep",
+									"dataKey":        "body.repository.full_name",
+								},
+								"dest": "spec.contract.repository",
+							},
+							map[string]interface{}{
+								"src": map[string]interface{}{
+									"dependencyName": "github-dep",
+									// Header key casing: Go's HTTP header
+									// canonicalization typically produces
+									// "X-Github-Event" (lowercase 'h'), not
+									// GitHub's own "X-GitHub-Event" casing.
+									// Adjust here first if this parameter
+									// comes back empty.
+									"dataKey": "headers.X-Github-Event.0",
+								},
+								"dest": "spec.contract.event_type",
+							},
+							map[string]interface{}{
+								"src": map[string]interface{}{
+									"dependencyName": "github-dep",
+									"dataKey":        "body.ref",
+								},
+								"dest": "spec.contract.ref",
+							},
+							map[string]interface{}{
+								"src": map[string]interface{}{
+									"dependencyName": "github-dep",
+									"dataKey":        "body.after",
+								},
+								"dest": "spec.contract.commit_sha",
+							},
+							map[string]interface{}{
+								"src": map[string]interface{}{
+									"dependencyName": "github-dep",
+									"dataKey":        "body.sender.login",
+								},
+								"dest": "spec.contract.actor",
+							},
+							map[string]interface{}{
+								"src": map[string]interface{}{
+									"dependencyName": "github-dep",
+									// Same casing caveat as event_type above.
+									"dataKey": "headers.X-Github-Delivery.0",
+								},
+								"dest": "spec.contract.event_id",
 							},
 						},
 					},
