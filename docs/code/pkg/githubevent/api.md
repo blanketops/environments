@@ -8,13 +8,15 @@ import "github.com/ntlaletsi70/blanketops-environments/pkg/githubevent/api"
 
 This file owns GitHubProvider — the concrete provider that provisions the Argo Events stack required to receive GitHub webhook deliveries and emit GitHubEvent CRs into the cluster.
 
-For each GitHubEvent CR the provider ensures three Argo resources exist:
+All Argo Events infrastructure — EventBus, EventSource, and Sensor — lives in a single fixed namespace \(argoEventsNamespace, "argo\-events"\), following Argo Events' own convention of one shared stack per cluster rather than per\-tenant proliferation. GitHubEvent CRs are required to live in that same namespace: Kubernetes does not support cross\-namespace owner references for namespaced resources, so EventSource/Sensor can only be owned by \(and garbage\-collected with\) a GitHubEvent CR that lives alongside them.
 
-- EventBus \(cluster\-scoped, not owned\) — shared NATS bus. Created once and left in place; never owned by a GitHubEvent CR.
-- EventSource \(namespaced, owned\) — registers the GitHub webhook subscription and exposes the delivery endpoint.
-- Sensor \(namespaced, owned\) — matches incoming payloads and emits GitHubEvent CRs via a Kubernetes trigger.
+For each GitHubEvent CR the provider ensures three Argo resources exist, all in argoEventsNamespace:
 
-EventSource and Sensor carry an ownerReference to the GitHubEvent CR so they are garbage\-collected when the CR is deleted. EventBus is cluster\-scoped and intentionally not owned.
+- EventBus \(not owned\) — shared NATS bus. Argo Events resolves EventBus by looking for a bus named "default" within the same namespace as the EventSource/Sensor that depend on it — it does NOT resolve cross\-namespace. Created once and left in place; never owned by any GitHubEvent CR.
+- EventSource \(owned\) — registers the GitHub webhook subscription and exposes the delivery endpoint.
+- Sensor \(owned\) — matches incoming payloads and emits GitHubEvent CRs via a Kubernetes trigger.
+
+EventSource and Sensor carry an ownerReference to the GitHubEvent CR so they are garbage\-collected when the CR is deleted. If a GitHubEvent CR is ever created outside argoEventsNamespace, Ensure\(\) rejects it rather than silently dropping the owner reference.
 
 apply\(\) is the shared upsert primitive — it creates or updates any Unstructured object with correct GVK assertion and ResourceVersion threading.
 
@@ -62,9 +64,9 @@ NewGitHubProvider constructs a GitHubProvider with the given dependencies.
 func (p *GitHubProvider) Ensure(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent, spec domain.GitHubEvent) (domain.GitHubEventResult, error)
 ```
 
-Ensure provisions or reconciles the full Argo Events stack for the given GitHubEvent CR. It creates or updates EventBus, EventSource, and Sensor in order. EventSource and Sensor are owned by the CR; EventBus is not.
+Ensure provisions or reconciles the full Argo Events stack for the given GitHubEvent CR. It creates or updates EventBus, EventSource, and Sensor in order, all in argoEventsNamespace. EventSource and Sensor are owned by the CR; EventBus is not.
 
-Returns Accepted on success and Rejected on the first apply failure.
+Returns Accepted on success and Rejected on the first apply failure, or if the GitHubEvent CR itself is not in argoEventsNamespace \(since the owner reference cannot be established cross\-namespace\).
 
 <a name="Provider"></a>
 ## type Provider
