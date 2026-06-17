@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.9] - 2026-06-17
+
+### 🚀 Features
+
+- *(ci)* Update codedocs
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.3.8
+- *(release)* Update changelog for v0.3.8
+- Sync develop with main after release/v0.3.9
+- Sync develop with main after release/v0.3.9
+- Sync develop with main after release/v0.3.9
+
+### Bugfix
+
+- *(ci/pkg)* Fix ci release, eventsensor at cr ns
+
+### Release
+
+- Merge release/v0.3.9 into main
+- Merge release/v0.3.9 into main
+- Merge release/v0.3.9 into main
+- Merge release/v0.3.9 into main
+
 ## [0.3.8] - 2026-06-16
 
 ### 🚀 Features
