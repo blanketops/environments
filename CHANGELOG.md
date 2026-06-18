@@ -1,3 +1,15 @@
+## [0.4.8] - 2026-06-18
+
+### 💼 Other
+
+- *(githubevent)* Replace datakeys for github index deps
+- Merge release/v0.4.8 into main
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.4.7
+- Sync develop with main after release/v0.4.6
+- Sync develop with main after release/v0.4.7
 ## [0.4.7] - 2026-06-18
 
 ### 💼 Other
