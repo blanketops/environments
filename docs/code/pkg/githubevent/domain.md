@@ -14,9 +14,9 @@ GitHubEvent is a pure domain fact: "something happened in a repository." It carr
 
 GitHubEventStatus is serialised into the CR's status.contract field by the StatusWriter. It is the authoritative machine\-readable outcome consumed by downstream automation.
 
-This file owns GitHubEventResult — the return type from every GitHubEvent Provider, and the three constructor functions \(Accepted, Triggered, Rejected\) that cover the common outcomes.
+This file owns GitHubEventResult — the return type from the GitHubEvent Provider and Observer. It captures the state of the webhook infrastructure and the latest delivery record.
 
-GitHubEventResult and GitHubEventStatus share the same fields — ToStatus\(\) converts between them for persistence. The distinction exists so the provider layer operates on a result type and the status layer operates on a status type, keeping their concerns separate.
+GitHubEventResult and GitHubEventStatus share the same fields — ToStatus\(\) converts between them for persistence. The distinction exists so the domain logic operates on a result type and the Kubernetes layer operates on a status type, keeping their concerns separate.
 
 This file owns the State type — the lifecycle state of a GitHubEvent CR as tracked by the domain layer.
 
@@ -32,9 +32,10 @@ State is intentionally coarse: the domain only cares whether an event is new, ha
 - [type GitHubEvent](<#GitHubEvent>)
 - [type GitHubEventResult](<#GitHubEventResult>)
   - [func Accepted\(msg string\) GitHubEventResult](<#Accepted>)
+  - [func Ensured\(msg string\) GitHubEventResult](<#Ensured>)
+  - [func PayloadReceived\(payloadRef string\) GitHubEventResult](<#PayloadReceived>)
   - [func Rejected\(msg string\) GitHubEventResult](<#Rejected>)
-  - [func Triggered\(ref, msg string\) GitHubEventResult](<#Triggered>)
-  - [func \(r GitHubEventResult\) ToStatus\(\) GitHubEventStatus](<#GitHubEventResult.ToStatus>)
+  - [func \(r GitHubEventResult\) ToStatus\(\) GitHubEventResult](<#GitHubEventResult.ToStatus>)
 - [type GitHubEventStatus](<#GitHubEventStatus>)
 - [type GitRef](<#GitRef>)
 - [type Repository](<#Repository>)
@@ -136,18 +137,18 @@ type GitHubEvent struct {
 <a name="GitHubEventResult"></a>
 ## type GitHubEventResult
 
-GitHubEventResult is the unified return value from a GitHubEvent Provider.
+GitHubEventResult is the unified return value for the GitHubEvent domain. It reflects both the infrastructure state \(from the Provider\) and the delivery state \(from the Observer\).
 
 ```go
 type GitHubEventResult struct {
-    // Accepted indicates the event passed validation and was admitted.
-    Accepted bool
-    // Triggered indicates the event caused downstream work to be dispatched.
-    Triggered bool
-    // Message is a human-readable explanation of the outcome.
+    // Phase represents the current lifecycle state of the GitHubEvent subscription.
+    // e.g., "IngressEnsured", "PayloadReceived", "Failed".
+    Phase string
+    // Message is a human-readable explanation of the current state.
     Message string
-    // TriggeredRef is the name of the downstream resource created, if any.
-    TriggeredRef string
+    // LastPayloadRef is the name of the most recent ephemeral GitHubPayload CR
+    // minted by the Argo Sensor for this subscription.
+    LastPayloadRef string
 }
 ```
 
@@ -158,7 +159,25 @@ type GitHubEventResult struct {
 func Accepted(msg string) GitHubEventResult
 ```
 
-Accepted returns a result indicating the event was admitted but did not trigger downstream work.
+Rejected returns a result indicating the infrastructure provisioning failed or the subscription is invalid.
+
+<a name="Ensured"></a>
+### func Ensured
+
+```go
+func Ensured(msg string) GitHubEventResult
+```
+
+Ensured returns a result indicating the Argo Events infrastructure \(EventSource, Sensor, etc.\) was successfully provisioned or verified. This is typically returned by the GitHubProvider.
+
+<a name="PayloadReceived"></a>
+### func PayloadReceived
+
+```go
+func PayloadReceived(payloadRef string) GitHubEventResult
+```
+
+PayloadReceived returns a result indicating a new GitHubPayload CR was observed by the controller, successfully closing the webhook delivery loop. This is typically returned by the GitHubEvent Observer.
 
 <a name="Rejected"></a>
 ### func Rejected
@@ -167,22 +186,13 @@ Accepted returns a result indicating the event was admitted but did not trigger 
 func Rejected(msg string) GitHubEventResult
 ```
 
-Rejected returns a result indicating the event was not admitted.
-
-<a name="Triggered"></a>
-### func Triggered
-
-```go
-func Triggered(ref, msg string) GitHubEventResult
-```
-
-Triggered returns a result indicating the event was admitted and caused downstream work to be dispatched to ref.
+Rejected returns a result indicating the infrastructure provisioning failed or the subscription is invalid.
 
 <a name="GitHubEventResult.ToStatus"></a>
 ### func \(GitHubEventResult\) ToStatus
 
 ```go
-func (r GitHubEventResult) ToStatus() GitHubEventStatus
+func (r GitHubEventResult) ToStatus() GitHubEventResult
 ```
 
 ToStatus converts a GitHubEventResult to a GitHubEventStatus for persistence. The two types are structurally identical — the conversion is zero\-cost.
