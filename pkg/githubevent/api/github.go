@@ -123,23 +123,20 @@ func (p *GitHubProvider) createTypedGitHubEventSource(spec domain.GitHubEvent) *
 // static Value rather than pulling from event data.
 func (p *GitHubProvider) createTypedGitHubSensor(spec domain.GitHubEvent, crName string) (*argoeventsv1alpha1.Sensor, error) {
 	basePayload := map[string]interface{}{
-		"apiVersion": "v1",
-		"kind":       "ConfigMap",
+		"apiVersion": "events.blanketops.dev/v1alpha1",
+		"kind":       "GitHubPayload",
 		"metadata": map[string]interface{}{
 			"generateName": "github-payload-",
 			"namespace":    argoEventsNamespace,
 		},
-		// Write-once audit record — never updated after creation, so mark
-		// it immutable. Also gives the API server a small perf win since it
-		// no longer needs to watch this object for changes.
-		"immutable": true,
-		"data":      map[string]interface{}{},
+		"spec": map[string]interface{}{
+			"contract": map[string]interface{}{},
+		},
 	}
 	basePayloadBytes, err := json.Marshal(basePayload)
 	if err != nil {
 		return nil, err
 	}
-
 	return &argoeventsv1alpha1.Sensor{
 		ObjectMeta: metav1.ObjectMeta{Name: "github-sensor", Namespace: argoEventsNamespace},
 		Spec: argoeventsv1alpha1.SensorSpec{
@@ -163,19 +160,17 @@ func (p *GitHubProvider) createTypedGitHubSensor(spec domain.GitHubEvent, crName
 						Source: &argoeventsv1alpha1.ArtifactLocation{
 							Resource: &argoeventsv1alpha1.K8SResource{Value: basePayloadBytes},
 						},
-						// dest paths are data.X — ConfigMap.Data is a flat
-						// map[string]string, no nested contract object.
+						// dest paths are spec.contract.X — opaque to
+						// Kubernetes, decoded by ResolveGitHubPayload using
+						// these exact camelCase keys.
 						Parameters: []argoeventsv1alpha1.TriggerParameter{
-							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataTemplate: `{{ index (index .Input.headers "X-Github-Event") 0 }}`}, Dest: "data.eventType"},
-							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataTemplate: `{{ index (index .Input.headers "X-Github-Delivery") 0 }}`}, Dest: "data.eventId"},
-							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataKey: "body.repository.full_name"}, Dest: "data.repository"},
-							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataKey: "body.ref"}, Dest: "data.ref"},
-							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataKey: "body.after"}, Dest: "data.commitSHA"},
-							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataKey: "body.sender.login"}, Dest: "data.actor"},
-							// Static value, no DataKey to resolve — falls
-							// straight through to Value. DependencyName is
-							// still required by the validator even here.
-							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", Value: &crName}, Dest: "data.githubEventRef"},
+							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataTemplate: `{{ index (index .Input.headers "X-Github-Event") 0 }}`}, Dest: "spec.contract.eventType"},
+							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataTemplate: `{{ index (index .Input.headers "X-Github-Delivery") 0 }}`}, Dest: "spec.contract.eventId"},
+							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataKey: "body.repository.full_name"}, Dest: "spec.contract.repository"},
+							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataKey: "body.ref"}, Dest: "spec.contract.ref"},
+							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataKey: "body.after"}, Dest: "spec.contract.commitSHA"},
+							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataKey: "body.sender.login"}, Dest: "spec.contract.actor"},
+							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", Value: &crName}, Dest: "spec.contract.githubEventRef"},
 						},
 					},
 				},
@@ -183,7 +178,6 @@ func (p *GitHubProvider) createTypedGitHubSensor(spec domain.GitHubEvent, crName
 		},
 	}, nil
 }
-
 func (p *GitHubProvider) apply(ctx context.Context, obj client.Object) error {
 	key := client.ObjectKeyFromObject(obj)
 	current := obj.DeepCopyObject().(client.Object)
