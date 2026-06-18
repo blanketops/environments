@@ -1,3 +1,13 @@
+## [0.4.7] - 2026-06-18
+
+### 💼 Other
+
+- *(githubevent)* Add repository as required upstream
+- Merge release/v0.4.7 into main
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.4.6
 ## [0.4.6] - 2026-06-18
 
 ### 💼 Other
