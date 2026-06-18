@@ -94,11 +94,15 @@ func (p *GitHubProvider) createTypedEventBus() *argoeventsv1alpha1.EventBus {
 }
 
 func (p *GitHubProvider) createTypedGitHubEventSource(spec domain.GitHubEvent) *argoeventsv1alpha1.EventSource {
+	owner, repoName := spec.Repository.Owner, spec.Repository.Name
 	return &argoeventsv1alpha1.EventSource{
 		ObjectMeta: metav1.ObjectMeta{Name: "github", Namespace: argoEventsNamespace},
 		Spec: argoeventsv1alpha1.EventSourceSpec{
 			Github: map[string]argoeventsv1alpha1.GithubEventSource{
 				"repo-events": {
+					Repositories: []argoeventsv1alpha1.OwnedRepositories{
+						{Owner: owner, Names: []string{repoName}},
+					},
 					Events:  []string{string(spec.Type)},
 					Webhook: &argoeventsv1alpha1.WebhookContext{Endpoint: "/github", Port: "12000"},
 					WebhookSecret: &corev1.SecretKeySelector{
