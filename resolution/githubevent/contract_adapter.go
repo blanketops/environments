@@ -58,7 +58,50 @@ func (s *ResolvedGitHubEventSpec) ToGitHubEventContract() *eventscontractv1alpha
 	if s == nil {
 		return nil
 	}
+	// out := &eventscontractv1alpha1.GitHubEventSpec{}
+	// // ------------------------------------------------
+	// // Repository (Recursive null check)
+	// // ------------------------------------------------
+	// if s.Repository.FullName != "" {
+	// 	out.Repository = &eventscontractv1alpha1.Repository{
+	// 		Owner:    s.Repository.Owner,
+	// 		Name:     s.Repository.Name,
+	// 		FullName: s.Repository.FullName,
+	// 	}
+	// }
 
+	// // ------------------------------------------------
+	// // Event Type
+	// // ------------------------------------------------
+	// if s.EventType != "" {
+	// 	out.EventType = normalizeEventType(s.EventType)
+	// }
+
+	// // ------------------------------------------------
+	// // Git Reference
+	// // ------------------------------------------------
+	// if s.Ref.Name != "" {
+	// 	out.Ref = &eventscontractv1alpha1.GitRef{
+	// 		Name: s.Ref.Name,
+	// 	}
+	// }
+
+	// // ------------------------------------------------
+	// // Identity Fields (Commit, Actor, EventID)
+	// // ------------------------------------------------
+	// if s.CommitSHA != "" {
+	// 	out.CommitSha = s.CommitSHA
+	// }
+
+	// if s.Actor != "" {
+	// 	out.Actor = s.Actor
+	// }
+
+	// if s.EventID != "" {
+	// 	out.EventId = s.EventID
+	// }
+
+	// return out
 	return &eventscontractv1alpha1.GitHubEventSpec{
 		Repository: s.Repository,
 		EventType:  normalizeEventType(s.EventType),
