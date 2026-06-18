@@ -23,7 +23,7 @@ Ensure is idempotent — calling it multiple times for the same GitHubEvent CR m
 <a name="GitHubProvider"></a>
 ## type GitHubProvider
 
-
+GitHubProvider is the concrete Provider implementation for GitHubEvent. It provisions the Argo Events stack \(EventBus, EventSource, Sensor\) required to receive and forward GitHub webhook deliveries.
 
 ```go
 type GitHubProvider struct {
