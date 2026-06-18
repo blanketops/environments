@@ -12,53 +12,76 @@ limitations under the License.
 */
 
 /*
-This file owns GitHubEventResult — the return type from every GitHubEvent
-Provider, and the three constructor functions (Accepted, Triggered, Rejected)
-that cover the common outcomes.
+This file owns GitHubEventResult — the return type from the GitHubEvent
+Provider and Observer. It captures the state of the webhook infrastructure
+and the latest delivery record.
 
 GitHubEventResult and GitHubEventStatus share the same fields — ToStatus()
-converts between them for persistence. The distinction exists so the provider
-layer operates on a result type and the status layer operates on a status type,
-keeping their concerns separate.
+converts between them for persistence. The distinction exists so the domain
+logic operates on a result type and the Kubernetes layer operates on a status
+type, keeping their concerns separate.
 */
 package domain
 
-// GitHubEventResult is the unified return value from a GitHubEvent Provider.
+// GitHubEventResult is the unified return value for the GitHubEvent domain.
+// It reflects both the infrastructure state (from the Provider) and the
+// delivery state (from the Observer).
 type GitHubEventResult struct {
-	// Accepted indicates the event passed validation and was admitted.
-	Accepted bool
-	// Triggered indicates the event caused downstream work to be dispatched.
-	Triggered bool
-	// Message is a human-readable explanation of the outcome.
+	// Phase represents the current lifecycle state of the GitHubEvent subscription.
+	// e.g., "IngressEnsured", "PayloadReceived", "Failed".
+	Phase string
+	// Message is a human-readable explanation of the current state.
 	Message string
-	// TriggeredRef is the name of the downstream resource created, if any.
-	TriggeredRef string
+	// LastPayloadRef is the name of the most recent ephemeral GitHubPayload CR
+	// minted by the Argo Sensor for this subscription.
+	LastPayloadRef string
+}
+
+// Ensured returns a result indicating the Argo Events infrastructure
+// (EventSource, Sensor, etc.) was successfully provisioned or verified.
+// This is typically returned by the GitHubProvider.
+func Ensured(msg string) GitHubEventResult {
+	return GitHubEventResult{
+		Phase:   "IngressEnsured",
+		Message: msg,
+	}
+}
+
+// PayloadReceived returns a result indicating a new GitHubPayload CR was
+// observed by the controller, successfully closing the webhook delivery loop.
+// This is typically returned by the GitHubEvent Observer.
+func PayloadReceived(payloadRef string) GitHubEventResult {
+	return GitHubEventResult{
+		Phase:          "PayloadReceived",
+		LastPayloadRef: payloadRef,
+		Message:        "Latest payload delivery recorded",
+	}
 }
 
 // ToStatus converts a GitHubEventResult to a GitHubEventStatus for persistence.
 // The two types are structurally identical — the conversion is zero-cost.
-func (r GitHubEventResult) ToStatus() GitHubEventStatus {
-	return GitHubEventStatus(r)
-}
-
-// Accepted returns a result indicating the event was admitted but did not
-// trigger downstream work.
-func Accepted(msg string) GitHubEventResult {
-	return GitHubEventResult{Accepted: true, Message: msg}
-}
-
-// Triggered returns a result indicating the event was admitted and caused
-// downstream work to be dispatched to ref.
-func Triggered(ref, msg string) GitHubEventResult {
+func (r GitHubEventResult) ToStatus() GitHubEventResult {
 	return GitHubEventResult{
-		Accepted:     true,
-		Triggered:    true,
-		TriggeredRef: ref,
-		Message:      msg,
+		Phase:          r.Phase,
+		Message:        r.Message,
+		LastPayloadRef: r.LastPayloadRef,
 	}
 }
 
-// Rejected returns a result indicating the event was not admitted.
+// Rejected returns a result indicating the infrastructure provisioning failed
+// or the subscription is invalid.
 func Rejected(msg string) GitHubEventResult {
-	return GitHubEventResult{Accepted: false, Message: msg}
+	return GitHubEventResult{
+		Phase:   "Failed",
+		Message: msg,
+	}
+}
+
+// Rejected returns a result indicating the infrastructure provisioning failed
+// or the subscription is invalid.
+func Accepted(msg string) GitHubEventResult {
+	return GitHubEventResult{
+		Phase:   "Passed",
+		Message: msg,
+	}
 }

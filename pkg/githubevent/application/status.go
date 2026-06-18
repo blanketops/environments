@@ -52,7 +52,7 @@ func NewStatusWriter(c client.Client) *StatusWriter {
 }
 
 // Write persists the provider result and any error to the GitHubEvent CR.
-// A non-nil runErr marks the event as not accepted and not triggered.
+// A non-nil runErr forces the Phase to "Failed".
 func (w *StatusWriter) Write(
 	ctx context.Context,
 	ev *eventsv1alpha1.GitHubEvent,
@@ -62,8 +62,7 @@ func (w *StatusWriter) Write(
 	// Stage 1: contract status (authoritative, machine-readable).
 	contractStatus := result.ToStatus()
 	if runErr != nil {
-		contractStatus.Accepted = false
-		contractStatus.Triggered = false
+		contractStatus.Phase = "Failed"
 		contractStatus.Message = runErr.Error()
 	}
 
@@ -77,42 +76,37 @@ func (w *StatusWriter) Write(
 	now := metav1.NewTime(time.Now())
 	var condition metav1.Condition
 
-	switch {
-	case runErr != nil:
+	switch contractStatus.Phase {
+	case "Failed":
 		condition = metav1.Condition{
-			Type:               "Accepted",
+			Type:               "Ready",
 			Status:             metav1.ConditionFalse,
 			Reason:             "ProcessingFailed",
-			Message:            runErr.Error(),
+			Message:            contractStatus.Message,
 			LastTransitionTime: now,
 		}
-	case !result.Accepted:
+	case "IngressEnsured":
 		condition = metav1.Condition{
-			Type:               "Accepted",
-			Status:             metav1.ConditionFalse,
-			Reason:             "Rejected",
-			Message:            result.Message,
-			LastTransitionTime: now,
-		}
-	case result.Accepted && !result.Triggered:
-		condition = metav1.Condition{
-			Type:               "Triggered",
-			Status:             metav1.ConditionFalse,
-			Reason:             "NoAction",
-			Message:            result.Message,
-			LastTransitionTime: now,
-		}
-	case result.Accepted && result.Triggered:
-		condition = metav1.Condition{
-			Type:               "Triggered",
+			Type:               "Ready",
 			Status:             metav1.ConditionTrue,
-			Reason:             "EventProcessed",
-			Message:            result.Message,
+			Reason:             "Provisioned",
+			Message:            contractStatus.Message,
+			LastTransitionTime: now,
+		}
+	case "PayloadReceived":
+		condition = metav1.Condition{
+			Type:               "Receiving",
+			Status:             metav1.ConditionTrue,
+			Reason:             "PayloadObserved",
+			Message:            contractStatus.Message,
 			LastTransitionTime: now,
 		}
 	}
 
-	ev.Status.Conditions = mergeCondition(ev.Status.Conditions, condition)
+	// Only merge if we constructed a valid condition
+	if condition.Type != "" {
+		ev.Status.Conditions = mergeCondition(ev.Status.Conditions, condition)
+	}
 
 	// Stage 3: persist — single status subresource update.
 	return w.Client.Status().Update(ctx, ev)
