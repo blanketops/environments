@@ -128,6 +128,9 @@ func (p *GitHubProvider) createTypedGitHubSensor(spec domain.GitHubEvent, crName
 		"metadata": map[string]interface{}{
 			"generateName": "github-payload-",
 			"namespace":    argoEventsNamespace,
+			"labels": map[string]interface{}{
+				"events.blanketops.dev/githubevent": crName,
+			},
 		},
 		"spec": map[string]interface{}{
 			"contract": map[string]interface{}{},
