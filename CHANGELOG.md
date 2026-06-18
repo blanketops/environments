@@ -1,3 +1,14 @@
+## [0.5.0] - 2026-06-18
+
+### 💼 Other
+
+- *(debt)* Remove runtime/events
+- Merge release/v0.5.0 into main
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.4.9
+- Sync develop with main after release/v0.4.9
 ## [0.4.9] - 2026-06-18
 
 ### 🚀 Features
