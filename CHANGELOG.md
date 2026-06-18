@@ -1,3 +1,22 @@
+## [0.4.9] - 2026-06-18
+
+### 🚀 Features
+
+- *(githubpaylod)* Add resolution
+
+### 💼 Other
+
+- *(githubevent)* Githubpayload construction
+- Merge release/v0.4.9 into main
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.4.8
+- Sync develop with main after release/v0.4.8
 ## [0.4.8] - 2026-06-18
 
 ### 💼 Other
