@@ -157,7 +157,7 @@ func (p *GitHubProvider) createTypedGitHubSensor(spec domain.GitHubEvent, crName
 			}},
 			Triggers: []argoeventsv1alpha1.Trigger{{
 				Template: &argoeventsv1alpha1.TriggerTemplate{
-					Name: "emit-github-payload",
+					Name: "github-payload",
 					K8s: &argoeventsv1alpha1.StandardK8STrigger{
 						Operation: "create",
 						Source: &argoeventsv1alpha1.ArtifactLocation{
