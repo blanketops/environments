@@ -53,9 +53,10 @@ type ResolvedBuild struct {
 // ResolvedBuildSpec is the decoded and validated Build spec.
 type ResolvedBuildSpec struct {
 	// Image is the fully qualified target image reference (registry/repo:tag).
-	Image    string
-	Source   ResolvedSource
-	Strategy ResolvedStrategy
+	Image       string
+	Source      ResolvedSource
+	Githubevent string
+	Strategy    ResolvedStrategy
 	// ServiceAccount is optional — omitted when the Build uses the default
 	// Shipwright service account.
 	ServiceAccount *ResolvedServiceAccount
@@ -182,6 +183,11 @@ func ResolveBuild(build *environmentv1alpha1.Build) (*ResolvedBuild, error) {
 	}
 
 	// ------------------------------------------------
+	// GitHubEventRef
+	// ------------------------------------------------
+	githubevent, err := mustString(raw, "githubevent")
+
+	// ------------------------------------------------
 	// Service account (OPTIONAL).
 	// ------------------------------------------------
 	var sa *ResolvedServiceAccount
@@ -217,8 +223,9 @@ func ResolveBuild(build *environmentv1alpha1.Build) (*ResolvedBuild, error) {
 	return &ResolvedBuild{
 		Build: build,
 		Spec: &ResolvedBuildSpec{
-			Image:  image,
-			Source: source,
+			Image:       image,
+			Githubevent: githubevent,
+			Source:      source,
 			Strategy: ResolvedStrategy{
 				Name:         strategyName,
 				StrategyKind: strategyKind,

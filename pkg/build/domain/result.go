@@ -38,30 +38,39 @@ type BuildResult struct {
 	// Success is true only when the BuildRun completed successfully.
 	// False when Triggered=true — the build has been dispatched, not confirmed.
 	Success bool
+
 	// Triggered is true when a BuildRun was created or already existed for
 	// this execution hash.
 	Triggered bool
+
 	// Message is a human-readable summary set by the provider or observer.
 	Message string
+
 	// Logs captures any provider-level log lines. Optional — most providers
 	// rely on Shipwright's own log streaming.
 	Logs []string
+
 	// ExecutionRef is the name of the Shipwright BuildRun created for this
 	// execution cycle.
 	ExecutionRef string
+
 	// BuildHash is the deterministic execution identity. Set by the provider
 	// and carried through to BuildStatus for deduplication tracking.
 	BuildHash string
+
 	// ArtifactRef is the fully qualified image reference produced by the build,
 	// including digest when available. Populated by the buildrun observer after
 	// successful completion.
 	ArtifactRef string
+
 	// ShipwrightBuild and ShipwrightBuildRun carry the live Shipwright objects
 	// for callers that need to inspect them directly. Both are optional.
 	ShipwrightBuild    *shipwrightvbeta1.Build
 	ShipwrightBuildRun *shipwrightvbeta1.BuildRun
+
 	// OnFailure mirrors the retry policy for observer-layer retry decisions.
 	OnFailure bool
+
 	// LastFailureAt is the timestamp of the most recent failure.
 	// Populated by the buildrun observer for observability only.
 	LastFailureAt *metav1.Time

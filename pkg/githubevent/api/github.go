@@ -46,41 +46,6 @@ func NewGitHubProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger,
 	return &GitHubProvider{Client: c, Scheme: scheme, Log: log, Recorder: rec}
 }
 
-// Ensure provisions or reconciles the Argo Events stack for the GitHubEvent CR.
-func (p *GitHubProvider) Ensure(
-	ctx context.Context,
-	resolved *githubeventResolution.ResolvedGitHubEvent,
-	spec domain.GitHubEvent,
-) (domain.GitHubEventResult, error) {
-	cr := resolved.Event
-
-	bus := p.createTypedEventBus()
-	src := p.createTypedGitHubEventSource(spec)
-	sensor, err := p.createTypedGitHubSensor(spec, cr.Name)
-	if err != nil {
-		p.Log.Error(err, "ensure: failed building sensor spec", "name", cr.Name)
-		return domain.Rejected(err.Error()), err
-	}
-
-	// Set OwnerRefs for garbage collection. EventBus is intentionally
-	// excluded — it's a shared cluster-wide singleton, not owned by any
-	// single GitHubEvent CR.
-	for _, obj := range []client.Object{src, sensor} {
-		if err := controllerutil.SetControllerReference(cr, obj, p.Scheme); err != nil {
-			p.Log.Error(err, "ensure: failed setting owner reference", "kind", obj.GetObjectKind().GroupVersionKind().Kind, "name", obj.GetName())
-			return domain.Rejected(err.Error()), err
-		}
-	}
-
-	for _, obj := range []client.Object{bus, src, sensor} {
-		if err := p.apply(ctx, obj); err != nil {
-			p.Log.Error(err, "ensure: failed applying object", "kind", obj.GetObjectKind().GroupVersionKind().Kind, "name", obj.GetName())
-			return domain.Rejected(err.Error()), err
-		}
-	}
-	return domain.Accepted("github ingress ensured"), nil
-}
-
 func (p *GitHubProvider) createTypedEventBus() *argoeventsv1alpha1.EventBus {
 	replicas := int32(1)
 	return &argoeventsv1alpha1.EventBus{
@@ -124,10 +89,10 @@ func (p *GitHubProvider) createTypedGitHubEventSource(spec domain.GitHubEvent) *
 func (p *GitHubProvider) createTypedGitHubSensor(spec domain.GitHubEvent, crName string) (*argoeventsv1alpha1.Sensor, error) {
 	basePayload := map[string]interface{}{
 		"apiVersion": "events.blanketops.dev/v1alpha1",
-		"kind":       "GitHubPayload",
+		"kind":       "GitHubEvent",
 		"metadata": map[string]interface{}{
-			"generateName": "github-payload-",
-			"namespace":    argoEventsNamespace,
+			"name":      crName,
+			"namespace": argoEventsNamespace,
 			"labels": map[string]interface{}{
 				"events.blanketops.dev/githubevent": crName,
 			},
@@ -159,7 +124,7 @@ func (p *GitHubProvider) createTypedGitHubSensor(spec domain.GitHubEvent, crName
 				Template: &argoeventsv1alpha1.TriggerTemplate{
 					Name: "github-payload",
 					K8s: &argoeventsv1alpha1.StandardK8STrigger{
-						Operation: "create",
+						Operation: "patch",
 						Source: &argoeventsv1alpha1.ArtifactLocation{
 							Resource: &argoeventsv1alpha1.K8SResource{Value: basePayloadBytes},
 						},
@@ -181,31 +146,92 @@ func (p *GitHubProvider) createTypedGitHubSensor(spec domain.GitHubEvent, crName
 		},
 	}, nil
 }
+
+// Ensure provisions or reconciles the Argo Events stack for the GitHubEvent CR.
+//
+// Ensure does NOT wait for a webhook delivery. Infrastructure provisioning
+// completing successfully is signaled via Triggered=true — the actual
+// payload-received outcome is written later by the observer/reconcile path
+// that detects the Sensor's patch on this CR's own spec.contract.
+func (p *GitHubProvider) Ensure(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent, spec domain.GitHubEvent) (domain.GitHubEventResult, error) {
+	cr := resolved.Event
+	res := domain.GitHubEventResult{
+		Success: false,
+		Message: "",
+	}
+
+	p.Log.Info(
+		"provider.evaluate: starting orchestration",
+		"githubevent", client.ObjectKeyFromObject(resolved.Event).String(),
+		"eventype", spec.Type,
+	)
+
+	// ------------------------------------------------
+	// Stage 1: Build the typed objects.
+	// ------------------------------------------------
+	bus := p.createTypedEventBus()
+	src := p.createTypedGitHubEventSource(spec)
+
+	sensor, err := p.createTypedGitHubSensor(spec, cr.Name)
+	if err != nil {
+		res.Message = err.Error()
+		return res, err
+	}
+
+	// ------------------------------------------------
+	// Stage 2: Owner references. EventBus is intentionally excluded — it's
+	// a shared cluster-wide singleton, not owned by any single GitHubEvent CR.
+	// ------------------------------------------------
+	for _, obj := range []client.Object{src, sensor} {
+		if err := controllerutil.SetControllerReference(cr, obj, p.Scheme); err != nil {
+			res.Message = err.Error()
+			return res, err
+		}
+	}
+
+	// ------------------------------------------------
+	// Stage 3: Apply (upsert) each object. First failure aborts.
+	// ------------------------------------------------
+	for _, obj := range []client.Object{bus, src, sensor} {
+		if err := p.apply(ctx, obj); err != nil {
+			p.Log.Error(err, "ensure: failed applying object", "kind", obj.GetObjectKind().GroupVersionKind().Kind, "name", obj.GetName())
+			res.Message = err.Error()
+			return res, err
+		}
+	}
+
+	// ------------------------------------------------
+	// Infrastructure ensured — return intent result.
+	//
+	// Triggered=true mirrors Run(): the ingress infrastructure was
+	// successfully created or already existed. Success stays false — this
+	// only confirms infrastructure is ready, not that a payload arrived.
+	// ------------------------------------------------
+	res.Success = true
+	res.Triggered = true
+	res.PayloadRecieved = true
+	res.Message = "GitHubEventPayload recieved"
+
+	p.Log.Info(
+		"provider.ensure: orchestration complete",
+		"githubevent", cr.Name,
+		"sensor", sensor.Name,
+	)
+
+	return res, nil
+}
+
 func (p *GitHubProvider) apply(ctx context.Context, obj client.Object) error {
 	key := client.ObjectKeyFromObject(obj)
 	current := obj.DeepCopyObject().(client.Object)
 	err := p.Client.Get(ctx, key, current)
-
 	if client.IgnoreNotFound(err) != nil {
 		return err
 	} else if err != nil {
 		p.Log.Info("apply: creating", "kind", obj.GetObjectKind().GroupVersionKind().Kind, "name", obj.GetName())
-		if err := p.Client.Create(ctx, obj); err != nil {
-			return err
-		}
-		if p.Recorder != nil {
-			p.Recorder.Eventf(obj, nil, "Normal", "Created", "Created %s", obj.GetName())
-		}
-		return nil
+		return p.Client.Create(ctx, obj)
 	}
-
 	obj.SetResourceVersion(current.GetResourceVersion())
 	p.Log.Info("apply: updating", "kind", obj.GetObjectKind().GroupVersionKind().Kind, "name", obj.GetName())
-	if err := p.Client.Update(ctx, obj); err != nil {
-		return err
-	}
-	if p.Recorder != nil {
-		p.Recorder.Eventf(obj, nil, "Normal", "Updated", "Updated %s", obj.GetName())
-	}
-	return nil
+	return p.Client.Update(ctx, obj)
 }

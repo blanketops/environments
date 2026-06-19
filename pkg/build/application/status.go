@@ -20,13 +20,13 @@ import (
 	"encoding/json"
 	"time"
 
-	buildv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/build/domain"
-
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	buildv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/build/domain"
 )
 
 type StatusWriter struct {
@@ -41,19 +41,9 @@ func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter {
 	}
 }
 
-func (w *StatusWriter) Write(
-	ctx context.Context,
-	build *buildv1.Build,
-	result domain.BuildResult,
-	runErr error,
-) error {
+func (w *StatusWriter) Write(ctx context.Context, build *buildv1.Build, result domain.BuildResult, runErr error) error {
 
-	log := w.Log.WithValues(
-		"build", build.Name,
-		"namespace", build.Namespace,
-		"executionRef", result.ExecutionRef,
-		"buildHash", result.BuildHash,
-	)
+	log := w.Log.WithValues("build", build.Name, "namespace", build.Namespace, "executionRef", result.ExecutionRef, "buildHash", result.BuildHash)
 
 	// ---------------------------------------------------------------------
 	// 1. Write CONTRACT status (authoritative, user-facing)
@@ -78,12 +68,7 @@ func (w *StatusWriter) Write(
 	}
 
 	build.Status.Contract = runtime.RawExtension{Raw: raw}
-
-	log.Info("contract status written",
-		"triggered", contractStatus.Triggered,
-		"success", contractStatus.Success,
-		"message", contractStatus.Message,
-	)
+	log.Info("contract status written", "triggered", contractStatus.Triggered, "success", contractStatus.Success, "message", contractStatus.Message)
 
 	// ---------------------------------------------------------------------
 	// 2. Conditions (kubectl describe alignment)
@@ -93,56 +78,17 @@ func (w *StatusWriter) Write(
 
 	switch {
 	case result.Triggered:
-		condition = metav1.Condition{
-			Type:               "Running",
-			Status:             metav1.ConditionTrue,
-			Reason:             "BuildTriggered",
-			Message:            "Build execution started",
-			LastTransitionTime: now,
-		}
-		log.Info("build execution started")
-
+		condition = metav1.Condition{Type: "BuildReady", Status: metav1.ConditionTrue, Reason: "BuildReady", Message: "Build Ready for next steps", LastTransitionTime: now}
 	case runErr != nil:
-		condition = metav1.Condition{
-			Type:               "Succeeded",
-			Status:             metav1.ConditionFalse,
-			Reason:             "BuildFailed",
-			Message:            runErr.Error(),
-			LastTransitionTime: now,
-		}
-		log.Info("build failed", "error", runErr.Error())
-
+		condition = metav1.Condition{Type: "BuildFailed", Status: metav1.ConditionFalse, Reason: "BuildFail", Message: runErr.Error(), LastTransitionTime: now}
 	case result.Success:
-		condition = metav1.Condition{
-			Type:               "Succeeded",
-			Status:             metav1.ConditionTrue,
-			Reason:             "BuildSucceeded",
-			Message:            result.Message,
-			LastTransitionTime: now,
-		}
-		log.Info("build succeeded", "message", result.Message)
-
+		condition = metav1.Condition{Type: "BuildSuccess", Status: metav1.ConditionTrue, Reason: "BuildSucceeded", Message: result.Message, LastTransitionTime: now}
 	default:
-		condition = metav1.Condition{
-			Type:               "Succeeded",
-			Status:             metav1.ConditionFalse,
-			Reason:             "BuildFailed",
-			Message:            result.Message,
-			LastTransitionTime: now,
-		}
-		log.Info("build failed", "message", result.Message)
+		condition = metav1.Condition{Type: "BuildFailed", Status: metav1.ConditionFalse, Reason: "BuildExecuteFail", Message: result.Message, LastTransitionTime: now}
 	}
 
-	build.Status.Conditions = mergeCondition(
-		build.Status.Conditions,
-		condition,
-	)
-
-	log.Info("condition updated",
-		"type", condition.Type,
-		"status", condition.Status,
-		"reason", condition.Reason,
-	)
+	build.Status.Conditions = mergeCondition(build.Status.Conditions, condition)
+	log.Info("condition updated", "type", condition.Type, "status", condition.Status, "reason", condition.Reason)
 
 	// ---------------------------------------------------------------------
 	// 3. Persist
@@ -156,10 +102,7 @@ func (w *StatusWriter) Write(
 	return nil
 }
 
-func mergeCondition(
-	conds []metav1.Condition,
-	newCond metav1.Condition,
-) []metav1.Condition {
+func mergeCondition(conds []metav1.Condition, newCond metav1.Condition) []metav1.Condition {
 
 	for i, c := range conds {
 		if c.Type == newCond.Type {

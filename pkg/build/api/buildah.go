@@ -204,21 +204,13 @@ func (p *BuildahProvider) CreateBuildRunSpec(
 // created if no run for the current execution hash exists — a hash collision
 // (same spec + same trigger context) is treated as "already triggered" and
 // the existing run is reused.
-func (p *BuildahProvider) Run(
-	ctx context.Context,
-	build *buildResolution.ResolvedBuild,
-	spec domain.BuildSpec,
-) (domain.BuildResult, error) {
+func (p *BuildahProvider) Run(ctx context.Context, build *buildResolution.ResolvedBuild, spec domain.BuildSpec) (domain.BuildResult, error) {
 	res := domain.BuildResult{
 		Success: false,
 		Message: "",
 	}
 
-	p.Log.Info(
-		"provider.run: starting orchestration",
-		"build", client.ObjectKeyFromObject(build.Build).String(),
-		"strategy", spec.StrategyName,
-	)
+	p.Log.Info("provider.run: starting orchestration", "build", client.ObjectKeyFromObject(build.Build).String(), "strategy", spec.StrategyName)
 
 	// ------------------------------------------------
 	// Stage 1: Upsert the Shipwright Build.

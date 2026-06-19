@@ -23,65 +23,39 @@ type, keeping their concerns separate.
 */
 package domain
 
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
 // GitHubEventResult is the unified return value for the GitHubEvent domain.
 // It reflects both the infrastructure state (from the Provider) and the
 // delivery state (from the Observer).
 type GitHubEventResult struct {
+	// Success is true only when the GitHubEvent completed successfully.
+	// False when Triggered=true — the build has been dispatched, not confirmed.
+	Success bool
+
+	// Triggered is true when a BuildRun was created or already existed for
+	// this execution hash.
+	Triggered bool
+
+	//Rejected bool
+
+	PayloadRecieved bool
+
 	// Phase represents the current lifecycle state of the GitHubEvent subscription.
 	// e.g., "IngressEnsured", "PayloadReceived", "Failed".
 	Phase string
+
 	// Message is a human-readable explanation of the current state.
 	Message string
+
+	Logs []string
 	// LastPayloadRef is the name of the most recent ephemeral GitHubPayload CR
 	// minted by the Argo Sensor for this subscription.
 	LastPayloadRef string
-}
 
-// Ensured returns a result indicating the Argo Events infrastructure
-// (EventSource, Sensor, etc.) was successfully provisioned or verified.
-// This is typically returned by the GitHubProvider.
-func Ensured(msg string) GitHubEventResult {
-	return GitHubEventResult{
-		Phase:   "IngressEnsured",
-		Message: msg,
-	}
-}
-
-// PayloadReceived returns a result indicating a new GitHubPayload CR was
-// observed by the controller, successfully closing the webhook delivery loop.
-// This is typically returned by the GitHubEvent Observer.
-func PayloadReceived(payloadRef string) GitHubEventResult {
-	return GitHubEventResult{
-		Phase:          "PayloadReceived",
-		LastPayloadRef: payloadRef,
-		Message:        "Latest payload delivery recorded",
-	}
-}
-
-// ToStatus converts a GitHubEventResult to a GitHubEventStatus for persistence.
-// The two types are structurally identical — the conversion is zero-cost.
-func (r GitHubEventResult) ToStatus() GitHubEventResult {
-	return GitHubEventResult{
-		Phase:          r.Phase,
-		Message:        r.Message,
-		LastPayloadRef: r.LastPayloadRef,
-	}
-}
-
-// Rejected returns a result indicating the infrastructure provisioning failed
-// or the subscription is invalid.
-func Rejected(msg string) GitHubEventResult {
-	return GitHubEventResult{
-		Phase:   "Failed",
-		Message: msg,
-	}
-}
-
-// Rejected returns a result indicating the infrastructure provisioning failed
-// or the subscription is invalid.
-func Accepted(msg string) GitHubEventResult {
-	return GitHubEventResult{
-		Phase:   "Passed",
-		Message: msg,
-	}
+	// LastFailureAt is the timestamp of the most recent failure.
+	// Populated by the buildrun observer for observability only.
+	LastFailureAt *metav1.Time
 }
