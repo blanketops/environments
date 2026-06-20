@@ -28,6 +28,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	shipwrightv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
@@ -39,9 +40,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	buildv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+	eventsv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/events/v1alpha1"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/build/domain"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/utils"
 	buildResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
+	githubEventResolution "github.com/ntlaletsi70/blanketops-environments/resolution/githubevent"
 )
 
 // KanikoProvider orchestrates Shipwright Build and BuildRun resources
@@ -223,4 +227,58 @@ func (p *KanikoProvider) Run(
 		"image", spec.Image,
 	)
 	return res, nil
+}
+
+// patchTriggerSHA looks up the most recent push GitHubEvent for this Build's
+// repo and patches the discovered SHA onto the Build's annotations so
+// ExtractTriggerContext can read it. Shared across all build providers.
+// No-op if nothing matches (manual trigger case).
+func patchTriggerSHA(ctx context.Context, c client.Client, build *buildv1.Build, sourceURL string) error {
+	var events eventsv1alpha1.GitHubEventList
+	if err := c.List(ctx, &events,
+		client.InNamespace(build.Namespace),
+		client.MatchingLabels{"events.blanketops.dev/repo": repoSlug(sourceURL)},
+	); err != nil {
+		return err
+	}
+
+	var latest *eventsv1alpha1.GitHubEvent
+	var latestSpec *githubEventResolution.ResolvedGitHubEventSpec
+
+	for i := range events.Items {
+		ev := &events.Items[i]
+		resolved, err := githubEventResolution.ResolveGitHubEvent(ev)
+		if err != nil {
+			continue // malformed contract — skip rather than fail the whole lookup
+		}
+		if resolved.Spec.EventType != "push" {
+			continue
+		}
+		if latest == nil || ev.CreationTimestamp.After(latest.CreationTimestamp.Time) {
+			latest = ev
+			latestSpec = resolved.Spec
+		}
+	}
+
+	if latest == nil {
+		return nil
+	}
+
+	original := build.DeepCopy()
+	if build.Annotations == nil {
+		build.Annotations = map[string]string{}
+	}
+	build.Annotations["build.blanketops.dev/trigger-type"] = "push"
+	build.Annotations["build.blanketops.dev/trigger-ref"] = latestSpec.Ref
+	build.Annotations["build.blanketops.dev/trigger-sha"] = latestSpec.CommitSHA
+
+	return c.Patch(ctx, build, client.MergeFrom(original))
+}
+
+// repoSlug normalizes a Build's source URL into the same label format the
+// Sensor writes onto GitHubEvent (events.blanketops.dev/repo).
+func repoSlug(sourceURL string) string {
+	s := strings.TrimPrefix(sourceURL, "https://github.com/")
+	s = strings.TrimSuffix(s, ".git")
+	return strings.ReplaceAll(s, "/", "-")
 }
