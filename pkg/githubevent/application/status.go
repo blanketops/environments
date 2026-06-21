@@ -32,158 +32,40 @@ package application
 
 import (
 	"context"
-	"encoding/json"
-	"time"
 
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	eventsv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/events/v1alpha1"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/githubevent/domain"
 )
 
-// StatusWriter persists GitHubEvent provisioning outcomes to the CR status.
 type StatusWriter struct {
 	Client client.Client
-
-	Log logr.Logger
+	Log    logr.Logger
 }
 
-// NewStatusWriter constructs a StatusWriter.
 func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter {
-	return &StatusWriter{
-		Client: c,
-		Log:    log.WithName("github-status-writer"),
-	}
+	return &StatusWriter{Client: c, Log: log.WithName("githubevent-status-writer")}
 }
 
-// Write persists the provider result and any error to the GitHubEvent CR.
-// A non-nil runErr forces the Phase to "Failed".
-func (w *StatusWriter) Write(ctx context.Context, githubevent *eventsv1alpha1.GitHubEvent, result domain.GitHubEventResult, runErr error) error {
+// Write merges the provided conditions and persists. Nothing else.
+func (w *StatusWriter) Write(ctx context.Context, gh *eventsv1alpha1.GitHubEvent, conditions ...metav1.Condition) error {
+	log := w.Log.WithValues("githubevent", gh.Name, "namespace", gh.Namespace)
 
-	log := w.Log.WithValues("githubevent", githubevent.Name, "namespace", githubevent.Namespace)
-
-	// ---------------------------------------------------------------------
-	// Preserve PayloadRecieved if already true — the Observer is the
-	// authoritative source for payload arrival. Once set, the controller
-	// must not overwrite it back to false.
-	// ---------------------------------------------------------------------
-	var currentStatus domain.GitHubEventStatus
-	payloadReceived := result.PayloadRecieved
-	if len(githubevent.Status.Contract.Raw) > 0 {
-		if err := json.Unmarshal(githubevent.Status.Contract.Raw, &currentStatus); err == nil {
-			if currentStatus.PayloadRecieved && !payloadReceived {
-				payloadReceived = true
-				log.Info("preserving payloadReceived from existing status")
-			}
-		}
+	for _, cond := range conditions {
+		gh.Status.Conditions = mergeCondition(gh.Status.Conditions, cond)
+		log.Info("condition merged", "type", cond.Type, "status", cond.Status, "reason", cond.Reason)
 	}
 
-	// ---------------------------------------------------------------------
-	// 1. Write CONTRACT status (authoritative, user-facing)
-	// ---------------------------------------------------------------------
-	contractStatus := domain.GitHubEventStatus{
-		Accepted:        result.Success && payloadReceived,
-		Triggered:       result.Triggered,
-		Success:         result.Success,
-		PayloadRecieved: payloadReceived,
-		Message:         result.Message,
-	}
-
-	if runErr != nil {
-		contractStatus.Success = false
-		contractStatus.Message = runErr.Error()
-	}
-
-	raw, err := json.Marshal(contractStatus)
-	if err != nil {
-		log.Error(err, "failed to marshal githubevent contract status")
-		return err
-	}
-
-	githubevent.Status.Contract = runtime.RawExtension{Raw: raw}
-	log.Info("contract status written",
-		"triggered", contractStatus.Triggered,
-		"success", contractStatus.Success,
-		"payloadReceived", contractStatus.PayloadRecieved,
-		"message", contractStatus.Message)
-
-	// ---------------------------------------------------------------------
-	// 2. Conditions (kubectl describe alignment)
-	// ---------------------------------------------------------------------
-	now := metav1.NewTime(time.Now())
-	var condition metav1.Condition
-
-	switch {
-	case runErr != nil:
-		condition = metav1.Condition{
-			Type:               "GitHubEventFailed",
-			Status:             metav1.ConditionFalse,
-			Reason:             "GitHubEventFailed",
-			Message:            runErr.Error(),
-			LastTransitionTime: now,
-		}
-	case payloadReceived && result.Success:
-		condition = metav1.Condition{
-			Type:               "GitHubEventReady",
-			Status:             metav1.ConditionTrue,
-			Reason:             "GitHubEventPayloadReceived",
-			Message:            contractStatus.Message,
-			LastTransitionTime: now,
-		}
-	case payloadReceived:
-		condition = metav1.Condition{
-			Type:               "GitHubEventReceiving",
-			Status:             metav1.ConditionTrue,
-			Reason:             "GitHubEventPayloadObserved",
-			Message:            "Payload received, processing",
-			LastTransitionTime: now,
-		}
-	case result.Triggered:
-		condition = metav1.Condition{
-			Type:               "GitHubEventReady",
-			Status:             metav1.ConditionTrue,
-			Reason:             "GitHubEventReady",
-			Message:            "GitHubEvent infrastructure provisioned",
-			LastTransitionTime: now,
-		}
-	default:
-		condition = metav1.Condition{
-			Type:               "GitHubEventPending",
-			Status:             metav1.ConditionFalse,
-			Reason:             "GitHubEventPending",
-			Message:            result.Message,
-			LastTransitionTime: now,
-		}
-	}
-
-	githubevent.Status.Conditions = mergeCondition(
-		githubevent.Status.Conditions,
-		condition,
-	)
-
-	log.Info("condition updated",
-		"type", condition.Type,
-		"status", condition.Status,
-		"reason", condition.Reason,
-	)
-
-	// ---------------------------------------------------------------------
-	// 3. Persist
-	// ---------------------------------------------------------------------
-	if err := w.Client.Status().Update(ctx, githubevent); err != nil {
+	if err := w.Client.Status().Update(ctx, gh); err != nil {
 		log.Error(err, "failed to persist githubevent status")
 		return err
 	}
-
-	log.Info("githubevent status persisted successfully")
+	log.Info("githubevent status persisted")
 	return nil
 }
 
-// mergeCondition upserts newCond into conds by Type. Replaces in place when
-// a condition of the same Type exists; appends otherwise.
 func mergeCondition(conds []metav1.Condition, newCond metav1.Condition) []metav1.Condition {
 	for i, c := range conds {
 		if c.Type == newCond.Type {
