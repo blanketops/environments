@@ -63,25 +63,14 @@ type BuildahProvider struct {
 	Client client.Client
 	Scheme *runtime.Scheme
 	Log    logr.Logger
-	// Recorder is optional — may be nil. No events are emitted at the
-	// provider layer; events are owned by the domain and observer layers.
+
 	Recorder events.EventRecorder
 }
 
 // NewBuildahProvider constructs a BuildahProvider with the given dependencies.
 // rec may be nil — the provider does not emit events directly.
-func NewBuildahProvider(
-	c client.Client,
-	scheme *runtime.Scheme,
-	log logr.Logger,
-	rec events.EventRecorder,
-) *BuildahProvider {
-	return &BuildahProvider{
-		Client:   c,
-		Scheme:   scheme,
-		Log:      log,
-		Recorder: rec,
-	}
+func NewBuildahProvider(client client.Client, scheme *runtime.Scheme, log logr.Logger, recorder events.EventRecorder) *BuildahProvider {
+	return &BuildahProvider{Client: client, Scheme: scheme, Log: log, Recorder: recorder}
 }
 
 // -----------------------------------------------------------------------------
@@ -98,10 +87,7 @@ func NewBuildahProvider(
 //
 // Timeout is intentionally omitted from the Shipwright BuildSpec — timeout
 // policy is enforced at the BuildRun level by Shipwright's own machinery.
-func (p *BuildahProvider) CreateBuildSpec(
-	spec domain.BuildSpec,
-	build *buildResolution.ResolvedBuild,
-) (*shipwrightv1alpha1.Build, error) {
+func (p *BuildahProvider) CreateBuildSpec(spec domain.BuildSpec, build *buildResolution.ResolvedBuild) (*shipwrightv1alpha1.Build, error) {
 	if spec.SourceURL == "" {
 		return nil, fmt.Errorf("missing source URL")
 	}
@@ -157,11 +143,7 @@ func (p *BuildahProvider) CreateBuildSpec(
 // Labels carry the execution identity for the buildrun observer to resolve
 // the owning Build CR and for retry counting (list by build name + hash).
 // The full hash is preserved in an annotation for audit purposes.
-func (p *BuildahProvider) CreateBuildRunSpec(
-	build *buildResolution.ResolvedBuild,
-	shipwrightBuild *shipwrightv1alpha1.Build,
-	fullHash string,
-) *shipwrightv1alpha1.BuildRun {
+func (p *BuildahProvider) CreateBuildRunSpec(build *buildResolution.ResolvedBuild, shipwrightBuild *shipwrightv1alpha1.Build, fullHash string) *shipwrightv1alpha1.BuildRun {
 	short := utils.ShortHash(fullHash)
 	name := fmt.Sprintf("%s-%s", build.Build.Name, short)
 
@@ -205,7 +187,7 @@ func (p *BuildahProvider) CreateBuildRunSpec(
 // (same spec + same trigger context) is treated as "already triggered" and
 // the existing run is reused.
 func (p *BuildahProvider) Run(ctx context.Context, build *buildResolution.ResolvedBuild, spec domain.BuildSpec) (domain.BuildResult, error) {
-	res := domain.BuildResult{
+	result := domain.BuildResult{
 		Success: false,
 		Message: "",
 	}
@@ -220,13 +202,13 @@ func (p *BuildahProvider) Run(ctx context.Context, build *buildResolution.Resolv
 	// ------------------------------------------------
 	shipBuild, err := p.CreateBuildSpec(spec, build)
 	if err != nil {
-		res.Message = err.Error()
-		return res, err
+		result.Message = err.Error()
+		return result, err
 	}
 
 	if err := controllerutil.SetControllerReference(build.Build, shipBuild, p.Scheme); err != nil {
-		res.Message = err.Error()
-		return res, err
+		result.Message = err.Error()
+		return result, err
 	}
 
 	foundBuild := &shipwrightv1alpha1.Build{}
@@ -234,18 +216,18 @@ func (p *BuildahProvider) Run(ctx context.Context, build *buildResolution.Resolv
 
 	if apierrors.IsNotFound(getErr) {
 		if err := p.Client.Create(ctx, shipBuild); err != nil {
-			res.Message = err.Error()
-			return res, err
+			result.Message = err.Error()
+			return result, err
 		}
 	} else if getErr == nil {
 		shipBuild.ResourceVersion = foundBuild.ResourceVersion
 		if err := p.Client.Update(ctx, shipBuild); err != nil {
-			res.Message = err.Error()
-			return res, err
+			result.Message = err.Error()
+			return result, err
 		}
 	} else {
-		res.Message = getErr.Error()
-		return res, getErr
+		result.Message = getErr.Error()
+		return result, getErr
 	}
 
 	// ------------------------------------------------
@@ -260,22 +242,17 @@ func (p *BuildahProvider) Run(ctx context.Context, build *buildResolution.Resolv
 	tc := ExtractTriggerContext(build.Build)
 	hash, err := utils.ComputeExecutionHash(build.Spec.ToBuildContract(), tc)
 
-	p.Log.Info(
-		"execution identity",
-		"retryAttempt", tc.RetryAttempt,
-		"triggerType", tc.Type,
-	)
+	p.Log.Info("execution identity", "retryAttempt", tc.RetryAttempt, "triggerType", tc.Type)
 
 	if err != nil {
-		res.Message = err.Error()
-		return res, err
+		result.Message = err.Error()
+		return result, err
 	}
 
 	buildRun := p.CreateBuildRunSpec(build, shipBuild, hash)
-
 	if err := controllerutil.SetControllerReference(build.Build, buildRun, p.Scheme); err != nil {
-		res.Message = err.Error()
-		return res, err
+		result.Message = err.Error()
+		return result, err
 	}
 
 	foundRun := &shipwrightv1alpha1.BuildRun{}
@@ -283,12 +260,12 @@ func (p *BuildahProvider) Run(ctx context.Context, build *buildResolution.Resolv
 
 	if apierrors.IsNotFound(getErr) {
 		if err := p.Client.Create(ctx, buildRun); err != nil {
-			res.Message = err.Error()
-			return res, err
+			result.Message = err.Error()
+			return result, err
 		}
 	} else if getErr != nil {
-		res.Message = getErr.Error()
-		return res, getErr
+		result.Message = getErr.Error()
+		return result, getErr
 	}
 
 	// ------------------------------------------------
@@ -298,17 +275,10 @@ func (p *BuildahProvider) Run(ctx context.Context, build *buildResolution.Resolv
 	// it has only been triggered. The observer sets Success=true when the
 	// BuildRun completes.
 	// ------------------------------------------------
-	res.Success = false
-	res.Triggered = true
-	res.ExecutionRef = buildRun.Name
-	res.Message = "BuildRun created"
+	result.Triggered = true
+	result.ExecutionRef = buildRun.Name
+	result.Message = "BuildRun " + buildRun.Name + "created"
 
-	p.Log.Info(
-		"provider.run: orchestration complete",
-		"build", build.Build.Name,
-		"buildRun", buildRun.Name,
-		"image", spec.Image,
-	)
-
-	return res, nil
+	p.Log.Info("provider.run: orchestration complete", "build", build.Build.Name, "buildRun", buildRun.Name, "image", spec.Image)
+	return result, nil
 }

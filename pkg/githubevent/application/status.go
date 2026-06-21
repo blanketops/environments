@@ -3,7 +3,9 @@ Copyright 2026 The BlanketOps Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
+
 	http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -64,12 +66,30 @@ func (w *StatusWriter) Write(ctx context.Context, githubevent *eventsv1alpha1.Gi
 	log := w.Log.WithValues("githubevent", githubevent.Name, "namespace", githubevent.Namespace)
 
 	// ---------------------------------------------------------------------
+	// Preserve PayloadRecieved if already true — the Observer is the
+	// authoritative source for payload arrival. Once set, the controller
+	// must not overwrite it back to false.
+	// ---------------------------------------------------------------------
+	var currentStatus domain.GitHubEventStatus
+	payloadReceived := result.PayloadRecieved
+	if len(githubevent.Status.Contract.Raw) > 0 {
+		if err := json.Unmarshal(githubevent.Status.Contract.Raw, &currentStatus); err == nil {
+			if currentStatus.PayloadRecieved && !payloadReceived {
+				payloadReceived = true
+				log.Info("preserving payloadReceived from existing status")
+			}
+		}
+	}
+
+	// ---------------------------------------------------------------------
 	// 1. Write CONTRACT status (authoritative, user-facing)
 	// ---------------------------------------------------------------------
 	contractStatus := domain.GitHubEventStatus{
-		Triggered: result.Triggered,
-		Success:   result.Success,
-		Message:   result.Message,
+		Accepted:        result.Success && payloadReceived,
+		Triggered:       result.Triggered,
+		Success:         result.Success,
+		PayloadRecieved: payloadReceived,
+		Message:         result.Message,
 	}
 
 	if runErr != nil {
@@ -84,7 +104,11 @@ func (w *StatusWriter) Write(ctx context.Context, githubevent *eventsv1alpha1.Gi
 	}
 
 	githubevent.Status.Contract = runtime.RawExtension{Raw: raw}
-	log.Info("contract status written", "triggered", contractStatus.Triggered, "success", contractStatus.Success, "message", contractStatus.Message)
+	log.Info("contract status written",
+		"triggered", contractStatus.Triggered,
+		"success", contractStatus.Success,
+		"payloadReceived", contractStatus.PayloadRecieved,
+		"message", contractStatus.Message)
 
 	// ---------------------------------------------------------------------
 	// 2. Conditions (kubectl describe alignment)
@@ -93,16 +117,46 @@ func (w *StatusWriter) Write(ctx context.Context, githubevent *eventsv1alpha1.Gi
 	var condition metav1.Condition
 
 	switch {
-	case result.Triggered:
-		condition = metav1.Condition{Type: "GitHubEventReady", Status: metav1.ConditionTrue, Reason: "GitHubEventReady", Message: "GitHubEvent Ready for next steps", LastTransitionTime: now}
 	case runErr != nil:
-		condition = metav1.Condition{Type: "GitHubEventFailed", Status: metav1.ConditionFalse, Reason: "GitHubEventFailed", Message: runErr.Error(), LastTransitionTime: now}
-	case result.Success:
-		condition = metav1.Condition{Type: "GitHubEventProcess", Status: metav1.ConditionTrue, Reason: "GitHubEventProcessed", Message: contractStatus.Message, LastTransitionTime: now}
-	case result.PayloadRecieved:
-		condition = metav1.Condition{Type: "GitHubEventReceiving", Status: metav1.ConditionTrue, Reason: "GitHubEventPayloadObserved", Message: contractStatus.Message, LastTransitionTime: now}
+		condition = metav1.Condition{
+			Type:               "GitHubEventFailed",
+			Status:             metav1.ConditionFalse,
+			Reason:             "GitHubEventFailed",
+			Message:            runErr.Error(),
+			LastTransitionTime: now,
+		}
+	case payloadReceived && result.Success:
+		condition = metav1.Condition{
+			Type:               "GitHubEventReady",
+			Status:             metav1.ConditionTrue,
+			Reason:             "GitHubEventPayloadReceived",
+			Message:            contractStatus.Message,
+			LastTransitionTime: now,
+		}
+	case payloadReceived:
+		condition = metav1.Condition{
+			Type:               "GitHubEventReceiving",
+			Status:             metav1.ConditionTrue,
+			Reason:             "GitHubEventPayloadObserved",
+			Message:            "Payload received, processing",
+			LastTransitionTime: now,
+		}
+	case result.Triggered:
+		condition = metav1.Condition{
+			Type:               "GitHubEventReady",
+			Status:             metav1.ConditionTrue,
+			Reason:             "GitHubEventReady",
+			Message:            "GitHubEvent infrastructure provisioned",
+			LastTransitionTime: now,
+		}
 	default:
-		condition = metav1.Condition{Type: "GitHubEventProcess", Status: metav1.ConditionFalse, Reason: "BuildExecuteFail", Message: result.Message, LastTransitionTime: now}
+		condition = metav1.Condition{
+			Type:               "GitHubEventPending",
+			Status:             metav1.ConditionFalse,
+			Reason:             "GitHubEventPending",
+			Message:            result.Message,
+			LastTransitionTime: now,
+		}
 	}
 
 	githubevent.Status.Conditions = mergeCondition(
