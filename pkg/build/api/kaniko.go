@@ -58,7 +58,14 @@ import (
 	"github.com/ntlaletsi70/blanketops-environments/pkg/build/domain"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/utils"
 	buildResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
-	githubEventResolution "github.com/ntlaletsi70/blanketops-environments/resolution/githubevent"
+	githubeventResolution "github.com/ntlaletsi70/blanketops-environments/resolution/githubevent"
+)
+
+const (
+	triggerTypeAnnotation   = "build.blanketops.dev/trigger-type"
+	triggerRefAnnotation    = "build.blanketops.dev/trigger-ref"
+	triggerSHAAnnotation    = "build.blanketops.dev/trigger-sha"
+	triggerSourceAnnotation = "build.blanketops.dev/trigger-source"
 )
 
 // KanikoProvider orchestrates Shipwright Build and BuildRun resources on
@@ -225,7 +232,7 @@ func (p *KanikoProvider) Run(ctx context.Context, build *buildResolution.Resolve
 		return res, getErr
 	}
 
-	if err := patchTriggerSHA(ctx, p.Client, build.Build, spec.SourceURL); err != nil {
+	if err := PatchBuildTriggerFromGitHubEvent(ctx, p.Client, build.Build); err != nil {
 		res.Message = err.Error()
 		return res, err
 	}
@@ -286,34 +293,62 @@ func (p *KanikoProvider) Run(ctx context.Context, build *buildResolution.Resolve
 // repo and patches the discovered SHA onto the Build's annotations so
 // ExtractTriggerContext can read it. Shared across all build providers.
 // No-op if nothing matches (manual trigger case).
-func patchTriggerSHA(ctx context.Context, c client.Client, build *buildv1.Build, sourceURL string) error {
+// PatchBuildTriggerFromGitHubEvent looks up the latest push GitHubEvent for
+// the given Build's repository and patches the Build's annotations with the
+// trigger metadata (type, ref, sha, source). No-op if no matching event
+// with payload exists.
+//
+// This is called by the provider before creating the BuildRun so the
+// execution hash includes the correct commit SHA.
+// PatchBuildTriggerFromGitHubEvent looks up the latest push GitHubEvent for
+// the given Build's repository and patches the Build's annotations with the
+// trigger metadata. No-op if no matching event with payload exists.
+func PatchBuildTriggerFromGitHubEvent(ctx context.Context, c client.Client, build *buildv1.Build) error {
+	// Resolve Build to get source URL
+	resolvedBuild, err := buildResolution.ResolveBuild(build)
+	if err != nil {
+		return fmt.Errorf("resolve build: %w", err)
+	}
+
+	sourceURL := resolvedBuild.Spec.Source.URL
+	if sourceURL == "" {
+		return nil
+	}
+
 	var events eventsv1alpha1.GitHubEventList
 	if err := c.List(ctx, &events,
 		client.InNamespace(build.Namespace),
 		client.MatchingLabels{"events.blanketops.dev/repo": RepoSlug(sourceURL)},
 	); err != nil {
-		return err
+		return fmt.Errorf("list githubevents: %w", err)
 	}
 
-	var latest *eventsv1alpha1.GitHubEvent
-	var latestSpec *githubEventResolution.ResolvedGitHubEventSpec
+	var latestEvent *eventsv1alpha1.GitHubEvent
+	var latestResolved *githubeventResolution.ResolvedGitHubEvent
 
 	for i := range events.Items {
 		ev := &events.Items[i]
-		resolved, err := githubEventResolution.ResolveGitHubEvent(ev)
+
+		resolved, err := githubeventResolution.ResolveGitHubEvent(ev)
 		if err != nil {
-			continue // malformed contract — skip rather than fail the whole lookup
-		}
-		if resolved.Spec.EventType != "push" {
 			continue
 		}
-		if latest == nil || ev.CreationTimestamp.After(latest.CreationTimestamp.Time) {
-			latest = ev
-			latestSpec = resolved.Spec
+
+		contract := resolved.Spec.ToGitHubEventContract()
+		if contract.GetEventId() == "" {
+			continue
+		}
+		if contract.GetEventType().String() != "push" {
+			continue
+		}
+
+		if latestEvent == nil || ev.CreationTimestamp.After(latestEvent.CreationTimestamp.Time) {
+			latestEvent = ev
+			latestResolved = resolved
 		}
 	}
 
-	if latest == nil {
+	if latestResolved == nil {
 		return nil
 	}
 
@@ -321,17 +356,25 @@ func patchTriggerSHA(ctx context.Context, c client.Client, build *buildv1.Build,
 	if build.Annotations == nil {
 		build.Annotations = map[string]string{}
 	}
-	build.Annotations["build.blanketops.dev/trigger-type"] = "push"
-	build.Annotations["build.blanketops.dev/trigger-ref"] = latestSpec.Ref
-	build.Annotations["build.blanketops.dev/trigger-sha"] = latestSpec.CommitSHA
 
-	return c.Patch(ctx, build, client.MergeFrom(original))
+	ghContract := latestResolved.Spec.ToGitHubEventContract()
+	build.Annotations[triggerTypeAnnotation] = string(ghContract.GetEventType().Type)
+	build.Annotations[triggerRefAnnotation] = ghContract.GetRef()
+	build.Annotations[triggerSHAAnnotation] = string(ghContract.GetCommitSha())
+	build.Annotations[triggerSourceAnnotation] = "github"
+
+	if err := c.Patch(ctx, build, client.MergeFrom(original)); err != nil {
+		return fmt.Errorf("patch build trigger annotations: %w", err)
+	}
+
+	return nil
 }
 
-// repoSlug normalizes a Build's source URL into the same label format the
-// Sensor writes onto GitHubEvent (events.blanketops.dev/repo).
+// RepoSlug normalizes a git URL into a label-safe slug matching the format
+// used by the GitHubEvent Sensor label (events.blanketops.dev/repo).
 func RepoSlug(sourceURL string) string {
 	s := strings.TrimPrefix(sourceURL, "https://github.com/")
+	s = strings.TrimPrefix(s, "git@github.com:")
 	s = strings.TrimSuffix(s, ".git")
 	return strings.ReplaceAll(s, "/", "-")
 }

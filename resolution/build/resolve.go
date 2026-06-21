@@ -52,19 +52,14 @@ type ResolvedBuild struct {
 
 // ResolvedBuildSpec is the decoded and validated Build spec.
 type ResolvedBuildSpec struct {
-	// Image is the fully qualified target image reference (registry/repo:tag).
-	Image       string
-	Source      ResolvedSource
-	Githubevent string
-	Strategy    ResolvedStrategy
-	// ServiceAccount is optional — omitted when the Build uses the default
-	// Shipwright service account.
+	Image          string
+	Source         ResolvedSource
+	Githubevent    string
+	Strategy       ResolvedStrategy
 	ServiceAccount *ResolvedServiceAccount
-	// Policy is optional — omitted when no retry or build policy is declared.
-	Policy *ResolvedBuildPolicy
+	Policy         *ResolvedBuildPolicy
 }
 
-// ResolvedSource is the resolved Git source for the Build.
 type ResolvedSource struct {
 	URL         string
 	Revision    string
@@ -72,29 +67,25 @@ type ResolvedSource struct {
 	CloneSecret string
 }
 
-// ResolvedStrategy is the resolved Shipwright build strategy reference.
-// StrategyKind is stored as the raw string from the contract ("ClusterBuildStrategy",
-// "NamespacedBuildStrategy") — the contract adapter is responsible for converting
-// this to the appropriate *v1.BuildStrategyKind proto message.
 type ResolvedStrategy struct {
 	Name         string
-	StrategyKind string // raw string: "ClusterBuildStrategy" | "NamespacedBuildStrategy"
+	StrategyKind string
 }
 
-// ResolvedServiceAccount carries the service account name and registry
-// credentials secret for Shipwright to use when pushing the built image.
 type ResolvedServiceAccount struct {
 	Name   string
 	Secret string
 }
 
-// ResolvedBuildPolicy is the optional build execution policy.
 type ResolvedBuildPolicy struct {
-	Retry *ResolvedRetryPolicy
+	Triggers []ResolvedTrigger
+	Retry    *ResolvedRetryPolicy
 }
 
-// ResolvedRetryPolicy controls automatic retry on build failure.
-// MaxAttempts must be > 0 when OnFailure is true — resolution enforces this.
+type ResolvedTrigger struct {
+	Type string
+}
+
 type ResolvedRetryPolicy struct {
 	OnFailure   bool
 	MaxAttempts uint32
@@ -111,7 +102,6 @@ func ResolveBuild(build *environmentv1alpha1.Build) (*ResolvedBuild, error) {
 	if build == nil {
 		return nil, fmt.Errorf("build is nil")
 	}
-
 	if len(build.Spec.Contract.Raw) == 0 {
 		return nil, fmt.Errorf("spec.contract is required")
 	}
@@ -139,10 +129,7 @@ func ResolveBuild(build *environmentv1alpha1.Build) (*ResolvedBuild, error) {
 			case "ClusterBuildStrategy", "NamespacedBuildStrategy":
 				strategyKind = k
 			default:
-				return nil, fmt.Errorf(
-					"unsupported strategy.kind %q (supported: ClusterBuildStrategy, NamespacedBuildStrategy)",
-					k,
-				)
+				return nil, fmt.Errorf("unsupported strategy.kind %q", k)
 			}
 		}
 	}
@@ -174,22 +161,13 @@ func ResolveBuild(build *environmentv1alpha1.Build) (*ResolvedBuild, error) {
 		return nil, fmt.Errorf("source.cloneSecret declared but resolved empty")
 	}
 
-	// ------------------------------------------------
-	// Image (REQUIRED).
-	// ------------------------------------------------
 	image, err := mustString(raw, "image")
 	if err != nil {
 		return nil, fmt.Errorf("image: %w", err)
 	}
 
-	// ------------------------------------------------
-	// GitHubEventRef
-	// ------------------------------------------------
-	githubevent, err := mustString(raw, "githubevent")
+	githubevent := optionalString(raw, "githubevent")
 
-	// ------------------------------------------------
-	// Service account (OPTIONAL).
-	// ------------------------------------------------
 	var sa *ResolvedServiceAccount
 	if saRaw, ok := raw["serviceAccount"].(map[string]any); ok {
 		sa = &ResolvedServiceAccount{
@@ -198,16 +176,22 @@ func ResolveBuild(build *environmentv1alpha1.Build) (*ResolvedBuild, error) {
 		}
 	}
 
-	// ------------------------------------------------
-	// Policy (OPTIONAL).
-	//
-	// Hard invariant: maxAttempts must be > 0 when onFailure=true.
-	// A retry policy with zero attempts is a misconfiguration that would
-	// cause the retry observer to loop indefinitely.
-	// ------------------------------------------------
 	var policy *ResolvedBuildPolicy
 	if polRaw, ok := raw["policy"].(map[string]any); ok {
 		policy = &ResolvedBuildPolicy{}
+
+		// Extract triggers
+		if triggersRaw, ok := polRaw["triggers"].([]any); ok {
+			for _, t := range triggersRaw {
+				if tMap, ok := t.(map[string]any); ok {
+					if typeStr, ok := tMap["type"].(string); ok {
+						policy.Triggers = append(policy.Triggers, ResolvedTrigger{Type: typeStr})
+					}
+				}
+			}
+		}
+
+		// Extract retry
 		if retryRaw, ok := polRaw["retry"].(map[string]any); ok {
 			retry := &ResolvedRetryPolicy{
 				OnFailure:   optionalBool(retryRaw, "onFailure"),
@@ -274,9 +258,6 @@ func optionalBool(m map[string]any, key string) bool {
 	return false
 }
 
-// optionalUint32 extracts a uint32 from m[key]. JSON numbers decode as
-// float64 by default — both float64 and int are handled to support callers
-// that pre-parse the JSON differently.
 func optionalUint32(m map[string]any, key string) uint32 {
 	if v, ok := m[key]; ok {
 		switch n := v.(type) {
