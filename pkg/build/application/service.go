@@ -32,7 +32,11 @@ package application
 
 import (
 	"context"
+	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/ntlaletsi70/blanketops-environments/pkg/build/domain"
 	bldResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
 )
 
@@ -45,11 +49,7 @@ type BuildService struct {
 }
 
 // NewBuildService constructs a BuildService with the required collaborators.
-func NewBuildService(
-	mapper *Mapper,
-	status *StatusWriter,
-	backend *BackendSelector,
-) *BuildService {
+func NewBuildService(mapper *Mapper, status *StatusWriter, backend *BackendSelector) *BuildService {
 	return &BuildService{
 		mapper:  mapper,
 		status:  status,
@@ -61,19 +61,55 @@ func NewBuildService(
 // It maps, selects, executes, and writes status in sequence. An error from
 // any stage is forwarded to StatusWriter so the Build CR always reflects the
 // latest outcome, even on failure.
-func (s *BuildService) Reconcile(
-	ctx context.Context,
-	resolved *bldResolution.ResolvedBuild,
-) error {
-	// Map resolved contract → domain spec.
+func (s *BuildService) Reconcile(ctx context.Context, resolved *bldResolution.ResolvedBuild) error {
 	spec := s.mapper.MapResolvedToDomain(resolved)
-
-	// Select the provider for the strategy declared in spec.
 	provider := s.backend.ForSpec(spec)
-
-	// Dispatch — returns immediately with Triggered=true, Success=false.
 	result, err := provider.Run(ctx, resolved, spec)
 
-	// Write outcome to the Build CR status regardless of error.
-	return s.status.Write(ctx, resolved.Build, result, err)
+	// Build conditions from outcome. This is the switch, moved from StatusWriter.
+	conditions := s.buildConditions(result, err)
+
+	// Pass clean conditions to the dumb writer.
+	return s.status.Write(ctx, resolved.Build, conditions...)
+}
+
+// buildConditions derives metav1.Condition slice from BuildResult + error.
+// This is application logic: it knows what Success/Triggered/Error mean.
+func (s *BuildService) buildConditions(result domain.BuildResult, runErr error) []metav1.Condition {
+	now := metav1.NewTime(time.Now())
+
+	switch {
+	case runErr != nil:
+		return []metav1.Condition{{
+			Type:               "BuildFailed",
+			Status:             metav1.ConditionFalse,
+			Reason:             "BuildFailed",
+			Message:            runErr.Error(),
+			LastTransitionTime: now,
+		}}
+	case result.Success:
+		return []metav1.Condition{{
+			Type:               "BuildSuccess",
+			Status:             metav1.ConditionTrue,
+			Reason:             "BuildSucceeded",
+			Message:            result.Message,
+			LastTransitionTime: now,
+		}}
+	case result.Triggered:
+		return []metav1.Condition{{
+			Type:               "BuildReady",
+			Status:             metav1.ConditionTrue,
+			Reason:             "BuildReady",
+			Message:            "Build dispatched",
+			LastTransitionTime: now,
+		}}
+	default:
+		return []metav1.Condition{{
+			Type:               "BuildPending",
+			Status:             metav1.ConditionFalse,
+			Reason:             "BuildPending",
+			Message:            result.Message,
+			LastTransitionTime: now,
+		}}
+	}
 }
