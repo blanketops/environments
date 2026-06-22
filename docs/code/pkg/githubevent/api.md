@@ -23,7 +23,7 @@ Ensure is idempotent — calling it multiple times for the same GitHubEvent CR m
 <a name="GitHubProvider"></a>
 ## type GitHubProvider
 
-GitHubProvider is the concrete Provider implementation for GitHubEvent. It provisions the Argo Events stack \(EventBus, EventSource, Sensor\) required to receive and forward GitHub webhook deliveries.
+GitHubProvider is the concrete Provider implementation for GitHubEvent. It provisions the Argo Events stack \(EventBus, EventSource, Sensor\) and the RBAC the Sensor needs to write GitHubEvent CRs.
 
 ```go
 type GitHubProvider struct {
@@ -50,7 +50,9 @@ func NewGitHubProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger,
 func (p *GitHubProvider) Ensure(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent, spec domain.GitHubEvent) (domain.GitHubEventResult, error)
 ```
 
-Ensure provisions or reconciles the Argo Events stack for the GitHubEvent CR.
+Ensure provisions or reconciles the Argo Events stack — plus the RBAC the Sensor needs — for the GitHubEvent CR.
+
+Ensure does NOT wait for a webhook delivery. Infrastructure provisioning completing successfully is signaled via Triggered=true — the actual payload\-received outcome is written later by the observer/reconcile path that detects the Sensor's patch on this CR's own spec.contract.
 
 <a name="Provider"></a>
 ## type Provider

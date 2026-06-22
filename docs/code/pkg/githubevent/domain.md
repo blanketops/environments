@@ -31,11 +31,6 @@ State is intentionally coarse: the domain only cares whether an event is new, ha
 - [type EventType](<#EventType>)
 - [type GitHubEvent](<#GitHubEvent>)
 - [type GitHubEventResult](<#GitHubEventResult>)
-  - [func Accepted\(msg string\) GitHubEventResult](<#Accepted>)
-  - [func Ensured\(msg string\) GitHubEventResult](<#Ensured>)
-  - [func PayloadReceived\(payloadRef string\) GitHubEventResult](<#PayloadReceived>)
-  - [func Rejected\(msg string\) GitHubEventResult](<#Rejected>)
-  - [func \(r GitHubEventResult\) ToStatus\(\) GitHubEventResult](<#GitHubEventResult.ToStatus>)
 - [type GitHubEventStatus](<#GitHubEventStatus>)
 - [type GitRef](<#GitRef>)
 - [type Repository](<#Repository>)
@@ -141,61 +136,33 @@ GitHubEventResult is the unified return value for the GitHubEvent domain. It ref
 
 ```go
 type GitHubEventResult struct {
+    // Success is true only when the GitHubEvent completed successfully.
+    // False when Triggered=true — the build has been dispatched, not confirmed.
+    Success bool
+
+    // Triggered is true when a BuildRun was created or already existed for
+    // this execution hash.
+    Triggered bool
+
+    PayloadRecieved bool
+
     // Phase represents the current lifecycle state of the GitHubEvent subscription.
     // e.g., "IngressEnsured", "PayloadReceived", "Failed".
     Phase string
+
     // Message is a human-readable explanation of the current state.
     Message string
+
+    Logs []string
     // LastPayloadRef is the name of the most recent ephemeral GitHubPayload CR
     // minted by the Argo Sensor for this subscription.
     LastPayloadRef string
+
+    // LastFailureAt is the timestamp of the most recent failure.
+    // Populated by the buildrun observer for observability only.
+    LastFailureAt *metav1.Time
 }
 ```
-
-<a name="Accepted"></a>
-### func Accepted
-
-```go
-func Accepted(msg string) GitHubEventResult
-```
-
-Rejected returns a result indicating the infrastructure provisioning failed or the subscription is invalid.
-
-<a name="Ensured"></a>
-### func Ensured
-
-```go
-func Ensured(msg string) GitHubEventResult
-```
-
-Ensured returns a result indicating the Argo Events infrastructure \(EventSource, Sensor, etc.\) was successfully provisioned or verified. This is typically returned by the GitHubProvider.
-
-<a name="PayloadReceived"></a>
-### func PayloadReceived
-
-```go
-func PayloadReceived(payloadRef string) GitHubEventResult
-```
-
-PayloadReceived returns a result indicating a new GitHubPayload CR was observed by the controller, successfully closing the webhook delivery loop. This is typically returned by the GitHubEvent Observer.
-
-<a name="Rejected"></a>
-### func Rejected
-
-```go
-func Rejected(msg string) GitHubEventResult
-```
-
-Rejected returns a result indicating the infrastructure provisioning failed or the subscription is invalid.
-
-<a name="GitHubEventResult.ToStatus"></a>
-### func \(GitHubEventResult\) ToStatus
-
-```go
-func (r GitHubEventResult) ToStatus() GitHubEventResult
-```
-
-ToStatus converts a GitHubEventResult to a GitHubEventStatus for persistence. The two types are structurally identical — the conversion is zero\-cost.
 
 <a name="GitHubEventStatus"></a>
 ## type GitHubEventStatus
@@ -206,10 +173,19 @@ GitHubEventStatus is the internal domain status for a GitHubEvent decision. Seri
 type GitHubEventStatus struct {
     // Accepted indicates the event passed validation and was admitted.
     Accepted bool
+
+    // Success indicates that the BuildRun completed successfully.
+    // False when Triggered=true — the build has been dispatched but not yet
+    // confirmed. The buildrun observer sets Success=true on completion.
+    Success bool
     // Triggered indicates the event caused downstream work to be dispatched.
     Triggered bool
+
+    PayloadRecieved bool
+
     // Message is a human-readable explanation of the outcome.
     Message string
+
     // TriggeredRef is the name of the downstream resource created, if any.
     TriggeredRef string
 }
