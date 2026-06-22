@@ -3,7 +3,9 @@ Copyright 2026 The BlanketOps Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
+
 	http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,90 +32,40 @@ package application
 
 import (
 	"context"
-	"encoding/json"
-	"time"
 
+	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	eventsv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/events/v1alpha1"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/githubevent/domain"
 )
 
-// StatusWriter persists GitHubEvent provisioning outcomes to the CR status.
 type StatusWriter struct {
 	Client client.Client
+	Log    logr.Logger
 }
 
-// NewStatusWriter constructs a StatusWriter.
-func NewStatusWriter(c client.Client) *StatusWriter {
-	return &StatusWriter{Client: c}
+func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter {
+	return &StatusWriter{Client: c, Log: log.WithName("githubevent-status-writer")}
 }
 
-// Write persists the provider result and any error to the GitHubEvent CR.
-// A non-nil runErr forces the Phase to "Failed".
-func (w *StatusWriter) Write(
-	ctx context.Context,
-	ev *eventsv1alpha1.GitHubEvent,
-	result domain.GitHubEventResult,
-	runErr error,
-) error {
-	// Stage 1: contract status (authoritative, machine-readable).
-	contractStatus := result.ToStatus()
-	if runErr != nil {
-		contractStatus.Phase = "Failed"
-		contractStatus.Message = runErr.Error()
+// Write merges the provided conditions and persists. Nothing else.
+func (w *StatusWriter) Write(ctx context.Context, gh *eventsv1alpha1.GitHubEvent, conditions ...metav1.Condition) error {
+	log := w.Log.WithValues("githubevent", gh.Name, "namespace", gh.Namespace)
+
+	for _, cond := range conditions {
+		gh.Status.Conditions = mergeCondition(gh.Status.Conditions, cond)
+		log.Info("condition merged", "type", cond.Type, "status", cond.Status, "reason", cond.Reason)
 	}
 
-	raw, err := json.Marshal(contractStatus)
-	if err != nil {
+	if err := w.Client.Status().Update(ctx, gh); err != nil {
+		log.Error(err, "failed to persist githubevent status")
 		return err
 	}
-	ev.Status.Contract = runtime.RawExtension{Raw: raw}
-
-	// Stage 2: condition (kubectl describe / human observability).
-	now := metav1.NewTime(time.Now())
-	var condition metav1.Condition
-
-	switch contractStatus.Phase {
-	case "Failed":
-		condition = metav1.Condition{
-			Type:               "Ready",
-			Status:             metav1.ConditionFalse,
-			Reason:             "ProcessingFailed",
-			Message:            contractStatus.Message,
-			LastTransitionTime: now,
-		}
-	case "IngressEnsured":
-		condition = metav1.Condition{
-			Type:               "Ready",
-			Status:             metav1.ConditionTrue,
-			Reason:             "Provisioned",
-			Message:            contractStatus.Message,
-			LastTransitionTime: now,
-		}
-	case "PayloadReceived":
-		condition = metav1.Condition{
-			Type:               "Receiving",
-			Status:             metav1.ConditionTrue,
-			Reason:             "PayloadObserved",
-			Message:            contractStatus.Message,
-			LastTransitionTime: now,
-		}
-	}
-
-	// Only merge if we constructed a valid condition
-	if condition.Type != "" {
-		ev.Status.Conditions = mergeCondition(ev.Status.Conditions, condition)
-	}
-
-	// Stage 3: persist — single status subresource update.
-	return w.Client.Status().Update(ctx, ev)
+	log.Info("githubevent status persisted")
+	return nil
 }
 
-// mergeCondition upserts newCond into conds by Type. Replaces in place when
-// a condition of the same Type exists; appends otherwise.
 func mergeCondition(conds []metav1.Condition, newCond metav1.Condition) []metav1.Condition {
 	for i, c := range conds {
 		if c.Type == newCond.Type {

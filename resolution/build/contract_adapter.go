@@ -49,7 +49,8 @@ func (s *ResolvedBuildSpec) ToBuildContract() *contractv1.BuildSpec {
 	}
 
 	out := &contractv1.BuildSpec{
-		Image: s.Image,
+		Image:       s.Image,
+		GithubEvent: s.Githubevent,
 	}
 
 	// ------------------------------------------------

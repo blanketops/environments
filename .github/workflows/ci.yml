@@ -122,7 +122,8 @@ jobs:
           IMAGE="${{ env.VENDOR_IMAGE }}:${{ needs.vendor-snapshot.outputs.vendor-tag }}"
           echo "Restoring vendor from ${IMAGE}"
           docker pull "${IMAGE}"
-          CONTAINER=$(docker create "${IMAGE}")
+          # Added 'sh' to ensure the container has a command to run upon creation
+          CONTAINER=$(docker create "${IMAGE}" sh)
           docker cp "${CONTAINER}:/vendor" ./vendor
           docker rm "${CONTAINER}"
           echo "vendor/ restored — $(find vendor -mindepth 1 -maxdepth 1 -type d | wc -l) packages"
@@ -168,10 +169,10 @@ jobs:
       - name: Vet
         run: go vet -mod=vendor ./...
 
-      # - name: Static Check
-      #   uses: dominikh/staticcheck-action@v1
-      #   with:
-      #     version: "latest"
+      - name: Static Check
+        uses: dominikh/staticcheck-action@v1
+        with:
+          version: "latest"
 
       - name: Test
         run: go test -mod=vendor ./... -coverprofile=coverage.out -covermode=atomic

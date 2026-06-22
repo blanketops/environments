@@ -25,7 +25,11 @@ package application
 
 import (
 	"context"
+	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/ntlaletsi70/blanketops-environments/pkg/githubevent/domain"
 	githubeventResolution "github.com/ntlaletsi70/blanketops-environments/resolution/githubevent"
 )
 
@@ -50,19 +54,67 @@ func NewGitHubEventService(
 // Reconcile maps the resolved event to a domain model, delegates provisioning
 // to the provider, then writes the result back to the GitHubEvent CR.
 // Status is always written — even when provisioning fails.
-func (s *GitHubEventService) Reconcile(
-	ctx context.Context,
-	resolved *githubeventResolution.ResolvedGitHubEvent,
-) error {
+func (s *GitHubEventService) Reconcile(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent) error {
 	// Map resolved contract → domain event.
 	event := s.mapper.MapResolvedToDomain(resolved)
 
 	// Select provider — currently always GitHub.
 	provider := s.backend.Default()
+	// Build conditions from outcome. This is the switch, moved from StatusWriter.
 
 	// Provision or reconcile the Argo Events stack.
 	result, err := provider.Ensure(ctx, resolved, event)
+	conditions := s.buildConditions(result, err)
 
 	// Write outcome to the GitHubEvent CR regardless of error.
-	return s.status.Write(ctx, resolved.Event, result, err)
+	return s.status.Write(ctx, resolved.Event, conditions...)
+
+}
+
+// In your GitHubEventService (or a builder helper):
+func (s *GitHubEventService) buildConditions(result domain.GitHubEventResult, runErr error) []metav1.Condition {
+	now := metav1.NewTime(time.Now())
+
+	switch {
+	case runErr != nil:
+		return []metav1.Condition{{
+			Type:               "GitHubEventFailed",
+			Status:             metav1.ConditionFalse,
+			Reason:             "GitHubEventFailed",
+			Message:            runErr.Error(),
+			LastTransitionTime: now,
+		}}
+	case result.PayloadRecieved && result.Success:
+		return []metav1.Condition{{
+			Type:               "GitHubEventReady",
+			Status:             metav1.ConditionTrue,
+			Reason:             "GitHubEventPayloadReceived",
+			Message:            result.Message,
+			LastTransitionTime: now,
+		}}
+	case result.PayloadRecieved:
+		return []metav1.Condition{{
+			Type:               "GitHubEventReceiving",
+			Status:             metav1.ConditionTrue,
+			Reason:             "GitHubEventPayloadObserved",
+			Message:            "Payload received, processing",
+			LastTransitionTime: now,
+		}}
+	case result.Triggered:
+		return []metav1.Condition{{
+			Type:               "GitHubEventReady",
+			Status:             metav1.ConditionTrue,
+			Reason:             "GitHubEventReady",
+			Message:            "GitHubEvent infrastructure provisioned",
+			LastTransitionTime: now,
+		}}
+	default:
+		return []metav1.Condition{{
+			Type:               "GitHubEventPending",
+			Status:             metav1.ConditionFalse,
+			Reason:             "GitHubEventPending",
+			Message:            result.Message,
+			LastTransitionTime: now,
+		}}
+	}
 }

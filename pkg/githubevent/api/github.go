@@ -3,7 +3,9 @@ Copyright 2026 The BlanketOps Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
+
 	http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,6 +22,7 @@ import (
 	argoeventsv1alpha1 "github.com/argoproj/argo-events/pkg/apis/events/v1alpha1"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/events"
@@ -32,9 +35,21 @@ import (
 
 const argoEventsNamespace = "argo-events"
 
+// githubSensorServiceAccount is the dedicated ServiceAccount the GitHub
+// Sensor runs as. Scoped narrowly to GitHubEvent write access — the Sensor
+// has no business touching anything else in the cluster.
+const githubSensorServiceAccount = "github-sensor-sa"
+
+// githubEventWriterRole / githubEventWriterRoleBinding name the RBAC objects
+// granting the Sensor SA permission to create/patch GitHubEvent CRs.
+const (
+	githubEventWriterRole        = "githubevent-writer"
+	githubEventWriterRoleBinding = "argo-events-githubevent-writer"
+)
+
 // GitHubProvider is the concrete Provider implementation for GitHubEvent.
-// It provisions the Argo Events stack (EventBus, EventSource, Sensor)
-// required to receive and forward GitHub webhook deliveries.
+// It provisions the Argo Events stack (EventBus, EventSource, Sensor) and
+// the RBAC the Sensor needs to write GitHubEvent CRs.
 type GitHubProvider struct {
 	Client   client.Client
 	Scheme   *runtime.Scheme
@@ -44,41 +59,6 @@ type GitHubProvider struct {
 
 func NewGitHubProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *GitHubProvider {
 	return &GitHubProvider{Client: c, Scheme: scheme, Log: log, Recorder: rec}
-}
-
-// Ensure provisions or reconciles the Argo Events stack for the GitHubEvent CR.
-func (p *GitHubProvider) Ensure(
-	ctx context.Context,
-	resolved *githubeventResolution.ResolvedGitHubEvent,
-	spec domain.GitHubEvent,
-) (domain.GitHubEventResult, error) {
-	cr := resolved.Event
-
-	bus := p.createTypedEventBus()
-	src := p.createTypedGitHubEventSource(spec)
-	sensor, err := p.createTypedGitHubSensor(spec, cr.Name)
-	if err != nil {
-		p.Log.Error(err, "ensure: failed building sensor spec", "name", cr.Name)
-		return domain.Rejected(err.Error()), err
-	}
-
-	// Set OwnerRefs for garbage collection. EventBus is intentionally
-	// excluded — it's a shared cluster-wide singleton, not owned by any
-	// single GitHubEvent CR.
-	for _, obj := range []client.Object{src, sensor} {
-		if err := controllerutil.SetControllerReference(cr, obj, p.Scheme); err != nil {
-			p.Log.Error(err, "ensure: failed setting owner reference", "kind", obj.GetObjectKind().GroupVersionKind().Kind, "name", obj.GetName())
-			return domain.Rejected(err.Error()), err
-		}
-	}
-
-	for _, obj := range []client.Object{bus, src, sensor} {
-		if err := p.apply(ctx, obj); err != nil {
-			p.Log.Error(err, "ensure: failed applying object", "kind", obj.GetObjectKind().GroupVersionKind().Kind, "name", obj.GetName())
-			return domain.Rejected(err.Error()), err
-		}
-	}
-	return domain.Accepted("github ingress ensured"), nil
 }
 
 func (p *GitHubProvider) createTypedEventBus() *argoeventsv1alpha1.EventBus {
@@ -116,18 +96,78 @@ func (p *GitHubProvider) createTypedGitHubEventSource(spec domain.GitHubEvent) *
 	}
 }
 
+// createTypedSensorServiceAccount is the identity the github-sensor Pod runs
+// as. Created separately from the Role/RoleBinding so it can be referenced
+// by name on the Sensor's pod template before RBAC is necessarily applied
+// in the same reconcile pass — apply() is idempotent either way.
+func (p *GitHubProvider) createTypedSensorServiceAccount() *corev1.ServiceAccount {
+	return &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      githubSensorServiceAccount,
+			Namespace: argoEventsNamespace,
+		},
+	}
+}
+
+// createTypedGitHubEventRole grants exactly the verbs the Sensor's patch
+// trigger needs against GitHubEvent — nothing else. Tighten further to
+// resourceNames if the Sensor ever stops needing to create new CRs (it
+// currently does, per createTypedGitHubSensor's patch-with-create-fallback
+// semantics).
+func (p *GitHubProvider) createTypedGitHubEventRole() *rbacv1.Role {
+	return &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      githubEventWriterRole,
+			Namespace: argoEventsNamespace,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"events.blanketops.dev"},
+				Resources: []string{"githubevents"},
+				Verbs:     []string{"get", "list", "watch", "create", "update", "patch"},
+			},
+		},
+	}
+}
+
+func (p *GitHubProvider) createTypedGitHubEventRoleBinding() *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      githubEventWriterRoleBinding,
+			Namespace: argoEventsNamespace,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      githubSensorServiceAccount,
+				Namespace: argoEventsNamespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Kind:     "Role",
+			Name:     githubEventWriterRole,
+			APIGroup: "rbac.authorization.k8s.io",
+		},
+	}
+}
+
 // createTypedGitHubSensor builds the Sensor that watches for GitHub webhook
 // deliveries and, on match, creates an immutable ConfigMap audit record of
 // the payload. Every TriggerParameter must set DependencyName — Argo Events'
 // sensor-controller validates this even for parameters that only inject a
 // static Value rather than pulling from event data.
+//
+// The Sensor runs as githubSensorServiceAccount — set explicitly rather than
+// left to default, so the RBAC grant in createTypedGitHubEventRoleBinding
+// actually applies to the identity the patch trigger executes as.
 func (p *GitHubProvider) createTypedGitHubSensor(spec domain.GitHubEvent, crName string) (*argoeventsv1alpha1.Sensor, error) {
+	sensorName := "github-sensor-" + crName
 	basePayload := map[string]interface{}{
 		"apiVersion": "events.blanketops.dev/v1alpha1",
-		"kind":       "GitHubPayload",
+		"kind":       "GitHubEvent",
 		"metadata": map[string]interface{}{
-			"generateName": "github-payload-",
-			"namespace":    argoEventsNamespace,
+			"name":      crName,
+			"namespace": argoEventsNamespace,
 			"labels": map[string]interface{}{
 				"events.blanketops.dev/githubevent": crName,
 			},
@@ -141,8 +181,17 @@ func (p *GitHubProvider) createTypedGitHubSensor(spec domain.GitHubEvent, crName
 		return nil, err
 	}
 	return &argoeventsv1alpha1.Sensor{
-		ObjectMeta: metav1.ObjectMeta{Name: "github-sensor", Namespace: argoEventsNamespace},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      sensorName,
+			Namespace: argoEventsNamespace,
+			Labels: map[string]string{
+				"events.blanketops.dev/githubevent": crName,
+			},
+		},
 		Spec: argoeventsv1alpha1.SensorSpec{
+			Template: &argoeventsv1alpha1.Template{
+				ServiceAccountName: githubSensorServiceAccount,
+			},
 			Dependencies: []argoeventsv1alpha1.EventDependency{{
 				Name:            "github-dep",
 				EventSourceName: "github",
@@ -159,13 +208,10 @@ func (p *GitHubProvider) createTypedGitHubSensor(spec domain.GitHubEvent, crName
 				Template: &argoeventsv1alpha1.TriggerTemplate{
 					Name: "github-payload",
 					K8s: &argoeventsv1alpha1.StandardK8STrigger{
-						Operation: "create",
+						Operation: "patch",
 						Source: &argoeventsv1alpha1.ArtifactLocation{
 							Resource: &argoeventsv1alpha1.K8SResource{Value: basePayloadBytes},
 						},
-						// dest paths are spec.contract.X — opaque to
-						// Kubernetes, decoded by ResolveGitHubPayload using
-						// these exact camelCase keys.
 						Parameters: []argoeventsv1alpha1.TriggerParameter{
 							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataTemplate: `{{ index (index .Input.headers "X-Github-Event") 0 }}`}, Dest: "spec.contract.eventType"},
 							{Src: &argoeventsv1alpha1.TriggerParameterSource{DependencyName: "github-dep", DataTemplate: `{{ index (index .Input.headers "X-Github-Delivery") 0 }}`}, Dest: "spec.contract.eventId"},
@@ -181,31 +227,101 @@ func (p *GitHubProvider) createTypedGitHubSensor(spec domain.GitHubEvent, crName
 		},
 	}, nil
 }
+
+// Ensure provisions or reconciles the Argo Events stack — plus the RBAC the
+// Sensor needs — for the GitHubEvent CR.
+//
+// Ensure does NOT wait for a webhook delivery. Infrastructure provisioning
+// completing successfully is signaled via Triggered=true — the actual
+// payload-received outcome is written later by the observer/reconcile path
+// that detects the Sensor's patch on this CR's own spec.contract.
+func (p *GitHubProvider) Ensure(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent, spec domain.GitHubEvent) (domain.GitHubEventResult, error) {
+	cr := resolved.Event
+	res := domain.GitHubEventResult{
+		Success: false,
+		Message: "",
+	}
+
+	p.Log.Info(
+		"provider.evaluate: starting orchestration",
+		"githubevent", client.ObjectKeyFromObject(resolved.Event).String(),
+		"eventype", spec.Type,
+	)
+
+	// ------------------------------------------------
+	// Stage 1: Build the typed objects.
+	// ------------------------------------------------
+	bus := p.createTypedEventBus()
+	src := p.createTypedGitHubEventSource(spec)
+	sa := p.createTypedSensorServiceAccount()
+	role := p.createTypedGitHubEventRole()
+	roleBinding := p.createTypedGitHubEventRoleBinding()
+
+	sensor, err := p.createTypedGitHubSensor(spec, cr.Name)
+	if err != nil {
+		res.Message = err.Error()
+		return res, err
+	}
+
+	// ------------------------------------------------
+	// Stage 2: Owner references. EventBus is intentionally excluded — it's
+	// a shared cluster-wide singleton, not owned by any single GitHubEvent
+	// CR. The RBAC trio (sa/role/roleBinding) follows the same lifecycle as
+	// the Sensor they support, so they're owned alongside it.
+	// ------------------------------------------------
+	for _, obj := range []client.Object{src, sensor, sa, role, roleBinding} {
+		if err := controllerutil.SetControllerReference(cr, obj, p.Scheme); err != nil {
+			res.Message = err.Error()
+			return res, err
+		}
+	}
+
+	// ------------------------------------------------
+	// Stage 3: Apply (upsert) each object. RBAC and the EventSource land
+	// before the Sensor, since the Sensor's pod template references the SA
+	// by name and its trigger depends on the EventSource existing. First
+	// failure aborts.
+	// ------------------------------------------------
+	for _, obj := range []client.Object{bus, sa, role, roleBinding, src, sensor} {
+		if err := p.apply(ctx, obj); err != nil {
+			p.Log.Error(err, "ensure: failed applying object", "kind", obj.GetObjectKind().GroupVersionKind().Kind, "name", obj.GetName())
+			res.Message = err.Error()
+			return res, err
+		}
+	}
+
+	// ------------------------------------------------
+	// Infrastructure ensured — return intent result.
+	//
+	// Triggered=true mirrors Run(): the ingress infrastructure was
+	// successfully created or already existed. Success stays false — this
+	// only confirms infrastructure is ready, not that a payload arrived.
+	// ------------------------------------------------
+	res.Success = true
+	res.Triggered = true        // Infrastructure is ready
+	res.PayloadRecieved = false // NOTHING arrived yet
+	res.Message = "GitHubEvent infrastructure provisioned"
+
+	p.Log.Info(
+		"provider.ensure: orchestration complete",
+		"githubevent", cr.Name,
+		"sensor", sensor.Name,
+	)
+
+	return res, nil
+}
+
 func (p *GitHubProvider) apply(ctx context.Context, obj client.Object) error {
 	key := client.ObjectKeyFromObject(obj)
 	current := obj.DeepCopyObject().(client.Object)
 	err := p.Client.Get(ctx, key, current)
-
 	if client.IgnoreNotFound(err) != nil {
 		return err
 	} else if err != nil {
 		p.Log.Info("apply: creating", "kind", obj.GetObjectKind().GroupVersionKind().Kind, "name", obj.GetName())
-		if err := p.Client.Create(ctx, obj); err != nil {
-			return err
-		}
-		if p.Recorder != nil {
-			p.Recorder.Eventf(obj, nil, "Normal", "Created", "Created %s", obj.GetName())
-		}
-		return nil
+		return p.Client.Create(ctx, obj)
 	}
-
 	obj.SetResourceVersion(current.GetResourceVersion())
 	p.Log.Info("apply: updating", "kind", obj.GetObjectKind().GroupVersionKind().Kind, "name", obj.GetName())
-	if err := p.Client.Update(ctx, obj); err != nil {
-		return err
-	}
-	if p.Recorder != nil {
-		p.Recorder.Eventf(obj, nil, "Normal", "Updated", "Updated %s", obj.GetName())
-	}
-	return nil
+	return p.Client.Update(ctx, obj)
 }

@@ -74,10 +74,19 @@ type GitHubEvent struct {
 type GitHubEventStatus struct {
 	// Accepted indicates the event passed validation and was admitted.
 	Accepted bool
+
+	// Success indicates that the BuildRun completed successfully.
+	// False when Triggered=true — the build has been dispatched but not yet
+	// confirmed. The buildrun observer sets Success=true on completion.
+	Success bool
 	// Triggered indicates the event caused downstream work to be dispatched.
 	Triggered bool
+
+	PayloadRecieved bool
+
 	// Message is a human-readable explanation of the outcome.
 	Message string
+
 	// TriggeredRef is the name of the downstream resource created, if any.
 	TriggeredRef string
 }
