@@ -44,6 +44,7 @@ Resolution validates required fields, normalises strategy kind, and enforces pol
 - [type ResolvedServiceAccount](<#ResolvedServiceAccount>)
 - [type ResolvedSource](<#ResolvedSource>)
 - [type ResolvedStrategy](<#ResolvedStrategy>)
+- [type ResolvedTrigger](<#ResolvedTrigger>)
 
 
 <a name="Adapter"></a>
@@ -103,11 +104,12 @@ ResolveBuild decodes and validates the raw JSON contract from the Build CR spec 
 <a name="ResolvedBuildPolicy"></a>
 ## type ResolvedBuildPolicy
 
-ResolvedBuildPolicy is the optional build execution policy.
+
 
 ```go
 type ResolvedBuildPolicy struct {
-    Retry *ResolvedRetryPolicy
+    Triggers []ResolvedTrigger
+    Retry    *ResolvedRetryPolicy
 }
 ```
 
@@ -118,15 +120,12 @@ ResolvedBuildSpec is the decoded and validated Build spec.
 
 ```go
 type ResolvedBuildSpec struct {
-    // Image is the fully qualified target image reference (registry/repo:tag).
-    Image    string
-    Source   ResolvedSource
-    Strategy ResolvedStrategy
-    // ServiceAccount is optional — omitted when the Build uses the default
-    // Shipwright service account.
+    Image          string
+    Source         ResolvedSource
+    Githubevent    string
+    Strategy       ResolvedStrategy
     ServiceAccount *ResolvedServiceAccount
-    // Policy is optional — omitted when no retry or build policy is declared.
-    Policy *ResolvedBuildPolicy
+    Policy         *ResolvedBuildPolicy
 }
 ```
 
@@ -144,7 +143,7 @@ ToBuildContract projects the resolved runtime spec into a protobuf contractv1.Bu
 <a name="ResolvedRetryPolicy"></a>
 ## type ResolvedRetryPolicy
 
-ResolvedRetryPolicy controls automatic retry on build failure. MaxAttempts must be \> 0 when OnFailure is true — resolution enforces this.
+
 
 ```go
 type ResolvedRetryPolicy struct {
@@ -156,7 +155,7 @@ type ResolvedRetryPolicy struct {
 <a name="ResolvedServiceAccount"></a>
 ## type ResolvedServiceAccount
 
-ResolvedServiceAccount carries the service account name and registry credentials secret for Shipwright to use when pushing the built image.
+
 
 ```go
 type ResolvedServiceAccount struct {
@@ -168,7 +167,7 @@ type ResolvedServiceAccount struct {
 <a name="ResolvedSource"></a>
 ## type ResolvedSource
 
-ResolvedSource is the resolved Git source for the Build.
+
 
 ```go
 type ResolvedSource struct {
@@ -182,12 +181,23 @@ type ResolvedSource struct {
 <a name="ResolvedStrategy"></a>
 ## type ResolvedStrategy
 
-ResolvedStrategy is the resolved Shipwright build strategy reference. StrategyKind is stored as the raw string from the contract \("ClusterBuildStrategy", "NamespacedBuildStrategy"\) — the contract adapter is responsible for converting this to the appropriate \*v1.BuildStrategyKind proto message.
+
 
 ```go
 type ResolvedStrategy struct {
     Name         string
-    StrategyKind string // raw string: "ClusterBuildStrategy" | "NamespacedBuildStrategy"
+    StrategyKind string
+}
+```
+
+<a name="ResolvedTrigger"></a>
+## type ResolvedTrigger
+
+
+
+```go
+type ResolvedTrigger struct {
+    Type string
 }
 ```
 

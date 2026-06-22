@@ -23,9 +23,18 @@ This file owns the Buildpacks provider — structurally identical to the Buildah
 
 See buildah.go for the canonical documentation of the shared pipeline pattern. TODO: consolidate Buildah, Buildpacks, and Kaniko into a single generic provider parameterised by strategy name once the provider interface is stable.
 
-This file owns the Kaniko provider — structurally identical to the Buildah provider but registered under the "kaniko" strategy name. Shipwright selects the ClusterBuildStrategy at run time; the provider layer constructs the spec and dispatches execution.
+Package api implements the build provider layer for the BlanketOps Environments build domain.
 
-See buildah.go for the canonical documentation of the shared pipeline pattern. TODO: consolidate Buildah, Buildpacks, and Kaniko into a single generic provider parameterised by strategy name once the provider interface is stable.
+This file owns the Kaniko provider — structurally identical to the Kaniko provider but registered under the "kaniko" strategy name. Shipwright selects the ClusterBuildStrategy at run time; the provider layer constructs the spec and dispatches execution.
+
+The provider sits below the application service layer and above the Shipwright API. It is responsible for:
+
+- Constructing Shipwright Build and BuildRun specs from the resolved contract.
+- Applying owner references so Shipwright resources are garbage\-collected with the parent Build CR.
+- Ensuring idempotent upsert of the Shipwright Build \(create or update\).
+- Creating the BuildRun only when no run for the current execution hash exists, preventing duplicate builds on re\-reconciliation.
+
+The provider does NOT wait for the BuildRun to complete. Completion is observed asynchronously by the buildrun observer \(internal/controller/observers/buildrun\). Run\(\) returns Triggered=true, Success=false to signal intent dispatch — the final outcome is written to the Build CR by the observer.
 
 This file owns the Provider interface — the execution contract that all build backend implementations \(Buildah, Kaniko, Buildpacks\) must satisfy.
 
@@ -36,8 +45,10 @@ Concrete implementations live alongside this file \(buildah.go, kaniko.go, build
 ## Index
 
 - [func ExtractTriggerContext\(build \*buildv1.Build\) domain.TriggerContext](<#ExtractTriggerContext>)
+- [func PatchBuildTriggerFromGitHubEvent\(ctx context.Context, c client.Client, build \*buildv1.Build\) error](<#PatchBuildTriggerFromGitHubEvent>)
+- [func RepoSlug\(sourceURL string\) string](<#RepoSlug>)
 - [type BuildahProvider](<#BuildahProvider>)
-  - [func NewBuildahProvider\(c client.Client, scheme \*runtime.Scheme, log logr.Logger, rec events.EventRecorder\) \*BuildahProvider](<#NewBuildahProvider>)
+  - [func NewBuildahProvider\(client client.Client, scheme \*runtime.Scheme, log logr.Logger, recorder events.EventRecorder\) \*BuildahProvider](<#NewBuildahProvider>)
   - [func \(p \*BuildahProvider\) CreateBuildRunSpec\(build \*buildResolution.ResolvedBuild, shipwrightBuild \*shipwrightv1alpha1.Build, fullHash string\) \*shipwrightv1alpha1.BuildRun](<#BuildahProvider.CreateBuildRunSpec>)
   - [func \(p \*BuildahProvider\) CreateBuildSpec\(spec domain.BuildSpec, build \*buildResolution.ResolvedBuild\) \(\*shipwrightv1alpha1.Build, error\)](<#BuildahProvider.CreateBuildSpec>)
   - [func \(p \*BuildahProvider\) Run\(ctx context.Context, build \*buildResolution.ResolvedBuild, spec domain.BuildSpec\) \(domain.BuildResult, error\)](<#BuildahProvider.Run>)
@@ -47,7 +58,7 @@ Concrete implementations live alongside this file \(buildah.go, kaniko.go, build
   - [func \(p \*BuildpacksProvider\) CreateBuildSpec\(spec domain.BuildSpec, build \*buildResolution.ResolvedBuild\) \(\*shipwrightv1alpha1.Build, error\)](<#BuildpacksProvider.CreateBuildSpec>)
   - [func \(p \*BuildpacksProvider\) Run\(ctx context.Context, build \*buildResolution.ResolvedBuild, spec domain.BuildSpec\) \(domain.BuildResult, error\)](<#BuildpacksProvider.Run>)
 - [type KanikoProvider](<#KanikoProvider>)
-  - [func NewKanikoProvider\(c client.Client, scheme \*runtime.Scheme, log logr.Logger, rec events.EventRecorder\) \*KanikoProvider](<#NewKanikoProvider>)
+  - [func NewKanikoProvider\(client client.Client, scheme \*runtime.Scheme, log logr.Logger, recorder events.EventRecorder\) \*KanikoProvider](<#NewKanikoProvider>)
   - [func \(p \*KanikoProvider\) CreateBuildRunSpec\(build \*buildResolution.ResolvedBuild, shipwrightBuild \*shipwrightv1alpha1.Build, fullHash string\) \*shipwrightv1alpha1.BuildRun](<#KanikoProvider.CreateBuildRunSpec>)
   - [func \(p \*KanikoProvider\) CreateBuildSpec\(spec domain.BuildSpec, build \*buildResolution.ResolvedBuild\) \(\*shipwrightv1alpha1.Build, error\)](<#KanikoProvider.CreateBuildSpec>)
   - [func \(p \*KanikoProvider\) Run\(ctx context.Context, build \*buildResolution.ResolvedBuild, spec domain.BuildSpec\) \(domain.BuildResult, error\)](<#KanikoProvider.Run>)
@@ -67,6 +78,26 @@ Annotations are written by the BuildTrigger domain when it patches the Build CR 
 
 The returned TriggerContext is fed into utils.ComputeExecutionHash to produce the execution identity used for BuildRun deduplication.
 
+<a name="PatchBuildTriggerFromGitHubEvent"></a>
+## func PatchBuildTriggerFromGitHubEvent
+
+```go
+func PatchBuildTriggerFromGitHubEvent(ctx context.Context, c client.Client, build *buildv1.Build) error
+```
+
+patchTriggerSHA looks up the most recent push GitHubEvent for this Build's repo and patches the discovered SHA onto the Build's annotations so ExtractTriggerContext can read it. Shared across all build providers. No\-op if nothing matches \(manual trigger case\). PatchBuildTriggerFromGitHubEvent looks up the latest push GitHubEvent for the given Build's repository and patches the Build's annotations with the trigger metadata \(type, ref, sha, source\). No\-op if no matching event with payload exists.
+
+This is called by the provider before creating the BuildRun so the execution hash includes the correct commit SHA. PatchBuildTriggerFromGitHubEvent looks up the latest push GitHubEvent for the given Build's repository and patches the Build's annotations with the trigger metadata. No\-op if no matching event with payload exists.
+
+<a name="RepoSlug"></a>
+## func RepoSlug
+
+```go
+func RepoSlug(sourceURL string) string
+```
+
+RepoSlug normalizes a git URL into a label\-safe slug matching the format used by the GitHubEvent Sensor label \(events.blanketops.dev/repo\).
+
 <a name="BuildahProvider"></a>
 ## type BuildahProvider
 
@@ -77,8 +108,7 @@ type BuildahProvider struct {
     Client client.Client
     Scheme *runtime.Scheme
     Log    logr.Logger
-    // Recorder is optional — may be nil. No events are emitted at the
-    // provider layer; events are owned by the domain and observer layers.
+
     Recorder events.EventRecorder
 }
 ```
@@ -87,7 +117,7 @@ type BuildahProvider struct {
 ### func NewBuildahProvider
 
 ```go
-func NewBuildahProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *BuildahProvider
+func NewBuildahProvider(client client.Client, scheme *runtime.Scheme, log logr.Logger, recorder events.EventRecorder) *BuildahProvider
 ```
 
 NewBuildahProvider constructs a BuildahProvider with the given dependencies. rec may be nil — the provider does not emit events directly.
@@ -182,14 +212,14 @@ Run upserts the Shipwright Build and creates the BuildRun, then returns immediat
 <a name="KanikoProvider"></a>
 ## type KanikoProvider
 
-KanikoProvider orchestrates Shipwright Build and BuildRun resources using the kaniko ClusterBuildStrategy.
+KanikoProvider orchestrates Shipwright Build and BuildRun resources on behalf of the BlanketOps build domain. It is the only component in the platform that writes Shipwright API objects directly.
 
 ```go
 type KanikoProvider struct {
     Client   client.Client
     Scheme   *runtime.Scheme
     Log      logr.Logger
-    Recorder events.EventRecorder // optional; may be nil
+    Recorder events.EventRecorder
 }
 ```
 
@@ -197,10 +227,10 @@ type KanikoProvider struct {
 ### func NewKanikoProvider
 
 ```go
-func NewKanikoProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *KanikoProvider
+func NewKanikoProvider(client client.Client, scheme *runtime.Scheme, log logr.Logger, recorder events.EventRecorder) *KanikoProvider
 ```
 
-NewKanikoProvider constructs a KanikoProvider with the given dependencies.
+NewKanikoProvider constructs a KanikoProvider with the given dependencies. rec may be nil — the provider does not emit events directly.
 
 <a name="KanikoProvider.CreateBuildRunSpec"></a>
 ### func \(\*KanikoProvider\) CreateBuildRunSpec
@@ -209,7 +239,9 @@ NewKanikoProvider constructs a KanikoProvider with the given dependencies.
 func (p *KanikoProvider) CreateBuildRunSpec(build *buildResolution.ResolvedBuild, shipwrightBuild *shipwrightv1alpha1.Build, fullHash string) *shipwrightv1alpha1.BuildRun
 ```
 
-CreateBuildRunSpec constructs a Shipwright BuildRun for the given resolved Build and execution hash. Run name is derived from the Build name and a short hash suffix. Full hash is preserved in an annotation for audit.
+CreateBuildRunSpec constructs a Shipwright BuildRun for the given resolved Build and execution hash. The run name is derived from the Build name and a short hash suffix, ensuring a unique run per execution identity.
+
+Labels carry the execution identity for the buildrun observer to resolve the owning Build CR and for retry counting \(list by build name \+ hash\). The full hash is preserved in an annotation for audit purposes.
 
 <a name="KanikoProvider.CreateBuildSpec"></a>
 ### func \(\*KanikoProvider\) CreateBuildSpec
@@ -218,7 +250,11 @@ CreateBuildRunSpec constructs a Shipwright BuildRun for the given resolved Build
 func (p *KanikoProvider) CreateBuildSpec(spec domain.BuildSpec, build *buildResolution.ResolvedBuild) (*shipwrightv1alpha1.Build, error)
 ```
 
-CreateBuildSpec translates a domain.BuildSpec into a Shipwright Build object. Validates SourceURL and Image — both are required by Shipwright. Owner reference is applied by the caller before creation.
+CreateBuildSpec translates a domain.BuildSpec and resolved Build contract into a Shipwright Build object. Validates that SourceURL and Image are present — both are required for Shipwright to accept the Build.
+
+The returned Build has labels for domain ownership tracking \("build.blanketops.dev/name"\) but no owner reference — that is applied by the caller via controllerutil.SetControllerReference before creation.
+
+Timeout is intentionally omitted from the Shipwright BuildSpec — timeout policy is enforced at the BuildRun level by Shipwright's own machinery.
 
 <a name="KanikoProvider.Run"></a>
 ### func \(\*KanikoProvider\) Run
@@ -227,7 +263,11 @@ CreateBuildSpec translates a domain.BuildSpec into a Shipwright Build object. Va
 func (p *KanikoProvider) Run(ctx context.Context, build *buildResolution.ResolvedBuild, spec domain.BuildSpec) (domain.BuildResult, error)
 ```
 
-Run upserts the Shipwright Build and creates the BuildRun, then returns immediately with Triggered=true, Success=false. Completion is observed asynchronously by the buildrun observer.
+Run orchestrates the full Shipwright dispatch pipeline for the given resolved Build and spec. It upserts the Shipwright Build and creates the BuildRun, then returns immediately with Triggered=true.
+
+Run does NOT block on BuildRun completion. The buildrun observer \(internal/controller/observers/buildrun\) watches for terminal state and writes the final outcome back to the Build CR asynchronously.
+
+Idempotency: the Shipwright Build is always upserted. The BuildRun is only created if no run for the current execution hash exists — a hash collision \(same spec \+ same trigger context\) is treated as "already triggered" and the existing run is reused.
 
 <a name="Provider"></a>
 ## type Provider
