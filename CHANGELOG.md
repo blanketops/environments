@@ -1,3 +1,28 @@
+## [0.5.2] - 2026-06-22
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.5.1
+## [0.5.1] - 2026-06-18
+
+### 🚀 Features
+
+- *(githubevent)* Update to consume and own githubpayload
+
+### 💼 Other
+
+- *(tidy)* Mod tidy, space finalzie release ci, no buildtrigger contract-adapter
+- *(buildtrigger)* Remove
+- Merge release/v0.5.1 into main
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.5.0
+- Sync develop with main after release/v0.5.0
 ## [0.5.0] - 2026-06-18
 
 ### 💼 Other
