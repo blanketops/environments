@@ -40,9 +40,5 @@ import (
 //   - resolved.Spec  → typed contract semantics decoded from spec.contract.
 //   - spec           → internal domain projection for Shipwright spec construction.
 type Provider interface {
-	Run(
-		ctx context.Context,
-		resolved *buildResolution.ResolvedBuild,
-		spec domain.BuildSpec,
-	) (domain.BuildResult, error)
+	Run(ctx context.Context, resolved *buildResolution.ResolvedBuild, spec domain.BuildSpec) (domain.BuildResult, error)
 }
