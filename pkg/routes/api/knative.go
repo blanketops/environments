@@ -16,33 +16,35 @@ This file owns KnativeProvider — the Knative implementation of the routes
 Provider interface.
 
 KnativeProvider materializes a Route as a Knative DomainMapping
-(serving.knative.dev/v1alpha1). The DomainMapping binds the declared host to
+(serving.knative.dev/v1beta1). The DomainMapping binds the declared host to
 the Knative Service identified by Route.ServiceRef, making the workload
 reachable at that FQDN via Kourier.
 
-Ensure is idempotent — it uses controller-runtime CreateOrUpdate so repeated
-calls for the same Route produce the same DomainMapping without duplicates or
-spurious updates.
+API version:
+
+	DomainMapping/v1alpha1 was deprecated in Knative v1.11.0. This provider
+	targets the stable v1beta1 API exclusively.
+
+TLS:
+
+	When Route.TLSEnabled is true, the DomainMapping is created with
+	spec.tls.secretName pointing to the TLS Secret that the Domain provider
+	(pkg/domain/api/knative.go) provisions via cert-manager. The secret name
+	follows the blanketops-tls-{sanitized-host} convention shared between both
+	providers. Knative serving will wait for the Secret to exist — no ordering
+	dependency between Route and Domain reconciliation is required.
 
 Disabled routes:
 
 	When Route.Enabled is false the DomainMapping is deleted. The Route CR is
 	retained; only the runtime resource is removed. A missing DomainMapping
-	(NotFound) is not treated as an error — the disabled state is already
-	satisfied.
-
-TLS:
-
-	TLS termination is handled by Kourier + net-certmanager. When Route.TLSEnabled
-	is true, the Domain provider (pkg/domain/api/knative.go) provisions the cert
-	and DomainClaim separately. KnativeProvider does not touch certs.
+	(NotFound) is not treated as an error — the disabled state is satisfied.
 
 See also:
   - pkg/routes/api/provider.go         — Provider interface
   - pkg/routes/domain/model.go         — Route.ServiceRef design note
-  - pkg/domain/api/knative.go          — handles the TLS chain for this host
-  - pkg/routes/application/backend_selector.go — wires KnativeProvider for
-    RuntimeKnativeService
+  - pkg/domain/api/knative.go          — provisions the TLS Secret this file references
+  - pkg/routes/application/backend_selector.go — wires KnativeProvider for RuntimeKnativeService
 */
 package api
 
@@ -53,7 +55,7 @@ import (
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	duckv1 "knative.dev/pkg/apis/duck/v1"
-	knservingv1alpha1 "knative.dev/serving/pkg/apis/serving/v1alpha1"
+	knservingv1beta1 "knative.dev/serving/pkg/apis/serving/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -62,7 +64,7 @@ import (
 )
 
 // KnativeProvider implements Provider for the Knative serving runtime.
-// Materializes Route as a serving.knative.dev/v1alpha1 DomainMapping.
+// Materializes Route as a serving.knative.dev/v1beta1 DomainMapping.
 type KnativeProvider struct {
 	client client.Client
 	log    logr.Logger
@@ -91,7 +93,7 @@ func (p *KnativeProvider) Ensure(
 		}, domain.ErrServiceRefEmpty
 	}
 
-	dm := &knservingv1alpha1.DomainMapping{
+	dm := &knservingv1beta1.DomainMapping{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      route.Host,
 			Namespace: route.Namespace,
@@ -99,13 +101,20 @@ func (p *KnativeProvider) Ensure(
 	}
 
 	op, err := controllerutil.CreateOrUpdate(ctx, p.client, dm, func() error {
-		dm.Spec = knservingv1alpha1.DomainMappingSpec{
+		dm.Spec = knservingv1beta1.DomainMappingSpec{
 			Ref: duckv1.KReference{
 				APIVersion: "serving.knative.dev/v1",
 				Kind:       "Service",
 				Namespace:  route.Namespace,
 				Name:       route.ServiceRef,
 			},
+		}
+		// Wire TLS when the Route declares it. The Secret is provisioned
+		// separately by the Domain provider — Knative will wait for it.
+		if route.TLSEnabled {
+			dm.Spec.TLS = &knservingv1beta1.SecretTLS{
+				SecretName: certSecretName(route.Host),
+			}
 		}
 		return nil
 	})
@@ -119,6 +128,7 @@ func (p *KnativeProvider) Ensure(
 	p.log.Info("DomainMapping reconciled",
 		"host", route.Host,
 		"serviceRef", route.ServiceRef,
+		"tlsEnabled", route.TLSEnabled,
 		"operation", op,
 	)
 
@@ -129,14 +139,12 @@ func (p *KnativeProvider) Ensure(
 }
 
 // ensureDisabled removes the DomainMapping when a Route is disabled.
-// A missing DomainMapping is not treated as an error — the desired state is
-// already satisfied.
+// NotFound is not an error — the desired state is already satisfied.
 func (p *KnativeProvider) ensureDisabled(ctx context.Context, route domain.Route) (domain.RouteResult, error) {
-	dm := &knservingv1alpha1.DomainMapping{}
+	dm := &knservingv1beta1.DomainMapping{}
 	err := p.client.Get(ctx, client.ObjectKey{Name: route.Host, Namespace: route.Namespace}, dm)
 	if err != nil {
 		if client.IgnoreNotFound(err) == nil {
-			// DomainMapping already absent — desired state satisfied.
 			return domain.RouteResult{
 				Phase:   domain.PhasePending,
 				Message: "route disabled; DomainMapping absent",
@@ -160,4 +168,23 @@ func (p *KnativeProvider) ensureDisabled(ctx context.Context, route domain.Route
 		Phase:   domain.PhasePending,
 		Message: "route disabled; DomainMapping removed",
 	}, nil
+}
+
+// certSecretName returns the TLS Secret name used by both this provider
+// (in DomainMapping.Spec.TLS.SecretName) and the Domain provider
+// (as the cert-manager Certificate secretName). Shared convention.
+func certSecretName(host string) string {
+	return fmt.Sprintf("blanketops-tls-%s", sanitizeHost(host))
+}
+
+func sanitizeHost(host string) string {
+	result := make([]byte, len(host))
+	for i := 0; i < len(host); i++ {
+		if host[i] == '.' {
+			result[i] = '-'
+		} else {
+			result[i] = host[i]
+		}
+	}
+	return string(result)
 }
