@@ -51,5 +51,5 @@ type Provider interface {
 	// failure. PhaseProvisioning is returned as a Go error (ErrCertProvisioning)
 	// so the controller requeues while ACME challenge or cert issuance is
 	// in progress.
-	Ensure(ctx context.Context,resolved *domainResolution.ResolvedDomain,d domain.Domain) (domain.DomainResult, error)
+	Ensure(ctx context.Context, resolved *domainResolution.ResolvedDomain, d domain.Domain) (domain.DomainResult, error)
 }

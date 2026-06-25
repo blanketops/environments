@@ -138,10 +138,7 @@ Provider executes a PackageIntent against a concrete backend \(e.g. kapp\).
 
 ```go
 type Provider interface {
-    Execute(
-        ctx context.Context,
-        intent *intent.PackageIntent,
-    ) (*domain.PackageResult, error)
+    Execute(ctx context.Context, intent *intent.PackageIntent) (*domain.PackageResult, error)
 }
 ```
 

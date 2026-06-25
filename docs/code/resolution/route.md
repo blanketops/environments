@@ -12,19 +12,70 @@ This file owns the Adapter — a thin struct wrapper around the package\-level R
 
 Current deps are intentionally empty — client and logger will be added here when resolution requires cross\-CR reads or observability hooks. Until then, resolution is pure and stateless so no deps are needed.
 
-Package Route implements resolution for the Route CR.
+Package route — contract\_adapter.go
 
-This file owns the Adapter — a thin struct wrapper around the package\-level ResolveDeployment function. The Adapter exists to satisfy interface\-based injection points in the application layer where a concrete resolution dependency must be passed as a value rather than called as a free function.
+This file owns the proto projection for Route — a one\-way mapping from the typed ResolvedRouteSpec to the canonical proto RouteSpec used for content\-addressable hashing, audit trails, and gRPC API responses.
 
-Current deps are intentionally empty — client and logger will be added here when resolution requires cross\-CR reads or observability hooks. Until then, resolution is pure and stateless so no deps are needed.
+One\-way contract:
+
+```
+ResolvedRouteSpec → networkscontractv1alpha1.RouteSpec
+```
+
+This projection is NEVER fed back into controllers. It is the canonical serialization of a resolved Route intent — output only.
+
+Runtime wrapper:
+
+```
+RouteSpec.Runtime is *commonv1.RouteRuntime — a common/v1 wrapper message.
+The local Runtime string is mapped to the wrapper via mapRuntime().
+
+Supported contract values and their canonical mappings:
+  "knative-service" or "knative"  → ROUTE_RUNTIME_KNATIVE_SERVICE
+  "kubernetes-container"           → ROUTE_RUNTIME_KUBERNETES_CONTAINER
+  "gateway-api"                    → ROUTE_RUNTIME_GATEWAY_API
+  any other value                  → ROUTE_RUNTIME_UNSPECIFIED
+
+Kourier is Knative's default network layer — both "knative-service" and
+"knative" map to the same proto enum value.
+```
+
+See also:
+
+- resolution/route/resolve.go — resolution entry point and Runtime type
+- resolution/route/adapter.go — interface wrapper
+- pkg/routes/ — application layer consuming ResolvedRoute
+
+Package route implements resolution for the Route CR.
+
+The Route CR stores its spec as a raw JSON contract \(spec.contract\). ResolveRoute decodes this into a fully typed ResolvedRoute — the authoritative runtime representation consumed by all downstream domain and application logic.
+
+Route declares the intent to expose a workload at a host and path. The controller materializes the route through the selected runtime \(Kubernetes Ingress, Knative DomainMapping, or Gateway API HTTPRoute\). Owned by an Environment CR via ownerReference \(cascade delete\).
+
+All failures surface as errors. Resolution never panics.
 
 ## Index
 
+- [func ToRouteContract\(r \*ResolvedRoute\) \(\*networkscontractv1alpha1.RouteSpec, error\)](<#ToRouteContract>)
 - [type Adapter](<#Adapter>)
   - [func NewAdapter\(\) \*Adapter](<#NewAdapter>)
+  - [func \(a \*Adapter\) Resolve\(ctx context.Context, route \*networksv1alpha1.Route\) \(\*ResolvedRoute, error\)](<#Adapter.Resolve>)
 - [type ResolvedRoute](<#ResolvedRoute>)
+  - [func ResolveRoute\(route \*networksv1alpha1.Route\) \(\*ResolvedRoute, error\)](<#ResolveRoute>)
 - [type ResolvedRouteSpec](<#ResolvedRouteSpec>)
+- [type Runtime](<#Runtime>)
 
+
+<a name="ToRouteContract"></a>
+## func ToRouteContract
+
+```go
+func ToRouteContract(r *ResolvedRoute) (*networkscontractv1alpha1.RouteSpec, error)
+```
+
+ToRouteContract projects a ResolvedRoute into the canonical proto RouteSpec for infrastructure consumers \(hashing, audit logging, gRPC serialization\). Returns nil, nil for a nil input — callers decide whether that is an error.
+
+⚠️ ONE\-WAY adapter. The returned value MUST NOT be fed back into any controller or domain logic path.
 
 <a name="Adapter"></a>
 ## type Adapter
@@ -50,6 +101,15 @@ func NewAdapter() *Adapter
 
 NewAdapter constructs a stateless Package resolution Adapter.
 
+<a name="Adapter.Resolve"></a>
+### func \(\*Adapter\) Resolve
+
+```go
+func (a *Adapter) Resolve(ctx context.Context, route *networksv1alpha1.Route) (*ResolvedRoute, error)
+```
+
+Resolve delegates to ResolvePackage, returning the resolved Package contract or an error if the CR spec fails validation.
+
 <a name="ResolvedRoute"></a>
 ## type ResolvedRoute
 
@@ -62,20 +122,70 @@ type ResolvedRoute struct {
 }
 ```
 
+<a name="ResolveRoute"></a>
+### func ResolveRoute
+
+```go
+func ResolveRoute(route *networksv1alpha1.Route) (*ResolvedRoute, error)
+```
+
+ResolveRoute decodes and validates the raw JSON contract from the Route CR spec into a ResolvedRoute. Returns an error if the CR is nil, the contract is absent, or any required field is missing or malformed.
+
 <a name="ResolvedRouteSpec"></a>
 ## type ResolvedRouteSpec
 
-ResolvedRouteSpec is the decoded and validated Build spec.
+ResolvedRouteSpec is the decoded and validated Route spec. Fields mirror the proto RouteSpec — consumers must not re\-read from the raw CR.
 
 ```go
 type ResolvedRouteSpec struct {
-    // Image is the fully qualified target image reference (registry/repo:tag).
+    // Host is the fully qualified domain name to serve.
+    // e.g. app.dev.blanketops.online
     Host string
 
+    // Enabled controls whether the route is active. Defaults to true.
+    // Disabled routes are removed from the runtime but the CR is retained.
+    Enabled bool
+
+    // Path is the HTTP path prefix to match.
+    // e.g. /, /v1, /api. Defaults to "/" when absent.
     Path string
 
+    // TLSEnabled controls whether TLS termination is enforced.
+    // Certificate provisioning is delegated to cert-manager via the platform
+    // issuer (DNS01 wildcard or namespaced HTTP01). Defaults to true.
     TLSEnabled bool
+
+    // Runtime is the serving backend responsible for materializing this route.
+    // Mandatory — backend selection in pkg/routes/application/ branches on this.
+    Runtime *Runtime
 }
+```
+
+<a name="Runtime"></a>
+## type Runtime
+
+Runtime identifies the serving backend that materializes this Route. Corresponds to blanketops.common.v1.RouteRuntime in the proto contract.
+
+```go
+type Runtime string
+```
+
+<a name="RuntimeKnativeService"></a>
+
+```go
+const (
+    // RuntimeKnativeService materializes the route as a Knative DomainMapping
+    // via Kourier. Covers both "knative-service" and "knative" contract values.
+    RuntimeKnativeService Runtime = "knative-service"
+
+    // RuntimeKubernetesContainer materializes the route as a standard Kubernetes
+    // Ingress resource. Covers "kubernetes-container" contract values.
+    RuntimeKubernetesContainer Runtime = "kubernetes-container"
+
+    // RuntimeGatewayAPI materializes the route as a Gateway API HTTPRoute.
+    // Future — not yet supported by any backend provider.
+    RuntimeGatewayAPI Runtime = "gateway-api"
+)
 ```
 
 Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
