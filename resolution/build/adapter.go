@@ -52,9 +52,6 @@ func NewAdapter() *Adapter {
 
 // Resolve delegates to ResolveBuild, returning the resolved Build contract
 // or an error if the CR spec fails validation.
-func (a *Adapter) Resolve(
-	ctx context.Context,
-	build *environmentv1alpha1.Build,
-) (*ResolvedBuild, error) {
+func (a *Adapter) Resolve(ctx context.Context, build *environmentv1alpha1.Build) (*ResolvedBuild, error) {
 	return ResolveBuild(build)
 }

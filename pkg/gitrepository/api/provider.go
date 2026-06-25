@@ -26,9 +26,5 @@ import (
 type Provider interface {
 	// Ensure accepts context, the GitRepository CR (for metadata / owner refs),
 	// and the pure domain model representing intent.
-	Ensure(
-		ctx context.Context,
-		cr *sourcesv1alpha1.GitRepository,
-		spec domain.GitRepository,
-	) (domain.Result, error)
+	Ensure(ctx context.Context, cr *sourcesv1alpha1.GitRepository, spec domain.GitRepository) (domain.Result, error)
 }

@@ -3,9 +3,7 @@ Copyright 2026 The BlanketOps Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
 	http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,4 +11,153 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+This file owns KnativeProvider — the Knative implementation of the routes
+Provider interface.
+
+KnativeProvider materializes a Route as a Knative DomainMapping
+(serving.knative.dev/v1alpha1). The DomainMapping binds the declared host to
+the Knative Service identified by Route.ServiceRef, making the workload
+reachable at that FQDN via Kourier.
+
+Ensure is idempotent — it uses controller-runtime CreateOrUpdate so repeated
+calls for the same Route produce the same DomainMapping without duplicates or
+spurious updates.
+
+Disabled routes:
+
+	When Route.Enabled is false the DomainMapping is deleted. The Route CR is
+	retained; only the runtime resource is removed. A missing DomainMapping
+	(NotFound) is not treated as an error — the disabled state is already
+	satisfied.
+
+TLS:
+
+	TLS termination is handled by Kourier + net-certmanager. When Route.TLSEnabled
+	is true, the Domain provider (pkg/domain/api/knative.go) provisions the cert
+	and DomainClaim separately. KnativeProvider does not touch certs.
+
+See also:
+  - pkg/routes/api/provider.go         — Provider interface
+  - pkg/routes/domain/model.go         — Route.ServiceRef design note
+  - pkg/domain/api/knative.go          — handles the TLS chain for this host
+  - pkg/routes/application/backend_selector.go — wires KnativeProvider for
+    RuntimeKnativeService
+*/
 package api
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/go-logr/logr"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	duckv1 "knative.dev/pkg/apis/duck/v1"
+	knservingv1alpha1 "knative.dev/serving/pkg/apis/serving/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	"github.com/ntlaletsi70/blanketops-environments/pkg/routes/domain"
+	routeResolution "github.com/ntlaletsi70/blanketops-environments/resolution/route"
+)
+
+// KnativeProvider implements Provider for the Knative serving runtime.
+// Materializes Route as a serving.knative.dev/v1alpha1 DomainMapping.
+type KnativeProvider struct {
+	client client.Client
+	log    logr.Logger
+}
+
+// NewKnativeProvider constructs a KnativeProvider with the given client and logger.
+func NewKnativeProvider(c client.Client, log logr.Logger) *KnativeProvider {
+	return &KnativeProvider{client: c, log: log}
+}
+
+// Ensure creates or reconciles the Knative DomainMapping for the given Route.
+// When Route.Enabled is false the DomainMapping is removed instead.
+func (p *KnativeProvider) Ensure(
+	ctx context.Context,
+	resolved *routeResolution.ResolvedRoute,
+	route domain.Route,
+) (domain.RouteResult, error) {
+	if !route.Enabled {
+		return p.ensureDisabled(ctx, route)
+	}
+
+	if route.ServiceRef == "" {
+		return domain.RouteResult{
+			Phase:   domain.PhaseFailed,
+			Message: domain.ErrServiceRefEmpty.Error(),
+		}, domain.ErrServiceRefEmpty
+	}
+
+	dm := &knservingv1alpha1.DomainMapping{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      route.Host,
+			Namespace: route.Namespace,
+		},
+	}
+
+	op, err := controllerutil.CreateOrUpdate(ctx, p.client, dm, func() error {
+		dm.Spec = knservingv1alpha1.DomainMappingSpec{
+			Ref: duckv1.KReference{
+				APIVersion: "serving.knative.dev/v1",
+				Kind:       "Service",
+				Namespace:  route.Namespace,
+				Name:       route.ServiceRef,
+			},
+		}
+		return nil
+	})
+	if err != nil {
+		return domain.RouteResult{
+			Phase:   domain.PhaseFailed,
+			Message: fmt.Sprintf("failed to reconcile DomainMapping %q: %v", route.Host, err),
+		}, err
+	}
+
+	p.log.Info("DomainMapping reconciled",
+		"host", route.Host,
+		"serviceRef", route.ServiceRef,
+		"operation", op,
+	)
+
+	return domain.RouteResult{
+		Phase:           domain.PhaseReady,
+		ResolvedAddress: route.Host,
+	}, nil
+}
+
+// ensureDisabled removes the DomainMapping when a Route is disabled.
+// A missing DomainMapping is not treated as an error — the desired state is
+// already satisfied.
+func (p *KnativeProvider) ensureDisabled(ctx context.Context, route domain.Route) (domain.RouteResult, error) {
+	dm := &knservingv1alpha1.DomainMapping{}
+	err := p.client.Get(ctx, client.ObjectKey{Name: route.Host, Namespace: route.Namespace}, dm)
+	if err != nil {
+		if client.IgnoreNotFound(err) == nil {
+			// DomainMapping already absent — desired state satisfied.
+			return domain.RouteResult{
+				Phase:   domain.PhasePending,
+				Message: "route disabled; DomainMapping absent",
+			}, nil
+		}
+		return domain.RouteResult{
+			Phase:   domain.PhaseFailed,
+			Message: fmt.Sprintf("failed to get DomainMapping %q: %v", route.Host, err),
+		}, err
+	}
+
+	if err := p.client.Delete(ctx, dm); err != nil {
+		return domain.RouteResult{
+			Phase:   domain.PhaseFailed,
+			Message: fmt.Sprintf("failed to delete DomainMapping %q: %v", route.Host, err),
+		}, err
+	}
+
+	p.log.Info("DomainMapping deleted (route disabled)", "host", route.Host)
+	return domain.RouteResult{
+		Phase:   domain.PhasePending,
+		Message: "route disabled; DomainMapping removed",
+	}, nil
+}

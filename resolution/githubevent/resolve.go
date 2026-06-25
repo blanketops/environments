@@ -133,7 +133,7 @@ func ResolveGitHubEvent(ev *eventsv1alpha1.GitHubEvent) (*ResolvedGitHubEvent, e
 		EventType:  eventType,
 		EventID:    optionalString(raw, "eventId"),
 		Ref:        optionalString(raw, "ref"),
-		CommitSHA:  optionalString(raw, "commitSha"),
+		CommitSHA:  optionalString(raw, "commitSHA"), // FIXED: was "commitSha"
 		Actor:      optionalString(raw, "actor"),
 		Webhook:    webhook,
 	}
