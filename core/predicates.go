@@ -67,7 +67,7 @@ func MeaningfulChangePredicate() predicate.Funcs {
 				if !ok {
 					return true
 				}
-				return !reflect.DeepEqual(old.Spec, newObj.Spec)
+				return old.Annotations["build.blanketops.dev/retry-attempt"] != newObj.Annotations["build.blanketops.dev/retry-attempt"]
 
 			case *environmentsv1alpha1.BuildTrigger:
 				newObj, ok := e.ObjectNew.(*environmentsv1alpha1.BuildTrigger)

@@ -108,6 +108,18 @@ func (p *KanikoProvider) CreateBuildSpec(spec domain.BuildSpec, build *buildReso
 
 	strategyKind := shipwrightv1alpha1.BuildStrategyKind(spec.StrategyKind)
 
+	// ------------------------------------------------
+	// Derive image tag and git revision from trigger annotations.
+	// If a webhook delivered a commit SHA, build that exact commit
+	// and tag the image with it instead of the static spec value.
+	// ------------------------------------------------
+	image := spec.Image
+	revision := spec.Revision
+	if sha := build.Build.Annotations[triggerSHAAnnotation]; sha != "" {
+		image = replaceImageTag(image, sha)
+		revision = sha
+	}
+
 	return &shipwrightv1alpha1.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      build.Build.Name,
@@ -121,7 +133,7 @@ func (p *KanikoProvider) CreateBuildSpec(spec domain.BuildSpec, build *buildReso
 			Source: shipwrightv1alpha1.Source{
 				URL:        &spec.SourceURL,
 				ContextDir: &spec.ContextDir,
-				Revision:   &spec.Revision,
+				Revision:   &revision,
 				Credentials: &corev1.LocalObjectReference{
 					Name: spec.CloneSecret,
 				},
@@ -131,14 +143,22 @@ func (p *KanikoProvider) CreateBuildSpec(spec domain.BuildSpec, build *buildReso
 				Kind: &strategyKind,
 			},
 			Output: shipwrightv1alpha1.Image{
-				Image: spec.Image,
+				Image: image,
 				Credentials: &corev1.LocalObjectReference{
 					Name: spec.ServiceAccountSecret,
 				},
 			},
-			// Timeout intentionally omitted — enforced at BuildRun level.
 		},
 	}, nil
+}
+
+// replaceImageTag swaps the last :tag segment of an image reference.
+// Safe for registry paths like ghcr.io/owner/repo:tag.
+func replaceImageTag(image, tag string) string {
+	if i := strings.LastIndex(image, ":"); i != -1 && strings.Contains(image[:i], "/") {
+		return image[:i] + ":" + tag
+	}
+	return image + ":" + tag
 }
 
 // -----------------------------------------------------------------------------
@@ -199,9 +219,6 @@ func (p *KanikoProvider) Run(ctx context.Context, build *buildResolution.Resolve
 
 	// ------------------------------------------------
 	// Stage 1: Upsert the Shipwright Build.
-	//
-	// The Build object declares the strategy, source, and output image.
-	// It is stable across retries — only the BuildRun varies per execution.
 	// ------------------------------------------------
 	shipBuild, err := p.CreateBuildSpec(spec, build)
 	if err != nil {
@@ -236,14 +253,9 @@ func (p *KanikoProvider) Run(ctx context.Context, build *buildResolution.Resolve
 		res.Message = err.Error()
 		return res, err
 	}
+
 	// ------------------------------------------------
 	// Stage 2: Create the BuildRun (idempotent by hash).
-	//
-	// The execution hash combines the resolved spec and trigger context
-	// (commit SHA, retry attempt, trigger type). A run already exists for
-	// this hash if and only if this exact execution was already dispatched —
-	// in that case we skip creation and return Triggered=true against the
-	// existing run.
 	// ------------------------------------------------
 	tc := ExtractTriggerContext(build.Build)
 	hash, err := utils.ComputeExecutionHash(build.Spec.ToBuildContract(), tc)
@@ -276,10 +288,6 @@ func (p *KanikoProvider) Run(ctx context.Context, build *buildResolution.Resolve
 
 	// ------------------------------------------------
 	// Execution dispatched — return intent result.
-	//
-	// Success=false here is intentional: the build has not succeeded yet,
-	// it has only been triggered. The observer sets Success=true when the
-	// BuildRun completes.
 	// ------------------------------------------------
 	res.Triggered = true
 	res.ExecutionRef = buildRun.Name
@@ -289,36 +297,21 @@ func (p *KanikoProvider) Run(ctx context.Context, build *buildResolution.Resolve
 	return res, nil
 }
 
-// patchTriggerSHA looks up the most recent push GitHubEvent for this Build's
-// repo and patches the discovered SHA onto the Build's annotations so
-// ExtractTriggerContext can read it. Shared across all build providers.
-// No-op if nothing matches (manual trigger case).
-// PatchBuildTriggerFromGitHubEvent looks up the latest push GitHubEvent for
-// the given Build's repository and patches the Build's annotations with the
-// trigger metadata (type, ref, sha, source). No-op if no matching event
-// with payload exists.
-//
-// This is called by the provider before creating the BuildRun so the
-// execution hash includes the correct commit SHA.
 // PatchBuildTriggerFromGitHubEvent looks up the latest push GitHubEvent for
 // the given Build's repository and patches the Build's annotations with the
 // trigger metadata. No-op if no matching event with payload exists.
+//
+// This is called by the provider before creating the BuildRun so the
+// execution hash includes the correct commit SHA.
 func PatchBuildTriggerFromGitHubEvent(ctx context.Context, c client.Client, build *buildv1.Build) error {
-	// Resolve Build to get source URL
-	resolvedBuild, err := buildResolution.ResolveBuild(build)
-	if err != nil {
-		return fmt.Errorf("resolve build: %w", err)
-	}
-
-	sourceURL := resolvedBuild.Spec.Source.URL
-	if sourceURL == "" {
+	appName := build.Labels["environments.blanketops.dev/name"]
+	if appName == "" {
 		return nil
 	}
 
 	var events eventsv1alpha1.GitHubEventList
 	if err := c.List(ctx, &events,
-		client.InNamespace(build.Namespace),
-		client.MatchingLabels{"events.blanketops.dev/repo": RepoSlug(sourceURL)},
+		client.MatchingLabels{"environments.blanketops.dev/name": appName},
 	); err != nil {
 		return fmt.Errorf("list githubevents: %w", err)
 	}
@@ -368,13 +361,4 @@ func PatchBuildTriggerFromGitHubEvent(ctx context.Context, c client.Client, buil
 	}
 
 	return nil
-}
-
-// RepoSlug normalizes a git URL into a label-safe slug matching the format
-// used by the GitHubEvent Sensor label (events.blanketops.dev/repo).
-func RepoSlug(sourceURL string) string {
-	s := strings.TrimPrefix(sourceURL, "https://github.com/")
-	s = strings.TrimPrefix(s, "git@github.com:")
-	s = strings.TrimSuffix(s, ".git")
-	return strings.ReplaceAll(s, "/", "-")
 }

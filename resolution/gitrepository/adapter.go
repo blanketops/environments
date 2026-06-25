@@ -52,9 +52,6 @@ func NewAdapter() *Adapter {
 
 // Resolve delegates to ResolveGitRepository, returning the resolved GitRepository contract
 // or an error if the CR spec fails validation.
-func (a *Adapter) Resolve(
-	ctx context.Context,
-	gitrepository *sourcesv1alpha1.GitRepository,
-) (*ResolvedGitRepository, error) {
+func (a *Adapter) Resolve(ctx context.Context, gitrepository *sourcesv1alpha1.GitRepository) (*ResolvedGitRepository, error) {
 	return ResolveGitRepository(gitrepository)
 }
