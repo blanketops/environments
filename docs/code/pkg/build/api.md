@@ -46,7 +46,6 @@ Concrete implementations live alongside this file \(buildah.go, kaniko.go, build
 
 - [func ExtractTriggerContext\(build \*buildv1.Build\) domain.TriggerContext](<#ExtractTriggerContext>)
 - [func PatchBuildTriggerFromGitHubEvent\(ctx context.Context, c client.Client, build \*buildv1.Build\) error](<#PatchBuildTriggerFromGitHubEvent>)
-- [func RepoSlug\(sourceURL string\) string](<#RepoSlug>)
 - [type BuildahProvider](<#BuildahProvider>)
   - [func NewBuildahProvider\(client client.Client, scheme \*runtime.Scheme, log logr.Logger, recorder events.EventRecorder\) \*BuildahProvider](<#NewBuildahProvider>)
   - [func \(p \*BuildahProvider\) CreateBuildRunSpec\(build \*buildResolution.ResolvedBuild, shipwrightBuild \*shipwrightv1alpha1.Build, fullHash string\) \*shipwrightv1alpha1.BuildRun](<#BuildahProvider.CreateBuildRunSpec>)
@@ -85,18 +84,9 @@ The returned TriggerContext is fed into utils.ComputeExecutionHash to produce th
 func PatchBuildTriggerFromGitHubEvent(ctx context.Context, c client.Client, build *buildv1.Build) error
 ```
 
-patchTriggerSHA looks up the most recent push GitHubEvent for this Build's repo and patches the discovered SHA onto the Build's annotations so ExtractTriggerContext can read it. Shared across all build providers. No\-op if nothing matches \(manual trigger case\). PatchBuildTriggerFromGitHubEvent looks up the latest push GitHubEvent for the given Build's repository and patches the Build's annotations with the trigger metadata \(type, ref, sha, source\). No\-op if no matching event with payload exists.
+PatchBuildTriggerFromGitHubEvent looks up the latest push GitHubEvent for the given Build's repository and patches the Build's annotations with the trigger metadata. No\-op if no matching event with payload exists.
 
-This is called by the provider before creating the BuildRun so the execution hash includes the correct commit SHA. PatchBuildTriggerFromGitHubEvent looks up the latest push GitHubEvent for the given Build's repository and patches the Build's annotations with the trigger metadata. No\-op if no matching event with payload exists.
-
-<a name="RepoSlug"></a>
-## func RepoSlug
-
-```go
-func RepoSlug(sourceURL string) string
-```
-
-RepoSlug normalizes a git URL into a label\-safe slug matching the format used by the GitHubEvent Sensor label \(events.blanketops.dev/repo\).
+This is called by the provider before creating the BuildRun so the execution hash includes the correct commit SHA.
 
 <a name="BuildahProvider"></a>
 ## type BuildahProvider
@@ -280,11 +270,7 @@ Provider is the build execution contract implemented by all build backends.
 
 ```go
 type Provider interface {
-    Run(
-        ctx context.Context,
-        resolved *buildResolution.ResolvedBuild,
-        spec domain.BuildSpec,
-    ) (domain.BuildResult, error)
+    Run(ctx context.Context, resolved *buildResolution.ResolvedBuild, spec domain.BuildSpec) (domain.BuildResult, error)
 }
 ```
 
