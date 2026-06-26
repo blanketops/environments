@@ -20,12 +20,12 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-	buildResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	buildResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
 )
 
 type BuildGitSSHSecretReconciler struct {
@@ -33,23 +33,16 @@ type BuildGitSSHSecretReconciler struct {
 	Log    logr.Logger
 }
 
-func NewBuildGitSSHSecretReconciler(
-	c client.Client,
-	log logr.Logger,
-) *BuildGitSSHSecretReconciler {
+func NewBuildGitSSHSecretReconciler(c client.Client, log logr.Logger) *BuildGitSSHSecretReconciler {
 	return &BuildGitSSHSecretReconciler{
 		Client: c,
 		Log:    log,
 	}
 }
 
-func (r *BuildGitSSHSecretReconciler) Reconcile(
-	ctx context.Context,
-	build *buildResolution.ResolvedBuild,
-) error {
+func (r *BuildGitSSHSecretReconciler) Reconcile(ctx context.Context, build *buildResolution.ResolvedBuild) error {
 
 	source := build.Spec.Source
-
 	secretName := source.CloneSecret
 	namespace := build.Build.Namespace
 

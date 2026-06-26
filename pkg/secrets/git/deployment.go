@@ -20,12 +20,12 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-	deploymentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	deploymentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
 )
 
 type DeploymentGitSSHSecretReconciler struct {
@@ -33,23 +33,16 @@ type DeploymentGitSSHSecretReconciler struct {
 	Log    logr.Logger
 }
 
-func NewDeploymentGitSSHSecretReconciler(
-	c client.Client,
-	log logr.Logger,
-) *DeploymentGitSSHSecretReconciler {
+func NewDeploymentGitSSHSecretReconciler(c client.Client, log logr.Logger) *DeploymentGitSSHSecretReconciler {
 	return &DeploymentGitSSHSecretReconciler{
 		Client: c,
 		Log:    log,
 	}
 }
 
-func (r *DeploymentGitSSHSecretReconciler) Reconcile(
-	ctx context.Context,
-	deployment *deploymentResolution.ResolvedDeployment,
-) error {
+func (r *DeploymentGitSSHSecretReconciler) Reconcile(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) error {
 
 	source := deployment.Spec.ManifestsRepo
-
 	secretName := source.CloneSecret
 	namespace := deployment.Deployment.Namespace
 

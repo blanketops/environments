@@ -21,12 +21,12 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-	sourcesv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/sources/v1alpha1"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	sourcesv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/sources/v1alpha1"
 )
 
 const (
@@ -39,20 +39,14 @@ type HookURLExternalSecretReconciler struct {
 	Log    logr.Logger
 }
 
-func NewHookURLExternalSecretReconciler(
-	c client.Client,
-	log logr.Logger,
-) *HookURLExternalSecretReconciler {
+func NewHookURLExternalSecretReconciler(c client.Client, log logr.Logger) *HookURLExternalSecretReconciler {
 	return &HookURLExternalSecretReconciler{
 		Client: c,
 		Log:    log,
 	}
 }
 
-func (r *HookURLExternalSecretReconciler) Reconcile(
-	ctx context.Context,
-	repo *sourcesv1alpha1.GitRepository,
-) error {
+func (r *HookURLExternalSecretReconciler) Reconcile(ctx context.Context, repo *sourcesv1alpha1.GitRepository) error {
 
 	if repo == nil {
 		return fmt.Errorf("nil GitRepository provided to HookURLExternalSecretReconciler")

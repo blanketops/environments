@@ -19,16 +19,14 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	sourcesv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/sources/v1alpha1"
-
-	"github.com/ntlaletsi70/blanketops-environments/pkg/gitrepository/domain"
-
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/events"
-
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	sourcesv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/sources/v1alpha1"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/gitrepository/domain"
 )
 
 //
@@ -43,12 +41,7 @@ type GitHubProvider struct {
 	Recorder events.EventRecorder // optional
 }
 
-func NewGitHubProvider(
-	c ctrlclient.Client,
-	scheme *runtime.Scheme,
-	log logr.Logger,
-	rec events.EventRecorder,
-) *GitHubProvider {
+func NewGitHubProvider(c ctrlclient.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *GitHubProvider {
 	return &GitHubProvider{
 		Client:   c,
 		Scheme:   scheme,
