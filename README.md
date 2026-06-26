@@ -5,10 +5,6 @@ A Deterministic Software Delivery Engine for Kubernetes.
 
 BlanketOps Environments is the core resolution engine behind the BlanketOps Environments platform.
 It provides deterministic domain logic for Kubernetes-native software delivery — transforming structured Custom Resources into stable, governed execution plans.
-
-This repository contains **pure domain and resolution logic only**.
-It does not run standalone and does not include controllers or transport layers.
-
 ---
 
 ## 🧭 About BlanketOps
@@ -25,32 +21,6 @@ Instead of ad-hoc pipelines and implicit state, BlanketOps Environments models d
 | Git Repositories | [docs](https://blanketopsenvironments.netlify.app/docs/Concepts/gitrepository) |
 | Service Units | [docs](https://blanketopsenvironments.netlify.app/docs/Concepts/serviceunit) |
 | Event Triggers | [docs](https://blanketopsenvironments.netlify.app/docs/Concepts/githubevent) |
-
-This repository implements the **resolution engine** that powers those primitives.
-
----
-
-## 🧠 What This Repository Is
-
-This module is:
-
-* A pure Go library.
-* Infrastructure-agnostic.
-* Transport-agnostic.
-* Deterministic by design.
-* Intended to be embedded in controllers or services.
-
-It is designed to be imported by:
-
-* Kubernetes controllers.
-* Delivery operators.
-* API backends.
-* CLI tools.
-* Platform orchestration layers.
-
-> **This module is not intended to be executed directly.**
-
----
 
 ## 🧩 How It Fits Into BlanketOps Environments
 
@@ -213,7 +183,7 @@ The full BlanketOps Environments documentation is available at:
 ## 📦 Installation
 
 ```bash
-go get github.com/ntlaletsi70/blanketops-environments@v0.3.4
+go get github.com/ntlaletsi70/blanketops-environments@v0.5.6
 ```
 
 ---
