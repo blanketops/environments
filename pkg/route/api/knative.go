@@ -59,7 +59,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/ntlaletsi70/blanketops-environments/pkg/routes/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/route/domain"
 	routeResolution "github.com/ntlaletsi70/blanketops-environments/resolution/route"
 )
 
