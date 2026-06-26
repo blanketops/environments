@@ -20,7 +20,6 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,19 +30,14 @@ type GitHubProviderSecretReconciler struct {
 	Log    logr.Logger
 }
 
-func NewGitHubProviderSecretReconciler(
-	c client.Client,
-	log logr.Logger,
-) *GitHubProviderSecretReconciler {
+func NewGitHubProviderSecretReconciler(c client.Client, log logr.Logger) *GitHubProviderSecretReconciler {
 	return &GitHubProviderSecretReconciler{
 		Client: c,
 		Log:    log,
 	}
 }
 
-func (r *GitHubProviderSecretReconciler) Reconcile(
-	ctx context.Context,
-) error {
+func (r *GitHubProviderSecretReconciler) Reconcile(ctx context.Context) error {
 
 	const (
 		externalSecretName = "github-upjet-creds"

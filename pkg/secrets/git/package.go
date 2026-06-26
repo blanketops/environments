@@ -20,12 +20,12 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-	packageResolution "github.com/ntlaletsi70/blanketops-environments/resolution/packages"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	packageResolution "github.com/ntlaletsi70/blanketops-environments/resolution/packages"
 )
 
 type PackageStateRepositorySecretReconciler struct {
@@ -33,20 +33,14 @@ type PackageStateRepositorySecretReconciler struct {
 	Log    logr.Logger
 }
 
-func NewPackageStateRepositorySecretReconciler(
-	c client.Client,
-	log logr.Logger,
-) *PackageStateRepositorySecretReconciler {
+func NewPackageStateRepositorySecretReconciler(c client.Client, log logr.Logger) *PackageStateRepositorySecretReconciler {
 	return &PackageStateRepositorySecretReconciler{
 		Client: c,
 		Log:    log,
 	}
 }
 
-func (r *PackageStateRepositorySecretReconciler) Reconcile(
-	ctx context.Context,
-	resolvedPackage *packageResolution.ResolvedPackage,
-) error {
+func (r *PackageStateRepositorySecretReconciler) Reconcile(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage) error {
 
 	if resolvedPackage == nil || resolvedPackage.Package == nil {
 		return nil
