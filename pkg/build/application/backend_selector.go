@@ -44,11 +44,7 @@ type BackendSelector struct {
 
 // NewBackendSelector constructs a BackendSelector with the three registered
 // build providers.
-func NewBackendSelector(
-	buildah api.Provider,
-	kaniko api.Provider,
-	buildpacks api.Provider,
-) *BackendSelector {
+func NewBackendSelector(buildah api.Provider, kaniko api.Provider, buildpacks api.Provider) *BackendSelector {
 	return &BackendSelector{
 		Buildah:    buildah,
 		Kaniko:     kaniko,
