@@ -29,8 +29,8 @@ package application
 import (
 	"fmt"
 
-	"github.com/ntlaletsi70/blanketops-environments/pkg/routes/api"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/routes/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/route/api"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/route/domain"
 )
 
 // BackendSelector routes a domain.Route to the correct Provider implementation

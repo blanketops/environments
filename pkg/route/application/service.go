@@ -36,7 +36,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/ntlaletsi70/blanketops-environments/pkg/routes/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/route/domain"
 	routeResolution "github.com/ntlaletsi70/blanketops-environments/resolution/route"
 )
 
