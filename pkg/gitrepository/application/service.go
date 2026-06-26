@@ -28,11 +28,7 @@ type GitRepositoryService struct {
 	backend *BackendSelector
 }
 
-func NewGitRepositoryService(
-	mapper *Mapper,
-	status *StatusWriter,
-	backend *BackendSelector,
-) *GitRepositoryService {
+func NewGitRepositoryService(mapper *Mapper, status *StatusWriter, backend *BackendSelector) *GitRepositoryService {
 	return &GitRepositoryService{
 		mapper:  mapper,
 		status:  status,
@@ -41,10 +37,7 @@ func NewGitRepositoryService(
 }
 
 // Reconcile reconciles a resolved GitRepository declaratively.
-func (s *GitRepositoryService) Reconcile(
-	ctx context.Context,
-	resolved *gitrepoResolution.ResolvedGitRepository,
-) error {
+func (s *GitRepositoryService) Reconcile(ctx context.Context, resolved *gitrepoResolution.ResolvedGitRepository) error {
 
 	// ------------------------------------------------
 	// 1. Map resolved → domain
