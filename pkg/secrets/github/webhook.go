@@ -20,12 +20,12 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	githubeventResolution "github.com/ntlaletsi70/blanketops-environments/resolution/githubevent"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	githubeventResolution "github.com/ntlaletsi70/blanketops-environments/resolution/githubevent"
 )
 
 type GitHubWebhookSecretReconciler struct {
@@ -33,10 +33,7 @@ type GitHubWebhookSecretReconciler struct {
 	Log    logr.Logger
 }
 
-func NewGitHubWebhookSecretReconciler(
-	c client.Client,
-	log logr.Logger,
-) *GitHubWebhookSecretReconciler {
+func NewGitHubWebhookSecretReconciler(c client.Client, log logr.Logger) *GitHubWebhookSecretReconciler {
 	return &GitHubWebhookSecretReconciler{
 		Client: c,
 		Log:    log,
@@ -48,10 +45,7 @@ func NewGitHubWebhookSecretReconciler(
 // CONTRACT:
 // - resolved contains authoritative webhook intent
 // - Event is used only for ownership + namespace
-func (r *GitHubWebhookSecretReconciler) Reconcile(
-	ctx context.Context,
-	resolved *githubeventResolution.ResolvedGitHubEvent,
-) error {
+func (r *GitHubWebhookSecretReconciler) Reconcile(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent) error {
 
 	if resolved == nil || resolved.Event == nil || resolved.Spec == nil {
 		return fmt.Errorf("nil ResolvedGitHubEvent (resolver bug)")

@@ -19,12 +19,12 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	buildResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	buildResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
 )
 
 type BuildRegistryExternalSecretReconciler struct {
@@ -32,10 +32,7 @@ type BuildRegistryExternalSecretReconciler struct {
 	Log    logr.Logger
 }
 
-func NewBuildRegistryExternalSecretReconciler(
-	c client.Client,
-	log logr.Logger,
-) *BuildRegistryExternalSecretReconciler {
+func NewBuildRegistryExternalSecretReconciler(c client.Client, log logr.Logger) *BuildRegistryExternalSecretReconciler {
 	return &BuildRegistryExternalSecretReconciler{
 		Client: c,
 		Log:    log,
@@ -44,10 +41,7 @@ func NewBuildRegistryExternalSecretReconciler(
 
 // Reconcile ensures an ExternalSecret exists for registry credentials
 // requested by the Build contract.
-func (r *BuildRegistryExternalSecretReconciler) Reconcile(
-	ctx context.Context,
-	build *buildResolution.ResolvedBuild,
-) error {
+func (r *BuildRegistryExternalSecretReconciler) Reconcile(ctx context.Context, build *buildResolution.ResolvedBuild) error {
 
 	if build == nil || build.Build == nil || build.Spec == nil {
 		return nil

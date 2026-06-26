@@ -50,10 +50,7 @@ func NewDeploymentFluxGitSSHSecretReconciler(
 	}
 }
 
-func (r *DeploymentFluxGitSSHSecretReconciler) Reconcile(
-	ctx context.Context,
-	deployment *deploymentResolution.ResolvedDeployment,
-) error {
+func (r *DeploymentFluxGitSSHSecretReconciler) Reconcile(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) error {
 	secretName := fmt.Sprintf("%s-flux-ssh", deployment.Deployment.Name)
 	namespace := deployment.Deployment.Namespace
 
@@ -136,10 +133,7 @@ func (r *DeploymentFluxGitSSHSecretReconciler) Reconcile(
 
 // PublicKey returns the authorized_keys format public key from an existing secret.
 // Used by ensureDeployKey to register the key on GitHub.
-func (r *DeploymentFluxGitSSHSecretReconciler) PublicKey(
-	ctx context.Context,
-	deployment *deploymentResolution.ResolvedDeployment,
-) (string, error) {
+func (r *DeploymentFluxGitSSHSecretReconciler) PublicKey(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) (string, error) {
 	secretName := fmt.Sprintf("%s-flux-ssh", deployment.Deployment.Name)
 	secret := &corev1.Secret{}
 	if err := r.Client.Get(ctx, client.ObjectKey{
