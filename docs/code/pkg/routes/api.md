@@ -8,32 +8,39 @@ import "github.com/ntlaletsi70/blanketops-environments/pkg/routes/api"
 
 This file owns KnativeProvider — the Knative implementation of the routes Provider interface.
 
-KnativeProvider materializes a Route as a Knative DomainMapping \(serving.knative.dev/v1alpha1\). The DomainMapping binds the declared host to the Knative Service identified by Route.ServiceRef, making the workload reachable at that FQDN via Kourier.
+KnativeProvider materializes a Route as a Knative DomainMapping \(serving.knative.dev/v1beta1\). The DomainMapping binds the declared host to the Knative Service identified by Route.ServiceRef, making the workload reachable at that FQDN via Kourier.
 
-Ensure is idempotent — it uses controller\-runtime CreateOrUpdate so repeated calls for the same Route produce the same DomainMapping without duplicates or spurious updates.
+API version:
+
+```
+DomainMapping/v1alpha1 was deprecated in Knative v1.11.0. This provider
+targets the stable v1beta1 API exclusively.
+```
+
+TLS:
+
+```
+When Route.TLSEnabled is true, the DomainMapping is created with
+spec.tls.secretName pointing to the TLS Secret that the Domain provider
+(pkg/domain/api/knative.go) provisions via cert-manager. The secret name
+follows the blanketops-tls-{sanitized-host} convention shared between both
+providers. Knative serving will wait for the Secret to exist — no ordering
+dependency between Route and Domain reconciliation is required.
+```
 
 Disabled routes:
 
 ```
 When Route.Enabled is false the DomainMapping is deleted. The Route CR is
 retained; only the runtime resource is removed. A missing DomainMapping
-(NotFound) is not treated as an error — the disabled state is already
-satisfied.
-```
-
-TLS:
-
-```
-TLS termination is handled by Kourier + net-certmanager. When Route.TLSEnabled
-is true, the Domain provider (pkg/domain/api/knative.go) provisions the cert
-and DomainClaim separately. KnativeProvider does not touch certs.
+(NotFound) is not treated as an error — the disabled state is satisfied.
 ```
 
 See also:
 
 - pkg/routes/api/provider.go — Provider interface
 - pkg/routes/domain/model.go — Route.ServiceRef design note
-- pkg/domain/api/knative.go — handles the TLS chain for this host
+- pkg/domain/api/knative.go — provisions the TLS Secret this file references
 - pkg/routes/application/backend\_selector.go — wires KnativeProvider for RuntimeKnativeService
 
 This file owns the Provider interface for the routes domain — the contract that all route backend implementations must satisfy.
@@ -61,7 +68,7 @@ See also:
 <a name="KnativeProvider"></a>
 ## type KnativeProvider
 
-KnativeProvider implements Provider for the Knative serving runtime. Materializes Route as a serving.knative.dev/v1alpha1 DomainMapping.
+KnativeProvider implements Provider for the Knative serving runtime. Materializes Route as a serving.knative.dev/v1beta1 DomainMapping.
 
 ```go
 type KnativeProvider struct {

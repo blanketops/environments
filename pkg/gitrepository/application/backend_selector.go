@@ -30,9 +30,7 @@ type BackendSelector struct {
 	// Bitbucket api.Provider
 }
 
-func NewBackendSelector(
-	github api.Provider,
-) *BackendSelector {
+func NewBackendSelector(github api.Provider) *BackendSelector {
 	return &BackendSelector{
 		GitHub: github,
 	}

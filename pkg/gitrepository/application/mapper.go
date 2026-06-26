@@ -36,9 +36,7 @@ func NewMapper() *Mapper {
 // - Nil / empty mandatory values indicate a resolver bug and MUST panic
 // - Optional fields must be preserved verbatim
 // - Mapper must not invent defaults or reinterpret intent
-func (Mapper) MapResolvedToDomain(
-	r *gitrepoResolution.ResolvedGitRepository,
-) domain.GitRepository {
+func (Mapper) MapResolvedToDomain(r *gitrepoResolution.ResolvedGitRepository) domain.GitRepository {
 
 	spec := r.Spec
 
