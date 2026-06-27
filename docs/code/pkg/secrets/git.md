@@ -16,10 +16,10 @@ import "github.com/ntlaletsi70/blanketops-environments/pkg/secrets/git"
   - [func \(r \*DeploymentFluxGitSSHSecretReconciler\) PublicKey\(ctx context.Context, deployment \*deploymentResolution.ResolvedDeployment\) \(string, error\)](<#DeploymentFluxGitSSHSecretReconciler.PublicKey>)
   - [func \(r \*DeploymentFluxGitSSHSecretReconciler\) Reconcile\(ctx context.Context, deployment \*deploymentResolution.ResolvedDeployment\) error](<#DeploymentFluxGitSSHSecretReconciler.Reconcile>)
 - [type DeploymentGitSSHSecretReconciler](<#DeploymentGitSSHSecretReconciler>)
-  - [func NewDeploymentGitSSHSecretReconciler\(c client.Client, log logr.Logger\) \*DeploymentGitSSHSecretReconciler](<#NewDeploymentGitSSHSecretReconciler>)
+  - [func NewDeploymentGitSSHSecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*DeploymentGitSSHSecretReconciler](<#NewDeploymentGitSSHSecretReconciler>)
   - [func \(r \*DeploymentGitSSHSecretReconciler\) Reconcile\(ctx context.Context, deployment \*deploymentResolution.ResolvedDeployment\) error](<#DeploymentGitSSHSecretReconciler.Reconcile>)
 - [type PackageStateRepositorySecretReconciler](<#PackageStateRepositorySecretReconciler>)
-  - [func NewPackageStateRepositorySecretReconciler\(c client.Client, log logr.Logger\) \*PackageStateRepositorySecretReconciler](<#NewPackageStateRepositorySecretReconciler>)
+  - [func NewPackageStateRepositorySecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*PackageStateRepositorySecretReconciler](<#NewPackageStateRepositorySecretReconciler>)
   - [func \(r \*PackageStateRepositorySecretReconciler\) Reconcile\(ctx context.Context, resolvedPackage \*packageResolution.ResolvedPackage\) error](<#PackageStateRepositorySecretReconciler.Reconcile>)
 
 
@@ -100,8 +100,9 @@ func (r *DeploymentFluxGitSSHSecretReconciler) Reconcile(ctx context.Context, de
 
 ```go
 type DeploymentGitSSHSecretReconciler struct {
-    Client client.Client
-    Log    logr.Logger
+    Client    client.Client
+    Log       logr.Logger
+    StoreName string
 }
 ```
 
@@ -109,7 +110,7 @@ type DeploymentGitSSHSecretReconciler struct {
 ### func NewDeploymentGitSSHSecretReconciler
 
 ```go
-func NewDeploymentGitSSHSecretReconciler(c client.Client, log logr.Logger) *DeploymentGitSSHSecretReconciler
+func NewDeploymentGitSSHSecretReconciler(c client.Client, log logr.Logger, storeName string) *DeploymentGitSSHSecretReconciler
 ```
 
 
@@ -130,8 +131,9 @@ func (r *DeploymentGitSSHSecretReconciler) Reconcile(ctx context.Context, deploy
 
 ```go
 type PackageStateRepositorySecretReconciler struct {
-    Client client.Client
-    Log    logr.Logger
+    Client    client.Client
+    Log       logr.Logger
+    StoreName string
 }
 ```
 
@@ -139,7 +141,7 @@ type PackageStateRepositorySecretReconciler struct {
 ### func NewPackageStateRepositorySecretReconciler
 
 ```go
-func NewPackageStateRepositorySecretReconciler(c client.Client, log logr.Logger) *PackageStateRepositorySecretReconciler
+func NewPackageStateRepositorySecretReconciler(c client.Client, log logr.Logger, storeName string) *PackageStateRepositorySecretReconciler
 ```
 
 

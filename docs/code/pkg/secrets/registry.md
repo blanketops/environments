@@ -9,10 +9,10 @@ import "github.com/ntlaletsi70/blanketops-environments/pkg/secrets/registry"
 ## Index
 
 - [type BuildRegistryExternalSecretReconciler](<#BuildRegistryExternalSecretReconciler>)
-  - [func NewBuildRegistryExternalSecretReconciler\(c client.Client, log logr.Logger\) \*BuildRegistryExternalSecretReconciler](<#NewBuildRegistryExternalSecretReconciler>)
+  - [func NewBuildRegistryExternalSecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*BuildRegistryExternalSecretReconciler](<#NewBuildRegistryExternalSecretReconciler>)
   - [func \(r \*BuildRegistryExternalSecretReconciler\) Reconcile\(ctx context.Context, build \*buildResolution.ResolvedBuild\) error](<#BuildRegistryExternalSecretReconciler.Reconcile>)
 - [type PackageRegistrySecretReconciler](<#PackageRegistrySecretReconciler>)
-  - [func NewPackageRegistrySecretReconciler\(c client.Client, log logr.Logger\) \*PackageRegistrySecretReconciler](<#NewPackageRegistrySecretReconciler>)
+  - [func NewPackageRegistrySecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*PackageRegistrySecretReconciler](<#NewPackageRegistrySecretReconciler>)
   - [func \(r \*PackageRegistrySecretReconciler\) Reconcile\(ctx context.Context, resolvedPackage \*packageResolution.ResolvedPackage\) error](<#PackageRegistrySecretReconciler.Reconcile>)
 
 
@@ -23,8 +23,9 @@ import "github.com/ntlaletsi70/blanketops-environments/pkg/secrets/registry"
 
 ```go
 type BuildRegistryExternalSecretReconciler struct {
-    Client client.Client
-    Log    logr.Logger
+    Client    client.Client
+    Log       logr.Logger
+    StoreName string
 }
 ```
 
@@ -32,7 +33,7 @@ type BuildRegistryExternalSecretReconciler struct {
 ### func NewBuildRegistryExternalSecretReconciler
 
 ```go
-func NewBuildRegistryExternalSecretReconciler(c client.Client, log logr.Logger) *BuildRegistryExternalSecretReconciler
+func NewBuildRegistryExternalSecretReconciler(c client.Client, log logr.Logger, storeName string) *BuildRegistryExternalSecretReconciler
 ```
 
 
@@ -44,7 +45,7 @@ func NewBuildRegistryExternalSecretReconciler(c client.Client, log logr.Logger) 
 func (r *BuildRegistryExternalSecretReconciler) Reconcile(ctx context.Context, build *buildResolution.ResolvedBuild) error
 ```
 
-Reconcile ensures an ExternalSecret exists for registry credentials requested by the Build contract.
+
 
 <a name="PackageRegistrySecretReconciler"></a>
 ## type PackageRegistrySecretReconciler
@@ -53,8 +54,9 @@ Reconcile ensures an ExternalSecret exists for registry credentials requested by
 
 ```go
 type PackageRegistrySecretReconciler struct {
-    Client client.Client
-    Log    logr.Logger
+    Client    client.Client
+    Log       logr.Logger
+    StoreName string
 }
 ```
 
@@ -62,7 +64,7 @@ type PackageRegistrySecretReconciler struct {
 ### func NewPackageRegistrySecretReconciler
 
 ```go
-func NewPackageRegistrySecretReconciler(c client.Client, log logr.Logger) *PackageRegistrySecretReconciler
+func NewPackageRegistrySecretReconciler(c client.Client, log logr.Logger, storeName string) *PackageRegistrySecretReconciler
 ```
 
 
