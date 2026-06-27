@@ -9,7 +9,7 @@ import "github.com/ntlaletsi70/blanketops-environments/pkg/secrets/git"
 ## Index
 
 - [type BuildGitSSHSecretReconciler](<#BuildGitSSHSecretReconciler>)
-  - [func NewBuildGitSSHSecretReconciler\(c client.Client, log logr.Logger\) \*BuildGitSSHSecretReconciler](<#NewBuildGitSSHSecretReconciler>)
+  - [func NewBuildGitSSHSecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*BuildGitSSHSecretReconciler](<#NewBuildGitSSHSecretReconciler>)
   - [func \(r \*BuildGitSSHSecretReconciler\) Reconcile\(ctx context.Context, build \*buildResolution.ResolvedBuild\) error](<#BuildGitSSHSecretReconciler.Reconcile>)
 - [type DeploymentFluxGitSSHSecretReconciler](<#DeploymentFluxGitSSHSecretReconciler>)
   - [func NewDeploymentFluxGitSSHSecretReconciler\(c client.Client, log logr.Logger\) \*DeploymentFluxGitSSHSecretReconciler](<#NewDeploymentFluxGitSSHSecretReconciler>)
@@ -30,8 +30,9 @@ import "github.com/ntlaletsi70/blanketops-environments/pkg/secrets/git"
 
 ```go
 type BuildGitSSHSecretReconciler struct {
-    Client client.Client
-    Log    logr.Logger
+    Client    client.Client
+    Log       logr.Logger
+    StoreName string // ClusterSecretStore name — resolved from environment contract
 }
 ```
 
@@ -39,7 +40,7 @@ type BuildGitSSHSecretReconciler struct {
 ### func NewBuildGitSSHSecretReconciler
 
 ```go
-func NewBuildGitSSHSecretReconciler(c client.Client, log logr.Logger) *BuildGitSSHSecretReconciler
+func NewBuildGitSSHSecretReconciler(c client.Client, log logr.Logger, storeName string) *BuildGitSSHSecretReconciler
 ```
 
 
