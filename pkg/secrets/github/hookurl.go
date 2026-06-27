@@ -35,31 +35,26 @@ const (
 )
 
 type HookURLExternalSecretReconciler struct {
-	Client client.Client
-	Log    logr.Logger
+	Client    client.Client
+	Log       logr.Logger
+	StoreName string
 }
 
-func NewHookURLExternalSecretReconciler(c client.Client, log logr.Logger) *HookURLExternalSecretReconciler {
+func NewHookURLExternalSecretReconciler(c client.Client, log logr.Logger, storeName string) *HookURLExternalSecretReconciler {
 	return &HookURLExternalSecretReconciler{
-		Client: c,
-		Log:    log,
+		Client:    c,
+		Log:       log,
+		StoreName: storeName,
 	}
 }
 
 func (r *HookURLExternalSecretReconciler) Reconcile(ctx context.Context, repo *sourcesv1alpha1.GitRepository) error {
-
 	if repo == nil {
 		return fmt.Errorf("nil GitRepository provided to HookURLExternalSecretReconciler")
 	}
 
-	remoteKey := fmt.Sprintf(
-		"/blanketops/sources/%s/hookurl",
-		repo.Name,
-	)
+	remoteKey := fmt.Sprintf("/blanketops/sources/%s/hookurl", repo.Name)
 
-	// ---------------------------------------------------------------------
-	// Desired ExternalSecret (UNSTRUCTURED)
-	// ---------------------------------------------------------------------
 	desired := &unstructured.Unstructured{
 		Object: map[string]any{
 			"apiVersion": "external-secrets.io/v1",
@@ -76,7 +71,7 @@ func (r *HookURLExternalSecretReconciler) Reconcile(ctx context.Context, repo *s
 			"spec": map[string]any{
 				"refreshInterval": "0s",
 				"secretStoreRef": map[string]any{
-					"name": "blanketops-environments-fake",
+					"name": r.StoreName,
 					"kind": "ClusterSecretStore",
 				},
 				"target": map[string]any{
@@ -85,83 +80,44 @@ func (r *HookURLExternalSecretReconciler) Reconcile(ctx context.Context, repo *s
 				"data": []any{
 					map[string]any{
 						"secretKey": HookURLSecretKey,
-						"remoteRef": map[string]any{
-							"key": remoteKey,
-						},
+						"remoteRef": map[string]any{"key": remoteKey},
 					},
 				},
 			},
 		},
 	}
 
-	// 🔑 OWN the ExternalSecret (never the Secret)
-	if err := controllerutil.SetControllerReference(
-		repo,
-		desired,
-		r.Client.Scheme(),
-	); err != nil {
+	if err := controllerutil.SetControllerReference(repo, desired, r.Client.Scheme()); err != nil {
 		return err
 	}
 
-	// ---------------------------------------------------------------------
-	// Fetch existing
-	// ---------------------------------------------------------------------
 	var existing unstructured.Unstructured
 	existing.SetGroupVersionKind(desired.GroupVersionKind())
 
-	err := r.Client.Get(
-		ctx,
-		client.ObjectKeyFromObject(desired),
-		&existing,
-	)
+	err := r.Client.Get(ctx, client.ObjectKeyFromObject(desired), &existing)
 
-	// ---------------------------------------------------------------------
-	// CREATE
-	// ---------------------------------------------------------------------
 	if apierrors.IsNotFound(err) {
-		r.Log.Info(
-			"Creating ExternalSecret for GitRepository hook URL",
-			"repository", repo.Name,
-			"namespace", repo.Namespace,
-		)
+		r.Log.Info("creating ExternalSecret for GitRepository hook URL",
+			"repository", repo.Name, "store", r.StoreName)
 		return r.Client.Create(ctx, desired)
 	}
-
 	if err != nil {
 		return err
 	}
 
-	// ---------------------------------------------------------------------
-	// UPDATE (spec drift)
-	// ---------------------------------------------------------------------
 	desiredSpec, _, _ := unstructured.NestedMap(desired.Object, "spec")
 	existingSpec, _, _ := unstructured.NestedMap(existing.Object, "spec")
 
 	if !reflect.DeepEqual(existingSpec, desiredSpec) {
-		if err := unstructured.SetNestedMap(
-			existing.Object,
-			desiredSpec,
-			"spec",
-		); err != nil {
+		if err := unstructured.SetNestedMap(existing.Object, desiredSpec, "spec"); err != nil {
 			return err
 		}
-
-		r.Log.Info(
-			"Updating ExternalSecret for GitRepository hook URL",
-			"repository", repo.Name,
-			"namespace", repo.Namespace,
-		)
-
+		r.Log.Info("updating ExternalSecret for GitRepository hook URL",
+			"repository", repo.Name, "store", r.StoreName)
 		return r.Client.Update(ctx, &existing)
 	}
 
-	// ---------------------------------------------------------------------
-	// NO-OP
-	// ---------------------------------------------------------------------
-	r.Log.V(1).Info(
-		"ExternalSecret for GitRepository hook URL already up-to-date",
-		"repository", repo.Name,
-	)
-
+	r.Log.V(1).Info("ExternalSecret for GitRepository hook URL already up-to-date",
+		"repository", repo.Name)
 	return nil
 }

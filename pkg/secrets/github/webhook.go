@@ -29,24 +29,20 @@ import (
 )
 
 type GitHubWebhookSecretReconciler struct {
-	Client client.Client
-	Log    logr.Logger
+	Client    client.Client
+	Log       logr.Logger
+	StoreName string
 }
 
-func NewGitHubWebhookSecretReconciler(c client.Client, log logr.Logger) *GitHubWebhookSecretReconciler {
+func NewGitHubWebhookSecretReconciler(c client.Client, log logr.Logger, storeName string) *GitHubWebhookSecretReconciler {
 	return &GitHubWebhookSecretReconciler{
-		Client: c,
-		Log:    log,
+		Client:    c,
+		Log:       log,
+		StoreName: storeName,
 	}
 }
 
-// Reconcile ensures an ExternalSecret exists for the GitHub webhook shared secret.
-//
-// CONTRACT:
-// - resolved contains authoritative webhook intent
-// - Event is used only for ownership + namespace
 func (r *GitHubWebhookSecretReconciler) Reconcile(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent) error {
-
 	if resolved == nil || resolved.Event == nil || resolved.Spec == nil {
 		return fmt.Errorf("nil ResolvedGitHubEvent (resolver bug)")
 	}
@@ -55,16 +51,12 @@ func (r *GitHubWebhookSecretReconciler) Reconcile(ctx context.Context, resolved 
 	webhook := resolved.Spec.Webhook
 
 	if webhook.SecretRef.Name == "" || webhook.SecretRef.Key == "" {
-		// No webhook secret requested
 		return nil
 	}
 
 	secretName := webhook.SecretRef.Name
 	secretKey := webhook.SecretRef.Key
 
-	// -------------------------------------------------------------------------
-	// Desired ExternalSecret (UNSTRUCTURED)
-	// -------------------------------------------------------------------------
 	desired := &unstructured.Unstructured{
 		Object: map[string]any{
 			"apiVersion": "external-secrets.io/v1",
@@ -81,7 +73,7 @@ func (r *GitHubWebhookSecretReconciler) Reconcile(ctx context.Context, resolved 
 			"spec": map[string]any{
 				"refreshInterval": "0s",
 				"secretStoreRef": map[string]any{
-					"name": "blanketops-environments-fake",
+					"name": r.StoreName,
 					"kind": "ClusterSecretStore",
 				},
 				"target": map[string]any{
@@ -102,42 +94,22 @@ func (r *GitHubWebhookSecretReconciler) Reconcile(ctx context.Context, resolved 
 		},
 	}
 
-	// OWN the ExternalSecret (never the Secret)
-	if err := controllerutil.SetControllerReference(
-		event,
-		desired,
-		r.Client.Scheme(),
-	); err != nil {
+	if err := controllerutil.SetControllerReference(event, desired, r.Client.Scheme()); err != nil {
 		return err
 	}
 
-	// -------------------------------------------------------------------------
-	// Fetch existing
-	// -------------------------------------------------------------------------
 	var existing unstructured.Unstructured
 	existing.SetGroupVersionKind(desired.GroupVersionKind())
 
-	err := r.Client.Get(
-		ctx,
-		client.ObjectKeyFromObject(desired),
-		&existing,
-	)
+	err := r.Client.Get(ctx, client.ObjectKeyFromObject(desired), &existing)
 	if err == nil {
-		// Intentionally no drift reconciliation for webhook secrets
 		return nil
 	}
 	if !apierrors.IsNotFound(err) {
 		return err
 	}
 
-	// -------------------------------------------------------------------------
-	// Create
-	// -------------------------------------------------------------------------
-	r.Log.Info(
-		"Creating ExternalSecret for GitHub webhook",
-		"event", event.Name,
-		"secret", secretName,
-	)
-
+	r.Log.Info("creating ExternalSecret for GitHub webhook",
+		"event", event.Name, "secret", secretName, "store", r.StoreName)
 	return r.Client.Create(ctx, desired)
 }
