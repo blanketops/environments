@@ -97,6 +97,13 @@ func MeaningfulChangePredicate() predicate.Funcs {
 				}
 				return !reflect.DeepEqual(old.Spec, newObj.Spec)
 
+			case *environmentsv1alpha1.Environment:
+				newObj, ok := e.ObjectNew.(*environmentsv1alpha1.Environment)
+				if !ok {
+					return true
+				}
+				return !reflect.DeepEqual(old.Spec, newObj.Spec)
+
 			case *environmentsv1alpha1.Package:
 				newObj, ok := e.ObjectNew.(*environmentsv1alpha1.Package)
 				if !ok {
