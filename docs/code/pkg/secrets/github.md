@@ -10,13 +10,13 @@ import "github.com/ntlaletsi70/blanketops-environments/pkg/secrets/github"
 
 - [Constants](<#constants>)
 - [type GitHubProviderSecretReconciler](<#GitHubProviderSecretReconciler>)
-  - [func NewGitHubProviderSecretReconciler\(c client.Client, log logr.Logger\) \*GitHubProviderSecretReconciler](<#NewGitHubProviderSecretReconciler>)
+  - [func NewGitHubProviderSecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*GitHubProviderSecretReconciler](<#NewGitHubProviderSecretReconciler>)
   - [func \(r \*GitHubProviderSecretReconciler\) Reconcile\(ctx context.Context\) error](<#GitHubProviderSecretReconciler.Reconcile>)
 - [type GitHubWebhookSecretReconciler](<#GitHubWebhookSecretReconciler>)
-  - [func NewGitHubWebhookSecretReconciler\(c client.Client, log logr.Logger\) \*GitHubWebhookSecretReconciler](<#NewGitHubWebhookSecretReconciler>)
+  - [func NewGitHubWebhookSecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*GitHubWebhookSecretReconciler](<#NewGitHubWebhookSecretReconciler>)
   - [func \(r \*GitHubWebhookSecretReconciler\) Reconcile\(ctx context.Context, resolved \*githubeventResolution.ResolvedGitHubEvent\) error](<#GitHubWebhookSecretReconciler.Reconcile>)
 - [type HookURLExternalSecretReconciler](<#HookURLExternalSecretReconciler>)
-  - [func NewHookURLExternalSecretReconciler\(c client.Client, log logr.Logger\) \*HookURLExternalSecretReconciler](<#NewHookURLExternalSecretReconciler>)
+  - [func NewHookURLExternalSecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*HookURLExternalSecretReconciler](<#NewHookURLExternalSecretReconciler>)
   - [func \(r \*HookURLExternalSecretReconciler\) Reconcile\(ctx context.Context, repo \*sourcesv1alpha1.GitRepository\) error](<#HookURLExternalSecretReconciler.Reconcile>)
 
 
@@ -38,8 +38,9 @@ const (
 
 ```go
 type GitHubProviderSecretReconciler struct {
-    Client client.Client
-    Log    logr.Logger
+    Client    client.Client
+    Log       logr.Logger
+    StoreName string
 }
 ```
 
@@ -47,7 +48,7 @@ type GitHubProviderSecretReconciler struct {
 ### func NewGitHubProviderSecretReconciler
 
 ```go
-func NewGitHubProviderSecretReconciler(c client.Client, log logr.Logger) *GitHubProviderSecretReconciler
+func NewGitHubProviderSecretReconciler(c client.Client, log logr.Logger, storeName string) *GitHubProviderSecretReconciler
 ```
 
 
@@ -68,8 +69,9 @@ func (r *GitHubProviderSecretReconciler) Reconcile(ctx context.Context) error
 
 ```go
 type GitHubWebhookSecretReconciler struct {
-    Client client.Client
-    Log    logr.Logger
+    Client    client.Client
+    Log       logr.Logger
+    StoreName string
 }
 ```
 
@@ -77,7 +79,7 @@ type GitHubWebhookSecretReconciler struct {
 ### func NewGitHubWebhookSecretReconciler
 
 ```go
-func NewGitHubWebhookSecretReconciler(c client.Client, log logr.Logger) *GitHubWebhookSecretReconciler
+func NewGitHubWebhookSecretReconciler(c client.Client, log logr.Logger, storeName string) *GitHubWebhookSecretReconciler
 ```
 
 
@@ -89,9 +91,7 @@ func NewGitHubWebhookSecretReconciler(c client.Client, log logr.Logger) *GitHubW
 func (r *GitHubWebhookSecretReconciler) Reconcile(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent) error
 ```
 
-Reconcile ensures an ExternalSecret exists for the GitHub webhook shared secret.
 
-CONTRACT: \- resolved contains authoritative webhook intent \- Event is used only for ownership \+ namespace
 
 <a name="HookURLExternalSecretReconciler"></a>
 ## type HookURLExternalSecretReconciler
@@ -100,8 +100,9 @@ CONTRACT: \- resolved contains authoritative webhook intent \- Event is used onl
 
 ```go
 type HookURLExternalSecretReconciler struct {
-    Client client.Client
-    Log    logr.Logger
+    Client    client.Client
+    Log       logr.Logger
+    StoreName string
 }
 ```
 
@@ -109,7 +110,7 @@ type HookURLExternalSecretReconciler struct {
 ### func NewHookURLExternalSecretReconciler
 
 ```go
-func NewHookURLExternalSecretReconciler(c client.Client, log logr.Logger) *HookURLExternalSecretReconciler
+func NewHookURLExternalSecretReconciler(c client.Client, log logr.Logger, storeName string) *HookURLExternalSecretReconciler
 ```
 
 
