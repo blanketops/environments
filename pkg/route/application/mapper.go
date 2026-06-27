@@ -30,7 +30,7 @@ package application
 import (
 	"fmt"
 
-	"github.com/ntlaletsi70/blanketops-environments/pkg/routes/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/route/domain"
 	routeResolution "github.com/ntlaletsi70/blanketops-environments/resolution/route"
 )
 
