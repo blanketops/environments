@@ -1,8 +1,36 @@
 ## [unreleased]
 
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+## [0.5.8] - 2026-06-27
+
+### 💼 Other
+
+- *(release)* Apply cache for environment
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.5.7
+## [0.5.7] - 2026-06-27
+
+### 💼 Other
+
+- *(release)* Update fixes for all secrets to storename
+- Merge release/v0.5.7 into main
+
 ### 🎨 Styling
 
 - Auto-format and tidy [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.5.6
+- *(release)* Update changelog for v0.5.6
 ## [0.5.6] - 2026-06-27
 
 ### 💼 Other
@@ -20,6 +48,10 @@
 - Auto-generate code documentation [skip ci]
 - Auto-generate code documentation [skip ci]
 - Auto-generate code documentation [skip ci]
+
+### 🎨 Styling
+
+- Auto-format and tidy [skip ci]
 
 ### ⚙️ Miscellaneous Tasks
 
