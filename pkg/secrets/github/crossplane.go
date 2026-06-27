@@ -26,27 +26,25 @@ import (
 )
 
 type GitHubProviderSecretReconciler struct {
-	Client client.Client
-	Log    logr.Logger
+	Client    client.Client
+	Log       logr.Logger
+	StoreName string
 }
 
-func NewGitHubProviderSecretReconciler(c client.Client, log logr.Logger) *GitHubProviderSecretReconciler {
+func NewGitHubProviderSecretReconciler(c client.Client, log logr.Logger, storeName string) *GitHubProviderSecretReconciler {
 	return &GitHubProviderSecretReconciler{
-		Client: c,
-		Log:    log,
+		Client:    c,
+		Log:       log,
+		StoreName: storeName,
 	}
 }
 
 func (r *GitHubProviderSecretReconciler) Reconcile(ctx context.Context) error {
-
 	const (
 		externalSecretName = "github-upjet-creds"
 		namespace          = "crossplane-system"
 	)
 
-	// -------------------------------------------------------------------------
-	// Desired ExternalSecret (UNSTRUCTURED)
-	// -------------------------------------------------------------------------
 	desired := &unstructured.Unstructured{
 		Object: map[string]any{
 			"apiVersion": "external-secrets.io/v1",
@@ -62,7 +60,7 @@ func (r *GitHubProviderSecretReconciler) Reconcile(ctx context.Context) error {
 			"spec": map[string]any{
 				"refreshInterval": "0s",
 				"secretStoreRef": map[string]any{
-					"name": "blanketops-environments-fake",
+					"name": r.StoreName,
 					"kind": "ClusterSecretStore",
 				},
 				"target": map[string]any{
@@ -72,9 +70,7 @@ func (r *GitHubProviderSecretReconciler) Reconcile(ctx context.Context) error {
 						"type":          "Opaque",
 						"engineVersion": "v2",
 						"data": map[string]any{
-							"credentials": `{
-  "token": "{{ .token }}"
-}`,
+							"credentials": `{"token": "{{ .token }}"}`,
 						},
 					},
 				},
@@ -90,60 +86,28 @@ func (r *GitHubProviderSecretReconciler) Reconcile(ctx context.Context) error {
 		},
 	}
 
-	// -------------------------------------------------------------------------
-	// Fetch existing
-	// -------------------------------------------------------------------------
 	var existing unstructured.Unstructured
 	existing.SetGroupVersionKind(desired.GroupVersionKind())
 
-	err := r.Client.Get(
-		ctx,
-		client.ObjectKey{
-			Name:      externalSecretName,
-			Namespace: namespace,
-		},
-		&existing,
-	)
+	err := r.Client.Get(ctx, client.ObjectKey{Name: externalSecretName, Namespace: namespace}, &existing)
 
-	// -------------------------------------------------------------------------
-	// Create
-	// -------------------------------------------------------------------------
 	if apierrors.IsNotFound(err) {
-		r.Log.Info(
-			"Creating ExternalSecret for GitHub Upjet provider",
-			"secret", externalSecretName,
-		)
+		r.Log.Info("creating ExternalSecret for GitHub Upjet provider",
+			"secret", externalSecretName, "store", r.StoreName)
 		return r.Client.Create(ctx, desired)
 	}
-
 	if err != nil {
 		return err
 	}
 
-	// -------------------------------------------------------------------------
-	// Update (spec drift only)
-	// -------------------------------------------------------------------------
-	if !reflect.DeepEqual(
-		existing.Object["spec"],
-		desired.Object["spec"],
-	) {
+	if !reflect.DeepEqual(existing.Object["spec"], desired.Object["spec"]) {
 		existing.Object["spec"] = desired.Object["spec"]
-
-		r.Log.Info(
-			"Updating ExternalSecret for GitHub Upjet provider",
-			"secret", externalSecretName,
-		)
-
+		r.Log.Info("updating ExternalSecret for GitHub Upjet provider",
+			"secret", externalSecretName, "store", r.StoreName)
 		return r.Client.Update(ctx, &existing)
 	}
 
-	// -------------------------------------------------------------------------
-	// No-op
-	// -------------------------------------------------------------------------
-	r.Log.V(1).Info(
-		"ExternalSecret for GitHub Upjet provider already up-to-date",
-		"secret", externalSecretName,
-	)
-
+	r.Log.V(1).Info("ExternalSecret for GitHub Upjet provider already up-to-date",
+		"secret", externalSecretName)
 	return nil
 }

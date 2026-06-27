@@ -28,41 +28,32 @@ import (
 )
 
 type BuildRegistryExternalSecretReconciler struct {
-	Client client.Client
-	Log    logr.Logger
+	Client    client.Client
+	Log       logr.Logger
+	StoreName string
 }
 
-func NewBuildRegistryExternalSecretReconciler(c client.Client, log logr.Logger) *BuildRegistryExternalSecretReconciler {
+func NewBuildRegistryExternalSecretReconciler(c client.Client, log logr.Logger, storeName string) *BuildRegistryExternalSecretReconciler {
 	return &BuildRegistryExternalSecretReconciler{
-		Client: c,
-		Log:    log,
+		Client:    c,
+		Log:       log,
+		StoreName: storeName,
 	}
 }
 
-// Reconcile ensures an ExternalSecret exists for registry credentials
-// requested by the Build contract.
 func (r *BuildRegistryExternalSecretReconciler) Reconcile(ctx context.Context, build *buildResolution.ResolvedBuild) error {
-
 	if build == nil || build.Build == nil || build.Spec == nil {
 		return nil
 	}
-
-	spec := build.Spec
-
-	if spec.ServiceAccount == nil {
-		// No service account → no registry auth requested
+	if build.Spec.ServiceAccount == nil {
 		return nil
 	}
 
-	secretName := spec.ServiceAccount.Secret
+	secretName := build.Spec.ServiceAccount.Secret
 	if secretName == "" {
-		// ServiceAccount exists but registry secret not requested
 		return nil
 	}
 
-	// ---------------------------------------------------------------------
-	// Desired ExternalSecret (UNSTRUCTURED)
-	// ---------------------------------------------------------------------
 	desired := &unstructured.Unstructured{
 		Object: map[string]any{
 			"apiVersion": "external-secrets.io/v1",
@@ -79,7 +70,7 @@ func (r *BuildRegistryExternalSecretReconciler) Reconcile(ctx context.Context, b
 			"spec": map[string]any{
 				"refreshInterval": "0s",
 				"secretStoreRef": map[string]any{
-					"name": "blanketops-environments-fake",
+					"name": r.StoreName,
 					"kind": "ClusterSecretStore",
 				},
 				"target": map[string]any{
@@ -100,41 +91,22 @@ func (r *BuildRegistryExternalSecretReconciler) Reconcile(ctx context.Context, b
 		},
 	}
 
-	// 🔑 OWN the ExternalSecret (never the Secret)
-	if err := controllerutil.SetControllerReference(
-		build.Build,
-		desired,
-		r.Client.Scheme(),
-	); err != nil {
+	if err := controllerutil.SetControllerReference(build.Build, desired, r.Client.Scheme()); err != nil {
 		return err
 	}
 
-	// ---------------------------------------------------------------------
-	// Fetch existing (CREATE-ONLY semantics)
-	// ---------------------------------------------------------------------
 	var existing unstructured.Unstructured
 	existing.SetGroupVersionKind(desired.GroupVersionKind())
 
-	err := r.Client.Get(
-		ctx,
-		client.ObjectKeyFromObject(desired),
-		&existing,
-	)
-
+	err := r.Client.Get(ctx, client.ObjectKeyFromObject(desired), &existing)
 	if err == nil {
-		// Contract says: existence is enough
 		return nil
 	}
-
 	if !apierrors.IsNotFound(err) {
 		return err
 	}
 
-	r.Log.Info(
-		"Creating ExternalSecret for registry credentials",
-		"build", build.Build.Name,
-		"secret", secretName,
-	)
-
+	r.Log.Info("creating ExternalSecret for registry credentials",
+		"build", build.Build.Name, "secret", secretName, "store", r.StoreName)
 	return r.Client.Create(ctx, desired)
 }

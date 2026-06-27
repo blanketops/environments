@@ -29,34 +29,30 @@ import (
 )
 
 type PackageStateRepositorySecretReconciler struct {
-	Client client.Client
-	Log    logr.Logger
+	Client    client.Client
+	Log       logr.Logger
+	StoreName string
 }
 
-func NewPackageStateRepositorySecretReconciler(c client.Client, log logr.Logger) *PackageStateRepositorySecretReconciler {
+func NewPackageStateRepositorySecretReconciler(c client.Client, log logr.Logger, storeName string) *PackageStateRepositorySecretReconciler {
 	return &PackageStateRepositorySecretReconciler{
-		Client: c,
-		Log:    log,
+		Client:    c,
+		Log:       log,
+		StoreName: storeName,
 	}
 }
 
 func (r *PackageStateRepositorySecretReconciler) Reconcile(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage) error {
-
 	if resolvedPackage == nil || resolvedPackage.Package == nil {
 		return nil
 	}
 
 	pkg := resolvedPackage.Package
-
-	// 🔑 Secret name is authoritative from Package contract
 	secretName := resolvedPackage.Spec.StateRepository.CloneSecret
 	if secretName == "" {
 		return nil
 	}
 
-	// ---------------------------------------------------------------------
-	// Desired ExternalSecret (UNSTRUCTURED)
-	// ---------------------------------------------------------------------
 	desired := &unstructured.Unstructured{
 		Object: map[string]any{
 			"apiVersion": "external-secrets.io/v1",
@@ -73,7 +69,7 @@ func (r *PackageStateRepositorySecretReconciler) Reconcile(ctx context.Context, 
 			"spec": map[string]any{
 				"refreshInterval": "0s",
 				"secretStoreRef": map[string]any{
-					"name": "blanketops-environments-fake",
+					"name": r.StoreName,
 					"kind": "ClusterSecretStore",
 				},
 				"target": map[string]any{
@@ -90,96 +86,52 @@ func (r *PackageStateRepositorySecretReconciler) Reconcile(ctx context.Context, 
 				"data": []any{
 					map[string]any{
 						"secretKey": "ssh_privatekey",
-						"remoteRef": map[string]any{
-							"key": "/blanketops/git/ssh-privatekey",
-						},
+						"remoteRef": map[string]any{"key": "/blanketops/git/ssh-privatekey"},
 					},
 					map[string]any{
 						"secretKey": "ssh_publickey",
-						"remoteRef": map[string]any{
-							"key": "/blanketops/git/ssh-publickey",
-						},
+						"remoteRef": map[string]any{"key": "/blanketops/git/ssh-publickey"},
 					},
 					map[string]any{
 						"secretKey": "known_hosts",
-						"remoteRef": map[string]any{
-							"key": "/blanketops/git/known-hosts",
-						},
+						"remoteRef": map[string]any{"key": "/blanketops/git/known-hosts"},
 					},
 				},
 			},
 		},
 	}
 
-	// 🔑 OWN the ExternalSecret (never the Secret)
-	if err := controllerutil.SetControllerReference(
-		pkg,
-		desired,
-		r.Client.Scheme(),
-	); err != nil {
+	if err := controllerutil.SetControllerReference(pkg, desired, r.Client.Scheme()); err != nil {
 		return err
 	}
 
-	// ---------------------------------------------------------------------
-	// Fetch existing
-	// ---------------------------------------------------------------------
 	var existing unstructured.Unstructured
 	existing.SetGroupVersionKind(desired.GroupVersionKind())
 
-	err := r.Client.Get(
-		ctx,
-		client.ObjectKeyFromObject(desired),
-		&existing,
-	)
+	err := r.Client.Get(ctx, client.ObjectKeyFromObject(desired), &existing)
 
-	// ---------------------------------------------------------------------
-	// CREATE
-	// ---------------------------------------------------------------------
 	if apierrors.IsNotFound(err) {
-		r.Log.Info(
-			"Creating ExternalSecret for package state repository (git ssh)",
-			"package", pkg.Name,
-			"secret", secretName,
-		)
+		r.Log.Info("creating ExternalSecret for package state repository",
+			"package", pkg.Name, "secret", secretName, "store", r.StoreName)
 		return r.Client.Create(ctx, desired)
 	}
-
 	if err != nil {
 		return err
 	}
 
-	// ---------------------------------------------------------------------
-	// UPDATE (spec drift)
-	// ---------------------------------------------------------------------
 	desiredSpec, _, _ := unstructured.NestedMap(desired.Object, "spec")
 	existingSpec, _, _ := unstructured.NestedMap(existing.Object, "spec")
 
 	if !reflect.DeepEqual(existingSpec, desiredSpec) {
-		if err := unstructured.SetNestedMap(
-			existing.Object,
-			desiredSpec,
-			"spec",
-		); err != nil {
+		if err := unstructured.SetNestedMap(existing.Object, desiredSpec, "spec"); err != nil {
 			return err
 		}
-
-		r.Log.Info(
-			"Updating ExternalSecret for package state repository (git ssh)",
-			"package", pkg.Name,
-			"secret", secretName,
-		)
-
+		r.Log.Info("updating ExternalSecret for package state repository",
+			"package", pkg.Name, "secret", secretName, "store", r.StoreName)
 		return r.Client.Update(ctx, &existing)
 	}
 
-	// ---------------------------------------------------------------------
-	// NO-OP
-	// ---------------------------------------------------------------------
-	r.Log.V(1).Info(
-		"ExternalSecret for package state repository already up-to-date",
-		"package", pkg.Name,
-		"secret", secretName,
-	)
-
+	r.Log.V(1).Info("ExternalSecret for package state repository already up-to-date",
+		"package", pkg.Name, "secret", secretName)
 	return nil
 }
