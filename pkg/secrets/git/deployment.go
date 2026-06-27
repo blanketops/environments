@@ -29,26 +29,24 @@ import (
 )
 
 type DeploymentGitSSHSecretReconciler struct {
-	Client client.Client
-	Log    logr.Logger
+	Client    client.Client
+	Log       logr.Logger
+	StoreName string
 }
 
-func NewDeploymentGitSSHSecretReconciler(c client.Client, log logr.Logger) *DeploymentGitSSHSecretReconciler {
+func NewDeploymentGitSSHSecretReconciler(c client.Client, log logr.Logger, storeName string) *DeploymentGitSSHSecretReconciler {
 	return &DeploymentGitSSHSecretReconciler{
-		Client: c,
-		Log:    log,
+		Client:    c,
+		Log:       log,
+		StoreName: storeName,
 	}
 }
 
 func (r *DeploymentGitSSHSecretReconciler) Reconcile(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) error {
-
 	source := deployment.Spec.ManifestsRepo
 	secretName := source.CloneSecret
 	namespace := deployment.Deployment.Namespace
 
-	// -------------------------------------------------------------------------
-	// Desired ExternalSecret (UNSTRUCTURED)
-	// -------------------------------------------------------------------------
 	desired := &unstructured.Unstructured{
 		Object: map[string]any{
 			"apiVersion": "external-secrets.io/v1",
@@ -65,7 +63,7 @@ func (r *DeploymentGitSSHSecretReconciler) Reconcile(ctx context.Context, deploy
 			"spec": map[string]any{
 				"refreshInterval": "0s",
 				"secretStoreRef": map[string]any{
-					"name": "blanketops-environments-fake",
+					"name": r.StoreName,
 					"kind": "ClusterSecretStore",
 				},
 				"target": map[string]any{
@@ -98,9 +96,6 @@ func (r *DeploymentGitSSHSecretReconciler) Reconcile(ctx context.Context, deploy
 		},
 	}
 
-	// -------------------------------------------------------------------------
-	// Ownership (Deployment → ExternalSecret)
-	// -------------------------------------------------------------------------
 	if err := controllerutil.SetControllerReference(
 		deployment.Deployment,
 		desired,
@@ -109,63 +104,36 @@ func (r *DeploymentGitSSHSecretReconciler) Reconcile(ctx context.Context, deploy
 		return err
 	}
 
-	// -------------------------------------------------------------------------
-	// Fetch existing
-	// -------------------------------------------------------------------------
 	var existing unstructured.Unstructured
 	existing.SetGroupVersionKind(desired.GroupVersionKind())
 
-	err := r.Client.Get(
-		ctx,
-		client.ObjectKey{
-			Name:      secretName,
-			Namespace: namespace,
-		},
-		&existing,
-	)
+	err := r.Client.Get(ctx, client.ObjectKey{Name: secretName, Namespace: namespace}, &existing)
 
-	// -------------------------------------------------------------------------
-	// Create
-	// -------------------------------------------------------------------------
 	if apierrors.IsNotFound(err) {
-		r.Log.Info(
-			"Creating ExternalSecret for Git SSH",
-			"Deployment", deployment.Deployment.Name,
+		r.Log.Info("creating ExternalSecret for Git SSH",
+			"deployment", deployment.Deployment.Name,
 			"secret", secretName,
+			"store", r.StoreName,
 		)
 		return r.Client.Create(ctx, desired)
 	}
-
 	if err != nil {
 		return err
 	}
 
-	// -------------------------------------------------------------------------
-	// Update (spec drift only)
-	// -------------------------------------------------------------------------
-	if !reflect.DeepEqual(
-		existing.Object["spec"],
-		desired.Object["spec"],
-	) {
+	if !reflect.DeepEqual(existing.Object["spec"], desired.Object["spec"]) {
 		existing.Object["spec"] = desired.Object["spec"]
-
-		r.Log.Info(
-			"Updating ExternalSecret for Git SSH",
-			"Deployment", deployment.Deployment.Name,
+		r.Log.Info("updating ExternalSecret for Git SSH",
+			"deployment", deployment.Deployment.Name,
 			"secret", secretName,
+			"store", r.StoreName,
 		)
-
 		return r.Client.Update(ctx, &existing)
 	}
 
-	// -------------------------------------------------------------------------
-	// No-op
-	// -------------------------------------------------------------------------
-	r.Log.V(1).Info(
-		"ExternalSecret already up-to-date",
-		"Deployment", deployment.Deployment.Name,
+	r.Log.V(1).Info("ExternalSecret already up-to-date",
+		"deployment", deployment.Deployment.Name,
 		"secret", secretName,
 	)
-
 	return nil
 }
