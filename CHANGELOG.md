@@ -1,8 +1,13 @@
-## [unreleased]
+## [0.5.9] - 2026-06-27
 
 ### 📚 Documentation
 
 - Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.5.8
+- Sync develop with main after release/v0.5.8
 ## [0.5.8] - 2026-06-27
 
 ### 💼 Other
