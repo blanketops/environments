@@ -10,18 +10,13 @@ Package environment implements resolution for the Environment CR.
 
 This file owns the contract adapter — the one\-way projection from the resolved runtime spec \(ResolvedEnvironmentSpec\) to the protobuf contract type \(environmentscontractv1alpha1.EnvironmentSpec\).
 
-The contract type is consumed by infrastructure\-layer concerns only:
-
-- Execution hash computation for environment deduplication
-- Spec comparison across reconciliation cycles
-- Audit pipelines
-
-Controllers and domain logic MUST NOT consume the returned contract value.
+Controllers and domain logic MUST NOT consume the returned contract value. The resolved runtime spec is the authoritative type for all reconciliation decisions. The contract is a serialisation artifact, not a source of truth.
 
 Key generated type facts:
 
-- EnvironmentType → \*v1.EnvironmentType wrapper message \(Type field carries enum\)
-- All CR refs \(Build, Deployment, Route, Package, ServiceUnits, BuildTriggers\) → \*ObjectRef / \[\]\*ObjectRef — a single local message with only a Name field. There are no typed ref messages \(EnvironmentBuildRef etc.\).
+- SecretStoreProvider → top\-level enum \(commoncontractv1.SecretStoreProvider\). No wrapper message. SecretStore.Provider field takes the enum directly.
+- EnvironmentType → wrapped enum \(\*commoncontractv1.EnvironmentType\). Field carries EnvironmentType\_EnvironmentType enum value.
+- All CR refs → \*environmentscontractv1alpha1.ObjectRef\{Name: "..."\}.
 
 Package environment implements resolution for the Environment CR.
 
@@ -36,6 +31,7 @@ Resolution is nil\-tolerant for the CR itself but strict on the contract payload
   - [func \(a \*Adapter\) Resolve\(ctx context.Context, environment \*environmentv1alpha1.Environment\) \(\*ResolvedEnvironment, error\)](<#Adapter.Resolve>)
 - [type ResolvedEnvironment](<#ResolvedEnvironment>)
   - [func ResolveEnvironment\(environment \*environmentv1alpha1.Environment\) \(\*ResolvedEnvironment, error\)](<#ResolveEnvironment>)
+- [type ResolvedEnvironmentContract](<#ResolvedEnvironmentContract>)
 - [type ResolvedEnvironmentSpec](<#ResolvedEnvironmentSpec>)
   - [func \(s \*ResolvedEnvironmentSpec\) ToEnvironmentContract\(\) \*environmentscontractv1alpha1.EnvironmentSpec](<#ResolvedEnvironmentSpec.ToEnvironmentContract>)
 
@@ -71,7 +67,7 @@ func (a *Adapter) Resolve(ctx context.Context, environment *environmentv1alpha1.
 <a name="ResolvedEnvironment"></a>
 ## type ResolvedEnvironment
 
-ResolvedEnvironment pairs the original Kubernetes Environment object with its fully decoded and validated spec. Spec is nil when the CR is nil.
+ResolvedEnvironment pairs the original Kubernetes Environment object with its fully decoded and validated spec.
 
 ```go
 type ResolvedEnvironment struct {
@@ -89,12 +85,21 @@ func ResolveEnvironment(environment *environmentv1alpha1.Environment) (*Resolved
 
 ResolveEnvironment decodes and validates the raw JSON contract from the Environment CR spec into a ResolvedEnvironment.
 
-A nil CR is accepted and returns a zero ResolvedEnvironment — callers that need a non\-nil CR should validate before calling. A missing or malformed contract always returns an error.
+<a name="ResolvedEnvironmentContract"></a>
+## type ResolvedEnvironmentContract
+
+ResolvedEnvironmentContract holds platform\-level bindings declared on the Environment — currently the ESO secret store provider.
+
+```go
+type ResolvedEnvironmentContract struct {
+    SecretStoreProvider string
+}
+```
 
 <a name="ResolvedEnvironmentSpec"></a>
 ## type ResolvedEnvironmentSpec
 
-ResolvedEnvironmentSpec is the decoded Environment spec. All CR references \(Build, Deployment, Route, Package, ServiceUnits, BuildTriggers\) are stored as name strings — cross\-CR lookups are the responsibility of the domain layer.
+ResolvedEnvironmentSpec is the decoded Environment spec. All CR references are stored as name strings — cross\-CR lookups are the responsibility of the domain layer.
 
 ```go
 type ResolvedEnvironmentSpec struct {
@@ -106,14 +111,18 @@ type ResolvedEnvironmentSpec struct {
     Description     string
 
     // Optional CR references — empty string means not declared.
-    Build      string
-    Deployment string
-    Route      string
-    Package    string
+    Build         string
+    GitRepository string
+    GitHubEvent   string
+    Deployment    string
+    Route         string
+    Package       string
 
     // Slices are nil when not declared; empty slice is never returned.
-    BuildTriggers []string
-    ServiceUnits  []string
+    ServiceUnits []string
+
+    // Platform-level bindings.
+    Contract *ResolvedEnvironmentContract
 }
 ```
 
@@ -124,10 +133,8 @@ type ResolvedEnvironmentSpec struct {
 func (s *ResolvedEnvironmentSpec) ToEnvironmentContract() *environmentscontractv1alpha1.EnvironmentSpec
 ```
 
-ToEnvironmentContract projects the resolved runtime spec into a protobuf environmentscontractv1alpha1.EnvironmentSpec for infrastructure consumers \(hashing, comparison, audit\).
+ToEnvironmentContract projects the resolved runtime spec into a protobuf EnvironmentSpec for infrastructure consumers \(hashing, comparison, audit\).
 
-EnvironmentType is projected as a \*v1.EnvironmentType wrapper message. All CR references \(Build, Deployment, Route, Package, ServiceUnits, BuildTriggers\) are projected as \*ObjectRef — the single generic reference type used throughout the environment proto.
-
-⚠️ ONE\-WAY adapter. The returned value MUST NOT be fed back into any controller or domain logic path.
+⚠️ ONE\-WAY adapter. MUST NOT be fed back into any controller or domain path.
 
 Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
