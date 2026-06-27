@@ -29,14 +29,16 @@ import (
 )
 
 type BuildGitSSHSecretReconciler struct {
-	Client client.Client
-	Log    logr.Logger
+	Client    client.Client
+	Log       logr.Logger
+	StoreName string // ClusterSecretStore name — resolved from environment contract
 }
 
-func NewBuildGitSSHSecretReconciler(c client.Client, log logr.Logger) *BuildGitSSHSecretReconciler {
+func NewBuildGitSSHSecretReconciler(c client.Client, log logr.Logger, storeName string) *BuildGitSSHSecretReconciler {
 	return &BuildGitSSHSecretReconciler{
-		Client: c,
-		Log:    log,
+		Client:    c,
+		Log:       log,
+		StoreName: storeName,
 	}
 }
 
@@ -48,6 +50,8 @@ func (r *BuildGitSSHSecretReconciler) Reconcile(ctx context.Context, build *buil
 
 	// -------------------------------------------------------------------------
 	// Desired ExternalSecret (UNSTRUCTURED)
+	// Keys are platform constants — never change regardless of provider.
+	// Only secretStoreRef.name is provider-dependent.
 	// -------------------------------------------------------------------------
 	desired := &unstructured.Unstructured{
 		Object: map[string]any{
@@ -65,7 +69,7 @@ func (r *BuildGitSSHSecretReconciler) Reconcile(ctx context.Context, build *buil
 			"spec": map[string]any{
 				"refreshInterval": "0s",
 				"secretStoreRef": map[string]any{
-					"name": "blanketops-environments-fake",
+					"name": r.StoreName,
 					"kind": "ClusterSecretStore",
 				},
 				"target": map[string]any{
@@ -129,9 +133,10 @@ func (r *BuildGitSSHSecretReconciler) Reconcile(ctx context.Context, build *buil
 	// -------------------------------------------------------------------------
 	if apierrors.IsNotFound(err) {
 		r.Log.Info(
-			"Creating ExternalSecret for Git SSH",
+			"creating ExternalSecret for Git SSH",
 			"build", build.Build.Name,
 			"secret", secretName,
+			"store", r.StoreName,
 		)
 		return r.Client.Create(ctx, desired)
 	}
@@ -150,9 +155,10 @@ func (r *BuildGitSSHSecretReconciler) Reconcile(ctx context.Context, build *buil
 		existing.Object["spec"] = desired.Object["spec"]
 
 		r.Log.Info(
-			"Updating ExternalSecret for Git SSH",
+			"updating ExternalSecret for Git SSH",
 			"build", build.Build.Name,
 			"secret", secretName,
+			"store", r.StoreName,
 		)
 
 		return r.Client.Update(ctx, &existing)
