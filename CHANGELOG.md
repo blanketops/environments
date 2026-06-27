@@ -1,3 +1,69 @@
+## [unreleased]
+
+### 🎨 Styling
+
+- Auto-format and tidy [skip ci]
+## [0.5.6] - 2026-06-27
+
+### 💼 Other
+
+- *(gitrepository)* Align with pattern upstream controller
+- *(gitrepository)* Sanitize pkg/secrets reconciler secrets
+- *(release)* Update route
+- *(release)* Construction of environment, resolution updated
+- *(release)* Construction of environment, resolution updated
+- Merge release/v0.5.6 into main
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+- Auto-generate code documentation [skip ci]
+- Auto-generate code documentation [skip ci]
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.5.5
+## [0.5.5] - 2026-06-26
+
+### 🚀 Features
+
+- *(cache)* Add cache layers init for route and domain types
+
+### 💼 Other
+
+- *(route)* Rebase for release, pkg/route, sanitize for build selector
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.5.4
+## [0.5.4] - 2026-06-25
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+
+### 🎨 Styling
+
+- Auto-format and tidy [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.5.3
+## [0.5.3] - 2026-06-22
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.5.2
+- Sync develop with main after release/v0.5.2
 ## [0.5.2] - 2026-06-22
 
 ### 📚 Documentation
