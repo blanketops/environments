@@ -44,9 +44,6 @@ func NewAdapter() *Adapter {
 	return &Adapter{}
 }
 
-func (a *Adapter) Resolve(
-	ctx context.Context,
-	environment *environmentv1alpha1.Environment,
-) (*ResolvedEnvironment, error) {
+func (a *Adapter) Resolve(ctx context.Context, environment *environmentv1alpha1.Environment) (*ResolvedEnvironment, error) {
 	return ResolveEnvironment(environment)
 }
