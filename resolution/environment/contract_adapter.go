@@ -20,18 +20,16 @@ This file owns the contract adapter — the one-way projection from the resolved
 runtime spec (ResolvedEnvironmentSpec) to the protobuf contract type
 (environmentscontractv1alpha1.EnvironmentSpec).
 
-The contract type is consumed by infrastructure-layer concerns only:
-  - Execution hash computation for environment deduplication
-  - Spec comparison across reconciliation cycles
-  - Audit pipelines
-
 Controllers and domain logic MUST NOT consume the returned contract value.
+The resolved runtime spec is the authoritative type for all reconciliation
+decisions. The contract is a serialisation artifact, not a source of truth.
 
 Key generated type facts:
-  - EnvironmentType → *v1.EnvironmentType wrapper message (Type field carries enum)
-  - All CR refs (Build, Deployment, Route, Package, ServiceUnits, BuildTriggers)
-    → *ObjectRef / []*ObjectRef — a single local message with only a Name field.
-    There are no typed ref messages (EnvironmentBuildRef etc.).
+  - SecretStoreProvider  → top-level enum (commoncontractv1.SecretStoreProvider).
+    No wrapper message. SecretStore.Provider field takes the enum directly.
+  - EnvironmentType      → wrapped enum (*commoncontractv1.EnvironmentType).
+    Field carries EnvironmentType_EnvironmentType enum value.
+  - All CR refs          → *environmentscontractv1alpha1.ObjectRef{Name: "..."}.
 */
 package environment
 
@@ -41,16 +39,9 @@ import (
 )
 
 // ToEnvironmentContract projects the resolved runtime spec into a protobuf
-// environmentscontractv1alpha1.EnvironmentSpec for infrastructure consumers
-// (hashing, comparison, audit).
+// EnvironmentSpec for infrastructure consumers (hashing, comparison, audit).
 //
-// EnvironmentType is projected as a *v1.EnvironmentType wrapper message.
-// All CR references (Build, Deployment, Route, Package, ServiceUnits,
-// BuildTriggers) are projected as *ObjectRef — the single generic reference
-// type used throughout the environment proto.
-//
-// ⚠️ ONE-WAY adapter. The returned value MUST NOT be fed back into any
-// controller or domain logic path.
+// ⚠️ ONE-WAY adapter. MUST NOT be fed back into any controller or domain path.
 func (s *ResolvedEnvironmentSpec) ToEnvironmentContract() *environmentscontractv1alpha1.EnvironmentSpec {
 	if s == nil {
 		return nil
@@ -73,12 +64,19 @@ func (s *ResolvedEnvironmentSpec) ToEnvironmentContract() *environmentscontractv
 	}
 
 	// ------------------------------------------------
-	// BuildTrigger refs (OPTIONAL).
+	// GitRepository ref (OPTIONAL).
+	// The GitRepository CR owns branch, owner, and clone config.
 	// ------------------------------------------------
-	for _, name := range s.BuildTriggers {
-		spec.BuildTriggers = append(spec.BuildTriggers,
-			&environmentscontractv1alpha1.ObjectRef{Name: name},
-		)
+	if s.GitRepository != "" {
+		spec.GitRepository = &environmentscontractv1alpha1.ObjectRef{Name: s.GitRepository}
+	}
+
+	// ------------------------------------------------
+	// GitHubEvent ref (OPTIONAL).
+	// The GitHubEvent CR owns webhook event routing and Argo Events config.
+	// ------------------------------------------------
+	if s.GitHubEvent != "" {
+		spec.GitHubEvent = &environmentscontractv1alpha1.ObjectRef{Name: s.GitHubEvent}
 	}
 
 	// ------------------------------------------------
@@ -111,13 +109,27 @@ func (s *ResolvedEnvironmentSpec) ToEnvironmentContract() *environmentscontractv
 		spec.Package = &environmentscontractv1alpha1.ObjectRef{Name: s.Package}
 	}
 
+	// ------------------------------------------------
+	// Platform contract: secret store provider only.
+	// SecretStoreProvider is a top-level enum — no wrapper message.
+	// Each CR manages its own credential secrets independently.
+	// Provider drives ESO ClusterSecretStore selection.
+	// ------------------------------------------------
+	if s.Contract != nil && s.Contract.SecretStoreProvider != "" {
+		spec.Contract = &environmentscontractv1alpha1.EnvironmentContract{
+			SecretStore: &commoncontractv1.SecretStore{
+				Provider: toSecretStoreProvider(s.Contract.SecretStoreProvider),
+			},
+		}
+	}
+
 	return spec
 }
 
-// toEnvironmentTypeWrapper maps an environment type string to the corresponding
-// *v1.EnvironmentType wrapper message. Unknown strings map to UNSPECIFIED —
-// environment type is user-provided and an unknown value should not fail
-// the projection.
+// toEnvironmentTypeWrapper maps an environment type string to the
+// corresponding *commoncontractv1.EnvironmentType wrapper message.
+// EnvironmentType is a wrapped enum — field carries EnvironmentType_EnvironmentType.
+// Unknown strings map to UNSPECIFIED — must not fail the projection.
 func toEnvironmentTypeWrapper(t string) *commoncontractv1.EnvironmentType {
 	switch t {
 	case "ENVIRONMENT_TYPE_DEVELOPMENT", "development":
@@ -139,6 +151,35 @@ func toEnvironmentTypeWrapper(t string) *commoncontractv1.EnvironmentType {
 	default:
 		return &commoncontractv1.EnvironmentType{
 			Type: commoncontractv1.EnvironmentType_ENVIRONMENT_TYPE_UNSPECIFIED,
+		}
+	}
+}
+
+// toSecretStoreProvider maps a provider string to the corresponding
+// commoncontractv1.SecretStoreProvider enum value.
+// SecretStoreProvider is a top-level enum — returned directly, no wrapper.
+// Unknown strings map to UNSPECIFIED — must not fail the projection.
+func toSecretStoreProvider(p string) *commoncontractv1.SecretStoreProvider {
+	switch p {
+	case "SECRET_STORE_PROVIDER_AWS", "aws":
+		return &commoncontractv1.SecretStoreProvider{
+			SecretStoreProvider: commoncontractv1.SecretStoreProvider_SECRET_STORE_PROVIDER_AWS,
+		}
+	case "SECRET_STORE_PROVIDER_VAULT", "vault":
+		return &commoncontractv1.SecretStoreProvider{
+			SecretStoreProvider: commoncontractv1.SecretStoreProvider_SECRET_STORE_PROVIDER_VAULT,
+		}
+	case "SECRET_STORE_PROVIDER_GCP", "gcp":
+		return &commoncontractv1.SecretStoreProvider{
+			SecretStoreProvider: commoncontractv1.SecretStoreProvider_SECRET_STORE_PROVIDER_GCP,
+		}
+	case "SECRET_STORE_PROVIDER_AZURE", "azure":
+		return &commoncontractv1.SecretStoreProvider{
+			SecretStoreProvider: commoncontractv1.SecretStoreProvider_SECRET_STORE_PROVIDER_AZURE,
+		}
+	default:
+		return &commoncontractv1.SecretStoreProvider{
+			SecretStoreProvider: commoncontractv1.SecretStoreProvider_SECRET_STORE_PROVIDER_UNSPECIFIED,
 		}
 	}
 }

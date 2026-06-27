@@ -39,15 +39,14 @@ import (
 // -----------------------------------------------------------------------------
 
 // ResolvedEnvironment pairs the original Kubernetes Environment object with
-// its fully decoded and validated spec. Spec is nil when the CR is nil.
+// its fully decoded and validated spec.
 type ResolvedEnvironment struct {
 	Environment *environmentv1alpha1.Environment
 	Spec        *ResolvedEnvironmentSpec
 }
 
 // ResolvedEnvironmentSpec is the decoded Environment spec.
-// All CR references (Build, Deployment, Route, Package, ServiceUnits,
-// BuildTriggers) are stored as name strings — cross-CR lookups are the
+// All CR references are stored as name strings — cross-CR lookups are the
 // responsibility of the domain layer.
 type ResolvedEnvironmentSpec struct {
 	ApplicationName string
@@ -58,14 +57,24 @@ type ResolvedEnvironmentSpec struct {
 	Description     string
 
 	// Optional CR references — empty string means not declared.
-	Build      string
-	Deployment string
-	Route      string
-	Package    string
+	Build         string
+	GitRepository string
+	GitHubEvent   string
+	Deployment    string
+	Route         string
+	Package       string
 
 	// Slices are nil when not declared; empty slice is never returned.
-	BuildTriggers []string
-	ServiceUnits  []string
+	ServiceUnits []string
+
+	// Platform-level bindings.
+	Contract *ResolvedEnvironmentContract
+}
+
+// ResolvedEnvironmentContract holds platform-level bindings declared on the
+// Environment — currently the ESO secret store provider.
+type ResolvedEnvironmentContract struct {
+	SecretStoreProvider string
 }
 
 // -----------------------------------------------------------------------------
@@ -74,10 +83,6 @@ type ResolvedEnvironmentSpec struct {
 
 // ResolveEnvironment decodes and validates the raw JSON contract from the
 // Environment CR spec into a ResolvedEnvironment.
-//
-// A nil CR is accepted and returns a zero ResolvedEnvironment — callers that
-// need a non-nil CR should validate before calling. A missing or malformed
-// contract always returns an error.
 func ResolveEnvironment(environment *environmentv1alpha1.Environment) (*ResolvedEnvironment, error) {
 	if environment == nil {
 		return &ResolvedEnvironment{}, nil
@@ -141,20 +146,27 @@ func ResolveEnvironment(environment *environmentv1alpha1.Environment) (*Resolved
 	}
 
 	// ------------------------------------------------
-	// Optional CR reference list: buildTriggers.
+	// Optional CR reference: gitRepository.
+	// The GitRepository CR owns branch, owner, and clone config.
 	// ------------------------------------------------
-	if list, ok := raw["buildTriggers"].([]any); ok {
-		for i, item := range list {
-			m, ok := item.(map[string]any)
-			if !ok {
-				return nil, fmt.Errorf("buildTriggers[%d] must be an object", i)
-			}
-			n, err := mustString(m, "name")
-			if err != nil {
-				return nil, fmt.Errorf("buildTriggers[%d].name: %w", i, err)
-			}
-			spec.BuildTriggers = append(spec.BuildTriggers, n)
+	if v, ok := raw["gitRepository"].(map[string]any); ok {
+		n, err := mustString(v, "name")
+		if err != nil {
+			return nil, fmt.Errorf("gitRepository.name: %w", err)
 		}
+		spec.GitRepository = n
+	}
+
+	// ------------------------------------------------
+	// Optional CR reference: gitHubEvent.
+	// The GitRepository CR owns branch, owner, and clone config.
+	// ------------------------------------------------
+	if v, ok := raw["gitHubEvent"].(map[string]any); ok {
+		n, err := mustString(v, "name")
+		if err != nil {
+			return nil, fmt.Errorf("gitHubEvent.name: %w", err)
+		}
+		spec.GitHubEvent = n
 	}
 
 	// ------------------------------------------------
@@ -193,12 +205,40 @@ func ResolveEnvironment(environment *environmentv1alpha1.Environment) (*Resolved
 		spec.Route = n
 	}
 
+	if v, ok := raw["domain"].(map[string]any); ok {
+		n, err := mustString(v, "name")
+		if err != nil {
+			return nil, fmt.Errorf("domain.name: %w", err)
+		}
+		spec.Route = n
+	}
+
 	if v, ok := raw["package"].(map[string]any); ok {
 		n, err := mustString(v, "name")
 		if err != nil {
 			return nil, fmt.Errorf("package.name: %w", err)
 		}
 		spec.Package = n
+	}
+
+	// ------------------------------------------------
+	// Optional platform contract: secretStore provider.
+	// ------------------------------------------------
+	// ------------------------------------------------
+	// Platform contract: secretStore is required when contract is declared.
+	// ------------------------------------------------
+	if contractRaw, ok := raw["contract"].(map[string]any); ok {
+		ssRaw, ok := contractRaw["secretStore"].(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("contract.secretStore is required")
+		}
+		provider, err := mustString(ssRaw, "provider")
+		if err != nil {
+			return nil, fmt.Errorf("contract.secretStore.provider: %w", err)
+		}
+		spec.Contract = &ResolvedEnvironmentContract{
+			SecretStoreProvider: provider,
+		}
 	}
 
 	return &ResolvedEnvironment{
@@ -211,8 +251,6 @@ func ResolveEnvironment(environment *environmentv1alpha1.Environment) (*Resolved
 // Extraction helpers
 // -----------------------------------------------------------------------------
 
-// mustString extracts a non-empty string from m[key].
-// Returns an error — resolution must never panic and crash the controller.
 func mustString(m map[string]any, key string) (string, error) {
 	v, ok := m[key]
 	if !ok {
