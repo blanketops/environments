@@ -26,7 +26,7 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	sourcesv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/sources/v1alpha1"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/gitrepository/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/apis/gitrepository/domain"
 )
 
 //

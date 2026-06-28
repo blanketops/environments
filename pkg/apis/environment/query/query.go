@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	environmentsv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
-	environmentapi "github.com/ntlaletsi70/blanketops-environments/pkg/environment/api"
+	environmentapi "github.com/ntlaletsi70/blanketops-environments/pkg/apis/environment/api"
 	environmentresolution "github.com/ntlaletsi70/blanketops-environments/resolution/environment"
 )
 
