@@ -5,6 +5,12 @@
 # Vendor is restored from the GHCR snapshot — no network fetches at scan time.
 # Fires on push to main, pull requests, and weekly on Monday.
 #
+# vendor restore:
+#   FROM scratch images have no default CMD — docker create requires a command
+#   even though it is never executed. /nonexistent is used as the placeholder.
+#   docker export | tar extracts vendor/ directly — no path nesting issues.
+#   Three-tier fallback: tagged snapshot → latest → inline go mod vendor.
+#
 # Secrets required:
 #   GH_PAT — GHCR pull + private module git config
 # =============================================================================
@@ -62,32 +68,33 @@ jobs:
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "Vendor tag: ${TAG}"
 
-      # Restore vendor from snapshot — govulncheck runs with -mod=vendor
-      # so no private module network access is needed at scan time.
+      # Three-tier fallback:
+      #   1. content-addressed tag (exact go.sum match)
+      #   2. latest (most recent snapshot, may be slightly stale)
+      #   3. inline go mod vendor (slow but always works)
       - name: Restore vendor from snapshot
         run: |
           IMAGE_TAG="${{ env.VENDOR_IMAGE }}:${{ steps.tag.outputs.tag }}"
           IMAGE_LATEST="${{ env.VENDOR_IMAGE }}:latest"
+          rm -rf ./vendor
 
           if docker pull "${IMAGE_TAG}" 2>/dev/null; then
             echo "Restoring vendor from tagged snapshot: ${IMAGE_TAG}"
-            CONTAINER=$(docker create "${IMAGE_TAG}")
+            CONTAINER=$(docker create "${IMAGE_TAG}" /nonexistent)
+            docker export "${CONTAINER}" | tar -xf - vendor/
+            docker rm "${CONTAINER}"
           elif docker pull "${IMAGE_LATEST}" 2>/dev/null; then
             echo "Tagged snapshot not found — restoring from latest: ${IMAGE_LATEST}"
-            CONTAINER=$(docker create "${IMAGE_LATEST}")
+            CONTAINER=$(docker create "${IMAGE_LATEST}" /nonexistent)
+            docker export "${CONTAINER}" | tar -xf - vendor/
+            docker rm "${CONTAINER}"
           else
             echo "No snapshot available — building vendor inline"
             go mod vendor
-            echo "vendor/ built inline"
-            echo "VENDOR_BUILT_INLINE=true" >> "$GITHUB_ENV"
-          fi
-
-          if [[ -z "${VENDOR_BUILT_INLINE}" ]]; then
-            docker cp "${CONTAINER}:/vendor" ./vendor
-            docker rm "${CONTAINER}"
           fi
 
           echo "vendor/ ready — $(find vendor -mindepth 1 -maxdepth 1 -type d | wc -l) packages"
+          echo "modules.txt present: $(test -f vendor/modules.txt && echo yes || echo NO)"
 
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest

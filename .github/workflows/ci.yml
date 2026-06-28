@@ -11,6 +11,11 @@
 #   Extracted from go.mod at runtime — never hardcoded in this file.
 #   Passed as GO_VERSION build-arg to vendor-snapshot/Dockerfile.
 #
+# vendor restore:
+#   FROM scratch images have no default CMD — docker create requires a command
+#   even though it is never executed. /nonexistent is used as the placeholder.
+#   docker export | tar extracts vendor/ directly — no path nesting issues.
+#
 # Secrets required:
 #   GH_PAT — GHCR push/pull + private module access
 # =============================================================================
@@ -33,11 +38,11 @@ env:
 
 jobs:
 
-  # ─────────────────────────────────────────────────────────────────────────────
+  # ───────────────────────────────────────────────────────────────────────────
   # Job 1: Vendor Snapshot
   # Builds and pushes the vendor image only when go.sum has changed.
   # All subsequent jobs restore vendor/ from this image — zero network at build.
-  # ─────────────────────────────────────────────────────────────────────────────
+  # ───────────────────────────────────────────────────────────────────────────
   vendor-snapshot:
     name: Vendor Snapshot
     runs-on: ubuntu-latest
@@ -91,7 +96,7 @@ jobs:
         run: |
           git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
 
-      # GO_VERSION build-arg keeps the Dockerfile in sync with go.mod —
+      # GO_VERSION build-arg keeps the Dockerfile in sync with go.mod.
       # vendor-snapshot/Dockerfile must use: ARG GO_VERSION / FROM golang:${GO_VERSION}-alpine
       - name: Build and push vendor snapshot
         if: steps.check.outputs.hit == 'false'
@@ -108,11 +113,11 @@ jobs:
           secrets: |
             GH_PAT=${{ secrets.GH_PAT }}
 
-  # ─────────────────────────────────────────────────────────────────────────────
+  # ───────────────────────────────────────────────────────────────────────────
   # Job 2: Validate
   # Restores vendor/ from the snapshot image then runs the full pipeline.
-  # go mod tidy and go mod vendor are NOT run here — the snapshot is authoritative.
-  # ─────────────────────────────────────────────────────────────────────────────
+  # go mod tidy and go mod vendor are NOT run here — snapshot is authoritative.
+  # ───────────────────────────────────────────────────────────────────────────
   validate:
     name: Lint, Vet, Test
     runs-on: ubuntu-latest
@@ -124,7 +129,7 @@ jobs:
           token: ${{ secrets.GH_PAT }}
           fetch-depth: 0
 
-      # Go version comes from go.mod — consistent with vendor snapshot build.
+      # Go version from go.mod — consistent with vendor snapshot build.
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -145,15 +150,15 @@ jobs:
           username: ntlaletsi70
           password: ${{ secrets.GH_PAT }}
 
-      # vendor-snapshot image is built FROM scratch — no shell, no entrypoint.
-      # docker create without a command works fine; docker cp does not need a
-      # running container, just a created one.
+      # FROM scratch has no default CMD — docker create requires a placeholder
+      # command even though it is never executed (/nonexistent is fine).
+      # docker export | tar extracts vendor/ with no path nesting issues.
       - name: Restore vendor from snapshot
         run: |
           IMAGE="${{ env.VENDOR_IMAGE }}:${{ needs.vendor-snapshot.outputs.vendor-tag }}"
           echo "Restoring vendor from ${IMAGE}"
           docker pull "${IMAGE}"
-          CONTAINER=$(docker create "${IMAGE}")
+          CONTAINER=$(docker create "${IMAGE}" /nonexistent)
           rm -rf ./vendor
           docker export "${CONTAINER}" | tar -xf - vendor/
           docker rm "${CONTAINER}"
