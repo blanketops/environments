@@ -30,9 +30,10 @@ TLS:
 	When Route.TLSEnabled is true, the DomainMapping is created with
 	spec.tls.secretName pointing to the TLS Secret that the Domain provider
 	(pkg/domain/api/knative.go) provisions via cert-manager. The secret name
-	follows the blanketops-tls-{sanitized-host} convention shared between both
-	providers. Knative serving will wait for the Secret to exist — no ordering
-	dependency between Route and Domain reconciliation is required.
+	follows the blanketops-tls-{sanitized-host} convention defined in common.go
+	and shared between all providers. Knative serving will wait for the Secret
+	to exist — no ordering dependency between Route and Domain reconciliation
+	is required.
 
 Disabled routes:
 
@@ -41,10 +42,11 @@ Disabled routes:
 	(NotFound) is not treated as an error — the disabled state is satisfied.
 
 See also:
-  - pkg/routes/api/provider.go         — Provider interface
-  - pkg/routes/domain/model.go         — Route.ServiceRef design note
-  - pkg/domain/api/knative.go          — provisions the TLS Secret this file references
-  - pkg/routes/application/backend_selector.go — wires KnativeProvider for RuntimeKnativeService
+  - pkg/route/api/provider.go               — Provider interface
+  - pkg/route/api/common.go                 — certSecretName / sanitizeHost
+  - pkg/route/api/ingress.go                — Kubernetes Ingress provider
+  - pkg/domain/api/knative.go               — provisions the TLS Secret this file references
+  - pkg/route/application/backend_selector.go — wires KnativeProvider for RuntimeKnativeService
 */
 package api
 
@@ -168,23 +170,4 @@ func (p *KnativeProvider) ensureDisabled(ctx context.Context, route domain.Route
 		Phase:   domain.PhasePending,
 		Message: "route disabled; DomainMapping removed",
 	}, nil
-}
-
-// certSecretName returns the TLS Secret name used by both this provider
-// (in DomainMapping.Spec.TLS.SecretName) and the Domain provider
-// (as the cert-manager Certificate secretName). Shared convention.
-func certSecretName(host string) string {
-	return fmt.Sprintf("blanketops-tls-%s", sanitizeHost(host))
-}
-
-func sanitizeHost(host string) string {
-	result := make([]byte, len(host))
-	for i := 0; i < len(host); i++ {
-		if host[i] == '.' {
-			result[i] = '-'
-		} else {
-			result[i] = host[i]
-		}
-	}
-	return string(result)
 }

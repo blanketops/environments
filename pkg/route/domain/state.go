@@ -15,12 +15,12 @@ limitations under the License.
 This file owns the Phase type and its constants for the Route domain.
 
 Phase mirrors blanketops.common.v1.RoutePhase in the proto contract. The
-status writer (pkg/routes/application/status.go) maps Phase values to the
+status writer (pkg/route/application/status.go) maps Phase values to the
 conditions on the Route CR status subresource.
 
 See also:
-  - pkg/routes/domain/result.go — RouteResult carries Phase as its outcome
-  - pkg/routes/application/status.go — writes Phase to the CR status
+  - pkg/route/domain/result.go   — RouteResult carries Phase as its outcome
+  - pkg/route/application/status.go — writes Phase to the CR status
 */
 package domain
 
@@ -30,11 +30,12 @@ type Phase string
 
 const (
 	// PhasePending indicates the controller has accepted the Route CR but
-	// the DomainMapping is not yet ready (backend not serving, TLS pending).
+	// the runtime resource is not yet ready (backend not serving, TLS pending).
 	PhasePending Phase = "Pending"
 
-	// PhaseReady indicates the DomainMapping is active and the host is serving
-	// traffic. TLS is provisioned when TLSEnabled is true.
+	// PhaseReady indicates the runtime resource is active and the host is
+	// serving traffic. TLS is provisioned when TLSEnabled is true.
+	// Applies to DomainMapping (Knative), Ingress (K8s), and HTTPRoute (Gateway).
 	PhaseReady Phase = "Ready"
 
 	// PhaseDegraded indicates the route is serving but unhealthy — for example,

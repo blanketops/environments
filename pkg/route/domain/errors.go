@@ -19,8 +19,9 @@ not met. The application service wraps them with context before returning to
 the controller. Callers may use errors.Is for structured matching.
 
 See also:
-  - pkg/routes/api/knative.go — primary consumer of these errors
-  - pkg/routes/application/service.go — wraps and surfaces them to the controller
+  - pkg/route/api/knative.go   — primary consumer of ErrServiceRefEmpty
+  - pkg/route/api/ingress.go   — primary consumer of ErrServiceRefEmpty
+  - pkg/route/application/service.go — surfaces errors as CR conditions
 */
 package domain
 
@@ -40,7 +41,8 @@ var (
 	// by the backend selector.
 	ErrRuntimeUnknown = errors.New("unknown runtime")
 
-	// ErrServiceRefEmpty is returned by the Knative provider when ServiceRef
-	// is absent. Without a service reference the DomainMapping cannot be created.
-	ErrServiceRefEmpty = errors.New("service reference is required for knative-service runtime")
+	// ErrServiceRefEmpty is returned by any provider when ServiceRef is absent.
+	// Without a service reference the runtime resource (DomainMapping or Ingress)
+	// cannot be created. Indicates a resolver or mapper bug — not a user error.
+	ErrServiceRefEmpty = errors.New("service reference is required")
 )

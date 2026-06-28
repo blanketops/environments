@@ -12,18 +12,19 @@ limitations under the License.
 */
 
 /*
-This file owns the Mapper — the translation layer between the resolved Route
+This file owns Mapper — the translation layer between the resolved Route
 contract and the domain Route aggregate consumed by the provider layer.
 
 The Mapper enforces the resolution contract: it panics on fields the resolver
-guarantees to be present (Host, Runtime) so that resolver bugs surface loudly
-rather than silently producing an empty DomainMapping.
+guarantees to be present (Host, Runtime, ServiceUnitRef) so that resolver bugs
+surface loudly rather than silently producing an empty DomainMapping or Ingress.
 
-ServiceRef is not a resolver invariant — it is read from the
-environments.blanketops.dev/service-unit label that the controller stamps on
-the Route CR, and is passed through verbatim. The Knative provider guards an
-empty ServiceRef with ErrServiceRefEmpty at Ensure time; the Mapper never
-invents defaults or modifies intent.
+ServiceRef is derived directly from spec.ServiceUnitRef.Name — the resolver
+validates this as a required field. The controller convention enforces:
+
+	ksvc name == ServiceUnit name
+
+No label lookup, no API server read, no status lookup required.
 */
 package application
 
@@ -33,10 +34,6 @@ import (
 	"github.com/ntlaletsi70/blanketops-environments/pkg/route/domain"
 	routeResolution "github.com/ntlaletsi70/blanketops-environments/resolution/route"
 )
-
-// labelServiceUnit is the Route CR label carrying the Knative Service name
-// this route exposes. Stamped by the controller during Environment deployment.
-const labelServiceUnit = "environments.blanketops.dev/service-unit"
 
 // Mapper translates a ResolvedRoute into a domain.Route.
 type Mapper struct{}
@@ -49,13 +46,16 @@ func NewMapper() *Mapper {
 // MapResolvedToDomain converts a fully resolved Route into a domain Route
 // for consumption by the provider layer.
 //
-// Panics on resolver invariant violations (empty Host or nil Runtime) — these
-// indicate a resolver bug, not a user error, and must not be silently
-// swallowed. All other fields are mapped verbatim.
+// Panics on resolver invariant violations (empty Host, nil Runtime, nil
+// ServiceUnitRef) — these indicate a resolver bug, not a user error, and
+// must not be silently swallowed. All other fields are mapped verbatim.
 //
-// ServiceRef is read from the environments.blanketops.dev/service-unit label.
-// It may be empty here — the Knative provider enforces its presence via
-// ErrServiceRefEmpty when Runtime is RuntimeKnativeService.
+// ServiceRef is derived from spec.ServiceUnitRef.Name by convention:
+//
+//	ksvc name == ServiceUnit name
+//
+// The provider layer guards an empty ServiceRef with ErrServiceRefEmpty
+// at Ensure time as a final safety net.
 func (Mapper) MapResolvedToDomain(rr *routeResolution.ResolvedRoute) domain.Route {
 	spec := rr.Spec
 
@@ -66,11 +66,8 @@ func (Mapper) MapResolvedToDomain(rr *routeResolution.ResolvedRoute) domain.Rout
 	if spec.Runtime == nil {
 		panic(fmt.Sprintf("resolved route %q has nil Runtime (resolver bug)", rr.Route.Name))
 	}
-
-	// ServiceRef is optional at map time — stamped as a label by the controller.
-	var serviceRef string
-	if rr.Route.Labels != nil {
-		serviceRef = rr.Route.Labels[labelServiceUnit]
+	if spec.ServiceUnitRef == nil || spec.ServiceUnitRef.Name == "" {
+		panic(fmt.Sprintf("resolved route %q has nil or empty ServiceUnitRef (resolver bug)", rr.Route.Name))
 	}
 
 	return domain.Route{
@@ -81,6 +78,8 @@ func (Mapper) MapResolvedToDomain(rr *routeResolution.ResolvedRoute) domain.Rout
 		Path:       spec.Path,
 		TLSEnabled: spec.TLSEnabled,
 		Runtime:    domain.Runtime(string(*spec.Runtime)),
-		ServiceRef: serviceRef,
+		// Convention: ksvc name == ServiceUnit name.
+		// Derived from the resolved ServiceUnitRef — no label, no API server read.
+		ServiceRef: spec.ServiceUnitRef.Name,
 	}
 }

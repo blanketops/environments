@@ -13,13 +13,18 @@ limitations under the License.
 
 /*
 This file owns BackendSelector — the routing layer that maps a domain.Route
-to the correct build provider (Knative, KubernetesIngress, or GatewayAPI).
+to the correct Provider implementation based on the Runtime field.
 
-Selection is driven by the Runtime field. Unlike the build selector — which
-falls back to Buildah for unrecognised strategy names — an unknown route
-runtime is a malformed CR, not a soft default. ErrRuntimeUnknown is returned
-so the controller surfaces it as a Failed condition rather than silently
-materialising the wrong backend.
+Unlike the build selector — which falls back to Buildah for unrecognised
+strategy names — an unknown route runtime is a malformed CR, not a soft
+default. ErrRuntimeUnknown is returned so the controller surfaces it as a
+Failed condition rather than silently materialising the wrong backend.
+
+Registered runtimes:
+
+	RuntimeKnativeService        → KnativeProvider  (Knative DomainMapping via Kourier)
+	RuntimeKubernetesContainer   → IngressProvider  (networking.k8s.io/v1 Ingress via nginx)
+	RuntimeGatewayAPI            → not yet registered — returns ErrRuntimeUnknown
 
 BackendSelector sits in the application layer — it is called by RouteService
 after resolution and before provider dispatch.
@@ -38,13 +43,17 @@ import (
 // construction time.
 type BackendSelector struct {
 	Knative api.Provider
+	Ingress api.Provider
 }
 
 // NewBackendSelector constructs a BackendSelector with the registered route
-// providers. v1 registers Knative only; KubernetesIngress and GatewayAPI are
-// added here as they land.
-func NewBackendSelector(knative api.Provider) *BackendSelector {
-	return &BackendSelector{Knative: knative}
+// providers. Knative and KubernetesIngress are registered at v1.
+// GatewayAPI is added here when it lands.
+func NewBackendSelector(knative api.Provider, ingress api.Provider) *BackendSelector {
+	return &BackendSelector{
+		Knative: knative,
+		Ingress: ingress,
+	}
 }
 
 // ForRoute returns the Provider that should materialize the given Route.
@@ -53,6 +62,9 @@ func (b *BackendSelector) ForRoute(route domain.Route) (api.Provider, error) {
 	switch route.Runtime {
 	case domain.RuntimeKnativeService:
 		return b.Knative, nil
+	case domain.RuntimeKubernetesContainer:
+		return b.Ingress, nil
+	// RuntimeGatewayAPI: not yet registered — fall through to ErrRuntimeUnknown.
 	default:
 		return nil, fmt.Errorf("%w: %s", domain.ErrRuntimeUnknown, route.Runtime)
 	}
