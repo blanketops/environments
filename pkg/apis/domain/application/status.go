@@ -21,10 +21,13 @@ set directly on the CR by the caller (DomainService) before Write is invoked.
 
 DomainMappingRef is never written here — it is owned by the Route controller.
 
+Uses RetryOnConflict + re-fetch on each attempt — concurrent writers may bump
+resourceVersion between the caller's initial fetch and this write.
+
 See also:
-  - pkg/domain/application/service.go — sets scalar fields and calls Write
-  - pkg/build/application/status.go   — canonical pattern this mirrors
-  - pkg/route/application/status.go   — same pattern for Route
+  - pkg/apis/domain/application/service.go  — sets scalar fields and calls Write
+  - pkg/apis/build/application/status.go    — canonical pattern this mirrors
+  - pkg/apis/route/application/status.go    — same pattern for Route
 */
 package application
 
@@ -33,6 +36,7 @@ import (
 
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	networksv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/networks/v1alpha1"
@@ -55,24 +59,36 @@ func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter {
 	}
 }
 
-// Write merges the provided conditions into the Domain CR's status and persists.
-// Scalar fields (Phase, DomainReady, TLSReady, CertificateRef) must be set on
-// the CR by the caller before Write is invoked. This method only merges and writes.
+// Write merges the provided conditions into the Domain CR status and persists.
+// Uses RetryOnConflict + re-fetch on each attempt — concurrent writers may bump
+// resourceVersion between the caller's fetch and this write. Re-fetching on
+// every retry guarantees we always write to the latest version.
+// Scalar fields must be set on the CR by the caller before Write is invoked —
+// they are re-applied from the caller's version on each retry attempt since
+// DomainStatus.Contract is opaque and conditions are the only typed field.
 func (w *StatusWriter) Write(ctx context.Context, cr *networksv1alpha1.Domain, conditions ...metav1.Condition) error {
 	log := w.Log.WithValues("domain", cr.Name, "namespace", cr.Namespace)
 
-	for _, cond := range conditions {
-		cr.Status.Conditions = mergeCondition(cr.Status.Conditions, cond)
-		log.Info("condition merged", "type", cond.Type, "status", cond.Status, "reason", cond.Reason)
-	}
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latest := &networksv1alpha1.Domain{}
+		if err := w.Client.Get(ctx, client.ObjectKeyFromObject(cr), latest); err != nil {
+			log.Error(err, "failed to re-fetch domain before status write")
+			return err
+		}
 
-	if err := w.Client.Status().Update(ctx, cr); err != nil {
-		log.Error(err, "failed to persist domain status")
-		return err
-	}
+		for _, cond := range conditions {
+			latest.Status.Conditions = mergeCondition(latest.Status.Conditions, cond)
+			log.Info("condition merged", "type", cond.Type, "status", cond.Status, "reason", cond.Reason)
+		}
 
-	log.Info("domain status persisted")
-	return nil
+		if err := w.Client.Status().Update(ctx, latest); err != nil {
+			log.Error(err, "failed to persist domain status")
+			return err
+		}
+
+		log.Info("domain status persisted")
+		return nil
+	})
 }
 
 // mergeCondition upserts newCond into conds by Type.
