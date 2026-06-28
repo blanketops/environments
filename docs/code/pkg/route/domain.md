@@ -12,21 +12,22 @@ These errors are returned by provider implementations when pre\-conditions are n
 
 See also:
 
-- pkg/routes/api/knative.go — primary consumer of these errors
-- pkg/routes/application/service.go — wraps and surfaces them to the controller
+- pkg/route/api/knative.go — primary consumer of ErrServiceRefEmpty
+- pkg/route/api/ingress.go — primary consumer of ErrServiceRefEmpty
+- pkg/route/application/service.go — surfaces errors as CR conditions
 
 This file owns the Route domain aggregate and the Runtime typed constant set.
 
 Route is the authoritative in\-memory representation of a Route CR after resolution. All downstream application and provider logic operates exclusively on this type — no raw strings, no re\-reads of the Kubernetes CR.
 
-ServiceRef carries the name of the Knative Service this route exposes. It is not part of the spec.contract \(the contract owns the hostname/path/runtime declaration\) — instead the mapper populates it from the environments.blanketops.dev/service\-unit label that the controller stamps on the Route CR when it is created as part of an Environment deployment. The Knative provider uses ServiceRef to bind the DomainMapping to the correct backend.
+ServiceRef carries the name of the K8s Service or Knative Service this route exposes. It is derived by the Mapper directly from spec.ServiceUnitRef.Name resolved from the contract — no label lookup, no API server read, no status lookup. Platform convention enforces: ksvc name == ServiceUnit name.
 
 See also:
 
-- pkg/routes/domain/state.go — Phase type and constants
-- pkg/routes/domain/result.go — RouteResult returned by the provider
-- pkg/routes/application/mapper.go — constructs Route from ResolvedRouteSpec
-- pkg/routes/api/provider.go — Provider interface consuming Route
+- pkg/route/domain/state.go — Phase type and constants
+- pkg/route/domain/result.go — RouteResult returned by the provider
+- pkg/route/application/mapper.go — constructs Route from ResolvedRouteSpec
+- pkg/route/api/provider.go — Provider interface consuming Route
 
 This file owns RouteResult — the outcome value returned by every Provider.Ensure call. The application service \(pkg/routes/application/service.go\) receives this and passes it to the status writer to update the Route CR.
 
@@ -40,12 +41,12 @@ See also:
 
 This file owns the Phase type and its constants for the Route domain.
 
-Phase mirrors blanketops.common.v1.RoutePhase in the proto contract. The status writer \(pkg/routes/application/status.go\) maps Phase values to the conditions on the Route CR status subresource.
+Phase mirrors blanketops.common.v1.RoutePhase in the proto contract. The status writer \(pkg/route/application/status.go\) maps Phase values to the conditions on the Route CR status subresource.
 
 See also:
 
-- pkg/routes/domain/result.go — RouteResult carries Phase as its outcome
-- pkg/routes/application/status.go — writes Phase to the CR status
+- pkg/route/domain/result.go — RouteResult carries Phase as its outcome
+- pkg/route/application/status.go — writes Phase to the CR status
 
 ## Index
 
@@ -76,9 +77,10 @@ var (
     // by the backend selector.
     ErrRuntimeUnknown = errors.New("unknown runtime")
 
-    // ErrServiceRefEmpty is returned by the Knative provider when ServiceRef
-    // is absent. Without a service reference the DomainMapping cannot be created.
-    ErrServiceRefEmpty = errors.New("service reference is required for knative-service runtime")
+    // ErrServiceRefEmpty is returned by any provider when ServiceRef is absent.
+    // Without a service reference the runtime resource (DomainMapping or Ingress)
+    // cannot be created. Indicates a resolver or mapper bug — not a user error.
+    ErrServiceRefEmpty = errors.New("service reference is required")
 )
 ```
 
@@ -96,11 +98,12 @@ type Phase string
 ```go
 const (
     // PhasePending indicates the controller has accepted the Route CR but
-    // the DomainMapping is not yet ready (backend not serving, TLS pending).
+    // the runtime resource is not yet ready (backend not serving, TLS pending).
     PhasePending Phase = "Pending"
 
-    // PhaseReady indicates the DomainMapping is active and the host is serving
-    // traffic. TLS is provisioned when TLSEnabled is true.
+    // PhaseReady indicates the runtime resource is active and the host is
+    // serving traffic. TLS is provisioned when TLSEnabled is true.
+    // Applies to DomainMapping (Knative), Ingress (K8s), and HTTPRoute (Gateway).
     PhaseReady Phase = "Ready"
 
     // PhaseDegraded indicates the route is serving but unhealthy — for example,
@@ -116,21 +119,21 @@ const (
 <a name="Route"></a>
 ## type Route
 
-Route is the authoritative domain aggregate for the Route CR. Constructed once by the mapper; consumed by the application service and Knative provider. Never mutated after construction.
+Route is the authoritative domain aggregate for the Route CR. Constructed once by the Mapper; consumed by the application service and provider implementations. Never mutated after construction.
 
 ```go
 type Route struct {
     // Name is the Route CR name.
     Name string
 
-    // Namespace is the Route CR namespace.
+    // Namespace is the Route CR namespace (tenant/environment namespace).
     Namespace string
 
     // Host is the FQDN this route serves (e.g. api.dev.blanketops.online).
     Host string
 
     // Enabled controls whether the route is active.
-    // When false the provider removes the DomainMapping but retains the CR.
+    // When false the provider removes the runtime resource but retains the CR.
     Enabled bool
 
     // Path is the HTTP path prefix to match (e.g. /, /v1, /api).
@@ -140,12 +143,14 @@ type Route struct {
     TLSEnabled bool
 
     // Runtime is the serving backend that materializes this route.
+    // BackendSelector branches on this to select the correct Provider.
     Runtime Runtime
 
-    // ServiceRef is the name of the Knative Service (or workload) this route
-    // exposes. Populated by the mapper from the
-    // environments.blanketops.dev/service-unit label on the Route CR.
-    // Required when Runtime is RuntimeKnativeService.
+    // ServiceRef is the name of the K8s Service or Knative Service backing
+    // this route. Derived by Mapper from spec.ServiceUnitRef.Name.
+    // Convention: ksvc name == ServiceUnit name — no label, no lookup.
+    // Both KnativeProvider and IngressProvider guard emptiness with
+    // ErrServiceRefEmpty at Ensure time as a final safety net.
     ServiceRef string
 }
 ```
@@ -194,14 +199,16 @@ type Runtime string
 const (
     // RuntimeKnativeService materializes the route as a Knative DomainMapping
     // served via Kourier. The DomainMapping binds the host to a Knative Service.
+    // Implemented by KnativeProvider.
     RuntimeKnativeService Runtime = "knative-service"
 
     // RuntimeKubernetesContainer materializes the route as a standard Kubernetes
-    // Ingress resource. Future — not yet implemented by any provider.
+    // Ingress resource via nginx. For non-Knative workloads.
+    // Implemented by IngressProvider.
     RuntimeKubernetesContainer Runtime = "kubernetes-container"
 
     // RuntimeGatewayAPI materializes the route as a Gateway API HTTPRoute.
-    // Future — not yet implemented by any provider.
+    // Future — not yet implemented. BackendSelector returns ErrRuntimeUnknown.
     RuntimeGatewayAPI Runtime = "gateway-api"
 )
 ```
