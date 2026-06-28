@@ -153,10 +153,12 @@ jobs:
           IMAGE="${{ env.VENDOR_IMAGE }}:${{ needs.vendor-snapshot.outputs.vendor-tag }}"
           echo "Restoring vendor from ${IMAGE}"
           docker pull "${IMAGE}"
-          CONTAINER=$(docker create "${IMAGE}" sh)
-          docker cp "${CONTAINER}:/vendor" ./vendor
+          CONTAINER=$(docker create "${IMAGE}")
+          rm -rf ./vendor
+          docker export "${CONTAINER}" | tar -xf - vendor/
           docker rm "${CONTAINER}"
           echo "vendor/ restored — $(find vendor -mindepth 1 -maxdepth 1 -type d | wc -l) packages"
+          echo "modules.txt present: $(test -f vendor/modules.txt && echo yes || echo NO)"
 
       - name: Build
         run: go build -mod=vendor ./...
