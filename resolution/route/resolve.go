@@ -18,10 +18,17 @@ The Route CR stores its spec as a raw JSON contract (spec.contract).
 ResolveRoute decodes this into a fully typed ResolvedRoute — the authoritative
 runtime representation consumed by all downstream domain and application logic.
 
-Route declares the intent to expose a workload at a host and path. The
+Route declares the intent to expose a ServiceUnit at a host and path. The
 controller materializes the route through the selected runtime (Kubernetes
 Ingress, Knative DomainMapping, or Gateway API HTTPRoute). Owned by an
 Environment CR via ownerReference (cascade delete).
+
+Workload resolution:
+
+	Route.spec.serviceUnitRef names the ServiceUnit in the same namespace.
+	The controller derives the ksvc/K8s service name by convention:
+	  ksvc name == ServiceUnit name
+	No ServiceUnit status lookup is required during resolution.
 
 All failures surface as errors. Resolution never panics.
 */
@@ -57,7 +64,7 @@ const (
 )
 
 // -----------------------------------------------------------------------------
-// Runtime types (AUTHORITATIVE)
+// Resolved types (AUTHORITATIVE)
 // -----------------------------------------------------------------------------
 
 // ResolvedRoute pairs the original Kubernetes Route object with its fully
@@ -90,6 +97,20 @@ type ResolvedRouteSpec struct {
 	// Runtime is the serving backend responsible for materializing this route.
 	// Mandatory — backend selection in pkg/routes/application/ branches on this.
 	Runtime *Runtime
+
+	// ServiceUnitRef identifies the ServiceUnit this Route exposes.
+	// Mandatory — a Route without a workload binding is invalid.
+	// The controller derives the ksvc/K8s service name by convention:
+	//   ksvc name == ServiceUnitRef.Name
+	// No ServiceUnit status lookup is required.
+	ServiceUnitRef *ResolvedServiceUnitRef
+}
+
+// ResolvedServiceUnitRef is the decoded reference to a ServiceUnit CR.
+// Mirrors proto ServiceUnitRef — name only; namespace is always this Route's namespace.
+type ResolvedServiceUnitRef struct {
+	// Name is the ServiceUnit CR name in the same namespace as this Route.
+	Name string
 }
 
 // -----------------------------------------------------------------------------
@@ -112,9 +133,9 @@ func ResolveRoute(route *networksv1alpha1.Route) (*ResolvedRoute, error) {
 		return nil, fmt.Errorf("failed to decode raw contract: %w", err)
 	}
 
-	// ------------------------------------------------
+	// --------------------------------------------------------
 	// Required fields.
-	// ------------------------------------------------
+	// --------------------------------------------------------
 
 	host, err := requireString(raw, "host")
 	if err != nil {
@@ -127,9 +148,15 @@ func ResolveRoute(route *networksv1alpha1.Route) (*ResolvedRoute, error) {
 	}
 	rt := Runtime(runtimeStr)
 
-	// ------------------------------------------------
+	// serviceUnitRef is required — Route without a workload binding is invalid.
+	serviceUnitRef, err := requireServiceUnitRef(raw)
+	if err != nil {
+		return nil, err
+	}
+
+	// --------------------------------------------------------
 	// Optional fields — platform defaults apply when absent.
-	// ------------------------------------------------
+	// --------------------------------------------------------
 
 	// enabled: absent or true means the route is active.
 	// Explicit false removes the materialized resource while retaining the CR.
@@ -153,11 +180,12 @@ func ResolveRoute(route *networksv1alpha1.Route) (*ResolvedRoute, error) {
 	return &ResolvedRoute{
 		Route: route,
 		Spec: &ResolvedRouteSpec{
-			Host:       host,
-			Enabled:    enabled,
-			Path:       path,
-			TLSEnabled: tlsEnabled,
-			Runtime:    &rt,
+			Host:           host,
+			Enabled:        enabled,
+			Path:           path,
+			TLSEnabled:     tlsEnabled,
+			Runtime:        &rt,
+			ServiceUnitRef: serviceUnitRef,
 		},
 	}, nil
 }
@@ -187,4 +215,23 @@ func optionalString(m map[string]any, key string) string {
 		}
 	}
 	return ""
+}
+
+// requireServiceUnitRef extracts and validates the serviceUnitRef nested object.
+// Expected contract shape: {"serviceUnitRef": {"name": "my-service-unit"}}
+// Returns an error if the field is absent, not an object, or name is empty.
+func requireServiceUnitRef(m map[string]any) (*ResolvedServiceUnitRef, error) {
+	v, ok := m["serviceUnitRef"]
+	if !ok {
+		return nil, fmt.Errorf("missing required field \"serviceUnitRef\"")
+	}
+	obj, ok := v.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("field \"serviceUnitRef\" must be an object")
+	}
+	name, ok := obj["name"].(string)
+	if !ok || name == "" {
+		return nil, fmt.Errorf("field \"serviceUnitRef.name\" must be a non-empty string")
+	}
+	return &ResolvedServiceUnitRef{Name: name}, nil
 }
