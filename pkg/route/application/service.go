@@ -25,13 +25,17 @@ resolution. It sequences four steps in order:
 
 RouteService does not own retry logic, predicate evaluation, or status
 persistence — those belong to the controller and writer layers respectively.
+
 Condition derivation lives here: the service knows what Ready/Pending/Failed
-mean; the StatusWriter is a dumb persister.
+mean for all registered runtimes. The Ready message is runtime-agnostic —
+providers return a ResolvedAddress and the service constructs the condition.
+The StatusWriter is a dumb persister.
 */
 package application
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -68,7 +72,7 @@ func (s *RouteService) Reconcile(ctx context.Context, resolved *routeResolution.
 	// as a Failed condition rather than returning bare.
 	provider, selErr := s.backend.ForRoute(route)
 	if selErr != nil {
-		conditions := s.routeConditions(domain.RouteResult{
+		conditions := s.routeConditions(route, domain.RouteResult{
 			Phase:   domain.PhaseFailed,
 			Message: selErr.Error(),
 		}, selErr)
@@ -76,13 +80,17 @@ func (s *RouteService) Reconcile(ctx context.Context, resolved *routeResolution.
 	}
 
 	result, ensureErr := provider.Ensure(ctx, resolved, route)
-	conditions := s.routeConditions(result, ensureErr)
+	conditions := s.routeConditions(route, result, ensureErr)
 	return s.status.Write(ctx, resolved.Route, conditions...)
 }
 
-// routeConditions derives a metav1.Condition slice from RouteResult + error.
-// This is application logic: it knows what Ready/Pending/Degraded/Failed mean.
-func (s *RouteService) routeConditions(result domain.RouteResult, runErr error) []metav1.Condition {
+// routeConditions derives a metav1.Condition slice from the domain Route,
+// RouteResult, and any provider error.
+//
+// Conditions are runtime-agnostic — the Ready message reports the resolved
+// address rather than naming a specific runtime resource (DomainMapping,
+// Ingress, etc). This keeps the condition stable across runtime migrations.
+func (s *RouteService) routeConditions(route domain.Route, result domain.RouteResult, runErr error) []metav1.Condition {
 	now := metav1.NewTime(time.Now())
 
 	switch {
@@ -99,7 +107,7 @@ func (s *RouteService) routeConditions(result domain.RouteResult, runErr error) 
 			Type:               "RouteReady",
 			Status:             metav1.ConditionTrue,
 			Reason:             "RouteReady",
-			Message:            "DomainMapping active; host serving traffic",
+			Message:            fmt.Sprintf("route active; serving traffic at %s", result.ResolvedAddress),
 			LastTransitionTime: now,
 		}}
 	case result.Phase == domain.PhaseDegraded:

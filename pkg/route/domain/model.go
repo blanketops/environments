@@ -18,36 +18,34 @@ Route is the authoritative in-memory representation of a Route CR after
 resolution. All downstream application and provider logic operates exclusively
 on this type — no raw strings, no re-reads of the Kubernetes CR.
 
-ServiceRef carries the name of the Knative Service this route exposes. It is
-not part of the spec.contract (the contract owns the hostname/path/runtime
-declaration) — instead the mapper populates it from the
-environments.blanketops.dev/service-unit label that the controller stamps on
-the Route CR when it is created as part of an Environment deployment. The Knative
-provider uses ServiceRef to bind the DomainMapping to the correct backend.
+ServiceRef carries the name of the K8s Service or Knative Service this route
+exposes. It is derived by the Mapper directly from spec.ServiceUnitRef.Name
+resolved from the contract — no label lookup, no API server read, no status
+lookup. Platform convention enforces: ksvc name == ServiceUnit name.
 
 See also:
-  - pkg/routes/domain/state.go    — Phase type and constants
-  - pkg/routes/domain/result.go   — RouteResult returned by the provider
-  - pkg/routes/application/mapper.go — constructs Route from ResolvedRouteSpec
-  - pkg/routes/api/provider.go    — Provider interface consuming Route
+  - pkg/route/domain/state.go    — Phase type and constants
+  - pkg/route/domain/result.go   — RouteResult returned by the provider
+  - pkg/route/application/mapper.go — constructs Route from ResolvedRouteSpec
+  - pkg/route/api/provider.go    — Provider interface consuming Route
 */
 package domain
 
 // Route is the authoritative domain aggregate for the Route CR.
-// Constructed once by the mapper; consumed by the application service and
-// Knative provider. Never mutated after construction.
+// Constructed once by the Mapper; consumed by the application service and
+// provider implementations. Never mutated after construction.
 type Route struct {
 	// Name is the Route CR name.
 	Name string
 
-	// Namespace is the Route CR namespace.
+	// Namespace is the Route CR namespace (tenant/environment namespace).
 	Namespace string
 
 	// Host is the FQDN this route serves (e.g. api.dev.blanketops.online).
 	Host string
 
 	// Enabled controls whether the route is active.
-	// When false the provider removes the DomainMapping but retains the CR.
+	// When false the provider removes the runtime resource but retains the CR.
 	Enabled bool
 
 	// Path is the HTTP path prefix to match (e.g. /, /v1, /api).
@@ -57,12 +55,14 @@ type Route struct {
 	TLSEnabled bool
 
 	// Runtime is the serving backend that materializes this route.
+	// BackendSelector branches on this to select the correct Provider.
 	Runtime Runtime
 
-	// ServiceRef is the name of the Knative Service (or workload) this route
-	// exposes. Populated by the mapper from the
-	// environments.blanketops.dev/service-unit label on the Route CR.
-	// Required when Runtime is RuntimeKnativeService.
+	// ServiceRef is the name of the K8s Service or Knative Service backing
+	// this route. Derived by Mapper from spec.ServiceUnitRef.Name.
+	// Convention: ksvc name == ServiceUnit name — no label, no lookup.
+	// Both KnativeProvider and IngressProvider guard emptiness with
+	// ErrServiceRefEmpty at Ensure time as a final safety net.
 	ServiceRef string
 }
 
@@ -73,13 +73,15 @@ type Runtime string
 const (
 	// RuntimeKnativeService materializes the route as a Knative DomainMapping
 	// served via Kourier. The DomainMapping binds the host to a Knative Service.
+	// Implemented by KnativeProvider.
 	RuntimeKnativeService Runtime = "knative-service"
 
 	// RuntimeKubernetesContainer materializes the route as a standard Kubernetes
-	// Ingress resource. Future — not yet implemented by any provider.
+	// Ingress resource via nginx. For non-Knative workloads.
+	// Implemented by IngressProvider.
 	RuntimeKubernetesContainer Runtime = "kubernetes-container"
 
 	// RuntimeGatewayAPI materializes the route as a Gateway API HTTPRoute.
-	// Future — not yet implemented by any provider.
+	// Future — not yet implemented. BackendSelector returns ErrRuntimeUnknown.
 	RuntimeGatewayAPI Runtime = "gateway-api"
 )

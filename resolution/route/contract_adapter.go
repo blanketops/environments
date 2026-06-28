@@ -39,6 +39,12 @@ Runtime wrapper:
 	Kourier is Knative's default network layer — both "knative-service" and
 	"knative" map to the same proto enum value.
 
+ServiceUnitRef:
+
+	RouteSpec.ServiceUnitRef is *networkscontractv1alpha1.ServiceUnitRef.
+	The local ResolvedServiceUnitRef.Name is projected directly.
+	Nil ref produces a nil proto field — callers treat absence as invalid.
+
 See also:
   - resolution/route/resolve.go  — resolution entry point and Runtime type
   - resolution/route/adapter.go  — interface wrapper
@@ -63,11 +69,12 @@ func ToRouteContract(r *ResolvedRoute) (*networkscontractv1alpha1.RouteSpec, err
 	}
 
 	return &networkscontractv1alpha1.RouteSpec{
-		Host:       r.Spec.Host,
-		Enabled:    r.Spec.Enabled,
-		Path:       r.Spec.Path,
-		TlsEnabled: r.Spec.TLSEnabled,
-		Runtime:    mapRuntime(r.Spec.Runtime),
+		Host:           r.Spec.Host,
+		Enabled:        r.Spec.Enabled,
+		Path:           r.Spec.Path,
+		TlsEnabled:     r.Spec.TLSEnabled,
+		Runtime:        mapRuntime(r.Spec.Runtime),
+		ServiceUnitRef: mapServiceUnitRef(r.Spec.ServiceUnitRef),
 	}, nil
 }
 
@@ -97,5 +104,17 @@ func mapRuntime(rt *Runtime) *commonv1.RouteRuntime {
 		return &commonv1.RouteRuntime{
 			Runtime: commonv1.RouteRuntime_ROUTE_RUNTIME_UNSPECIFIED,
 		}
+	}
+}
+
+// mapServiceUnitRef projects the local ResolvedServiceUnitRef to the proto
+// ServiceUnitRef wrapper. Returns nil for a nil input — the proto field is
+// optional at the wire level but treated as required by the controller.
+func mapServiceUnitRef(ref *ResolvedServiceUnitRef) *networkscontractv1alpha1.ServiceUnitRef {
+	if ref == nil {
+		return nil
+	}
+	return &networkscontractv1alpha1.ServiceUnitRef{
+		Name: ref.Name,
 	}
 }
