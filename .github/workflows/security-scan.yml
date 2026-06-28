@@ -66,13 +66,28 @@ jobs:
       # so no private module network access is needed at scan time.
       - name: Restore vendor from snapshot
         run: |
-          IMAGE="${{ env.VENDOR_IMAGE }}:${{ steps.tag.outputs.tag }}"
-          echo "Restoring vendor from ${IMAGE}"
-          docker pull "${IMAGE}"
-          CONTAINER=$(docker create "${IMAGE}")
-          docker cp "${CONTAINER}:/vendor" ./vendor
-          docker rm "${CONTAINER}"
-          echo "vendor/ restored — $(find vendor -mindepth 1 -maxdepth 1 -type d | wc -l) packages"
+          IMAGE_TAG="${{ env.VENDOR_IMAGE }}:${{ steps.tag.outputs.tag }}"
+          IMAGE_LATEST="${{ env.VENDOR_IMAGE }}:latest"
+
+          if docker pull "${IMAGE_TAG}" 2>/dev/null; then
+            echo "Restoring vendor from tagged snapshot: ${IMAGE_TAG}"
+            CONTAINER=$(docker create "${IMAGE_TAG}")
+          elif docker pull "${IMAGE_LATEST}" 2>/dev/null; then
+            echo "Tagged snapshot not found — restoring from latest: ${IMAGE_LATEST}"
+            CONTAINER=$(docker create "${IMAGE_LATEST}")
+          else
+            echo "No snapshot available — building vendor inline"
+            go mod vendor
+            echo "vendor/ built inline"
+            echo "VENDOR_BUILT_INLINE=true" >> "$GITHUB_ENV"
+          fi
+
+          if [[ -z "${VENDOR_BUILT_INLINE}" ]]; then
+            docker cp "${CONTAINER}:/vendor" ./vendor
+            docker rm "${CONTAINER}"
+          fi
+
+          echo "vendor/ ready — $(find vendor -mindepth 1 -maxdepth 1 -type d | wc -l) packages"
 
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
