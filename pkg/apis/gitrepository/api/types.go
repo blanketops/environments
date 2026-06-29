@@ -53,7 +53,7 @@ type Repository struct {
 func (r *Repository) DeepCopyObject() runtime.Object {
 	out := new(Repository)
 	*out = *r
-	out.ObjectMeta = *r.ObjectMeta.DeepCopy()
+	out.ObjectMeta = *r.DeepCopy()
 	return out
 }
 
@@ -78,7 +78,7 @@ type RepositoryWebhook struct {
 func (r *RepositoryWebhook) DeepCopyObject() runtime.Object {
 	out := new(RepositoryWebhook)
 	*out = *r
-	out.ObjectMeta = *r.ObjectMeta.DeepCopy()
+	out.ObjectMeta = *r.DeepCopy()
 	out.Spec.ForProvider = r.Spec.ForProvider.deepCopy()
 	return out
 }

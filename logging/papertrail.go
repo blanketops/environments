@@ -129,7 +129,7 @@ func SetupPapertrailJSONIngest(token string) func(msg string) error {
 		if err != nil {
 			return err
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode >= 300 {
 			return fmt.Errorf("papertrail ingest error: %s", resp.Status)

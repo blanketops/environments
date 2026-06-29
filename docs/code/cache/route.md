@@ -6,14 +6,6 @@
 import "github.com/ntlaletsi70/blanketops-environments/cache/route"
 ```
 
-Copyright 2026 The BlanketOps Authors. Licensed under the Apache License, Version 2.0 \(the "License"\); you may not use this file except in compliance with the License. You may obtain a copy of the License at
-
-```
-http://www.apache.org/licenses/LICENSE-2.0
-```
-
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-
 ## Index
 
 - [type RouteCache](<#RouteCache>)
@@ -22,12 +14,14 @@ Unless required by applicable law or agreed to in writing, software distributed 
   - [func \(r \*RouteCache\) GetHost\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#RouteCache.GetHost>)
   - [func \(r \*RouteCache\) GetPath\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#RouteCache.GetPath>)
   - [func \(r \*RouteCache\) GetRuntime\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#RouteCache.GetRuntime>)
+  - [func \(r \*RouteCache\) GetServiceUnitRefName\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#RouteCache.GetServiceUnitRefName>)
   - [func \(r \*RouteCache\) GetTLSEnabled\(ctx context.Context, nn types.NamespacedName, gen int64\) \(bool, bool, error\)](<#RouteCache.GetTLSEnabled>)
   - [func \(r \*RouteCache\) PublishResolved\(ctx context.Context, nn types.NamespacedName, gen int64, res \*routeResolution.ResolvedRoute\) error](<#RouteCache.PublishResolved>)
   - [func \(r \*RouteCache\) SetEnabled\(ctx context.Context, nn types.NamespacedName, gen int64, enabled bool\) error](<#RouteCache.SetEnabled>)
   - [func \(r \*RouteCache\) SetHost\(ctx context.Context, nn types.NamespacedName, gen int64, host string\) error](<#RouteCache.SetHost>)
   - [func \(r \*RouteCache\) SetPath\(ctx context.Context, nn types.NamespacedName, gen int64, path string\) error](<#RouteCache.SetPath>)
   - [func \(r \*RouteCache\) SetRuntime\(ctx context.Context, nn types.NamespacedName, gen int64, runtime string\) error](<#RouteCache.SetRuntime>)
+  - [func \(r \*RouteCache\) SetServiceUnitRefName\(ctx context.Context, nn types.NamespacedName, gen int64, name string\) error](<#RouteCache.SetServiceUnitRefName>)
   - [func \(r \*RouteCache\) SetTLSEnabled\(ctx context.Context, nn types.NamespacedName, gen int64, tlsEnabled bool\) error](<#RouteCache.SetTLSEnabled>)
 
 
@@ -87,6 +81,15 @@ func (r *RouteCache) GetRuntime(ctx context.Context, nn types.NamespacedName, ge
 
 
 
+<a name="RouteCache.GetServiceUnitRefName"></a>
+### func \(\*RouteCache\) GetServiceUnitRefName
+
+```go
+func (r *RouteCache) GetServiceUnitRefName(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
+```
+
+GetServiceUnitRefName retrieves the cached ServiceUnit name for this Route.
+
 <a name="RouteCache.GetTLSEnabled"></a>
 ### func \(\*RouteCache\) GetTLSEnabled
 
@@ -140,6 +143,15 @@ func (r *RouteCache) SetRuntime(ctx context.Context, nn types.NamespacedName, ge
 ```
 
 
+
+<a name="RouteCache.SetServiceUnitRefName"></a>
+### func \(\*RouteCache\) SetServiceUnitRefName
+
+```go
+func (r *RouteCache) SetServiceUnitRefName(ctx context.Context, nn types.NamespacedName, gen int64, name string) error
+```
+
+SetServiceUnitRefName caches the ServiceUnit name bound to this Route. Stored as a string field — the controller derives the ksvc name by convention \(ksvc name == ServiceUnit name\) without a status lookup.
 
 <a name="RouteCache.SetTLSEnabled"></a>
 ### func \(\*RouteCache\) SetTLSEnabled
