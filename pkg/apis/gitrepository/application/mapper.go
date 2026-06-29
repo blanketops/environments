@@ -18,7 +18,7 @@ package application
 import (
 	"fmt"
 
-	"github.com/ntlaletsi70/blanketops-environments/pkg/gitrepository/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/apis/gitrepository/domain"
 	gitrepoResolution "github.com/ntlaletsi70/blanketops-environments/resolution/gitrepository"
 )
 

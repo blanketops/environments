@@ -29,7 +29,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/ntlaletsi70/blanketops-environments/pkg/githubevent/domain"
+	"github.com/ntlaletsi70/blanketops-environments/pkg/apis/githubevent/domain"
 	githubeventResolution "github.com/ntlaletsi70/blanketops-environments/resolution/githubevent"
 )
 
