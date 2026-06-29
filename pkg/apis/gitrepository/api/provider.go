@@ -4,7 +4,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-	http://www.apache.org/licenses/LICENSE-2.0
+        http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,9 +22,14 @@ import (
 	"github.com/ntlaletsi70/blanketops-environments/pkg/apis/gitrepository/domain"
 )
 
-// Provider defines a backend capable of realizing a GitRepository declaration.
+// Provider is the orchestration interface for GitRepository backend providers.
+// Each implementation is responsible for ensuring the provider-specific
+// resources that back a GitRepository CR.
+//
+// Current implementations:
+//   - GitHubProvider (github.go) — upjet-github Crossplane provider
+//
+// The BackendSelector resolves the correct Provider from spec.contract.provider.
 type Provider interface {
-	// Ensure accepts context, the GitRepository CR (for metadata / owner refs),
-	// and the pure domain model representing intent.
 	Ensure(ctx context.Context, cr *sourcesv1alpha1.GitRepository, spec domain.GitRepository) (domain.Result, error)
 }
