@@ -101,6 +101,7 @@ jobs:
           name: coverage-report-${{ github.sha }}
           path: |
             coverage.out
+            continue-on-error: true
             coverage.html
           retention-days: 14
 
