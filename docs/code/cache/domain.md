@@ -6,27 +6,24 @@
 import "github.com/ntlaletsi70/blanketops-environments/cache/domain"
 ```
 
+Copyright 2026 The BlanketOps Authors. Licensed under the Apache License, Version 2.0 \(the "License"\); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+
+```
+http://www.apache.org/licenses/LICENSE-2.0
+```
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+
 ## Index
 
 - [type DomainCache](<#DomainCache>)
   - [func NewDomainCache\(c \*core.Cache\) \*DomainCache](<#NewDomainCache>)
-  - [func \(d \*DomainCache\) GetCertificateRefName\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#DomainCache.GetCertificateRefName>)
-  - [func \(d \*DomainCache\) GetCertificateRefNamespace\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#DomainCache.GetCertificateRefNamespace>)
-  - [func \(d \*DomainCache\) GetDomainMappingRefName\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#DomainCache.GetDomainMappingRefName>)
-  - [func \(d \*DomainCache\) GetDomainMappingRefNamespace\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#DomainCache.GetDomainMappingRefNamespace>)
-  - [func \(d \*DomainCache\) GetDomainReady\(ctx context.Context, nn types.NamespacedName, gen int64\) \(bool, bool, error\)](<#DomainCache.GetDomainReady>)
   - [func \(d \*DomainCache\) GetHost\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#DomainCache.GetHost>)
   - [func \(d \*DomainCache\) GetMTLSEnforced\(ctx context.Context, nn types.NamespacedName, gen int64\) \(bool, bool, error\)](<#DomainCache.GetMTLSEnforced>)
   - [func \(d \*DomainCache\) GetRenewBefore\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#DomainCache.GetRenewBefore>)
   - [func \(d \*DomainCache\) GetRouteRef\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#DomainCache.GetRouteRef>)
   - [func \(d \*DomainCache\) GetTLSStrategy\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#DomainCache.GetTLSStrategy>)
   - [func \(d \*DomainCache\) PublishResolved\(ctx context.Context, nn types.NamespacedName, gen int64, res \*domainResolution.ResolvedDomain\) error](<#DomainCache.PublishResolved>)
-  - [func \(d \*DomainCache\) PublishStatus\(ctx context.Context, nn types.NamespacedName, gen int64, domainReady bool, certRefName, certRefNamespace string, mappingRefName, mappingRefNamespace string\) error](<#DomainCache.PublishStatus>)
-  - [func \(d \*DomainCache\) SetCertificateRefName\(ctx context.Context, nn types.NamespacedName, gen int64, name string\) error](<#DomainCache.SetCertificateRefName>)
-  - [func \(d \*DomainCache\) SetCertificateRefNamespace\(ctx context.Context, nn types.NamespacedName, gen int64, namespace string\) error](<#DomainCache.SetCertificateRefNamespace>)
-  - [func \(d \*DomainCache\) SetDomainMappingRefName\(ctx context.Context, nn types.NamespacedName, gen int64, name string\) error](<#DomainCache.SetDomainMappingRefName>)
-  - [func \(d \*DomainCache\) SetDomainMappingRefNamespace\(ctx context.Context, nn types.NamespacedName, gen int64, namespace string\) error](<#DomainCache.SetDomainMappingRefNamespace>)
-  - [func \(d \*DomainCache\) SetDomainReady\(ctx context.Context, nn types.NamespacedName, gen int64, ready bool\) error](<#DomainCache.SetDomainReady>)
   - [func \(d \*DomainCache\) SetHost\(ctx context.Context, nn types.NamespacedName, gen int64, host string\) error](<#DomainCache.SetHost>)
   - [func \(d \*DomainCache\) SetMTLSEnforced\(ctx context.Context, nn types.NamespacedName, gen int64, enforced bool\) error](<#DomainCache.SetMTLSEnforced>)
   - [func \(d \*DomainCache\) SetRenewBefore\(ctx context.Context, nn types.NamespacedName, gen int64, renewBefore string\) error](<#DomainCache.SetRenewBefore>)
@@ -53,51 +50,6 @@ func NewDomainCache(c *core.Cache) *DomainCache
 ```
 
 NewDomainCache constructs a new DomainCache with the provided core.Cache.
-
-<a name="DomainCache.GetCertificateRefName"></a>
-### func \(\*DomainCache\) GetCertificateRefName
-
-```go
-func (d *DomainCache) GetCertificateRefName(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
-```
-
-
-
-<a name="DomainCache.GetCertificateRefNamespace"></a>
-### func \(\*DomainCache\) GetCertificateRefNamespace
-
-```go
-func (d *DomainCache) GetCertificateRefNamespace(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
-```
-
-
-
-<a name="DomainCache.GetDomainMappingRefName"></a>
-### func \(\*DomainCache\) GetDomainMappingRefName
-
-```go
-func (d *DomainCache) GetDomainMappingRefName(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
-```
-
-
-
-<a name="DomainCache.GetDomainMappingRefNamespace"></a>
-### func \(\*DomainCache\) GetDomainMappingRefNamespace
-
-```go
-func (d *DomainCache) GetDomainMappingRefNamespace(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
-```
-
-
-
-<a name="DomainCache.GetDomainReady"></a>
-### func \(\*DomainCache\) GetDomainReady
-
-```go
-func (d *DomainCache) GetDomainReady(ctx context.Context, nn types.NamespacedName, gen int64) (bool, bool, error)
-```
-
-
 
 <a name="DomainCache.GetHost"></a>
 ### func \(\*DomainCache\) GetHost
@@ -151,61 +103,7 @@ func (d *DomainCache) GetTLSStrategy(ctx context.Context, nn types.NamespacedNam
 func (d *DomainCache) PublishResolved(ctx context.Context, nn types.NamespacedName, gen int64, res *domainResolution.ResolvedDomain) error
 ```
 
-PublishResolved writes the resolved spec contract as a generation\-scoped, field\-level projection. All writes are best\-effort: failures cost queryability, never correctness. Returns the first error encountered for optional logging; callers should not fail reconciliation on it.
-
-<a name="DomainCache.PublishStatus"></a>
-### func \(\*DomainCache\) PublishStatus
-
-```go
-func (d *DomainCache) PublishStatus(ctx context.Context, nn types.NamespacedName, gen int64, domainReady bool, certRefName, certRefNamespace string, mappingRefName, mappingRefNamespace string) error
-```
-
-PublishStatus writes controller\-observed status fields after resource materialisation. Separate from PublishResolved — these are never derived from spec; they reflect what the controller actually created. The Route mediator reads certificateRef from here to gate DomainMapping dispatch without an additional API server lookup. All writes are best\-effort — callers must not fail reconciliation on errors.
-
-<a name="DomainCache.SetCertificateRefName"></a>
-### func \(\*DomainCache\) SetCertificateRefName
-
-```go
-func (d *DomainCache) SetCertificateRefName(ctx context.Context, nn types.NamespacedName, gen int64, name string) error
-```
-
-SetCertificateRefName caches the Certificate resource name emitted by the controller. Set only for custom TLS strategy — empty for platform strategy.
-
-<a name="DomainCache.SetCertificateRefNamespace"></a>
-### func \(\*DomainCache\) SetCertificateRefNamespace
-
-```go
-func (d *DomainCache) SetCertificateRefNamespace(ctx context.Context, nn types.NamespacedName, gen int64, namespace string) error
-```
-
-SetCertificateRefNamespace caches the Certificate resource namespace. For custom strategy this is always the Domain's own namespace.
-
-<a name="DomainCache.SetDomainMappingRefName"></a>
-### func \(\*DomainCache\) SetDomainMappingRefName
-
-```go
-func (d *DomainCache) SetDomainMappingRefName(ctx context.Context, nn types.NamespacedName, gen int64, name string) error
-```
-
-SetDomainMappingRefName caches the Knative DomainMapping resource name emitted by the controller. Set once materialised, cleared on deletion.
-
-<a name="DomainCache.SetDomainMappingRefNamespace"></a>
-### func \(\*DomainCache\) SetDomainMappingRefNamespace
-
-```go
-func (d *DomainCache) SetDomainMappingRefNamespace(ctx context.Context, nn types.NamespacedName, gen int64, namespace string) error
-```
-
-SetDomainMappingRefNamespace caches the Knative DomainMapping namespace. Always the Domain's own namespace — cached for mediator fast\-path reads.
-
-<a name="DomainCache.SetDomainReady"></a>
-### func \(\*DomainCache\) SetDomainReady
-
-```go
-func (d *DomainCache) SetDomainReady(ctx context.Context, nn types.NamespacedName, gen int64, ready bool) error
-```
-
-SetDomainReady caches the scalar domainReady bool from DomainStatus. True once both DomainClaim and DomainMapping are reconciled and active.
+PublishResolved writes the resolved contract as a generation\-scoped, field\-level projection. All writes are best\-effort: failures cost queryability, never correctness. Returns the first error encountered for optional logging; callers should not fail reconciliation on it.
 
 <a name="DomainCache.SetHost"></a>
 ### func \(\*DomainCache\) SetHost
