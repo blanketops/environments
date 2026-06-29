@@ -18,9 +18,7 @@ package api
 import (
 	"context"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/go-logr/logr"
-    repov1alpha1 "github.com/Jiraiya106/provider-github/apis/repository/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/events"
@@ -58,31 +56,27 @@ func NewGitHubProvider(
 
 // ── Builders ──────────────────────────────────────────────────────────────────
 
-// buildRepository constructs a typed Crossplane Repository using the
-// upbound/provider-github generated API types.
 func buildRepository(
 	cr *sourcesv1alpha1.GitRepository,
 	spec domain.GitRepository,
-) *repov1alpha1.Repository {
-	return &repov1alpha1.Repository{
+) *Repository {
+	return &Repository{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: repov1alpha1.SchemeGroupVersion.String(),
+			APIVersion: SchemeGroupVersion.String(),
 			Kind:       "Repository",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: cr.Name,
 			Labels: map[string]string{
 				"sources.blanketops.dev/gitrepository": cr.Name,
-				"sources.blanketops.dev/provider":      spec.Provider,
+				"sources.blanketops.dev/provider":      string(spec.Provider),
 			},
 		},
-		Spec: repov1alpha1.RepositorySpec{
-			ResourceSpec: xpv1.ResourceSpec{
-				ProviderConfigReference: &xpv1.Reference{
-					Name: "github-upjet",
-				},
+		Spec: RepositorySpec{
+			ProviderConfigRef: ProviderConfigRef{
+				Name: "github-upjet",
 			},
-			ForProvider: repov1alpha1.RepositoryParameters{
+			ForProvider: RepositoryParameters{
 				Name:       ptr(spec.Repository.Name),
 				Visibility: ptr("private"),
 			},
@@ -90,52 +84,43 @@ func buildRepository(
 	}
 }
 
-// buildRepositoryWebhook constructs a typed Crossplane RepositoryWebhook
-// using the upbound/provider-github generated API types.
-//
-// The hookUrl is sourced from a Secret ("hookurl", key "url") rather than
-// inlined — Crossplane requires sensitive fields via SecretKeySelector.
 func buildRepositoryWebhook(
 	cr *sourcesv1alpha1.GitRepository,
 	spec domain.GitRepository,
-) *repov1alpha1.RepositoryWebhook {
+) *RepositoryWebhook {
 	events := make([]*string, 0)
 	for _, wh := range spec.Webhooks {
 		for _, e := range wh.Events {
-			events = append(events, ptr(e))
+			events = append(events, ptr(string(e)))
 		}
 	}
 
-	return &repov1alpha1.RepositoryWebhook{
+	return &RepositoryWebhook{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: repov1alpha1.SchemeGroupVersion.String(),
+			APIVersion: SchemeGroupVersion.String(),
 			Kind:       "RepositoryWebhook",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: cr.Name + "-webhook",
 			Labels: map[string]string{
 				"sources.blanketops.dev/gitrepository": cr.Name,
-				"sources.blanketops.dev/provider":      spec.Provider,
+				"sources.blanketops.dev/provider":      string(spec.Provider),
 			},
 		},
-		Spec: repov1alpha1.RepositoryWebhookSpec{
-			ResourceSpec: xpv1.ResourceSpec{
-				ProviderConfigReference: &xpv1.Reference{
-					Name: "github-upjet",
-				},
+		Spec: RepositoryWebhookSpec{
+			ProviderConfigRef: ProviderConfigRef{
+				Name: "github-upjet",
 			},
-			ForProvider: repov1alpha1.RepositoryWebhookParameters{
+			ForProvider: RepositoryWebhookParameters{
 				Active:     ptr(true),
 				Events:     events,
 				Repository: ptr(cr.Name),
-				Configuration: []repov1alpha1.RepositoryWebhookConfigurationParameters{
+				Configuration: []RepositoryWebhookConfigurationParameters{
 					{
-						URLSecretRef: xpv1.SecretKeySelector{
-							SecretReference: xpv1.SecretReference{
-								Name:      "hookurl",
-								Namespace: cr.Namespace,
-							},
-							Key: "url",
+						URLSecretRef: SecretKeyRef{
+							Name:      "hookurl",
+							Namespace: cr.Namespace,
+							Key:       "url",
 						},
 					},
 				},
@@ -146,8 +131,6 @@ func buildRepositoryWebhook(
 
 // ── Ensure ────────────────────────────────────────────────────────────────────
 
-// Ensure reconciles the Crossplane Repository and RepositoryWebhook for the
-// given GitRepository CR. Implements Provider.
 func (p *GitHubProvider) Ensure(
 	ctx context.Context,
 	cr *sourcesv1alpha1.GitRepository,
@@ -185,8 +168,6 @@ func (p *GitHubProvider) Ensure(
 
 // ── Apply ─────────────────────────────────────────────────────────────────────
 
-// apply performs a Server-Side Apply patch for any registered ctrlclient.Object.
-//
 // NOTE: Crossplane-managed resources MUST be applied via SSA.
 // Never use Update() — it will race the Crossplane controllers.
 func (p *GitHubProvider) apply(ctx context.Context, obj ctrlclient.Object) error {
