@@ -1,4 +1,4 @@
-name: Go CI Coverage
+name: Coverage
 
 on:
   push:
@@ -6,37 +6,103 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  REGISTRY: ghcr.io
+  VENDOR_IMAGE: ghcr.io/ntlaletsi70/blanketops-environments/vendor-snapshot
+
 jobs:
-  quality-and-test:
+  coverage:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
+      - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Extract Go version from go.mod
+        id: goversion
+        run: |
+          FULL=$(grep '^go ' go.mod | awk '{print $2}')
+          MINOR=$(echo "$FULL" | cut -d. -f1-2)
+          echo "full=${FULL}" >> $GITHUB_OUTPUT
+          echo "minor=${MINOR}" >> $GITHUB_OUTPUT
+          echo "Go version: ${FULL} → image tag: ${MINOR}"
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: ${{ steps.goversion.outputs.minor }}
+          cache: false
 
-      - name: Check Formatting
+      - name: Compute vendor tag from go.sum
+        id: vendor
         run: |
-          if [ -n "$(gofmt -l .)" ]; then
-            echo "Go files are not formatted! Run 'go fmt ./...'"
-            exit 1
+          TAG=$(sha256sum go.sum | awk '{print $1}' | cut -c1-12)
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Vendor tag: ${TAG}"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GH_PAT }}
+
+      - name: Restore vendor snapshot
+        run: |
+          TAG="${{ steps.vendor.outputs.tag }}"
+          IMAGE="${{ env.VENDOR_IMAGE }}:${TAG}"
+          if oras manifest fetch "${IMAGE}" > /dev/null 2>&1; then
+            echo "Restoring vendor snapshot: ${TAG}"
+            oras pull "${IMAGE}"
+            echo "Vendor snapshot restored"
+          else
+            echo "No vendor snapshot found for tag ${TAG} — falling back to go mod vendor"
+            go mod vendor
           fi
 
-      - name: Run Tests & Generate Coverage Data
-        run: go test -v -coverprofile=coverage.out ./...
+      - name: Check formatting
+        run: |
+          UNFORMATTED=$(gofmt -l .)
+          if [ -n "${UNFORMATTED}" ]; then
+            echo "The following files are not formatted:"
+            echo "${UNFORMATTED}"
+            exit 1
+          fi
+          echo "All files formatted correctly"
 
-      - name: Convert Coverage to HTML File
+      - name: Run tests and generate coverage
+        run: |
+          go test -v -mod=vendor \
+            -coverprofile=coverage.out \
+            -covermode=atomic \
+            ./...
+
+      - name: Generate coverage HTML
         run: go tool cover -html=coverage.out -o coverage.html
 
-      - name: Upload HTML Coverage Report
+      - name: Generate coverage summary
+        run: |
+          echo "## 📊 Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Coverage |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|----------|" >> $GITHUB_STEP_SUMMARY
+          go tool cover -func=coverage.out | grep -v "^total" | awk '{
+            pkg=$1; cov=$3;
+            gsub(/github.com\/ntlaletsi70\/blanketops-environments\//, "", pkg);
+            print "| " pkg " | " cov " |"
+          }' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          TOTAL=$(go tool cover -func=coverage.out | grep "^total" | awk '{print $3}')
+          echo "**Total Coverage: ${TOTAL}**" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload coverage artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: go-coverage-report
-          path: coverage.html
+          name: coverage-report-${{ github.sha }}
+          path: |
+            coverage.out
+            coverage.html
           retention-days: 14
 
-      - name: Verify Build
-        run: go build -v ./...
+      - name: Verify build
+        run: go build -mod=vendor ./...
