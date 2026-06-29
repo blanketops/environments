@@ -40,6 +40,14 @@ Kourier is Knative's default network layer — both "knative-service" and
 "knative" map to the same proto enum value.
 ```
 
+ServiceUnitRef:
+
+```
+RouteSpec.ServiceUnitRef is *networkscontractv1alpha1.ServiceUnitRef.
+The local ResolvedServiceUnitRef.Name is projected directly.
+Nil ref produces a nil proto field — callers treat absence as invalid.
+```
+
 See also:
 
 - resolution/route/resolve.go — resolution entry point and Runtime type
@@ -50,7 +58,16 @@ Package route implements resolution for the Route CR.
 
 The Route CR stores its spec as a raw JSON contract \(spec.contract\). ResolveRoute decodes this into a fully typed ResolvedRoute — the authoritative runtime representation consumed by all downstream domain and application logic.
 
-Route declares the intent to expose a workload at a host and path. The controller materializes the route through the selected runtime \(Kubernetes Ingress, Knative DomainMapping, or Gateway API HTTPRoute\). Owned by an Environment CR via ownerReference \(cascade delete\).
+Route declares the intent to expose a ServiceUnit at a host and path. The controller materializes the route through the selected runtime \(Kubernetes Ingress, Knative DomainMapping, or Gateway API HTTPRoute\). Owned by an Environment CR via ownerReference \(cascade delete\).
+
+Workload resolution:
+
+```
+Route.spec.serviceUnitRef names the ServiceUnit in the same namespace.
+The controller derives the ksvc/K8s service name by convention:
+  ksvc name == ServiceUnit name
+No ServiceUnit status lookup is required during resolution.
+```
 
 All failures surface as errors. Resolution never panics.
 
@@ -63,6 +80,7 @@ All failures surface as errors. Resolution never panics.
 - [type ResolvedRoute](<#ResolvedRoute>)
   - [func ResolveRoute\(route \*networksv1alpha1.Route\) \(\*ResolvedRoute, error\)](<#ResolveRoute>)
 - [type ResolvedRouteSpec](<#ResolvedRouteSpec>)
+- [type ResolvedServiceUnitRef](<#ResolvedServiceUnitRef>)
 - [type Runtime](<#Runtime>)
 
 
@@ -158,6 +176,25 @@ type ResolvedRouteSpec struct {
     // Runtime is the serving backend responsible for materializing this route.
     // Mandatory — backend selection in pkg/routes/application/ branches on this.
     Runtime *Runtime
+
+    // ServiceUnitRef identifies the ServiceUnit this Route exposes.
+    // Mandatory — a Route without a workload binding is invalid.
+    // The controller derives the ksvc/K8s service name by convention:
+    //   ksvc name == ServiceUnitRef.Name
+    // No ServiceUnit status lookup is required.
+    ServiceUnitRef *ResolvedServiceUnitRef
+}
+```
+
+<a name="ResolvedServiceUnitRef"></a>
+## type ResolvedServiceUnitRef
+
+ResolvedServiceUnitRef is the decoded reference to a ServiceUnit CR. Mirrors proto ServiceUnitRef — name only; namespace is always this Route's namespace.
+
+```go
+type ResolvedServiceUnitRef struct {
+    // Name is the ServiceUnit CR name in the same namespace as this Route.
+    Name string
 }
 ```
 

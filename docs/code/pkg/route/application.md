@@ -6,17 +6,31 @@
 import "github.com/ntlaletsi70/blanketops-environments/pkg/route/application"
 ```
 
-This file owns BackendSelector — the routing layer that maps a domain.Route to the correct build provider \(Knative, KubernetesIngress, or GatewayAPI\).
+This file owns BackendSelector — the routing layer that maps a domain.Route to the correct Provider implementation based on the Runtime field.
 
-Selection is driven by the Runtime field. Unlike the build selector — which falls back to Buildah for unrecognised strategy names — an unknown route runtime is a malformed CR, not a soft default. ErrRuntimeUnknown is returned so the controller surfaces it as a Failed condition rather than silently materialising the wrong backend.
+Unlike the build selector — which falls back to Buildah for unrecognised strategy names — an unknown route runtime is a malformed CR, not a soft default. ErrRuntimeUnknown is returned so the controller surfaces it as a Failed condition rather than silently materialising the wrong backend.
+
+Registered runtimes:
+
+```
+RuntimeKnativeService        → KnativeProvider  (Knative DomainMapping via Kourier)
+RuntimeKubernetesContainer   → IngressProvider  (networking.k8s.io/v1 Ingress via nginx)
+RuntimeGatewayAPI            → not yet registered — returns ErrRuntimeUnknown
+```
 
 BackendSelector sits in the application layer — it is called by RouteService after resolution and before provider dispatch.
 
-This file owns the Mapper — the translation layer between the resolved Route contract and the domain Route aggregate consumed by the provider layer.
+This file owns Mapper — the translation layer between the resolved Route contract and the domain Route aggregate consumed by the provider layer.
 
-The Mapper enforces the resolution contract: it panics on fields the resolver guarantees to be present \(Host, Runtime\) so that resolver bugs surface loudly rather than silently producing an empty DomainMapping.
+The Mapper enforces the resolution contract: it panics on fields the resolver guarantees to be present \(Host, Runtime, ServiceUnitRef\) so that resolver bugs surface loudly rather than silently producing an empty DomainMapping or Ingress.
 
-ServiceRef is not a resolver invariant — it is read from the environments.blanketops.dev/service\-unit label that the controller stamps on the Route CR, and is passed through verbatim. The Knative provider guards an empty ServiceRef with ErrServiceRefEmpty at Ensure time; the Mapper never invents defaults or modifies intent.
+ServiceRef is derived directly from spec.ServiceUnitRef.Name — the resolver validates this as a required field. The controller convention enforces:
+
+```
+ksvc name == ServiceUnit name
+```
+
+No label lookup, no API server read, no status lookup required.
 
 This file owns RouteService — the application service that orchestrates the route reconciliation pipeline.
 
@@ -27,12 +41,14 @@ RouteService is the single entry point called by the route controller after reso
 3. Dispatch via the provider \(Provider.Ensure\).
 4. Write the outcome back to the Route CR status \(StatusWriter\).
 
-RouteService does not own retry logic, predicate evaluation, or status persistence — those belong to the controller and writer layers respectively. Condition derivation lives here: the service knows what Ready/Pending/Failed mean; the StatusWriter is a dumb persister.
+RouteService does not own retry logic, predicate evaluation, or status persistence — those belong to the controller and writer layers respectively.
+
+Condition derivation lives here: the service knows what Ready/Pending/Failed mean for all registered runtimes. The Ready message is runtime\-agnostic — providers return a ResolvedAddress and the service constructs the condition. The StatusWriter is a dumb persister.
 
 ## Index
 
 - [type BackendSelector](<#BackendSelector>)
-  - [func NewBackendSelector\(knative api.Provider\) \*BackendSelector](<#NewBackendSelector>)
+  - [func NewBackendSelector\(knative api.Provider, ingress api.Provider\) \*BackendSelector](<#NewBackendSelector>)
   - [func \(b \*BackendSelector\) ForRoute\(route domain.Route\) \(api.Provider, error\)](<#BackendSelector.ForRoute>)
 - [type Mapper](<#Mapper>)
   - [func NewMapper\(\) \*Mapper](<#NewMapper>)
@@ -53,6 +69,7 @@ BackendSelector routes a domain.Route to the correct Provider implementation bas
 ```go
 type BackendSelector struct {
     Knative api.Provider
+    Ingress api.Provider
 }
 ```
 
@@ -60,10 +77,10 @@ type BackendSelector struct {
 ### func NewBackendSelector
 
 ```go
-func NewBackendSelector(knative api.Provider) *BackendSelector
+func NewBackendSelector(knative api.Provider, ingress api.Provider) *BackendSelector
 ```
 
-NewBackendSelector constructs a BackendSelector with the registered route providers. v1 registers Knative only; KubernetesIngress and GatewayAPI are added here as they land.
+NewBackendSelector constructs a BackendSelector with the registered route providers. Knative and KubernetesIngress are registered at v1. GatewayAPI is added here when it lands.
 
 <a name="BackendSelector.ForRoute"></a>
 ### func \(\*BackendSelector\) ForRoute
@@ -101,9 +118,15 @@ func (Mapper) MapResolvedToDomain(rr *routeResolution.ResolvedRoute) domain.Rout
 
 MapResolvedToDomain converts a fully resolved Route into a domain Route for consumption by the provider layer.
 
-Panics on resolver invariant violations \(empty Host or nil Runtime\) — these indicate a resolver bug, not a user error, and must not be silently swallowed. All other fields are mapped verbatim.
+Panics on resolver invariant violations \(empty Host, nil Runtime, nil ServiceUnitRef\) — these indicate a resolver bug, not a user error, and must not be silently swallowed. All other fields are mapped verbatim.
 
-ServiceRef is read from the environments.blanketops.dev/service\-unit label. It may be empty here — the Knative provider enforces its presence via ErrServiceRefEmpty when Runtime is RuntimeKnativeService.
+ServiceRef is derived from spec.ServiceUnitRef.Name by convention:
+
+```
+ksvc name == ServiceUnit name
+```
+
+The provider layer guards an empty ServiceRef with ErrServiceRefEmpty at Ensure time as a final safety net.
 
 <a name="RouteService"></a>
 ## type RouteService

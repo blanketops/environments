@@ -6,6 +6,68 @@
 import "github.com/ntlaletsi70/blanketops-environments/pkg/route/api"
 ```
 
+Package api — common.go
+
+Shared utilities used across all Route Provider implementations.
+
+TLS secret naming:
+
+```
+certSecretName and sanitizeHost are the shared convention between
+the Route provider (DomainMapping.Spec.TLS.SecretName / Ingress.Spec.TLS)
+and the Domain provider (cert-manager Certificate secretName).
+Both sides must produce identical names — this file is the single source
+of truth. Never duplicate these functions in a provider file.
+```
+
+### Package api — ingress.go
+
+IngressProvider is the Kubernetes Ingress implementation of the routes Provider interface.
+
+IngressProvider materializes a Route as a networking.k8s.io/v1 Ingress resource, routing traffic from the declared host and path to the K8s Service identified by Route.ServiceRef via the nginx ingress controller.
+
+Ingress class:
+
+```
+All BlanketOps Ingress resources use the "nginx" IngressClassName.
+Kourier handles all Knative traffic — nginx is strictly for
+RuntimeKubernetesContainer routes.
+```
+
+Service port convention:
+
+```
+BlanketOps K8s Services expose port 80 regardless of container port.
+The Ingress backend always targets port 80. If a ServiceUnit declares a
+non-standard service port in future, domain.Route.ServicePort carries it.
+```
+
+TLS:
+
+```
+When Route.TLSEnabled is true, Ingress.Spec.TLS is populated with the
+shared blanketops-tls-{sanitized-host} secret name (see common.go).
+The Domain provider provisions the Secret via cert-manager — no ordering
+dependency between Route and Domain reconciliation is required; nginx
+will serve without TLS until the Secret appears, then upgrade.
+```
+
+Disabled routes:
+
+```
+When Route.Enabled is false the Ingress is deleted. The Route CR is
+retained; only the runtime resource is removed. A missing Ingress
+(NotFound) is not treated as an error — the disabled state is satisfied.
+```
+
+See also:
+
+- pkg/route/api/provider.go — Provider interface
+- pkg/route/api/knative.go — Knative DomainMapping provider
+- pkg/route/api/common.go — certSecretName / sanitizeHost
+- pkg/domain/api/knative.go — provisions the TLS Secret
+- pkg/route/application/backend\_selector.go — wires IngressProvider for RuntimeKubernetesContainer
+
 This file owns KnativeProvider — the Knative implementation of the routes Provider interface.
 
 KnativeProvider materializes a Route as a Knative DomainMapping \(serving.knative.dev/v1beta1\). The DomainMapping binds the declared host to the Knative Service identified by Route.ServiceRef, making the workload reachable at that FQDN via Kourier.
@@ -23,9 +85,10 @@ TLS:
 When Route.TLSEnabled is true, the DomainMapping is created with
 spec.tls.secretName pointing to the TLS Secret that the Domain provider
 (pkg/domain/api/knative.go) provisions via cert-manager. The secret name
-follows the blanketops-tls-{sanitized-host} convention shared between both
-providers. Knative serving will wait for the Secret to exist — no ordering
-dependency between Route and Domain reconciliation is required.
+follows the blanketops-tls-{sanitized-host} convention defined in common.go
+and shared between all providers. Knative serving will wait for the Secret
+to exist — no ordering dependency between Route and Domain reconciliation
+is required.
 ```
 
 Disabled routes:
@@ -38,10 +101,11 @@ retained; only the runtime resource is removed. A missing DomainMapping
 
 See also:
 
-- pkg/routes/api/provider.go — Provider interface
-- pkg/routes/domain/model.go — Route.ServiceRef design note
+- pkg/route/api/provider.go — Provider interface
+- pkg/route/api/common.go — certSecretName / sanitizeHost
+- pkg/route/api/ingress.go — Kubernetes Ingress provider
 - pkg/domain/api/knative.go — provisions the TLS Secret this file references
-- pkg/routes/application/backend\_selector.go — wires KnativeProvider for RuntimeKnativeService
+- pkg/route/application/backend\_selector.go — wires KnativeProvider for RuntimeKnativeService
 
 This file owns the Provider interface for the routes domain — the contract that all route backend implementations must satisfy.
 
@@ -59,11 +123,43 @@ See also:
 
 ## Index
 
+- [type IngressProvider](<#IngressProvider>)
+  - [func NewIngressProvider\(c client.Client, log logr.Logger\) \*IngressProvider](<#NewIngressProvider>)
+  - [func \(p \*IngressProvider\) Ensure\(ctx context.Context, resolved \*routeResolution.ResolvedRoute, route domain.Route\) \(domain.RouteResult, error\)](<#IngressProvider.Ensure>)
 - [type KnativeProvider](<#KnativeProvider>)
   - [func NewKnativeProvider\(c client.Client, log logr.Logger\) \*KnativeProvider](<#NewKnativeProvider>)
   - [func \(p \*KnativeProvider\) Ensure\(ctx context.Context, resolved \*routeResolution.ResolvedRoute, route domain.Route\) \(domain.RouteResult, error\)](<#KnativeProvider.Ensure>)
 - [type Provider](<#Provider>)
 
+
+<a name="IngressProvider"></a>
+## type IngressProvider
+
+IngressProvider implements Provider for the Kubernetes Ingress runtime. Materializes Route as a networking.k8s.io/v1 Ingress resource.
+
+```go
+type IngressProvider struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewIngressProvider"></a>
+### func NewIngressProvider
+
+```go
+func NewIngressProvider(c client.Client, log logr.Logger) *IngressProvider
+```
+
+NewIngressProvider constructs an IngressProvider with the given client and logger.
+
+<a name="IngressProvider.Ensure"></a>
+### func \(\*IngressProvider\) Ensure
+
+```go
+func (p *IngressProvider) Ensure(ctx context.Context, resolved *routeResolution.ResolvedRoute, route domain.Route) (domain.RouteResult, error)
+```
+
+Ensure creates or reconciles the Kubernetes Ingress for the given Route. When Route.Enabled is false the Ingress is removed instead.
 
 <a name="KnativeProvider"></a>
 ## type KnativeProvider
