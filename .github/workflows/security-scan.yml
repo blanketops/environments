@@ -11,6 +11,10 @@
 #   docker export | tar extracts vendor/ directly — no path nesting issues.
 #   Three-tier fallback: tagged snapshot → latest → inline go mod vendor.
 #
+# Outputs:
+#   - Text output for human-readable summary
+#   - SARIF uploaded to GitHub Security tab
+#
 # Secrets required:
 #   GH_PAT — GHCR pull + private module git config
 # =============================================================================
@@ -27,6 +31,7 @@ on:
 
 permissions:
   contents: read
+  security-events: write  # required for SARIF upload to GitHub Security tab
 
 env:
   REGISTRY: ghcr.io
@@ -99,18 +104,67 @@ jobs:
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
 
+      # Text run — human-readable, drives the summary.
+      # Allowed to fail so SARIF upload always runs.
       - name: Run govulncheck
+        id: govulncheck
         env:
           GOFLAGS: -mod=vendor
-        run: govulncheck ./...
+        run: |
+          govulncheck ./... 2>&1 | tee govulncheck.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      # SARIF run — machine-readable for GitHub Security tab.
+      # Runs even when text run finds vulnerabilities.
+      - name: Run govulncheck (SARIF)
+        env:
+          GOFLAGS: -mod=vendor
+        run: |
+          govulncheck -format sarif ./... > govulncheck.sarif 2>/dev/null || true
+
+      - name: Upload SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: govulncheck.sarif
+          category: govulncheck
+
+      - name: Upload scan artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: govulncheck-${{ github.sha }}
+          path: |
+            govulncheck.txt
+            govulncheck.sarif
+          retention-days: 30
 
       - name: Summary
         if: always()
         run: |
+          STATUS="${{ steps.govulncheck.outputs.exit_code == '0' && '✅ No vulnerabilities found' || '⚠️ Vulnerabilities detected' }}"
           cat >> "$GITHUB_STEP_SUMMARY" <<EOF
           # 🔍 Vulnerability Scan
 
+          **Status:** ${STATUS}
           **Go Version:** \`$(go version | awk '{print $3}')\`
           **Vendor tag:** \`${{ steps.tag.outputs.tag }}\`
           **Tool:** \`govulncheck -mod=vendor ./...\`
+
+          ## Results
+
+          \`\`\`
+          $(cat govulncheck.txt 2>/dev/null || echo "No output captured")
+          \`\`\`
+
+          > SARIF results uploaded to the [Security tab](${{ github.server_url }}/${{ github.repository }}/security/code-scanning).
           EOF
+
+      # Fail the job after all reporting steps complete
+      # so SARIF and artifacts are always captured.
+      - name: Fail on vulnerabilities
+        if: steps.govulncheck.outputs.exit_code != '0'
+        run: |
+          echo "govulncheck found vulnerabilities — see Security tab and artifacts"
+          exit 1
