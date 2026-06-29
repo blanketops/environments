@@ -263,7 +263,7 @@ func (p *KnativeProvider) ensureCertificate(
 		spec := certmanagerv1.CertificateSpec{
 			DNSNames:   []string{d.Host},
 			SecretName: certSecretName(d.Host),
-			IssuerRef: cmmeta.ObjectReference{
+			IssuerRef: cmmeta.ObjectReference{ //nolint:staticcheck
 				Name: issuerName(d.Namespace),
 				Kind: "Issuer",
 			},

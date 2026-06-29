@@ -249,7 +249,7 @@ resources:
 	}
 
 	for _, r := range resourceEntries {
-		kustContent.WriteString(fmt.Sprintf("  - %s\n", r))
+		fmt.Fprintf(&kustContent, "  - %s\n", r)
 	}
 
 	if err := os.WriteFile(kustFile, kustContent.Bytes(), 0644); err != nil {

@@ -43,7 +43,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -203,11 +202,4 @@ func (s *DomainService) domainConditions(d domain.Domain, result domain.DomainRe
 			},
 		}
 	}
-}
-
-// certResourceName returns the cert-manager Certificate CR name for a host.
-// Mirrors the naming convention in pkg/domain/api/knative.go certName().
-// Both sides must produce identical names — document any divergence immediately.
-func certResourceName(host string) string {
-	return "blanketops-cert-" + strings.ReplaceAll(host, ".", "-")
 }
