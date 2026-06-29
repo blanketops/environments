@@ -1,7 +1,5 @@
-FROM golang:1.25.8-alpine AS vendor-snapshot
-WORKDIR /snapshot
-COPY go.mod go.sum ./
-RUN go mod vendor
-
-FROM scratch AS export
-COPY --from=vendor-snapshot /snapshot/vendor /vendor
+# syntax=docker/dockerfile:1
+# Packages the local vendor/ directory as a minimal OCI image.
+# No network access needed — vendor/ is already authoritative locally.
+FROM scratch
+COPY vendor/ /vendor/

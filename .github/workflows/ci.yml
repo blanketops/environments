@@ -1,3 +1,25 @@
+# =============================================================================
+# ci.yml — Blanketops Environments Library CI
+#
+# Two-job pipeline:
+#   1. vendor-snapshot — builds and caches vendor/ as an OCI image in GHCR.
+#      Only rebuilds when go.sum changes (content-addressed by sha256 of go.sum).
+#   2. validate        — restores vendor/ from snapshot, runs full pipeline.
+#      No network at build time — vendor/ is authoritative.
+#
+# Go version:
+#   Extracted from go.mod at runtime — never hardcoded in this file.
+#   Passed as GO_VERSION build-arg to vendor-snapshot/Dockerfile.
+#
+# vendor restore:
+#   FROM scratch images have no default CMD — docker create requires a command
+#   even though it is never executed. /nonexistent is used as the placeholder.
+#   docker export | tar extracts vendor/ directly — no path nesting issues.
+#
+# Secrets required:
+#   GH_PAT — GHCR push/pull + private module access
+# =============================================================================
+
 name: CI
 
 on:
@@ -15,18 +37,19 @@ env:
   VENDOR_IMAGE: ghcr.io/${{ github.repository }}/vendor-snapshot
 
 jobs:
-  # ─────────────────────────────────────────────
+
+  # ───────────────────────────────────────────────────────────────────────────
   # Job 1: Vendor Snapshot
-  # Builds and pushes the vendor image only when
-  # go.sum has changed. All subsequent jobs restore
-  # vendor/ from this image — zero network at build time.
-  # ─────────────────────────────────────────────
+  # Builds and pushes the vendor image only when go.sum has changed.
+  # All subsequent jobs restore vendor/ from this image — zero network at build.
+  # ───────────────────────────────────────────────────────────────────────────
   vendor-snapshot:
     name: Vendor Snapshot
     runs-on: ubuntu-latest
     outputs:
       vendor-tag: ${{ steps.tag.outputs.tag }}
       cache-hit: ${{ steps.check.outputs.hit }}
+      go-minor: ${{ steps.goversion.outputs.minor }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,11 +57,20 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GH_PAT }}
 
+      - name: Extract Go version from go.mod
+        id: goversion
+        run: |
+          FULL=$(grep '^go ' go.mod | awk '{print $2}')
+          MINOR=$(echo "${FULL}" | cut -d. -f1,2)
+          echo "full=${FULL}" >> "$GITHUB_OUTPUT"
+          echo "minor=${MINOR}" >> "$GITHUB_OUTPUT"
+          echo "Go version: ${FULL} → image tag: ${MINOR}"
+
       - name: Compute vendor tag from go.sum
         id: tag
         run: |
           TAG=$(sha256sum go.sum | cut -d' ' -f1 | cut -c1-12)
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "Vendor tag: ${TAG}"
 
       - name: Log in to GHCR
@@ -52,10 +84,10 @@ jobs:
         id: check
         run: |
           if docker manifest inspect ${{ env.VENDOR_IMAGE }}:${{ steps.tag.outputs.tag }} > /dev/null 2>&1; then
-            echo "hit=true" >> $GITHUB_OUTPUT
+            echo "hit=true" >> "$GITHUB_OUTPUT"
             echo "Vendor snapshot exists — skipping build"
           else
-            echo "hit=false" >> $GITHUB_OUTPUT
+            echo "hit=false" >> "$GITHUB_OUTPUT"
             echo "No snapshot found — will build"
           fi
 
@@ -64,32 +96,33 @@ jobs:
         run: |
           git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
 
+      # GO_VERSION build-arg keeps the Dockerfile in sync with go.mod.
+      # vendor-snapshot/Dockerfile must use: ARG GO_VERSION / FROM golang:${GO_VERSION}-alpine
       - name: Build and push vendor snapshot
         if: steps.check.outputs.hit == 'false'
         uses: docker/build-push-action@v5
         with:
           context: .
+          provenance: false 
           file: vendor-snapshot/Dockerfile
           push: true
           tags: |
             ${{ env.VENDOR_IMAGE }}:${{ steps.tag.outputs.tag }}
             ${{ env.VENDOR_IMAGE }}:latest
+          build-args: |
+            GO_VERSION=${{ steps.goversion.outputs.minor }}
           secrets: |
             GH_PAT=${{ secrets.GH_PAT }}
 
-  # ─────────────────────────────────────────────
+  # ───────────────────────────────────────────────────────────────────────────
   # Job 2: Validate
-  # Restores vendor/ from the snapshot image then
-  # runs the full lint/vet/test pipeline.
-  # Pure Go toolchain — no mage, no make.
-  # ─────────────────────────────────────────────
+  # Restores vendor/ from the snapshot image then runs the full pipeline.
+  # go mod tidy and go mod vendor are NOT run here — snapshot is authoritative.
+  # ───────────────────────────────────────────────────────────────────────────
   validate:
     name: Lint, Vet, Test
     runs-on: ubuntu-latest
     needs: vendor-snapshot
-    strategy:
-      matrix:
-        go-version: ["1.25.8"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -97,10 +130,11 @@ jobs:
           token: ${{ secrets.GH_PAT }}
           fetch-depth: 0
 
+      # Go version from go.mod — consistent with vendor snapshot build.
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version-file: go.mod
           cache: false
 
       - name: Configure Git for private modules
@@ -108,7 +142,7 @@ jobs:
           git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
           go env -w GOPRIVATE=github.com/ntlaletsi70/*
           go env -w GONOSUMDB=github.com/ntlaletsi70/*
-          go env -w GOPROXY=https://proxy.golang.org,direct
+          go env -w GOPROXY=direct
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -117,51 +151,20 @@ jobs:
           username: ntlaletsi70
           password: ${{ secrets.GH_PAT }}
 
+      # FROM scratch has no default CMD — docker create requires a placeholder
+      # command even though it is never executed (/nonexistent is fine).
+      # docker export | tar extracts vendor/ with no path nesting issues.
       - name: Restore vendor from snapshot
         run: |
           IMAGE="${{ env.VENDOR_IMAGE }}:${{ needs.vendor-snapshot.outputs.vendor-tag }}"
           echo "Restoring vendor from ${IMAGE}"
           docker pull "${IMAGE}"
-          # Added 'sh' to ensure the container has a command to run upon creation
-          CONTAINER=$(docker create "${IMAGE}" sh)
-          docker cp "${CONTAINER}:/vendor" ./vendor
+          CONTAINER=$(docker create "${IMAGE}" /nonexistent)
+          rm -rf ./vendor
+          docker export "${CONTAINER}" | tar -xf - vendor/
           docker rm "${CONTAINER}"
           echo "vendor/ restored — $(find vendor -mindepth 1 -maxdepth 1 -type d | wc -l) packages"
-
-      - name: Cache Go module cache
-        uses: actions/cache@v4
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-gomod-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-gomod-${{ matrix.go-version }}-
-            ${{ runner.os }}-gomod-
-
-      - name: Cache Go build cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/go-build
-          key: ${{ runner.os }}-go-build-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-build-${{ matrix.go-version }}-
-            ${{ runner.os }}-go-build-
-
-      - name: Tidy
-        run: go mod tidy
-        
-      - name: Vendor
-        run: go mod vendor
-
-      - name: Auto-fix formatting
-        run: gofmt -w .
-
-      - name: Commit formatting and tidy fixes
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "style: auto-format and tidy [skip ci]"
-          branch: ${{ github.head_ref || github.ref_name }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          echo "modules.txt present: $(test -f vendor/modules.txt && echo yes || echo NO)"
 
       - name: Build
         run: go build -mod=vendor ./...
@@ -169,10 +172,11 @@ jobs:
       - name: Vet
         run: go vet -mod=vendor ./...
 
-      - name: Static Check
-        uses: dominikh/staticcheck-action@v1
+      - name: Lint
+        uses: golangci/golangci-lint-action@v7
         with:
-          version: "latest"
+          version: latest
+          args: --timeout=5m
 
       - name: Test
         run: go test -mod=vendor ./... -coverprofile=coverage.out -covermode=atomic
@@ -184,9 +188,10 @@ jobs:
         if: always()
         run: |
           VENDOR_STATUS="${{ needs.vendor-snapshot.outputs.cache-hit == 'true' && '✅ Cache hit' || '🔨 Rebuilt' }}"
-          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
           # ✅ Validation Complete
-          **Go Version:** \`${{ matrix.go-version }}\`
+
+          **Go Version:** \`${{ needs.vendor-snapshot.outputs.go-minor }}\`
 
           ## Vendor Snapshot
           | Key | Value |
@@ -198,11 +203,9 @@ jobs:
           ## Checks Executed
           | Step | Tool |
           | --- | --- |
-          | Dependency tidy | \`go mod tidy\` |
-          | Auto-format | \`gofmt\` |
           | Build | \`go build -mod=vendor\` |
           | Vet | \`go vet -mod=vendor\` |
-          | Lint | \`staticcheck -mod=vendor\` |
+          | Lint | \`golangci-lint\` |
           | Test | \`go test -mod=vendor\` |
           | Coverage | \`coverage.out\` |
           EOF

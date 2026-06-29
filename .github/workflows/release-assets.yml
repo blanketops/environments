@@ -38,7 +38,7 @@
 #   contents: write — required for gh release upload
 # =============================================================================
 
-name: release-assets
+name: Release Assets
 
 on:
   release:
