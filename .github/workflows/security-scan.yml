@@ -125,7 +125,10 @@ jobs:
 
       - name: Upload SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        # Skip on fork PRs — token lacks security-events: write in that context.
+        # continue-on-error ensures scan results are never blocked by upload failures.
+        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        continue-on-error: true
         with:
           sarif_file: govulncheck.sarif
           category: govulncheck
