@@ -31,7 +31,7 @@ on:
 
 permissions:
   contents: read
-  security-events: write  # required for SARIF upload to GitHub Security tab
+  # security-events: write  # re-enable when SARIF upload is active (requires GHAS)
 
 env:
   REGISTRY: ghcr.io
@@ -123,15 +123,14 @@ jobs:
         run: |
           govulncheck -format sarif ./... > govulncheck.sarif 2>/dev/null || true
 
-      - name: Upload SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v4
-        # Skip on fork PRs — token lacks security-events: write in that context.
-        # continue-on-error ensures scan results are never blocked by upload failures.
-        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
-        continue-on-error: true
-        with:
-          sarif_file: govulncheck.sarif
-          category: govulncheck
+      # SARIF upload disabled — requires GitHub Advanced Security (GHAS).
+      # Enable when repo is public under the blanketops org.
+      # - name: Upload SARIF to GitHub Security tab
+      #   uses: github/codeql-action/upload-sarif@v4
+      #   if: always()
+      #   with:
+      #     sarif_file: govulncheck.sarif
+      #     category: govulncheck
 
       - name: Upload scan artifacts
         uses: actions/upload-artifact@v4
