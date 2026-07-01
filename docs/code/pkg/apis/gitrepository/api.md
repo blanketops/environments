@@ -12,6 +12,7 @@ import "github.com/ntlaletsi70/blanketops-environments/pkg/apis/gitrepository/ap
 - [type GitHubProvider](<#GitHubProvider>)
   - [func NewGitHubProvider\(c ctrlclient.Client, scheme \*runtime.Scheme, log logr.Logger, rec events.EventRecorder\) \*GitHubProvider](<#NewGitHubProvider>)
   - [func \(p \*GitHubProvider\) Ensure\(ctx context.Context, cr \*sourcesv1alpha1.GitRepository, spec domain.GitRepository\) \(domain.Result, error\)](<#GitHubProvider.Ensure>)
+  - [func \(p \*GitHubProvider\) Teardown\(ctx context.Context, cr \*sourcesv1alpha1.GitRepository, spec domain.GitRepository\) error](<#GitHubProvider.Teardown>)
 - [type Provider](<#Provider>)
 - [type ProviderConfigRef](<#ProviderConfigRef>)
 - [type Repository](<#Repository>)
@@ -71,6 +72,17 @@ func (p *GitHubProvider) Ensure(ctx context.Context, cr *sourcesv1alpha1.GitRepo
 ```
 
 
+
+<a name="GitHubProvider.Teardown"></a>
+### func \(\*GitHubProvider\) Teardown
+
+```go
+func (p *GitHubProvider) Teardown(ctx context.Context, cr *sourcesv1alpha1.GitRepository, spec domain.GitRepository) error
+```
+
+── Teardown ────────────────────────────────────────────────────────────────── Teardown deletes the Crossplane Repository and RepositoryWebhook this provider created. Mandatory, not optional — Ensure links these objects to the GitRepository CR by label only \(sources.blanketops.dev/gitrepository\), never by ownerReference, and both are cluster\-scoped. Kubernetes GC has no mechanism to reclaim them; without this, deleting the GitRepository CR leaves Crossplane managing a live GitHub repository and webhook forever.
+
+Idempotent — a missing Repository or RepositoryWebhook is not an error.
 
 <a name="Provider"></a>
 ## type Provider

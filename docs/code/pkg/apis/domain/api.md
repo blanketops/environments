@@ -72,6 +72,7 @@ See also:
 - [type KnativeProvider](<#KnativeProvider>)
   - [func NewKnativeProvider\(c client.Client, log logr.Logger, acme ACMEConfig\) \*KnativeProvider](<#NewKnativeProvider>)
   - [func \(p \*KnativeProvider\) Ensure\(ctx context.Context, resolved \*domainResolution.ResolvedDomain, d domain.Domain\) \(domain.DomainResult, error\)](<#KnativeProvider.Ensure>)
+  - [func \(p \*KnativeProvider\) Teardown\(ctx context.Context, d domain.Domain\) error](<#KnativeProvider.Teardown>)
 - [type Provider](<#Provider>)
 
 
@@ -120,6 +121,15 @@ func (p *KnativeProvider) Ensure(ctx context.Context, resolved *domainResolution
 ```
 
 Ensure provisions the cert/mapping chain for the given Domain. Dispatches to ensurePlatform or ensureCustom based on TLSStrategy.
+
+<a name="KnativeProvider.Teardown"></a>
+### func \(\*KnativeProvider\) Teardown
+
+```go
+func (p *KnativeProvider) Teardown(ctx context.Context, d domain.Domain) error
+```
+
+domain/api/knative.go
 
 <a name="Provider"></a>
 ## type Provider

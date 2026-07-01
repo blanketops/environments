@@ -10,6 +10,7 @@ import "github.com/ntlaletsi70/blanketops-environments/pkg/serviceaccounts"
 
 - [type ServiceAccountReconciler](<#ServiceAccountReconciler>)
   - [func NewServiceAccountReconciler\(c client.Client, scheme \*runtime.Scheme, log logr.Logger\) \*ServiceAccountReconciler](<#NewServiceAccountReconciler>)
+  - [func \(r \*ServiceAccountReconciler\) Delete\(ctx context.Context, build \*buildResolution.ResolvedBuild\) error](<#ServiceAccountReconciler.Delete>)
   - [func \(r \*ServiceAccountReconciler\) Reconcile\(ctx context.Context, build \*buildResolution.ResolvedBuild\) error](<#ServiceAccountReconciler.Reconcile>)
 
 
@@ -34,6 +35,15 @@ func NewServiceAccountReconciler(c client.Client, scheme *runtime.Scheme, log lo
 ```
 
 
+
+<a name="ServiceAccountReconciler.Delete"></a>
+### func \(\*ServiceAccountReconciler\) Delete
+
+```go
+func (r *ServiceAccountReconciler) Delete(ctx context.Context, build *buildResolution.ResolvedBuild) error
+```
+
+Delete removes the ServiceAccount created for the Build execution. Mirrors the name\-resolution logic in Reconcile so it targets the same object. Idempotent — a missing ServiceAccount is not an error.
 
 <a name="ServiceAccountReconciler.Reconcile"></a>
 ### func \(\*ServiceAccountReconciler\) Reconcile

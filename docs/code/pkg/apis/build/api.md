@@ -51,16 +51,19 @@ Concrete implementations live alongside this file \(buildah.go, kaniko.go, build
   - [func \(p \*BuildahProvider\) CreateBuildRunSpec\(build \*buildResolution.ResolvedBuild, shipwrightBuild \*shipwrightv1alpha1.Build, fullHash string\) \*shipwrightv1alpha1.BuildRun](<#BuildahProvider.CreateBuildRunSpec>)
   - [func \(p \*BuildahProvider\) CreateBuildSpec\(spec domain.BuildSpec, build \*buildResolution.ResolvedBuild\) \(\*shipwrightv1alpha1.Build, error\)](<#BuildahProvider.CreateBuildSpec>)
   - [func \(p \*BuildahProvider\) Run\(ctx context.Context, build \*buildResolution.ResolvedBuild, spec domain.BuildSpec\) \(domain.BuildResult, error\)](<#BuildahProvider.Run>)
+  - [func \(p \*BuildahProvider\) Teardown\(ctx context.Context, build \*buildResolution.ResolvedBuild\) error](<#BuildahProvider.Teardown>)
 - [type BuildpacksProvider](<#BuildpacksProvider>)
   - [func NewBuildpacksProvider\(c client.Client, scheme \*runtime.Scheme, log logr.Logger, rec events.EventRecorder\) \*BuildpacksProvider](<#NewBuildpacksProvider>)
   - [func \(p \*BuildpacksProvider\) CreateBuildRunSpec\(build \*buildResolution.ResolvedBuild, shipwrightBuild \*shipwrightv1alpha1.Build, fullHash string\) \*shipwrightv1alpha1.BuildRun](<#BuildpacksProvider.CreateBuildRunSpec>)
   - [func \(p \*BuildpacksProvider\) CreateBuildSpec\(spec domain.BuildSpec, build \*buildResolution.ResolvedBuild\) \(\*shipwrightv1alpha1.Build, error\)](<#BuildpacksProvider.CreateBuildSpec>)
   - [func \(p \*BuildpacksProvider\) Run\(ctx context.Context, build \*buildResolution.ResolvedBuild, spec domain.BuildSpec\) \(domain.BuildResult, error\)](<#BuildpacksProvider.Run>)
+  - [func \(p \*BuildpacksProvider\) Teardown\(ctx context.Context, build \*buildResolution.ResolvedBuild\) error](<#BuildpacksProvider.Teardown>)
 - [type KanikoProvider](<#KanikoProvider>)
   - [func NewKanikoProvider\(client client.Client, scheme \*runtime.Scheme, log logr.Logger, recorder events.EventRecorder\) \*KanikoProvider](<#NewKanikoProvider>)
   - [func \(p \*KanikoProvider\) CreateBuildRunSpec\(build \*buildResolution.ResolvedBuild, shipwrightBuild \*shipwrightv1alpha1.Build, fullHash string\) \*shipwrightv1alpha1.BuildRun](<#KanikoProvider.CreateBuildRunSpec>)
   - [func \(p \*KanikoProvider\) CreateBuildSpec\(spec domain.BuildSpec, build \*buildResolution.ResolvedBuild\) \(\*shipwrightv1alpha1.Build, error\)](<#KanikoProvider.CreateBuildSpec>)
   - [func \(p \*KanikoProvider\) Run\(ctx context.Context, build \*buildResolution.ResolvedBuild, spec domain.BuildSpec\) \(domain.BuildResult, error\)](<#KanikoProvider.Run>)
+  - [func \(p \*KanikoProvider\) Teardown\(ctx context.Context, build \*buildResolution.ResolvedBuild\) error](<#KanikoProvider.Teardown>)
 - [type Provider](<#Provider>)
 
 
@@ -149,6 +152,17 @@ Run does NOT block on BuildRun completion. The buildrun observer \(internal/cont
 
 Idempotency: the Shipwright Build is always upserted. The BuildRun is only created if no run for the current execution hash exists — a hash collision \(same spec \+ same trigger context\) is treated as "already triggered" and the existing run is reused.
 
+<a name="BuildahProvider.Teardown"></a>
+### func \(\*BuildahProvider\) Teardown
+
+```go
+func (p *BuildahProvider) Teardown(ctx context.Context, build *buildResolution.ResolvedBuild) error
+```
+
+Teardown deletes the Shipwright Build and all BuildRuns this provider created for the given Build CR. Unlike Run, which creates at most one BuildRun per execution hash, Teardown removes every BuildRun labeled with this Build's name — CreateBuildRunSpec names runs by hash, so multiple runs can accumulate across generations and all must be cleared.
+
+Idempotent — a missing Build or empty BuildRun list is not an error. Ownership is via controllerutil.SetControllerReference, so Kubernetes GC would eventually reclaim these once the parent Build CR is deleted, but teardown deletes explicitly and synchronously rather than depending on GC timing to complete before the finalizer is removed.
+
 <a name="BuildpacksProvider"></a>
 ## type BuildpacksProvider
 
@@ -198,6 +212,17 @@ func (p *BuildpacksProvider) Run(ctx context.Context, build *buildResolution.Res
 ```
 
 Run upserts the Shipwright Build and creates the BuildRun, then returns immediately with Triggered=true, Success=false. Completion is observed asynchronously by the buildrun observer.
+
+<a name="BuildpacksProvider.Teardown"></a>
+### func \(\*BuildpacksProvider\) Teardown
+
+```go
+func (p *BuildpacksProvider) Teardown(ctx context.Context, build *buildResolution.ResolvedBuild) error
+```
+
+Teardown deletes the Shipwright Build and all BuildRuns this provider created for the given Build CR. Unlike Run, which creates at most one BuildRun per execution hash, Teardown removes every BuildRun labeled with this Build's name — CreateBuildRunSpec names runs by hash, so multiple runs can accumulate across generations and all must be cleared.
+
+Idempotent — a missing Build or empty BuildRun list is not an error. Ownership is via controllerutil.SetControllerReference, so Kubernetes GC would eventually reclaim these once the parent Build CR is deleted, but teardown deletes explicitly and synchronously rather than depending on GC timing to complete before the finalizer is removed.
 
 <a name="KanikoProvider"></a>
 ## type KanikoProvider
@@ -258,6 +283,17 @@ Run orchestrates the full Shipwright dispatch pipeline for the given resolved Bu
 Run does NOT block on BuildRun completion. The buildrun observer \(internal/controller/observers/buildrun\) watches for terminal state and writes the final outcome back to the Build CR asynchronously.
 
 Idempotency: the Shipwright Build is always upserted. The BuildRun is only created if no run for the current execution hash exists — a hash collision \(same spec \+ same trigger context\) is treated as "already triggered" and the existing run is reused.
+
+<a name="KanikoProvider.Teardown"></a>
+### func \(\*KanikoProvider\) Teardown
+
+```go
+func (p *KanikoProvider) Teardown(ctx context.Context, build *buildResolution.ResolvedBuild) error
+```
+
+Teardown deletes the Shipwright Build and all BuildRuns this provider created for the given Build CR. Unlike Run, which creates at most one BuildRun per execution hash, Teardown removes every BuildRun labeled with this Build's name — CreateBuildRunSpec names runs by hash, so multiple runs can accumulate across generations and all must be cleared.
+
+Idempotent — a missing Build or empty BuildRun list is not an error. Ownership is via controllerutil.SetControllerReference, so Kubernetes GC would eventually reclaim these once the parent Build CR is deleted, but teardown deletes explicitly and synchronously rather than depending on GC timing to complete before the finalizer is removed.
 
 <a name="Provider"></a>
 ## type Provider
