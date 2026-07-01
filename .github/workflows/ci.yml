@@ -96,6 +96,16 @@ jobs:
         run: |
           git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
 
+      - name: Set up Go
+        if: steps.check.outputs.hit == 'false'
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ steps.goversion.outputs.full }}
+
+      - name: Vendor dependencies
+        if: steps.check.outputs.hit == 'false'
+        run: go mod vendor
+
       # GO_VERSION build-arg keeps the Dockerfile in sync with go.mod.
       # vendor-snapshot/Dockerfile must use: ARG GO_VERSION / FROM golang:${GO_VERSION}-alpine
       - name: Build and push vendor snapshot
@@ -113,7 +123,6 @@ jobs:
             GO_VERSION=${{ steps.goversion.outputs.minor }}
           secrets: |
             GH_PAT=${{ secrets.GH_PAT }}
-
   # ───────────────────────────────────────────────────────────────────────────
   # Job 2: Validate
   # Restores vendor/ from the snapshot image then runs the full pipeline.
