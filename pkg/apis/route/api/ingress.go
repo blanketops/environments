@@ -62,6 +62,7 @@ import (
 
 	"github.com/go-logr/logr"
 	networkingv1 "k8s.io/api/networking/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -223,5 +224,25 @@ func (p *IngressProvider) ensureDisabled(ctx context.Context, route domain.Route
 // Prefixed to distinguish from DomainMapping resources sharing the namespace.
 // e.g. api.dev.blanketops.online → blanketops-route-api-dev-blanketops-online
 func ingressResourceName(host string) string {
-	return fmt.Sprintf("blanketops-route-%s", sanitizeHost(host))
+	return fmt.Sprintf("blanketops--environment-route-%s", sanitizeHost(host))
+}
+
+// ingress.go
+func (p *IngressProvider) Teardown(ctx context.Context, route domain.Route) error {
+	ing := &networkingv1.Ingress{}
+	err := p.client.Get(ctx, client.ObjectKey{
+		Name:      ingressResourceName(route.Host),
+		Namespace: route.Namespace,
+	}, ing)
+	if client.IgnoreNotFound(err) != nil {
+		return fmt.Errorf("get ingress %q: %w", route.Host, err)
+	}
+	if err != nil {
+		return nil // already absent
+	}
+	if err := p.client.Delete(ctx, ing); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("delete ingress %q: %w", route.Host, err)
+	}
+	p.log.Info("Ingress deleted (teardown)", "host", route.Host)
+	return nil
 }

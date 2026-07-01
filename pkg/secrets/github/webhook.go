@@ -113,3 +113,23 @@ func (r *GitHubWebhookSecretReconciler) Reconcile(ctx context.Context, resolved 
 		"event", event.Name, "secret", secretName, "store", r.StoreName)
 	return r.Client.Create(ctx, desired)
 }
+
+// github/webhook.go — append
+func (r *GitHubWebhookSecretReconciler) Delete(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent) error {
+	if resolved == nil || resolved.Event == nil || resolved.Spec == nil {
+		return nil
+	}
+	webhook := resolved.Spec.Webhook
+	if webhook.SecretRef.Name == "" {
+		return nil
+	}
+	obj := &unstructured.Unstructured{}
+	obj.SetAPIVersion("external-secrets.io/v1")
+	obj.SetKind("ExternalSecret")
+	obj.SetName(webhook.SecretRef.Name)
+	obj.SetNamespace(resolved.Event.Namespace)
+	if err := r.Client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+	return nil
+}

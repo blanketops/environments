@@ -224,3 +224,56 @@ func (p *BuildpacksProvider) Run(
 	)
 	return res, nil
 }
+
+// Teardown deletes the Shipwright Build and all BuildRuns this provider
+// created for the given Build CR. Unlike Run, which creates at most one
+// BuildRun per execution hash, Teardown removes every BuildRun labeled with
+// this Build's name — CreateBuildRunSpec names runs by hash, so multiple
+// runs can accumulate across generations and all must be cleared.
+//
+// Idempotent — a missing Build or empty BuildRun list is not an error.
+// Ownership is via controllerutil.SetControllerReference, so Kubernetes GC
+// would eventually reclaim these once the parent Build CR is deleted, but
+// teardown deletes explicitly and synchronously rather than depending on
+// GC timing to complete before the finalizer is removed.
+func (p *BuildpacksProvider) Teardown(ctx context.Context, build *buildResolution.ResolvedBuild) error {
+	if build == nil || build.Build == nil {
+		return nil
+	}
+
+	name := client.ObjectKeyFromObject(build.Build)
+
+	// ------------------------------------------------
+	// Delete all BuildRuns for this Build (may be more than one).
+	// ------------------------------------------------
+	var runs shipwrightv1alpha1.BuildRunList
+	if err := p.Client.List(ctx, &runs,
+		client.InNamespace(build.Build.Namespace),
+		client.MatchingLabels{"build.blanketops.dev/name": build.Build.Name},
+	); err != nil {
+		return fmt.Errorf("list buildruns for teardown: %w", err)
+	}
+
+	for i := range runs.Items {
+		run := &runs.Items[i]
+		if err := p.Client.Delete(ctx, run); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("delete buildrun %s: %w", run.Name, err)
+		}
+	}
+
+	// ------------------------------------------------
+	// Delete the Shipwright Build.
+	// ------------------------------------------------
+	shipBuild := &shipwrightv1alpha1.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      build.Build.Name,
+			Namespace: build.Build.Namespace,
+		},
+	}
+	if err := p.Client.Delete(ctx, shipBuild); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("delete build %s: %w", name.Name, err)
+	}
+
+	p.Log.Info("provider.teardown: complete", "build", build.Build.Name)
+	return nil
+}

@@ -121,3 +121,19 @@ func (r *HookURLExternalSecretReconciler) Reconcile(ctx context.Context, repo *s
 		"repository", repo.Name)
 	return nil
 }
+
+// github/hookurl.go — append
+func (r *HookURLExternalSecretReconciler) Delete(ctx context.Context, repo *sourcesv1alpha1.GitRepository) error {
+	if repo == nil {
+		return nil
+	}
+	obj := &unstructured.Unstructured{}
+	obj.SetAPIVersion("external-secrets.io/v1")
+	obj.SetKind("ExternalSecret")
+	obj.SetName(HookURLSecretName)
+	obj.SetNamespace(repo.Namespace)
+	if err := r.Client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+	return nil
+}

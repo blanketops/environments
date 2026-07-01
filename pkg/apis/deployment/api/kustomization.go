@@ -30,6 +30,7 @@ import (
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -420,4 +421,104 @@ func (m *KustomizeStrategyProvider) ensureKustomization(
 		client.Apply, //nolint:staticcheck
 		&client.PatchOptions{FieldManager: fieldManager, Force: ptr.To(true)},
 	)
+}
+
+// Teardown removes GitOps-managed resources for this Deployment CR: deletes
+// the workload manifests from the external Git repo (committed + pushed),
+// then deletes the Kustomization and GitRepository Flux CRs.
+//
+// Order matters: the Kustomization must be deleted (or its manifests must
+// already be absent) before or alongside the repo cleanup — otherwise Flux
+// may reconcile a stale kustomization.yaml pointing at files mid-removal.
+// Deleting first, removing files second, is the safer order here since a
+// missing Kustomization simply stops reconciling rather than reconciling
+// a broken state.
+//
+// GitRepository and Kustomization are ownerRef'd (SetControllerReference),
+// so GC would eventually reclaim them — deleted explicitly here anyway for
+// determinism, matching the rest of the chain.
+func (m *KustomizeStrategyProvider) Teardown(
+	ctx context.Context,
+	cr *environmentv1alpha1.Deployment,
+	intent *intent.DeploymentIntent,
+	env string,
+) error {
+	log := m.Log.WithValues("deployment", cr.Name, "namespace", cr.Namespace)
+
+	// ── 1. Delete Kustomization CR first — stop reconciliation before
+	//       touching files it points at.
+	kust := &kustomizev1.Kustomization{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-kustomize", cr.Name),
+			Namespace: cr.Namespace,
+		},
+	}
+	if err := m.Client.Delete(ctx, kust); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("delete kustomization: %w", err)
+	}
+
+	// ── 2. Delete GitRepository CR.
+	repo := &sourcev1.GitRepository{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-source", cr.Name),
+			Namespace: cr.Namespace,
+		},
+	}
+	if err := m.Client.Delete(ctx, repo); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("delete gitrepository: %w", err)
+	}
+
+	// ── 3. Remove committed manifests from the external repo + push.
+	if err := m.removeAndPush(cr, intent, env); err != nil {
+		return fmt.Errorf("remove manifests from gitops repo: %w", err)
+	}
+
+	log.Info("GitOps teardown complete")
+	return nil
+}
+
+func (m *KustomizeStrategyProvider) removeAndPush(
+	cr *environmentv1alpha1.Deployment,
+	intent *intent.DeploymentIntent,
+	env string,
+) error {
+	repoPath := filepath.Join(os.TempDir(), fmt.Sprintf("%s-manifests", cr.Name))
+	overlayPath := filepath.Join(repoPath, "overlays", env)
+
+	for _, su := range intent.ServiceUnits {
+		for _, suffix := range []string{"-deployment.yaml", "-service.yaml"} {
+			f := filepath.Join(overlayPath, su.Name+suffix)
+			if err := os.Remove(f); err != nil && !os.IsNotExist(err) {
+				return err
+			}
+		}
+	}
+
+	// Regenerate kustomization.yaml without the removed entries.
+	kustFile := filepath.Join(overlayPath, "kustomization.yaml")
+	var kustContent bytes.Buffer
+	kustContent.WriteString("apiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\nresources:\n  - ../../base/manifests\n")
+	envFile := filepath.Join(overlayPath, "environment.yaml")
+	if _, err := os.Stat(envFile); err == nil {
+		kustContent.WriteString("  - environment.yaml\n")
+	}
+	if err := os.WriteFile(kustFile, kustContent.Bytes(), 0644); err != nil {
+		return err
+	}
+
+	if _, err := utils.RunGit(repoPath, "add", filepath.Join("overlays", env)); err != nil {
+		return err
+	}
+
+	cmd := exec.Command("git", "diff", "--cached", "--quiet")
+	cmd.Dir = repoPath
+	if err := cmd.Run(); err == nil {
+		m.Log.Info("no manifest changes to remove", "env", env)
+		return nil
+	}
+	if _, err := utils.RunGit(repoPath, "commit", "-m", fmt.Sprintf("render(%s): remove workloads for %s", env, cr.Name)); err != nil {
+		return err
+	}
+	_, err := utils.RunGit(repoPath, "push")
+	return err
 }
