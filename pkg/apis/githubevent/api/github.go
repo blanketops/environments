@@ -18,11 +18,13 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	argoeventsv1alpha1 "github.com/argoproj/argo-events/pkg/apis/events/v1alpha1"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/events"
@@ -324,4 +326,32 @@ func (p *GitHubProvider) apply(ctx context.Context, obj client.Object) error {
 	obj.SetResourceVersion(current.GetResourceVersion())
 	p.Log.Info("apply: updating", "kind", obj.GetObjectKind().GroupVersionKind().Kind, "name", obj.GetName())
 	return p.Client.Update(ctx, obj)
+}
+
+// Teardown deletes the Sensor this GitHubEvent CR owns.
+//
+// EventBus, EventSource, the Sensor ServiceAccount, and its RBAC are shared
+// cluster singletons — provisioned once and reused across every GitHubEvent
+// CR — so they are NOT deleted here. Only the Sensor is genuinely per-CR
+// (named "github-sensor-" + crName); deleting the shared objects would break
+// every other GitHubEvent still depending on them.
+//
+// Idempotent — a missing Sensor is not an error.
+func (p *GitHubProvider) Teardown(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent) error {
+	cr := resolved.Event
+
+	sensor := &argoeventsv1alpha1.Sensor{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "github-sensor-" + cr.Name,
+			Namespace: argoEventsNamespace,
+		},
+	}
+
+	p.Log.Info("provider.teardown: deleting sensor", "githubevent", cr.Name, "sensor", sensor.Name)
+
+	if err := p.Client.Delete(ctx, sensor); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("delete sensor %s: %w", sensor.Name, err)
+	}
+
+	return nil
 }

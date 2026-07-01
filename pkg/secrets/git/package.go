@@ -135,3 +135,23 @@ func (r *PackageStateRepositorySecretReconciler) Reconcile(ctx context.Context, 
 		"package", pkg.Name, "secret", secretName)
 	return nil
 }
+
+// git/package.go — append
+func (r *PackageStateRepositorySecretReconciler) Delete(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage) error {
+	if resolvedPackage == nil || resolvedPackage.Package == nil {
+		return nil
+	}
+	secretName := resolvedPackage.Spec.StateRepository.CloneSecret
+	if secretName == "" {
+		return nil
+	}
+	obj := &unstructured.Unstructured{}
+	obj.SetAPIVersion("external-secrets.io/v1")
+	obj.SetKind("ExternalSecret")
+	obj.SetName(secretName)
+	obj.SetNamespace(resolvedPackage.Package.Namespace)
+	if err := r.Client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+	return nil
+}

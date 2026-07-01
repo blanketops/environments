@@ -19,14 +19,14 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	buildResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
-
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	buildResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
 )
 
 type ServiceAccountReconciler struct {
@@ -147,6 +147,48 @@ func (r *ServiceAccountReconciler) Reconcile(
 
 			return r.Client.Update(ctx, existing)
 		}
+	}
+
+	return nil
+}
+
+// Delete removes the ServiceAccount created for the Build execution.
+// Mirrors the name-resolution logic in Reconcile so it targets the same
+// object. Idempotent — a missing ServiceAccount is not an error.
+func (r *ServiceAccountReconciler) Delete(
+	ctx context.Context,
+	build *buildResolution.ResolvedBuild,
+) error {
+	if build == nil || build.Build == nil || build.Spec == nil {
+		return nil
+	}
+
+	spec := build.Spec
+	namespace := build.Build.Namespace
+
+	saName := build.Build.Name + "-build"
+	if spec.ServiceAccount != nil && spec.ServiceAccount.Name != "" {
+		saName = spec.ServiceAccount.Name
+	}
+
+	sa := &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      saName,
+			Namespace: namespace,
+		},
+	}
+
+	r.Log.Info(
+		"Deleting ServiceAccount for Build",
+		"build", build.Build.Name,
+		"serviceAccount", saName,
+	)
+
+	if err := r.Client.Delete(ctx, sa); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
 	}
 
 	return nil

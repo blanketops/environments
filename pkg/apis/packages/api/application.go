@@ -23,6 +23,7 @@ import (
 	kappctrlv1alpha1 "carvel.dev/kapp-controller/pkg/apis/kappctrl/v1alpha1"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -288,4 +289,27 @@ func failedResult(start time.Time, err error) *domain.PackageResult {
 		StartedAt:  start,
 		FinishedAt: time.Now(),
 	}
+}
+
+// DeleteApplication deletes the kapp App this provider created for the
+// given package intent. Mandatory, not optional — BuildKappApplication
+// sets no ownerReference on the App it constructs, so Kubernetes GC will
+// not reclaim it when the parent Package CR is deleted.
+//
+// Idempotent — a missing App is not an error.
+func DeleteApplication(
+	ctx context.Context,
+	c client.Client,
+	intent *intent.PackageIntent,
+) error {
+	app := &kappctrlv1alpha1.App{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      intent.ID.Name,
+			Namespace: intent.ID.Namespace,
+		},
+	}
+	if err := c.Delete(ctx, app); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("delete kapp app %s/%s: %w", intent.ID.Namespace, intent.ID.Name, err)
+	}
+	return nil
 }

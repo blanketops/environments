@@ -175,3 +175,17 @@ func (r *BuildGitSSHSecretReconciler) Reconcile(ctx context.Context, build *buil
 
 	return nil
 }
+
+// git/build.go — append
+func (r *BuildGitSSHSecretReconciler) Delete(ctx context.Context, build *buildResolution.ResolvedBuild) error {
+	secretName := build.Spec.Source.CloneSecret
+	obj := &unstructured.Unstructured{}
+	obj.SetAPIVersion("external-secrets.io/v1")
+	obj.SetKind("ExternalSecret")
+	obj.SetName(secretName)
+	obj.SetNamespace(build.Build.Namespace)
+	if err := r.Client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+	return nil
+}

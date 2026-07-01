@@ -137,3 +137,17 @@ func (r *DeploymentGitSSHSecretReconciler) Reconcile(ctx context.Context, deploy
 	)
 	return nil
 }
+
+// git/deployment.go — append
+func (r *DeploymentGitSSHSecretReconciler) Delete(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) error {
+	secretName := deployment.Spec.ManifestsRepo.CloneSecret
+	obj := &unstructured.Unstructured{}
+	obj.SetAPIVersion("external-secrets.io/v1")
+	obj.SetKind("ExternalSecret")
+	obj.SetName(secretName)
+	obj.SetNamespace(deployment.Deployment.Namespace)
+	if err := r.Client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+	return nil
+}
