@@ -126,9 +126,11 @@ See also:
 - [type IngressProvider](<#IngressProvider>)
   - [func NewIngressProvider\(c client.Client, log logr.Logger\) \*IngressProvider](<#NewIngressProvider>)
   - [func \(p \*IngressProvider\) Ensure\(ctx context.Context, resolved \*routeResolution.ResolvedRoute, route domain.Route\) \(domain.RouteResult, error\)](<#IngressProvider.Ensure>)
+  - [func \(p \*IngressProvider\) Teardown\(ctx context.Context, route domain.Route\) error](<#IngressProvider.Teardown>)
 - [type KnativeProvider](<#KnativeProvider>)
   - [func NewKnativeProvider\(c client.Client, log logr.Logger\) \*KnativeProvider](<#NewKnativeProvider>)
   - [func \(p \*KnativeProvider\) Ensure\(ctx context.Context, resolved \*routeResolution.ResolvedRoute, route domain.Route\) \(domain.RouteResult, error\)](<#KnativeProvider.Ensure>)
+  - [func \(p \*KnativeProvider\) Teardown\(ctx context.Context, route domain.Route\) error](<#KnativeProvider.Teardown>)
 - [type Provider](<#Provider>)
 
 
@@ -161,6 +163,15 @@ func (p *IngressProvider) Ensure(ctx context.Context, resolved *routeResolution.
 
 Ensure creates or reconciles the Kubernetes Ingress for the given Route. When Route.Enabled is false the Ingress is removed instead.
 
+<a name="IngressProvider.Teardown"></a>
+### func \(\*IngressProvider\) Teardown
+
+```go
+func (p *IngressProvider) Teardown(ctx context.Context, route domain.Route) error
+```
+
+ingress.go
+
 <a name="KnativeProvider"></a>
 ## type KnativeProvider
 
@@ -189,6 +200,15 @@ func (p *KnativeProvider) Ensure(ctx context.Context, resolved *routeResolution.
 ```
 
 Ensure creates or reconciles the Knative DomainMapping for the given Route. When Route.Enabled is false the DomainMapping is removed instead.
+
+<a name="KnativeProvider.Teardown"></a>
+### func \(\*KnativeProvider\) Teardown
+
+```go
+func (p *KnativeProvider) Teardown(ctx context.Context, route domain.Route) error
+```
+
+route/api/knative.go
 
 <a name="Provider"></a>
 ## type Provider

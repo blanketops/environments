@@ -14,9 +14,11 @@ import "github.com/ntlaletsi70/blanketops-environments/pkg/secrets/github"
   - [func \(r \*GitHubProviderSecretReconciler\) Reconcile\(ctx context.Context\) error](<#GitHubProviderSecretReconciler.Reconcile>)
 - [type GitHubWebhookSecretReconciler](<#GitHubWebhookSecretReconciler>)
   - [func NewGitHubWebhookSecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*GitHubWebhookSecretReconciler](<#NewGitHubWebhookSecretReconciler>)
+  - [func \(r \*GitHubWebhookSecretReconciler\) Delete\(ctx context.Context, resolved \*githubeventResolution.ResolvedGitHubEvent\) error](<#GitHubWebhookSecretReconciler.Delete>)
   - [func \(r \*GitHubWebhookSecretReconciler\) Reconcile\(ctx context.Context, resolved \*githubeventResolution.ResolvedGitHubEvent\) error](<#GitHubWebhookSecretReconciler.Reconcile>)
 - [type HookURLExternalSecretReconciler](<#HookURLExternalSecretReconciler>)
   - [func NewHookURLExternalSecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*HookURLExternalSecretReconciler](<#NewHookURLExternalSecretReconciler>)
+  - [func \(r \*HookURLExternalSecretReconciler\) Delete\(ctx context.Context, repo \*sourcesv1alpha1.GitRepository\) error](<#HookURLExternalSecretReconciler.Delete>)
   - [func \(r \*HookURLExternalSecretReconciler\) Reconcile\(ctx context.Context, repo \*sourcesv1alpha1.GitRepository\) error](<#HookURLExternalSecretReconciler.Reconcile>)
 
 
@@ -84,6 +86,15 @@ func NewGitHubWebhookSecretReconciler(c client.Client, log logr.Logger, storeNam
 
 
 
+<a name="GitHubWebhookSecretReconciler.Delete"></a>
+### func \(\*GitHubWebhookSecretReconciler\) Delete
+
+```go
+func (r *GitHubWebhookSecretReconciler) Delete(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent) error
+```
+
+github/webhook.go — append
+
 <a name="GitHubWebhookSecretReconciler.Reconcile"></a>
 ### func \(\*GitHubWebhookSecretReconciler\) Reconcile
 
@@ -114,6 +125,15 @@ func NewHookURLExternalSecretReconciler(c client.Client, log logr.Logger, storeN
 ```
 
 
+
+<a name="HookURLExternalSecretReconciler.Delete"></a>
+### func \(\*HookURLExternalSecretReconciler\) Delete
+
+```go
+func (r *HookURLExternalSecretReconciler) Delete(ctx context.Context, repo *sourcesv1alpha1.GitRepository) error
+```
+
+github/hookurl.go — append
 
 <a name="HookURLExternalSecretReconciler.Reconcile"></a>
 ### func \(\*HookURLExternalSecretReconciler\) Reconcile
