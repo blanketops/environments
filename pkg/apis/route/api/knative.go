@@ -55,6 +55,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	duckv1 "knative.dev/pkg/apis/duck/v1"
 	knservingv1beta1 "knative.dev/serving/pkg/apis/serving/v1beta1"
@@ -170,4 +171,21 @@ func (p *KnativeProvider) ensureDisabled(ctx context.Context, route domain.Route
 		Phase:   domain.PhasePending,
 		Message: "route disabled; DomainMapping removed",
 	}, nil
+}
+
+// route/api/knative.go
+func (p *KnativeProvider) Teardown(ctx context.Context, route domain.Route) error {
+	dm := &knservingv1beta1.DomainMapping{}
+	err := p.client.Get(ctx, client.ObjectKey{Name: route.Host, Namespace: route.Namespace}, dm)
+	if client.IgnoreNotFound(err) != nil {
+		return fmt.Errorf("get domainmapping %q: %w", route.Host, err)
+	}
+	if err != nil {
+		return nil
+	}
+	if err := p.client.Delete(ctx, dm); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("delete domainmapping %q: %w", route.Host, err)
+	}
+	p.log.Info("DomainMapping deleted (teardown)", "host", route.Host)
+	return nil
 }

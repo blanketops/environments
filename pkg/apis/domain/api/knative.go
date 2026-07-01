@@ -58,6 +58,7 @@ import (
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/go-logr/logr"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	knnetworkingv1alpha1 "knative.dev/networking/pkg/apis/networking/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -315,3 +316,37 @@ func sanitizeHost(host string) string {
 }
 
 func stringPtr(s string) *string { return &s }
+
+// domain/api/knative.go
+func (p *KnativeProvider) Teardown(ctx context.Context, d domain.Domain) error {
+	// ClusterDomainClaim is per-host, always safe to release regardless of strategy.
+	cdc := &knnetworkingv1alpha1.ClusterDomainClaim{
+		ObjectMeta: metav1.ObjectMeta{Name: d.Host},
+	}
+	if err := p.client.Delete(ctx, cdc); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("delete clusterdomainclaim %q: %w", d.Host, err)
+	}
+
+	if d.TLSStrategy != domain.TLSStrategyCustom {
+		p.log.Info("domain teardown complete (platform strategy)", "host", d.Host)
+		return nil
+	}
+
+	// Certificate is per-host, safe to delete.
+	// The Issuer is deliberately NOT deleted here — it is shared per-namespace
+	// (issuerName(d.Namespace)) across every custom-strategy Domain in that
+	// namespace. Deleting it on a single Domain's teardown would break ACME
+	// renewal for every other Domain still relying on it.
+	cert := &certmanagerv1.Certificate{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      certName(d.Host),
+			Namespace: d.Namespace,
+		},
+	}
+	if err := p.client.Delete(ctx, cert); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("delete certificate %q: %w", d.Host, err)
+	}
+
+	p.log.Info("domain teardown complete (custom strategy)", "host", d.Host)
+	return nil
+}

@@ -17,8 +17,10 @@ package api
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/events"
@@ -191,3 +193,58 @@ func (p *GitHubProvider) apply(ctx context.Context, obj ctrlclient.Object) error
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 func ptr[T any](v T) *T { return &v }
+
+// ── Teardown ──────────────────────────────────────────────────────────────────
+// Teardown deletes the Crossplane Repository and RepositoryWebhook this
+// provider created. Mandatory, not optional — Ensure links these objects to
+// the GitRepository CR by label only (sources.blanketops.dev/gitrepository),
+// never by ownerReference, and both are cluster-scoped. Kubernetes GC has no
+// mechanism to reclaim them; without this, deleting the GitRepository CR
+// leaves Crossplane managing a live GitHub repository and webhook forever.
+//
+// Idempotent — a missing Repository or RepositoryWebhook is not an error.
+func (p *GitHubProvider) Teardown(
+	ctx context.Context,
+	cr *sourcesv1alpha1.GitRepository,
+	spec domain.GitRepository,
+) error {
+	p.Log.Info(
+		"github.teardown: removing repository",
+		"gitrepository", ctrlclient.ObjectKeyFromObject(cr),
+	)
+
+	// 1. RepositoryWebhook first — release the hook before the repo it
+	//    targets, so Crossplane isn't left reconciling a webhook against a
+	//    Repository that's mid-deletion.
+	if len(spec.Webhooks) > 0 {
+		webhook := &RepositoryWebhook{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: SchemeGroupVersion.String(),
+				Kind:       "RepositoryWebhook",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: cr.Name + "-webhook",
+			},
+		}
+		if err := p.Client.Delete(ctx, webhook); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("delete repository webhook: %w", err)
+		}
+	}
+
+	// 2. Repository.
+	repo := &Repository{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: SchemeGroupVersion.String(),
+			Kind:       "Repository",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: cr.Name,
+		},
+	}
+	if err := p.Client.Delete(ctx, repo); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("delete repository: %w", err)
+	}
+
+	p.Log.Info("github.teardown: complete", "repository", cr.Name)
+	return nil
+}

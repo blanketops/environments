@@ -23,8 +23,10 @@ import (
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/events"
 	"k8s.io/utils/ptr"
@@ -335,4 +337,52 @@ func deriveDeploymentPhase(
 	}
 
 	return domain.DeploymentPhase("Deploying")
+}
+
+// Teardown deletes the Kubernetes Deployment and Service this provider
+// created for each ServiceUnit in the intent. Required, not optional —
+// applyDeployment/applyService use server-side apply with no
+// ownerReference, so Kubernetes GC will not reclaim these when the parent
+// Deployment CR is removed. Teardown is the only mechanism that cleans
+// them up.
+//
+// Idempotent — a missing Deployment or Service is not an error. Attempts
+// both objects for every ServiceUnit regardless of individual failures and
+// aggregates errors, so one stuck object doesn't block cleanup of the rest.
+func (p *K8SProvider) Teardown(
+	ctx context.Context,
+	deploymentIntent *intent.DeploymentIntent,
+) error {
+	var errs []error
+
+	for i := range deploymentIntent.ServiceUnits {
+		su := &deploymentIntent.ServiceUnits[i]
+
+		deploy := &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      su.Name,
+				Namespace: deploymentIntent.Namespace,
+			},
+		}
+		p.Log.Info("provider.teardown: deleting deployment", "name", su.Name)
+		if err := p.Client.Delete(ctx, deploy); err != nil && !apierrors.IsNotFound(err) {
+			errs = append(errs, fmt.Errorf("delete deployment %s: %w", su.Name, err))
+		}
+
+		svc := &corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      su.Name,
+				Namespace: deploymentIntent.Namespace,
+			},
+		}
+		p.Log.Info("provider.teardown: deleting service", "name", su.Name)
+		if err := p.Client.Delete(ctx, svc); err != nil && !apierrors.IsNotFound(err) {
+			errs = append(errs, fmt.Errorf("delete service %s: %w", su.Name, err))
+		}
+	}
+
+	if len(errs) > 0 {
+		return utilerrors.NewAggregate(errs)
+	}
+	return nil
 }
