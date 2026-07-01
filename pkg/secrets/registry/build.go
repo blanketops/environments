@@ -110,3 +110,22 @@ func (r *BuildRegistryExternalSecretReconciler) Reconcile(ctx context.Context, b
 		"build", build.Build.Name, "secret", secretName, "store", r.StoreName)
 	return r.Client.Create(ctx, desired)
 }
+
+func (r *BuildRegistryExternalSecretReconciler) Delete(ctx context.Context, build *buildResolution.ResolvedBuild) error {
+	if build == nil || build.Build == nil || build.Spec == nil || build.Spec.ServiceAccount == nil {
+		return nil
+	}
+	secretName := build.Spec.ServiceAccount.Secret
+	if secretName == "" {
+		return nil
+	}
+	obj := &unstructured.Unstructured{}
+	obj.SetAPIVersion("external-secrets.io/v1")
+	obj.SetKind("ExternalSecret")
+	obj.SetName(secretName)
+	obj.SetNamespace(build.Build.Namespace)
+	if err := r.Client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+	return nil
+}
