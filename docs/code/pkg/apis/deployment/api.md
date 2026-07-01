@@ -16,6 +16,7 @@ import "github.com/ntlaletsi70/blanketops-environments/pkg/apis/deployment/api"
   - [func \(p \*K8SProvider\) Execute\(ctx context.Context, intent \*intent.DeploymentIntent\) \(\*domain.DeploymentResult, error\)](<#K8SProvider.Execute>)
   - [func \(p \*K8SProvider\) Runtime\(\) intent.Runtime](<#K8SProvider.Runtime>)
   - [func \(p \*K8SProvider\) Supports\(strategy intent.Strategy\) bool](<#K8SProvider.Supports>)
+  - [func \(p \*K8SProvider\) Teardown\(ctx context.Context, deploymentIntent \*intent.DeploymentIntent\) error](<#K8SProvider.Teardown>)
 - [type KnativeReconciler](<#KnativeReconciler>)
   - [func NewKnativeReconciler\(c client.Client, scheme \*runtime.Scheme, log logr.Logger\) \*KnativeReconciler](<#NewKnativeReconciler>)
 - [type KustomizationProvider](<#KustomizationProvider>)
@@ -25,6 +26,7 @@ import "github.com/ntlaletsi70/blanketops-environments/pkg/apis/deployment/api"
   - [func \(m \*KustomizeStrategyProvider\) BuildKustomize\(intent \*intent.DeploymentIntent\) \(\[\]runtime.Object, error\)](<#KustomizeStrategyProvider.BuildKustomize>)
   - [func \(m \*KustomizeStrategyProvider\) CommitAndPush\(repoPath string, intent \*intent.DeploymentIntent, env string\) error](<#KustomizeStrategyProvider.CommitAndPush>)
   - [func \(m \*KustomizeStrategyProvider\) ReconcileKustomization\(ctx context.Context, cr \*environmentv1alpha1.Deployment, intent \*intent.DeploymentIntent, repoURL string, ref string, path string\) error](<#KustomizeStrategyProvider.ReconcileKustomization>)
+  - [func \(m \*KustomizeStrategyProvider\) Teardown\(ctx context.Context, cr \*environmentv1alpha1.Deployment, intent \*intent.DeploymentIntent, env string\) error](<#KustomizeStrategyProvider.Teardown>)
 - [type Provider](<#Provider>)
 - [type ProviderRegistry](<#ProviderRegistry>)
   - [func NewProviderRegistry\(providers ...Provider\) \*ProviderRegistry](<#NewProviderRegistry>)
@@ -117,6 +119,17 @@ func (p *K8SProvider) Supports(strategy intent.Strategy) bool
 ```
 
 
+
+<a name="K8SProvider.Teardown"></a>
+### func \(\*K8SProvider\) Teardown
+
+```go
+func (p *K8SProvider) Teardown(ctx context.Context, deploymentIntent *intent.DeploymentIntent) error
+```
+
+Teardown deletes the Kubernetes Deployment and Service this provider created for each ServiceUnit in the intent. Required, not optional — applyDeployment/applyService use server\-side apply with no ownerReference, so Kubernetes GC will not reclaim these when the parent Deployment CR is removed. Teardown is the only mechanism that cleans them up.
+
+Idempotent — a missing Deployment or Service is not an error. Attempts both objects for every ServiceUnit regardless of individual failures and aggregates errors, so one stuck object doesn't block cleanup of the rest.
 
 <a name="KnativeReconciler"></a>
 ## type KnativeReconciler
@@ -211,6 +224,19 @@ func (m *KustomizeStrategyProvider) ReconcileKustomization(ctx context.Context, 
 ```
 
 
+
+<a name="KustomizeStrategyProvider.Teardown"></a>
+### func \(\*KustomizeStrategyProvider\) Teardown
+
+```go
+func (m *KustomizeStrategyProvider) Teardown(ctx context.Context, cr *environmentv1alpha1.Deployment, intent *intent.DeploymentIntent, env string) error
+```
+
+Teardown removes GitOps\-managed resources for this Deployment CR: deletes the workload manifests from the external Git repo \(committed \+ pushed\), then deletes the Kustomization and GitRepository Flux CRs.
+
+Order matters: the Kustomization must be deleted \(or its manifests must already be absent\) before or alongside the repo cleanup — otherwise Flux may reconcile a stale kustomization.yaml pointing at files mid\-removal. Deleting first, removing files second, is the safer order here since a missing Kustomization simply stops reconciling rather than reconciling a broken state.
+
+GitRepository and Kustomization are ownerRef'd \(SetControllerReference\), so GC would eventually reclaim them — deleted explicitly here anyway for determinism, matching the rest of the chain.
 
 <a name="Provider"></a>
 ## type Provider

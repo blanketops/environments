@@ -10,6 +10,7 @@ import "github.com/ntlaletsi70/blanketops-environments/pkg/apis/packages/api"
 
 - [func ApplyApplication\(ctx context.Context, c client.Client, app \*kappctrlv1alpha1.App\) error](<#ApplyApplication>)
 - [func BuildKappApplication\(intent \*intent.PackageIntent\) \(\*kappctrlv1alpha1.App, error\)](<#BuildKappApplication>)
+- [func DeleteApplication\(ctx context.Context, c client.Client, intent \*intent.PackageIntent\) error](<#DeleteApplication>)
 - [func PackageResultFromApplicationState\(state \*domain.ApplicationState\) \*domain.PackageResult](<#PackageResultFromApplicationState>)
 - [type ApplicationProvider](<#ApplicationProvider>)
   - [func NewApplicationProvider\(c client.Client, scheme \*runtime.Scheme, log logr.Logger, rec events.EventRecorder\) \*ApplicationProvider](<#NewApplicationProvider>)
@@ -39,6 +40,17 @@ func BuildKappApplication(intent *intent.PackageIntent) (*kappctrlv1alpha1.App, 
 ```
 
 \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- Build \(pure function\) \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+
+<a name="DeleteApplication"></a>
+## func DeleteApplication
+
+```go
+func DeleteApplication(ctx context.Context, c client.Client, intent *intent.PackageIntent) error
+```
+
+DeleteApplication deletes the kapp App this provider created for the given package intent. Mandatory, not optional — BuildKappApplication sets no ownerReference on the App it constructs, so Kubernetes GC will not reclaim it when the parent Package CR is deleted.
+
+Idempotent — a missing App is not an error.
 
 <a name="PackageResultFromApplicationState"></a>
 ## func PackageResultFromApplicationState

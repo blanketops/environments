@@ -13,6 +13,7 @@ import "github.com/ntlaletsi70/blanketops-environments/pkg/secrets/registry"
   - [func \(r \*BuildRegistryExternalSecretReconciler\) Reconcile\(ctx context.Context, build \*buildResolution.ResolvedBuild\) error](<#BuildRegistryExternalSecretReconciler.Reconcile>)
 - [type PackageRegistrySecretReconciler](<#PackageRegistrySecretReconciler>)
   - [func NewPackageRegistrySecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*PackageRegistrySecretReconciler](<#NewPackageRegistrySecretReconciler>)
+  - [func \(r \*PackageRegistrySecretReconciler\) Delete\(ctx context.Context, resolvedPackage \*packageResolution.ResolvedPackage\) error](<#PackageRegistrySecretReconciler.Delete>)
   - [func \(r \*PackageRegistrySecretReconciler\) Reconcile\(ctx context.Context, resolvedPackage \*packageResolution.ResolvedPackage\) error](<#PackageRegistrySecretReconciler.Reconcile>)
 
 
@@ -68,6 +69,15 @@ func NewPackageRegistrySecretReconciler(c client.Client, log logr.Logger, storeN
 ```
 
 
+
+<a name="PackageRegistrySecretReconciler.Delete"></a>
+### func \(\*PackageRegistrySecretReconciler\) Delete
+
+```go
+func (r *PackageRegistrySecretReconciler) Delete(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage) error
+```
+
+registry/packageregistry.go — append
 
 <a name="PackageRegistrySecretReconciler.Reconcile"></a>
 ### func \(\*PackageRegistrySecretReconciler\) Reconcile

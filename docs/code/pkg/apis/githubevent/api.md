@@ -17,6 +17,7 @@ Ensure is idempotent — calling it multiple times for the same GitHubEvent CR m
 - [type GitHubProvider](<#GitHubProvider>)
   - [func NewGitHubProvider\(c client.Client, scheme \*runtime.Scheme, log logr.Logger, rec events.EventRecorder\) \*GitHubProvider](<#NewGitHubProvider>)
   - [func \(p \*GitHubProvider\) Ensure\(ctx context.Context, resolved \*githubeventResolution.ResolvedGitHubEvent, spec domain.GitHubEvent\) \(domain.GitHubEventResult, error\)](<#GitHubProvider.Ensure>)
+  - [func \(p \*GitHubProvider\) Teardown\(ctx context.Context, resolved \*githubeventResolution.ResolvedGitHubEvent\) error](<#GitHubProvider.Teardown>)
 - [type Provider](<#Provider>)
 
 
@@ -53,6 +54,19 @@ func (p *GitHubProvider) Ensure(ctx context.Context, resolved *githubeventResolu
 Ensure provisions or reconciles the Argo Events stack — plus the RBAC the Sensor needs — for the GitHubEvent CR.
 
 Ensure does NOT wait for a webhook delivery. Infrastructure provisioning completing successfully is signaled via Triggered=true — the actual payload\-received outcome is written later by the observer/reconcile path that detects the Sensor's patch on this CR's own spec.contract.
+
+<a name="GitHubProvider.Teardown"></a>
+### func \(\*GitHubProvider\) Teardown
+
+```go
+func (p *GitHubProvider) Teardown(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent) error
+```
+
+Teardown deletes the Sensor this GitHubEvent CR owns.
+
+EventBus, EventSource, the Sensor ServiceAccount, and its RBAC are shared cluster singletons — provisioned once and reused across every GitHubEvent CR — so they are NOT deleted here. Only the Sensor is genuinely per\-CR \(named "github\-sensor\-" \+ crName\); deleting the shared objects would break every other GitHubEvent still depending on them.
+
+Idempotent — a missing Sensor is not an error.
 
 <a name="Provider"></a>
 ## type Provider
