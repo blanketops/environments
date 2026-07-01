@@ -36,12 +36,12 @@ package core
 import (
 	"reflect"
 
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
 	environmentsv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
 	eventsv1alpha1 "github.com/BlanketOps/environments-api/api/events/v1alpha1"
+	networksv1alpha1 "github.com/BlanketOps/environments-api/api/networks/v1alpha1"
 	sourcesv1alpha1 "github.com/BlanketOps/environments-api/api/sources/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // MeaningfulChangePredicate returns a predicate.Funcs that suppresses Update
@@ -69,12 +69,6 @@ func MeaningfulChangePredicate() predicate.Funcs {
 				}
 				return old.Annotations["build.blanketops.dev/retry-attempt"] != newObj.Annotations["build.blanketops.dev/retry-attempt"]
 
-			case *environmentsv1alpha1.BuildTrigger:
-				newObj, ok := e.ObjectNew.(*environmentsv1alpha1.BuildTrigger)
-				if !ok {
-					return true
-				}
-				return !reflect.DeepEqual(old.Spec, newObj.Spec)
 
 			case *environmentsv1alpha1.Deployment:
 				newObj, ok := e.ObjectNew.(*environmentsv1alpha1.Deployment)
@@ -117,6 +111,18 @@ func MeaningfulChangePredicate() predicate.Funcs {
 					return true
 				}
 				return !reflect.DeepEqual(old.Spec, newObj.Spec)
+			case *networksv1alpha1.Route:
+				newObj, ok := e.ObjectNew.(*networksv1alpha1.Route)
+				if !ok {
+					return true
+				}
+				return !reflect.DeepEqual(old.Spec, newObj.Spec)
+			case *networksv1alpha1.Domain:
+				newObj, ok := e.ObjectNew.(*networksv1alpha1.Domain)
+				if !ok {
+					return true
+				}
+				return !reflect.DeepEqual(old.Spec, newObj.Spec)		
 
 			default:
 				// Unknown kind — reconcile as safe default. An unknown type
