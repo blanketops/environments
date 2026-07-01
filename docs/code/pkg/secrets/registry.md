@@ -10,6 +10,7 @@ import "github.com/ntlaletsi70/blanketops-environments/pkg/secrets/registry"
 
 - [type BuildRegistryExternalSecretReconciler](<#BuildRegistryExternalSecretReconciler>)
   - [func NewBuildRegistryExternalSecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*BuildRegistryExternalSecretReconciler](<#NewBuildRegistryExternalSecretReconciler>)
+  - [func \(r \*BuildRegistryExternalSecretReconciler\) Delete\(ctx context.Context, build \*buildResolution.ResolvedBuild\) error](<#BuildRegistryExternalSecretReconciler.Delete>)
   - [func \(r \*BuildRegistryExternalSecretReconciler\) Reconcile\(ctx context.Context, build \*buildResolution.ResolvedBuild\) error](<#BuildRegistryExternalSecretReconciler.Reconcile>)
 - [type PackageRegistrySecretReconciler](<#PackageRegistrySecretReconciler>)
   - [func NewPackageRegistrySecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*PackageRegistrySecretReconciler](<#NewPackageRegistrySecretReconciler>)
@@ -35,6 +36,15 @@ type BuildRegistryExternalSecretReconciler struct {
 
 ```go
 func NewBuildRegistryExternalSecretReconciler(c client.Client, log logr.Logger, storeName string) *BuildRegistryExternalSecretReconciler
+```
+
+
+
+<a name="BuildRegistryExternalSecretReconciler.Delete"></a>
+### func \(\*BuildRegistryExternalSecretReconciler\) Delete
+
+```go
+func (r *BuildRegistryExternalSecretReconciler) Delete(ctx context.Context, build *buildResolution.ResolvedBuild) error
 ```
 
 

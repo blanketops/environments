@@ -45,6 +45,7 @@ Unless required by applicable law or agreed to in writing, software distributed 
 - [type BuildService](<#BuildService>)
   - [func NewBuildService\(mapper \*Mapper, status \*StatusWriter, backend \*BackendSelector\) \*BuildService](<#NewBuildService>)
   - [func \(s \*BuildService\) Reconcile\(ctx context.Context, resolved \*bldResolution.ResolvedBuild\) error](<#BuildService.Reconcile>)
+  - [func \(s \*BuildService\) Teardown\(ctx context.Context, resolved \*bldResolution.ResolvedBuild\) error](<#BuildService.Teardown>)
 - [type Mapper](<#Mapper>)
   - [func NewMapper\(\) \*Mapper](<#NewMapper>)
   - [func \(Mapper\) MapResolvedToDomain\(rb \*bldResolution.ResolvedBuild\) domain.BuildSpec](<#Mapper.MapResolvedToDomain>)
@@ -112,6 +113,15 @@ func (s *BuildService) Reconcile(ctx context.Context, resolved *bldResolution.Re
 ```
 
 Reconcile executes the full build pipeline for a resolved Build CR. It maps, selects, executes, and writes status in sequence. An error from any stage is forwarded to StatusWriter so the Build CR always reflects the latest outcome, even on failure.
+
+<a name="BuildService.Teardown"></a>
+### func \(\*BuildService\) Teardown
+
+```go
+func (s *BuildService) Teardown(ctx context.Context, resolved *bldResolution.ResolvedBuild) error
+```
+
+Teardown reverses Reconcile — maps the resolved Build, selects the same backend provider strategy would have used, and dispatches Teardown to delete the owned BuildRun\(s\) and Build.
 
 <a name="Mapper"></a>
 ## type Mapper
