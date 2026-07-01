@@ -73,6 +73,15 @@ func (s *BuildService) Reconcile(ctx context.Context, resolved *bldResolution.Re
 	return s.status.Write(ctx, resolved.Build, conditions...)
 }
 
+// Teardown reverses Reconcile — maps the resolved Build, selects the same
+// backend provider strategy would have used, and dispatches Teardown to
+// delete the owned BuildRun(s) and Build.
+func (s *BuildService) Teardown(ctx context.Context, resolved *bldResolution.ResolvedBuild) error {
+	spec := s.mapper.MapResolvedToDomain(resolved)
+	provider := s.backend.ForSpec(spec)
+	return provider.Teardown(ctx, resolved)
+}
+
 // buildConditions derives metav1.Condition slice from BuildResult + error.
 // This is application logic: it knows what Success/Triggered/Error mean.
 func (s *BuildService) buildConditions(result domain.BuildResult, runErr error) []metav1.Condition {
