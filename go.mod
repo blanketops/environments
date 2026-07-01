@@ -4,7 +4,7 @@ go 1.26.4
 
 require (
 	carvel.dev/kapp-controller v0.60.3
-	github.com/BlanketOps/environments-api v0.2.2
+	github.com/BlanketOps/environments-api v0.2.3
 	github.com/argoproj/argo-events v1.9.10
 	github.com/bradfitz/gomemcache v0.0.0-20260422231931-4d751bb6e37c
 	github.com/cert-manager/cert-manager v1.20.3
