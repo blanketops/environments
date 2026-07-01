@@ -30,7 +30,7 @@ package gitrepository
 import (
 	"context"
 
-	sourcesv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/sources/v1alpha1"
+	sourcesv1alpha1 "github.com/BlanketOps/environments-api/api/sources/v1alpha1"
 )
 
 // Adapter wraps the GitRepository resolution function for interface-based injection.

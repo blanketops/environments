@@ -39,9 +39,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	environmentsv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
-	eventsv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/events/v1alpha1"
-	sourcesv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/sources/v1alpha1"
+	environmentsv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
+	eventsv1alpha1 "github.com/BlanketOps/environments-api/api/events/v1alpha1"
+	sourcesv1alpha1 "github.com/BlanketOps/environments-api/api/sources/v1alpha1"
 )
 
 // MeaningfulChangePredicate returns a predicate.Funcs that suppresses Update
