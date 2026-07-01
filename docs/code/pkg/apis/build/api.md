@@ -307,6 +307,13 @@ Provider is the build execution contract implemented by all build backends.
 ```go
 type Provider interface {
     Run(ctx context.Context, resolved *buildResolution.ResolvedBuild, spec domain.BuildSpec) (domain.BuildResult, error)
+
+    // Teardown deletes the Shipwright Build and any BuildRuns this provider
+    // created for the given resolved Build. Called from the domain's
+    // CmdDelete branch via BuildService.Teardown, gated by the finalizer at
+    // the controller level. Idempotent — a missing Build or BuildRun is not
+    // an error.
+    Teardown(ctx context.Context, resolved *buildResolution.ResolvedBuild) error
 }
 ```
 
