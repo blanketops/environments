@@ -4,20 +4,20 @@ go 1.26.4
 
 require (
 	carvel.dev/kapp-controller v0.60.3
+	github.com/BlanketOps/environments-api v0.2.0
 	github.com/argoproj/argo-events v1.9.10
 	github.com/bradfitz/gomemcache v0.0.0-20260422231931-4d751bb6e37c
 	github.com/cert-manager/cert-manager v1.20.3
-	github.com/fluxcd/kustomize-controller/api v1.9.0
+	github.com/fluxcd/kustomize-controller/api v1.9.1
 	github.com/fluxcd/pkg/apis/meta v1.31.0
-	github.com/fluxcd/source-controller/api v1.9.0
+	github.com/fluxcd/source-controller/api v1.9.1
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
 	github.com/magefile/mage v1.17.2
-	github.com/ntlaletsi70/blanketops-environments-api v0.1.8
 	github.com/ntlaletsi70/blanketops-environments-contract v0.4.7
 	github.com/princjef/gomarkdoc v1.1.0
 	github.com/redis/go-redis/v9 v9.21.0
-	github.com/shipwright-io/build v0.20.2
+	github.com/shipwright-io/build v0.20.3
 	go.uber.org/zap v1.28.0
 	golang.org/x/crypto v0.53.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -25,7 +25,7 @@ require (
 	k8s.io/api v0.36.2
 	k8s.io/apimachinery v0.36.2
 	k8s.io/client-go v0.36.2
-	k8s.io/utils v0.0.0-20260626114624-be93311217bd
+	k8s.io/utils v0.0.0-20260507154919-ff6756f316d2
 	knative.dev/networking v0.0.0-20260616021346-d4e13b76b133
 	knative.dev/pkg v0.0.0-20260622140654-39ebae2ee2dc
 	knative.dev/serving v0.49.1
@@ -51,7 +51,7 @@ require (
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/fluxcd/pkg/apis/acl v0.10.0 // indirect
-	github.com/fluxcd/pkg/apis/kustomize v1.19.0 // indirect
+	github.com/fluxcd/pkg/apis/kustomize v1.19.1 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.2 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
@@ -139,7 +139,7 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-	k8s.io/apiextensions-apiserver v0.36.1 // indirect
+	k8s.io/apiextensions-apiserver v0.36.2 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260603220949-865597e52e25 // indirect
 	mvdan.cc/xurls/v2 v2.2.0 // indirect

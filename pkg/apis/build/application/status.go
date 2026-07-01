@@ -22,7 +22,7 @@ import (
 	retry "k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	buildv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+	buildv1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
 )
 
 // StatusWriter persists Build conditions to the CR status.

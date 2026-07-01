@@ -34,7 +34,7 @@ package domain
 import (
 	"context"
 
-	networksv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/networks/v1alpha1"
+	networksv1alpha1 "github.com/BlanketOps/environments-api/api/networks/v1alpha1"
 )
 
 // Adapter wraps the Domain resolution function for interface-based injection.

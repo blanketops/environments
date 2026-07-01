@@ -2894,9 +2894,9 @@ import (
         "sigs.k8s.io/controller-runtime/pkg/event"
         "sigs.k8s.io/controller-runtime/pkg/predicate"
 
-        environmentsv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
-        eventsv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/events/v1alpha1"
-        sourcesv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/sources/v1alpha1"
+        environmentsv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
+        eventsv1alpha1 "github.com/BlanketOps/environments-api/api/events/v1alpha1"
+        sourcesv1alpha1 "github.com/BlanketOps/environments-api/api/sources/v1alpha1"
 )
 
 // MeaningfulChangePredicate returns a predicate.Funcs that suppresses Update
@@ -4166,8 +4166,8 @@ import (
         "sigs.k8s.io/controller-runtime/pkg/client"
         "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-        buildv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
-        eventsv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/events/v1alpha1"
+        buildv1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
+        eventsv1alpha1 "github.com/BlanketOps/environments-api/api/events/v1alpha1"
         "github.com/ntlaletsi70/blanketops-environments/pkg/apis/build/domain"
         "github.com/ntlaletsi70/blanketops-environments/pkg/utils"
         buildResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
@@ -4495,7 +4495,7 @@ limitations under the License.
 package api
 
 import (
-        buildv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+        buildv1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
         "github.com/ntlaletsi70/blanketops-environments/pkg/apis/build/domain"
 )
 
@@ -4836,7 +4836,7 @@ import (
         retry "k8s.io/client-go/util/retry"
         "sigs.k8s.io/controller-runtime/pkg/client"
 
-        buildv1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+        buildv1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
 )
 
 // StatusWriter persists Build conditions to the CR status.
@@ -5350,7 +5350,7 @@ import (
         "k8s.io/apimachinery/pkg/runtime"
         "sigs.k8s.io/controller-runtime/pkg/client"
 
-        env1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+        env1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
         "github.com/ntlaletsi70/blanketops-environments/pkg/apis/deployment/domain"
 )
 
@@ -6071,7 +6071,7 @@ import (
         "sigs.k8s.io/controller-runtime/pkg/client"
         "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-        environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+        environmentv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
         "github.com/ntlaletsi70/blanketops-environments/pkg/apis/deployment/render/builders"
         intent "github.com/ntlaletsi70/blanketops-environments/pkg/intent/deployment"
         "github.com/ntlaletsi70/blanketops-environments/pkg/utils"
@@ -6596,7 +6596,7 @@ import (
 
         "github.com/go-logr/logr"
 
-        environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+        environmentv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
         "github.com/ntlaletsi70/blanketops-environments/pkg/apis/deployment/domain"
         intent "github.com/ntlaletsi70/blanketops-environments/pkg/intent/deployment"
 )
@@ -7209,7 +7209,7 @@ import (
         "k8s.io/client-go/util/retry"
         "sigs.k8s.io/controller-runtime/pkg/client"
 
-        env1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+        env1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
         "github.com/ntlaletsi70/blanketops-environments/pkg/apis/deployment/domain"
 )
 
@@ -8517,7 +8517,7 @@ import (
         "k8s.io/client-go/util/retry"
         "sigs.k8s.io/controller-runtime/pkg/client"
 
-        networksv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/networks/v1alpha1"
+        networksv1alpha1 "github.com/BlanketOps/environments-api/api/networks/v1alpha1"
 )
 
 // StatusWriter persists Domain conditions to the CR status.
@@ -8723,7 +8723,7 @@ import (
         apierrors "k8s.io/apimachinery/pkg/api/errors"
         "sigs.k8s.io/controller-runtime/pkg/client"
 
-        environmentsv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+        environmentsv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
         environmentapi "github.com/ntlaletsi70/blanketops-environments/pkg/apis/environment/api"
         environmentresolution "github.com/ntlaletsi70/blanketops-environments/resolution/environment"
 )
@@ -9413,7 +9413,7 @@ import (
         metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
         "sigs.k8s.io/controller-runtime/pkg/client"
 
-        eventsv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/events/v1alpha1"
+        eventsv1alpha1 "github.com/BlanketOps/environments-api/api/events/v1alpha1"
 )
 
 type StatusWriter struct {
@@ -9479,7 +9479,7 @@ import (
         "k8s.io/client-go/tools/events"
         ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-        sourcesv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/sources/v1alpha1"
+        sourcesv1alpha1 "github.com/BlanketOps/environments-api/api/sources/v1alpha1"
         "github.com/ntlaletsi70/blanketops-environments/pkg/apis/gitrepository/domain"
 )
 
@@ -10013,7 +10013,7 @@ import (
         "k8s.io/apimachinery/pkg/api/meta"
         metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-        sourcesv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/sources/v1alpha1"
+        sourcesv1alpha1 "github.com/BlanketOps/environments-api/api/sources/v1alpha1"
         "github.com/ntlaletsi70/blanketops-environments/pkg/apis/gitrepository/domain"
 )
 
@@ -11058,7 +11058,7 @@ import (
         "encoding/json"
         "time"
 
-        env1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+        env1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
         "github.com/ntlaletsi70/blanketops-environments/pkg/apis/packages/domain"
 
         "github.com/go-logr/logr"
@@ -12223,7 +12223,7 @@ import (
         "k8s.io/client-go/util/retry"
         "sigs.k8s.io/controller-runtime/pkg/client"
 
-        networksv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/networks/v1alpha1"
+        networksv1alpha1 "github.com/BlanketOps/environments-api/api/networks/v1alpha1"
 )
 
 // StatusWriter persists Route conditions to the CR status.
@@ -13482,7 +13482,7 @@ import (
         "sigs.k8s.io/controller-runtime/pkg/client"
         "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-        sourcesv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/sources/v1alpha1"
+        sourcesv1alpha1 "github.com/BlanketOps/environments-api/api/sources/v1alpha1"
 )
 
 const (
@@ -14302,7 +14302,7 @@ package build
 import (
         "context"
 
-        environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+        environmentv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
 )
 
 // Adapter wraps the Build resolution function for interface-based injection.
@@ -14476,7 +14476,7 @@ import (
         "encoding/json"
         "fmt"
 
-        environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+        environmentv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
 )
 
 // -----------------------------------------------------------------------------
@@ -14738,11 +14738,11 @@ import (
 
         "sigs.k8s.io/controller-runtime/pkg/client"
 
-        environments1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
-        eventsv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/events/v1alpha1"
-        sourcesv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/sources/v1alpha1"
+        environments1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
+        eventsv1alpha1 "github.com/BlanketOps/environments-api/api/events/v1alpha1"
+        sourcesv1alpha1 "github.com/BlanketOps/environments-api/api/sources/v1alpha1"
 
-        //networksv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/networks/v1alpha1"
+        //networksv1alpha1 "github.com/BlanketOps/environments-api/api/networks/v1alpha1"
         build "github.com/ntlaletsi70/blanketops-environments/resolution/build"
         deployment "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
         gitHubEvent "github.com/ntlaletsi70/blanketops-environments/resolution/githubevent"
@@ -14841,7 +14841,7 @@ package deployment
 import (
         "context"
 
-        environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+        environmentv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
 )
 
 // Adapter wraps the Deployment resolution function for interface-based injection.
@@ -15043,7 +15043,7 @@ import (
         "encoding/json"
         "fmt"
 
-        environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+        environmentv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
         commoncontractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/common/v1"
 )
 
@@ -15404,7 +15404,7 @@ package domain
 import (
         "context"
 
-        networksv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/networks/v1alpha1"
+        networksv1alpha1 "github.com/BlanketOps/environments-api/api/networks/v1alpha1"
 )
 
 // Adapter wraps the Domain resolution function for interface-based injection.
@@ -15592,7 +15592,7 @@ import (
         "encoding/json"
         "fmt"
 
-        networksv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/networks/v1alpha1"
+        networksv1alpha1 "github.com/BlanketOps/environments-api/api/networks/v1alpha1"
 )
 
 // -----------------------------------------------------------------------------
@@ -15836,7 +15836,7 @@ package environment
 import (
         "context"
 
-        environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+        environmentv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
 )
 
 type Adapter struct {
@@ -16074,7 +16074,7 @@ import (
         "encoding/json"
         "fmt"
 
-        environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+        environmentv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
 )
 
 // -----------------------------------------------------------------------------
@@ -16348,7 +16348,7 @@ package githubevent
 import (
         "context"
 
-        eventsv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/events/v1alpha1"
+        eventsv1alpha1 "github.com/BlanketOps/environments-api/api/events/v1alpha1"
 )
 
 // Adapter wraps the GitHubEvent resolution function for interface-based injection.
@@ -16559,7 +16559,7 @@ import (
         "encoding/json"
         "fmt"
 
-        eventsv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/events/v1alpha1"
+        eventsv1alpha1 "github.com/BlanketOps/environments-api/api/events/v1alpha1"
 )
 
 // -----------------------------------------------------------------------------
@@ -16774,7 +16774,7 @@ package gitrepository
 import (
         "context"
 
-        sourcesv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/sources/v1alpha1"
+        sourcesv1alpha1 "github.com/BlanketOps/environments-api/api/sources/v1alpha1"
 )
 
 // Adapter wraps the GitRepository resolution function for interface-based injection.
@@ -17000,7 +17000,7 @@ import (
         "encoding/json"
         "fmt"
 
-        sourcesv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/sources/v1alpha1"
+        sourcesv1alpha1 "github.com/BlanketOps/environments-api/api/sources/v1alpha1"
 )
 
 // -----------------------------------------------------------------------------
@@ -17187,7 +17187,7 @@ package packages
 import (
         "context"
 
-        environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+        environmentv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
 )
 
 // Adapter wraps the Package resolution function for interface-based injection.
@@ -17348,7 +17348,7 @@ import (
         "encoding/json"
         "fmt"
 
-        environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+        environmentv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
 )
 
 // -----------------------------------------------------------------------------
@@ -17655,7 +17655,7 @@ package route
 import (
         "context"
 
-        networksv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/networks/v1alpha1"
+        networksv1alpha1 "github.com/BlanketOps/environments-api/api/networks/v1alpha1"
 )
 
 // Adapter wraps the Package resolution function for interface-based injection.
@@ -17844,7 +17844,7 @@ import (
         "encoding/json"
         "fmt"
 
-        networksv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/networks/v1alpha1"
+        networksv1alpha1 "github.com/BlanketOps/environments-api/api/networks/v1alpha1"
 )
 
 // -----------------------------------------------------------------------------
@@ -18075,7 +18075,7 @@ package serviceunit
 import (
         "context"
 
-        environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+        environmentv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
 )
 
 // Adapter wraps the ServiceUnit resolution function for interface-based injection.
@@ -18216,7 +18216,7 @@ dereferencing a pointer to read the enum.
 package serviceunit
 
 import (
-        environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+        environmentv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
         commoncontractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/common/v1"
 )
 

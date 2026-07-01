@@ -30,7 +30,7 @@ package build
 import (
 	"context"
 
-	environmentv1alpha1 "github.com/ntlaletsi70/blanketops-environments-api/api/environments/v1alpha1"
+	environmentv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
 )
 
 // Adapter wraps the Build resolution function for interface-based injection.
