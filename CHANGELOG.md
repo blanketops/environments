@@ -1,3 +1,58 @@
+## [0.6.3] - 2026-07-01
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.6.2
+## [0.6.2] - 2026-07-01
+
+### 💼 Other
+
+- *(release)* Add deletes and teardowns
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.6.1
+## [0.6.1] - 2026-06-29
+
+### 💼 Other
+
+- *(structure)* Update to pkg/apis
+- *(structure)* Update to pkg/apis
+- *(structure)* Update to pkg/apis
+- *(structure)* Update to pkg/apis
+- *(structure)* Update to pkg/apis
+- *(structure)* Update to pkg/apis
+- *(structure)* Update to pkg/apis
+- *(structure)* Update to pkg/apis
+- *(structure)* Update to pkg/apis
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.6.0
+## [0.6.0] - 2026-06-28
+
+### 💼 Other
+
+- *(release)* Update route and domain cache and resolution
+- *(release)* Update route and domain cache and resolution
+- *(release)* Update route pkg/api
+- *(release)* Update domain pkg/
+- *(release)* Update readme
+- *(release)* Update vulnerability scan ci
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.5.9
+- *(release)* Update changelog for v0.5.9
 ## [0.5.9] - 2026-06-27
 
 ### 📚 Documentation
