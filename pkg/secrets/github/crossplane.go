@@ -58,7 +58,7 @@ func (r *GitHubProviderSecretReconciler) Reconcile(ctx context.Context) error {
 				},
 			},
 			"spec": map[string]any{
-				"refreshInterval": "0s",
+				"refreshInterval": "10s",
 				"secretStoreRef": map[string]any{
 					"name": r.StoreName,
 					"kind": "ClusterSecretStore",

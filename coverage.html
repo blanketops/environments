@@ -12765,7 +12765,7 @@ func (r *BuildGitSSHSecretReconciler) Reconcile(ctx context.Context, build *buil
                                 },
                         },
                         "spec": map[string]any{
-                                "refreshInterval": "0s",
+                                "refreshInterval": "10s",
                                 "secretStoreRef": map[string]any{
                                         "name": r.StoreName,
                                         "kind": "ClusterSecretStore",
@@ -12938,7 +12938,7 @@ func (r *DeploymentGitSSHSecretReconciler) Reconcile(ctx context.Context, deploy
                                 },
                         },
                         "spec": map[string]any{
-                                "refreshInterval": "0s",
+                                "refreshInterval": "10s",
                                 "secretStoreRef": map[string]any{
                                         "name": r.StoreName,
                                         "kind": "ClusterSecretStore",
@@ -13269,7 +13269,7 @@ func (r *PackageStateRepositorySecretReconciler) Reconcile(ctx context.Context, 
                                 },
                         },
                         "spec": map[string]any{
-                                "refreshInterval": "0s",
+                                "refreshInterval": "10s",
                                 "secretStoreRef": map[string]any{
                                         "name": r.StoreName,
                                         "kind": "ClusterSecretStore",
@@ -13399,7 +13399,7 @@ func (r *GitHubProviderSecretReconciler) Reconcile(ctx context.Context) error <s
                                 },
                         },
                         "spec": map[string]any{
-                                "refreshInterval": "0s",
+                                "refreshInterval": "10s",
                                 "secretStoreRef": map[string]any{
                                         "name": r.StoreName,
                                         "kind": "ClusterSecretStore",
@@ -13525,7 +13525,7 @@ func (r *HookURLExternalSecretReconciler) Reconcile(ctx context.Context, repo *s
                                 },
                         },
                         "spec": map[string]any{
-                                "refreshInterval": "0s",
+                                "refreshInterval": "10s",
                                 "secretStoreRef": map[string]any{
                                         "name": r.StoreName,
                                         "kind": "ClusterSecretStore",
@@ -13652,7 +13652,7 @@ func (r *GitHubWebhookSecretReconciler) Reconcile(ctx context.Context, resolved 
                                 },
                         },
                         "spec": map[string]any{
-                                "refreshInterval": "0s",
+                                "refreshInterval": "10s",
                                 "secretStoreRef": map[string]any{
                                         "name": r.StoreName,
                                         "kind": "ClusterSecretStore",
@@ -13766,7 +13766,7 @@ func (r *BuildRegistryExternalSecretReconciler) Reconcile(ctx context.Context, b
                                 },
                         },
                         "spec": map[string]any{
-                                "refreshInterval": "0s",
+                                "refreshInterval": "10s",
                                 "secretStoreRef": map[string]any{
                                         "name": r.StoreName,
                                         "kind": "ClusterSecretStore",
@@ -13879,7 +13879,7 @@ func (r *PackageRegistrySecretReconciler) Reconcile(ctx context.Context, resolve
                                 },
                         },
                         "spec": map[string]any{
-                                "refreshInterval": "0s",
+                                "refreshInterval": "10s",
                                 "secretStoreRef": map[string]any{
                                         "name": r.StoreName,
                                         "kind": "ClusterSecretStore",
