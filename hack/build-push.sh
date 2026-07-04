@@ -8,5 +8,5 @@ echo $GH_PAT | oras login ghcr.io -u ntlaletsi70 --password-stdin
 
 # Push vendor snapshot
 oras push \
-  ghcr.io/ntlaletsi70/blanketops-environments-controller/vendor-snapshot:${GOSUM_SHA} \
+  ghcr.io/ntlaletsi70/blanketops-environments-controller/tools:${GOSUM_SHA} \
   ./vendor
