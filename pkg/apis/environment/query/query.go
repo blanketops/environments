@@ -27,10 +27,10 @@ import (
 	"context"
 	"fmt"
 
-	environmentsv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	environmentsv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
 	environmentapi "github.com/ntlaletsi70/blanketops-environments/pkg/apis/environment/api"
 	environmentresolution "github.com/ntlaletsi70/blanketops-environments/resolution/environment"
 )
@@ -49,9 +49,7 @@ const (
 // Environment CR. Returned by Lookup and passed into mediators.
 type EnvironmentContext struct {
 	// Name of the Environment CR.
-	Name string // StoreKind is the resolved ClusterSecretStore kind.
-	// Injected into all composed CR secret reconcilers.
-	StoreKind string
+	Name string
 	// EnvironmentType from environments.blanketops.dev/type label.
 	EnvironmentType string
 	// StoreName is the resolved ClusterSecretStore name.
