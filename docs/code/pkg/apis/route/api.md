@@ -107,6 +107,45 @@ See also:
 - pkg/domain/api/knative.go — provisions the TLS Secret this file references
 - pkg/route/application/backend\_selector.go — wires KnativeProvider for RuntimeKnativeService
 
+This file owns KourierProvider — the Knative implementation of the routes Provider interface.
+
+KourierProvider materializes a Route as a Knative DomainMapping \(serving.knative.dev/v1beta1\). The DomainMapping binds the declared host to the Knative Service identified by Route.ServiceRef, making the workload reachable at that FQDN via Kourier.
+
+API version:
+
+```
+DomainMapping/v1alpha1 was deprecated in Knative v1.11.0. This provider
+targets the stable v1beta1 API exclusively.
+```
+
+TLS:
+
+```
+When Route.TLSEnabled is true, the DomainMapping is created with
+spec.tls.secretName pointing to the TLS Secret that the Domain provider
+(pkg/domain/api/knative.go) provisions via cert-manager. The secret name
+follows the blanketops-tls-{sanitized-host} convention defined in common.go
+and shared between all providers. Knative serving will wait for the Secret
+to exist — no ordering dependency between Route and Domain reconciliation
+is required.
+```
+
+Disabled routes:
+
+```
+When Route.Enabled is false the DomainMapping is deleted. The Route CR is
+retained; only the runtime resource is removed. A missing DomainMapping
+(NotFound) is not treated as an error — the disabled state is satisfied.
+```
+
+See also:
+
+- pkg/route/api/provider.go — Provider interface
+- pkg/route/api/common.go — certSecretName / sanitizeHost
+- pkg/route/api/ingress.go — Kubernetes Ingress provider
+- pkg/domain/api/knative.go — provisions the TLS Secret this file references
+- pkg/route/application/backend\_selector.go — wires KourierProvider for RuntimeKnativeService
+
 This file owns the Provider interface for the routes domain — the contract that all route backend implementations must satisfy.
 
 A Provider is responsible for materializing or removing the runtime resource \(DomainMapping, Ingress, HTTPRoute\) that exposes a workload at the declared host and path. Ensure is idempotent — calling it multiple times for the same Route CR must produce the same result with no unintended side effects.
@@ -131,6 +170,10 @@ See also:
   - [func NewKnativeProvider\(c client.Client, log logr.Logger\) \*KnativeProvider](<#NewKnativeProvider>)
   - [func \(p \*KnativeProvider\) Ensure\(ctx context.Context, resolved \*routeResolution.ResolvedRoute, route domain.Route\) \(domain.RouteResult, error\)](<#KnativeProvider.Ensure>)
   - [func \(p \*KnativeProvider\) Teardown\(ctx context.Context, route domain.Route\) error](<#KnativeProvider.Teardown>)
+- [type KourierProvider](<#KourierProvider>)
+  - [func NewKourierProvider\(c client.Client, log logr.Logger\) \*KourierProvider](<#NewKourierProvider>)
+  - [func \(p \*KourierProvider\) Ensure\(ctx context.Context, resolved \*routeResolution.ResolvedRoute, route domain.Route\) \(domain.RouteResult, error\)](<#KourierProvider.Ensure>)
+  - [func \(p \*KourierProvider\) Teardown\(ctx context.Context, route domain.Route\) error](<#KourierProvider.Teardown>)
 - [type Provider](<#Provider>)
 
 
@@ -206,6 +249,44 @@ Ensure creates or reconciles the Knative DomainMapping for the given Route. When
 
 ```go
 func (p *KnativeProvider) Teardown(ctx context.Context, route domain.Route) error
+```
+
+route/api/knative.go
+
+<a name="KourierProvider"></a>
+## type KourierProvider
+
+KourierProvider implements Provider for the Knative serving runtime. Materializes Route as a serving.knative.dev/v1beta1 DomainMapping.
+
+```go
+type KourierProvider struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewKourierProvider"></a>
+### func NewKourierProvider
+
+```go
+func NewKourierProvider(c client.Client, log logr.Logger) *KourierProvider
+```
+
+NewKourierProvider constructs a KourierProvider with the given client and logger.
+
+<a name="KourierProvider.Ensure"></a>
+### func \(\*KourierProvider\) Ensure
+
+```go
+func (p *KourierProvider) Ensure(ctx context.Context, resolved *routeResolution.ResolvedRoute, route domain.Route) (domain.RouteResult, error)
+```
+
+Ensure creates or reconciles the Knative DomainMapping for the given Route. When Route.Enabled is false the DomainMapping is removed instead.
+
+<a name="KourierProvider.Teardown"></a>
+### func \(\*KourierProvider\) Teardown
+
+```go
+func (p *KourierProvider) Teardown(ctx context.Context, route domain.Route) error
 ```
 
 route/api/knative.go
