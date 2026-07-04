@@ -41,7 +41,9 @@ EnvironmentContext holds the resolved platform bindings for a given Environment 
 ```go
 type EnvironmentContext struct {
     // Name of the Environment CR.
-    Name string
+    Name string // StoreKind is the resolved ClusterSecretStore kind.
+    // Injected into all composed CR secret reconcilers.
+    StoreKind string
     // EnvironmentType from environments.blanketops.dev/type label.
     EnvironmentType string
     // StoreName is the resolved ClusterSecretStore name.
