@@ -32,13 +32,15 @@ type PackageStateRepositorySecretReconciler struct {
 	Client    client.Client
 	Log       logr.Logger
 	StoreName string
+	StoreKind string
 }
 
-func NewPackageStateRepositorySecretReconciler(c client.Client, log logr.Logger, storeName string) *PackageStateRepositorySecretReconciler {
+func NewPackageStateRepositorySecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *PackageStateRepositorySecretReconciler {
 	return &PackageStateRepositorySecretReconciler{
 		Client:    c,
 		Log:       log,
 		StoreName: storeName,
+		StoreKind: storeKind,
 	}
 }
 
@@ -67,10 +69,10 @@ func (r *PackageStateRepositorySecretReconciler) Reconcile(ctx context.Context, 
 				},
 			},
 			"spec": map[string]any{
-				"refreshInterval": "0s",
+				"refreshInterval": "10s",
 				"secretStoreRef": map[string]any{
 					"name": r.StoreName,
-					"kind": "ClusterSecretStore",
+					"kind": r.StoreKind,
 				},
 				"target": map[string]any{
 					"name": secretName,
