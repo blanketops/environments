@@ -9,29 +9,36 @@ import "github.com/ntlaletsi70/blanketops-environments/pkg/secrets/github"
 ## Index
 
 - [Constants](<#constants>)
+- [func HookURLSecretName\(repoName string\) string](<#HookURLSecretName>)
 - [type GitHubProviderSecretReconciler](<#GitHubProviderSecretReconciler>)
   - [func NewGitHubProviderSecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*GitHubProviderSecretReconciler](<#NewGitHubProviderSecretReconciler>)
   - [func \(r \*GitHubProviderSecretReconciler\) Reconcile\(ctx context.Context\) error](<#GitHubProviderSecretReconciler.Reconcile>)
 - [type GitHubWebhookSecretReconciler](<#GitHubWebhookSecretReconciler>)
-  - [func NewGitHubWebhookSecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*GitHubWebhookSecretReconciler](<#NewGitHubWebhookSecretReconciler>)
+  - [func NewGitHubWebhookSecretReconciler\(c client.Client, log logr.Logger, storeName string, storeKind string\) \*GitHubWebhookSecretReconciler](<#NewGitHubWebhookSecretReconciler>)
   - [func \(r \*GitHubWebhookSecretReconciler\) Delete\(ctx context.Context, resolved \*githubeventResolution.ResolvedGitHubEvent\) error](<#GitHubWebhookSecretReconciler.Delete>)
   - [func \(r \*GitHubWebhookSecretReconciler\) Reconcile\(ctx context.Context, resolved \*githubeventResolution.ResolvedGitHubEvent\) error](<#GitHubWebhookSecretReconciler.Reconcile>)
-- [type HookURLExternalSecretReconciler](<#HookURLExternalSecretReconciler>)
-  - [func NewHookURLExternalSecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*HookURLExternalSecretReconciler](<#NewHookURLExternalSecretReconciler>)
-  - [func \(r \*HookURLExternalSecretReconciler\) Delete\(ctx context.Context, repo \*sourcesv1alpha1.GitRepository\) error](<#HookURLExternalSecretReconciler.Delete>)
-  - [func \(r \*HookURLExternalSecretReconciler\) Reconcile\(ctx context.Context, repo \*sourcesv1alpha1.GitRepository\) error](<#HookURLExternalSecretReconciler.Reconcile>)
+- [type HookURLSecretReconciler](<#HookURLSecretReconciler>)
+  - [func NewHookURLSecretReconciler\(c client.Client, scheme \*runtime.Scheme, log logr.Logger\) \*HookURLSecretReconciler](<#NewHookURLSecretReconciler>)
+  - [func \(r \*HookURLSecretReconciler\) Delete\(ctx context.Context, repo \*gitrepoResolution.ResolvedGitRepository\) error](<#HookURLSecretReconciler.Delete>)
+  - [func \(r \*HookURLSecretReconciler\) Reconcile\(ctx context.Context, resolved \*gitrepoResolution.ResolvedGitRepository\) error](<#HookURLSecretReconciler.Reconcile>)
 
 
 ## Constants
 
-<a name="HookURLSecretName"></a>
+<a name="HookURLSecretKey"></a>
 
 ```go
-const (
-    HookURLSecretName = "hookurl"
-    HookURLSecretKey  = "url"
-)
+const HookURLSecretKey = "url"
 ```
+
+<a name="HookURLSecretName"></a>
+## func HookURLSecretName
+
+```go
+func HookURLSecretName(repoName string) string
+```
+
+HookURLSecretName returns the per\-repository hookurl Secret name.
 
 <a name="GitHubProviderSecretReconciler"></a>
 ## type GitHubProviderSecretReconciler
@@ -74,6 +81,7 @@ type GitHubWebhookSecretReconciler struct {
     Client    client.Client
     Log       logr.Logger
     StoreName string
+    StoreKind string
 }
 ```
 
@@ -81,7 +89,7 @@ type GitHubWebhookSecretReconciler struct {
 ### func NewGitHubWebhookSecretReconciler
 
 ```go
-func NewGitHubWebhookSecretReconciler(c client.Client, log logr.Logger, storeName string) *GitHubWebhookSecretReconciler
+func NewGitHubWebhookSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *GitHubWebhookSecretReconciler
 ```
 
 
@@ -104,42 +112,42 @@ func (r *GitHubWebhookSecretReconciler) Reconcile(ctx context.Context, resolved 
 
 
 
-<a name="HookURLExternalSecretReconciler"></a>
-## type HookURLExternalSecretReconciler
+<a name="HookURLSecretReconciler"></a>
+## type HookURLSecretReconciler
 
-
+HookURLSecretReconciler materializes the webhook delivery URL as a plain Secret. The URL's source of truth is spec.contract.hookUrl on the GitRepository CR — user\-declared, not store\-managed. No ESO involvement: there is no external producer for this value, so an ExternalSecret would reference a key nothing populates. The Secret exists only because Upjet's RepositoryWebhook consumes the URL via urlSecretRef \(the Terraform provider marks webhook URLs sensitive; Upjet mechanically converts sensitive fields to secret references\).
 
 ```go
-type HookURLExternalSecretReconciler struct {
-    Client    client.Client
-    Log       logr.Logger
-    StoreName string
+type HookURLSecretReconciler struct {
+    Client client.Client
+    Scheme *runtime.Scheme
+    Log    logr.Logger
 }
 ```
 
-<a name="NewHookURLExternalSecretReconciler"></a>
-### func NewHookURLExternalSecretReconciler
+<a name="NewHookURLSecretReconciler"></a>
+### func NewHookURLSecretReconciler
 
 ```go
-func NewHookURLExternalSecretReconciler(c client.Client, log logr.Logger, storeName string) *HookURLExternalSecretReconciler
+func NewHookURLSecretReconciler(c client.Client, scheme *runtime.Scheme, log logr.Logger) *HookURLSecretReconciler
 ```
 
 
 
-<a name="HookURLExternalSecretReconciler.Delete"></a>
-### func \(\*HookURLExternalSecretReconciler\) Delete
+<a name="HookURLSecretReconciler.Delete"></a>
+### func \(\*HookURLSecretReconciler\) Delete
 
 ```go
-func (r *HookURLExternalSecretReconciler) Delete(ctx context.Context, repo *sourcesv1alpha1.GitRepository) error
+func (r *HookURLSecretReconciler) Delete(ctx context.Context, repo *gitrepoResolution.ResolvedGitRepository) error
 ```
 
-github/hookurl.go — append
 
-<a name="HookURLExternalSecretReconciler.Reconcile"></a>
-### func \(\*HookURLExternalSecretReconciler\) Reconcile
+
+<a name="HookURLSecretReconciler.Reconcile"></a>
+### func \(\*HookURLSecretReconciler\) Reconcile
 
 ```go
-func (r *HookURLExternalSecretReconciler) Reconcile(ctx context.Context, repo *sourcesv1alpha1.GitRepository) error
+func (r *HookURLSecretReconciler) Reconcile(ctx context.Context, resolved *gitrepoResolution.ResolvedGitRepository) error
 ```
 
 

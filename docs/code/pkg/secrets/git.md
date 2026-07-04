@@ -9,7 +9,7 @@ import "github.com/ntlaletsi70/blanketops-environments/pkg/secrets/git"
 ## Index
 
 - [type BuildGitSSHSecretReconciler](<#BuildGitSSHSecretReconciler>)
-  - [func NewBuildGitSSHSecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*BuildGitSSHSecretReconciler](<#NewBuildGitSSHSecretReconciler>)
+  - [func NewBuildGitSSHSecretReconciler\(c client.Client, log logr.Logger, storeName string, storeKind string\) \*BuildGitSSHSecretReconciler](<#NewBuildGitSSHSecretReconciler>)
   - [func \(r \*BuildGitSSHSecretReconciler\) Delete\(ctx context.Context, build \*buildResolution.ResolvedBuild\) error](<#BuildGitSSHSecretReconciler.Delete>)
   - [func \(r \*BuildGitSSHSecretReconciler\) Reconcile\(ctx context.Context, build \*buildResolution.ResolvedBuild\) error](<#BuildGitSSHSecretReconciler.Reconcile>)
 - [type DeploymentFluxGitSSHSecretReconciler](<#DeploymentFluxGitSSHSecretReconciler>)
@@ -18,11 +18,11 @@ import "github.com/ntlaletsi70/blanketops-environments/pkg/secrets/git"
   - [func \(r \*DeploymentFluxGitSSHSecretReconciler\) PublicKey\(ctx context.Context, deployment \*deploymentResolution.ResolvedDeployment\) \(string, error\)](<#DeploymentFluxGitSSHSecretReconciler.PublicKey>)
   - [func \(r \*DeploymentFluxGitSSHSecretReconciler\) Reconcile\(ctx context.Context, deployment \*deploymentResolution.ResolvedDeployment\) error](<#DeploymentFluxGitSSHSecretReconciler.Reconcile>)
 - [type DeploymentGitSSHSecretReconciler](<#DeploymentGitSSHSecretReconciler>)
-  - [func NewDeploymentGitSSHSecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*DeploymentGitSSHSecretReconciler](<#NewDeploymentGitSSHSecretReconciler>)
+  - [func NewDeploymentGitSSHSecretReconciler\(c client.Client, log logr.Logger, storeName string, storeKind string\) \*DeploymentGitSSHSecretReconciler](<#NewDeploymentGitSSHSecretReconciler>)
   - [func \(r \*DeploymentGitSSHSecretReconciler\) Delete\(ctx context.Context, deployment \*deploymentResolution.ResolvedDeployment\) error](<#DeploymentGitSSHSecretReconciler.Delete>)
   - [func \(r \*DeploymentGitSSHSecretReconciler\) Reconcile\(ctx context.Context, deployment \*deploymentResolution.ResolvedDeployment\) error](<#DeploymentGitSSHSecretReconciler.Reconcile>)
 - [type PackageStateRepositorySecretReconciler](<#PackageStateRepositorySecretReconciler>)
-  - [func NewPackageStateRepositorySecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*PackageStateRepositorySecretReconciler](<#NewPackageStateRepositorySecretReconciler>)
+  - [func NewPackageStateRepositorySecretReconciler\(c client.Client, log logr.Logger, storeName string, storeKind string\) \*PackageStateRepositorySecretReconciler](<#NewPackageStateRepositorySecretReconciler>)
   - [func \(r \*PackageStateRepositorySecretReconciler\) Delete\(ctx context.Context, resolvedPackage \*packageResolution.ResolvedPackage\) error](<#PackageStateRepositorySecretReconciler.Delete>)
   - [func \(r \*PackageStateRepositorySecretReconciler\) Reconcile\(ctx context.Context, resolvedPackage \*packageResolution.ResolvedPackage\) error](<#PackageStateRepositorySecretReconciler.Reconcile>)
 
@@ -37,6 +37,7 @@ type BuildGitSSHSecretReconciler struct {
     Client    client.Client
     Log       logr.Logger
     StoreName string // ClusterSecretStore name — resolved from environment contract
+    StoreKind string // ClusterSecretStore kind — resolved from environment contract
 }
 ```
 
@@ -44,7 +45,7 @@ type BuildGitSSHSecretReconciler struct {
 ### func NewBuildGitSSHSecretReconciler
 
 ```go
-func NewBuildGitSSHSecretReconciler(c client.Client, log logr.Logger, storeName string) *BuildGitSSHSecretReconciler
+func NewBuildGitSSHSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *BuildGitSSHSecretReconciler
 ```
 
 
@@ -56,7 +57,7 @@ func NewBuildGitSSHSecretReconciler(c client.Client, log logr.Logger, storeName 
 func (r *BuildGitSSHSecretReconciler) Delete(ctx context.Context, build *buildResolution.ResolvedBuild) error
 ```
 
-git/build.go — append
+
 
 <a name="BuildGitSSHSecretReconciler.Reconcile"></a>
 ### func \(\*BuildGitSSHSecretReconciler\) Reconcile
@@ -95,7 +96,7 @@ func NewDeploymentFluxGitSSHSecretReconciler(c client.Client, log logr.Logger) *
 func (r *DeploymentFluxGitSSHSecretReconciler) Delete(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) error
 ```
 
-fluxcd.go — append \(plain corev1.Secret, not ExternalSecret\)
+
 
 <a name="DeploymentFluxGitSSHSecretReconciler.PublicKey"></a>
 ### func \(\*DeploymentFluxGitSSHSecretReconciler\) PublicKey
@@ -125,6 +126,7 @@ type DeploymentGitSSHSecretReconciler struct {
     Client    client.Client
     Log       logr.Logger
     StoreName string
+    StoreKind string
 }
 ```
 
@@ -132,7 +134,7 @@ type DeploymentGitSSHSecretReconciler struct {
 ### func NewDeploymentGitSSHSecretReconciler
 
 ```go
-func NewDeploymentGitSSHSecretReconciler(c client.Client, log logr.Logger, storeName string) *DeploymentGitSSHSecretReconciler
+func NewDeploymentGitSSHSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *DeploymentGitSSHSecretReconciler
 ```
 
 
@@ -165,6 +167,7 @@ type PackageStateRepositorySecretReconciler struct {
     Client    client.Client
     Log       logr.Logger
     StoreName string
+    StoreKind string
 }
 ```
 
@@ -172,7 +175,7 @@ type PackageStateRepositorySecretReconciler struct {
 ### func NewPackageStateRepositorySecretReconciler
 
 ```go
-func NewPackageStateRepositorySecretReconciler(c client.Client, log logr.Logger, storeName string) *PackageStateRepositorySecretReconciler
+func NewPackageStateRepositorySecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *PackageStateRepositorySecretReconciler
 ```
 
 

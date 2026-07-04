@@ -9,11 +9,11 @@ import "github.com/ntlaletsi70/blanketops-environments/pkg/secrets/registry"
 ## Index
 
 - [type BuildRegistryExternalSecretReconciler](<#BuildRegistryExternalSecretReconciler>)
-  - [func NewBuildRegistryExternalSecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*BuildRegistryExternalSecretReconciler](<#NewBuildRegistryExternalSecretReconciler>)
+  - [func NewBuildRegistryExternalSecretReconciler\(c client.Client, log logr.Logger, storeName string, storeKind string\) \*BuildRegistryExternalSecretReconciler](<#NewBuildRegistryExternalSecretReconciler>)
   - [func \(r \*BuildRegistryExternalSecretReconciler\) Delete\(ctx context.Context, build \*buildResolution.ResolvedBuild\) error](<#BuildRegistryExternalSecretReconciler.Delete>)
   - [func \(r \*BuildRegistryExternalSecretReconciler\) Reconcile\(ctx context.Context, build \*buildResolution.ResolvedBuild\) error](<#BuildRegistryExternalSecretReconciler.Reconcile>)
 - [type PackageRegistrySecretReconciler](<#PackageRegistrySecretReconciler>)
-  - [func NewPackageRegistrySecretReconciler\(c client.Client, log logr.Logger, storeName string\) \*PackageRegistrySecretReconciler](<#NewPackageRegistrySecretReconciler>)
+  - [func NewPackageRegistrySecretReconciler\(c client.Client, log logr.Logger, storeName string, storeKind string\) \*PackageRegistrySecretReconciler](<#NewPackageRegistrySecretReconciler>)
   - [func \(r \*PackageRegistrySecretReconciler\) Delete\(ctx context.Context, resolvedPackage \*packageResolution.ResolvedPackage\) error](<#PackageRegistrySecretReconciler.Delete>)
   - [func \(r \*PackageRegistrySecretReconciler\) Reconcile\(ctx context.Context, resolvedPackage \*packageResolution.ResolvedPackage\) error](<#PackageRegistrySecretReconciler.Reconcile>)
 
@@ -28,6 +28,7 @@ type BuildRegistryExternalSecretReconciler struct {
     Client    client.Client
     Log       logr.Logger
     StoreName string
+    StoreKind string
 }
 ```
 
@@ -35,7 +36,7 @@ type BuildRegistryExternalSecretReconciler struct {
 ### func NewBuildRegistryExternalSecretReconciler
 
 ```go
-func NewBuildRegistryExternalSecretReconciler(c client.Client, log logr.Logger, storeName string) *BuildRegistryExternalSecretReconciler
+func NewBuildRegistryExternalSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *BuildRegistryExternalSecretReconciler
 ```
 
 
@@ -68,6 +69,7 @@ type PackageRegistrySecretReconciler struct {
     Client    client.Client
     Log       logr.Logger
     StoreName string
+    StoreKind string
 }
 ```
 
@@ -75,7 +77,7 @@ type PackageRegistrySecretReconciler struct {
 ### func NewPackageRegistrySecretReconciler
 
 ```go
-func NewPackageRegistrySecretReconciler(c client.Client, log logr.Logger, storeName string) *PackageRegistrySecretReconciler
+func NewPackageRegistrySecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *PackageRegistrySecretReconciler
 ```
 
 
