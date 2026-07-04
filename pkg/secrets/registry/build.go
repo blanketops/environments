@@ -31,13 +31,15 @@ type BuildRegistryExternalSecretReconciler struct {
 	Client    client.Client
 	Log       logr.Logger
 	StoreName string
+	StoreKind string
 }
 
-func NewBuildRegistryExternalSecretReconciler(c client.Client, log logr.Logger, storeName string) *BuildRegistryExternalSecretReconciler {
+func NewBuildRegistryExternalSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *BuildRegistryExternalSecretReconciler {
 	return &BuildRegistryExternalSecretReconciler{
 		Client:    c,
 		Log:       log,
 		StoreName: storeName,
+		StoreKind: storeKind,
 	}
 }
 
@@ -68,10 +70,10 @@ func (r *BuildRegistryExternalSecretReconciler) Reconcile(ctx context.Context, b
 				},
 			},
 			"spec": map[string]any{
-				"refreshInterval": "0s",
+				"refreshInterval": "10s",
 				"secretStoreRef": map[string]any{
 					"name": r.StoreName,
-					"kind": "ClusterSecretStore",
+					"kind": r.StoreKind,
 				},
 				"target": map[string]any{
 					"name": secretName,

@@ -18,120 +18,96 @@ package github
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	sourcesv1alpha1 "github.com/BlanketOps/environments-api/api/sources/v1alpha1"
+	gitrepoResolution "github.com/ntlaletsi70/blanketops-environments/resolution/gitrepository"
 )
 
-const (
-	HookURLSecretName = "hookurl"
-	HookURLSecretKey  = "url"
-)
+const HookURLSecretKey = "url"
 
-type HookURLExternalSecretReconciler struct {
-	Client    client.Client
-	Log       logr.Logger
-	StoreName string
+// HookURLSecretName returns the per-repository hookurl Secret name.
+func HookURLSecretName(repoName string) string {
+	return repoName + "-hookurl"
 }
 
-func NewHookURLExternalSecretReconciler(c client.Client, log logr.Logger, storeName string) *HookURLExternalSecretReconciler {
-	return &HookURLExternalSecretReconciler{
-		Client:    c,
-		Log:       log,
-		StoreName: storeName,
-	}
+// HookURLSecretReconciler materializes the webhook delivery URL as a plain
+// Secret. The URL's source of truth is spec.contract.hookUrl on the
+// GitRepository CR — user-declared, not store-managed. No ESO involvement:
+// there is no external producer for this value, so an ExternalSecret would
+// reference a key nothing populates. The Secret exists only because Upjet's
+// RepositoryWebhook consumes the URL via urlSecretRef (the Terraform provider
+// marks webhook URLs sensitive; Upjet mechanically converts sensitive fields
+// to secret references).
+type HookURLSecretReconciler struct {
+	Client client.Client
+	Scheme *runtime.Scheme
+	Log    logr.Logger
 }
 
-func (r *HookURLExternalSecretReconciler) Reconcile(ctx context.Context, repo *sourcesv1alpha1.GitRepository) error {
-	if repo == nil {
-		return fmt.Errorf("nil GitRepository provided to HookURLExternalSecretReconciler")
+func NewHookURLSecretReconciler(c client.Client, scheme *runtime.Scheme, log logr.Logger) *HookURLSecretReconciler {
+	return &HookURLSecretReconciler{Client: c, Scheme: scheme, Log: log}
+}
+
+func (r *HookURLSecretReconciler) Reconcile(ctx context.Context, resolved *gitrepoResolution.ResolvedGitRepository) error {
+	if resolved == nil || resolved.Repository == nil || resolved.Spec == nil {
+		return fmt.Errorf("resolved gitrepository is incomplete")
+	}
+	repo := resolved.Repository
+	hookURL := resolved.Spec.HookURL
+	if hookURL == "" {
+		// Resolution validates this as required — reaching here is a resolver bug.
+		return fmt.Errorf("gitrepository %s/%s: empty hookUrl (resolver bug)", repo.Namespace, repo.Name)
 	}
 
-	remoteKey := fmt.Sprintf("/blanketops/sources/%s/hookurl", repo.Name)
-
-	desired := &unstructured.Unstructured{
-		Object: map[string]any{
-			"apiVersion": "external-secrets.io/v1",
-			"kind":       "ExternalSecret",
-			"metadata": map[string]any{
-				"name":      HookURLSecretName,
-				"namespace": repo.Namespace,
-				"labels": map[string]any{
-					"sources.blanketops.dev/gitrepository": repo.Name,
-					"blanketops.dev/managed":               "true",
-					"blanketops.dev/purpose":               "webhook",
-				},
-			},
-			"spec": map[string]any{
-				"refreshInterval": "0s",
-				"secretStoreRef": map[string]any{
-					"name": r.StoreName,
-					"kind": "ClusterSecretStore",
-				},
-				"target": map[string]any{
-					"name": HookURLSecretName,
-				},
-				"data": []any{
-					map[string]any{
-						"secretKey": HookURLSecretKey,
-						"remoteRef": map[string]any{"key": remoteKey},
-					},
-				},
+	desired := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      HookURLSecretName(repo.Name),
+			Namespace: repo.Namespace,
+			Labels: map[string]string{
+				"sources.blanketops.dev/gitrepository": repo.Name,
+				"blanketops.dev/managed":               "true",
+				"blanketops.dev/purpose":               "webhook",
 			},
 		},
+		Type:       corev1.SecretTypeOpaque,
+		StringData: map[string]string{HookURLSecretKey: hookURL},
 	}
-
-	if err := controllerutil.SetControllerReference(repo, desired, r.Client.Scheme()); err != nil {
+	if err := controllerutil.SetControllerReference(repo, desired, r.Scheme); err != nil {
 		return err
 	}
 
-	var existing unstructured.Unstructured
-	existing.SetGroupVersionKind(desired.GroupVersionKind())
-
+	var existing corev1.Secret
 	err := r.Client.Get(ctx, client.ObjectKeyFromObject(desired), &existing)
-
 	if apierrors.IsNotFound(err) {
-		r.Log.Info("creating ExternalSecret for GitRepository hook URL",
-			"repository", repo.Name, "store", r.StoreName)
+		r.Log.Info("creating hookurl secret", "repository", repo.Name, "secret", desired.Name)
 		return r.Client.Create(ctx, desired)
 	}
 	if err != nil {
 		return err
 	}
-
-	desiredSpec, _, _ := unstructured.NestedMap(desired.Object, "spec")
-	existingSpec, _, _ := unstructured.NestedMap(existing.Object, "spec")
-
-	if !reflect.DeepEqual(existingSpec, desiredSpec) {
-		if err := unstructured.SetNestedMap(existing.Object, desiredSpec, "spec"); err != nil {
-			return err
-		}
-		r.Log.Info("updating ExternalSecret for GitRepository hook URL",
-			"repository", repo.Name, "store", r.StoreName)
+	if string(existing.Data[HookURLSecretKey]) != hookURL {
+		existing.StringData = map[string]string{HookURLSecretKey: hookURL}
+		r.Log.Info("updating hookurl secret", "repository", repo.Name, "secret", desired.Name)
 		return r.Client.Update(ctx, &existing)
 	}
-
-	r.Log.V(1).Info("ExternalSecret for GitRepository hook URL already up-to-date",
-		"repository", repo.Name)
+	r.Log.V(1).Info("hookurl secret up-to-date", "repository", repo.Name)
 	return nil
 }
 
-// github/hookurl.go — append
-func (r *HookURLExternalSecretReconciler) Delete(ctx context.Context, repo *sourcesv1alpha1.GitRepository) error {
+func (r *HookURLSecretReconciler) Delete(ctx context.Context, repo *gitrepoResolution.ResolvedGitRepository) error {
 	if repo == nil {
 		return nil
 	}
-	obj := &unstructured.Unstructured{}
-	obj.SetAPIVersion("external-secrets.io/v1")
-	obj.SetKind("ExternalSecret")
-	obj.SetName(HookURLSecretName)
-	obj.SetNamespace(repo.Namespace)
+	obj := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{
+		Name: HookURLSecretName(repo.Repository.Name), Namespace: repo.Repository.Namespace,
+	}}
 	if err := r.Client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}

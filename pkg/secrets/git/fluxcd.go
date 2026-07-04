@@ -181,7 +181,6 @@ func generateSSHKeypair(comment string) ([]byte, []byte, error) {
 	return privateKeyPEM, publicKeyAuthorized, nil
 }
 
-// fluxcd.go — append (plain corev1.Secret, not ExternalSecret)
 func (r *DeploymentFluxGitSSHSecretReconciler) Delete(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) error {
 	secretName := fmt.Sprintf("%s-flux-ssh", deployment.Deployment.Name)
 	secret := &corev1.Secret{

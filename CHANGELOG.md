@@ -1,3 +1,29 @@
+## [0.6.5] - 2026-07-01
+
+### 💼 Other
+
+- Merge release/v0.6.5 into main
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.6.4
+- Sync develop with main after release/v0.6.4
+- Sync develop with main after release/v0.6.4
+## [0.6.4] - 2026-07-01
+
+### 💼 Other
+
+- Merge release/v0.6.4 into main
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.6.3
+- *(release)* Update changelog for v0.6.3
 ## [0.6.3] - 2026-07-01
 
 ### ⚙️ Miscellaneous Tasks
