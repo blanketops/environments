@@ -1,3 +1,33 @@
+## [0.6.8] - 2026-07-05
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.6.7
+## [0.6.7] - 2026-07-04
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.6.6
+## [0.6.6] - 2026-07-04
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.6.5
+- Sync develop with main after release/v0.6.5
 ## [0.6.5] - 2026-07-01
 
 ### 💼 Other
