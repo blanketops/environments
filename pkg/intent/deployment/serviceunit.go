@@ -18,7 +18,7 @@ package deployment
 import (
 	"fmt"
 
-	commoncontractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/common/v1"
+	commoncontractv1 "github.com/BlanketOps/environments-contract/blanketops/common/v1"
 	"github.com/ntlaletsi70/blanketops-environments/resolution/serviceunit"
 )
 
