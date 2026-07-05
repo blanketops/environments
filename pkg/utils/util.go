@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	contractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
+	contractv1 "github.com/BlanketOps/environments-contract/blanketops/environments/v1alpha1"
 	"github.com/ntlaletsi70/blanketops-environments/pkg/apis/build/domain"
 )
 

@@ -9,7 +9,7 @@
 #
 # Go version:
 #   Extracted from go.mod at runtime — never hardcoded in this file.
-#   Passed as GO_VERSION build-arg to vendor-snapshot/Dockerfile.
+#   Passed as GO_VERSION build-arg to tools/Dockerfile.
 #
 # vendor restore:
 #   FROM scratch images have no default CMD — docker create requires a command
@@ -107,14 +107,14 @@ jobs:
         run: go mod vendor
 
       # GO_VERSION build-arg keeps the Dockerfile in sync with go.mod.
-      # vendor-snapshot/Dockerfile must use: ARG GO_VERSION / FROM golang:${GO_VERSION}-alpine
+      # tools/Dockerfile must use: ARG GO_VERSION / FROM golang:${GO_VERSION}-alpine
       - name: Build and push vendor snapshot
         if: steps.check.outputs.hit == 'false'
         uses: docker/build-push-action@v5
         with:
           context: .
           provenance: false 
-          file: vendor-snapshot/Dockerfile
+          file: tools/Dockerfile
           push: true
           tags: |
             ${{ env.VENDOR_IMAGE }}:${{ steps.tag.outputs.tag }}

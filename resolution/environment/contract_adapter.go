@@ -34,8 +34,8 @@ Key generated type facts:
 package environment
 
 import (
-	commoncontractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/common/v1"
-	environmentscontractv1alpha1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
+	commoncontractv1 "github.com/BlanketOps/environments-contract/blanketops/common/v1"
+	environmentscontractv1alpha1 "github.com/BlanketOps/environments-contract/blanketops/environments/v1alpha1"
 )
 
 // ToEnvironmentContract projects the resolved runtime spec into a protobuf

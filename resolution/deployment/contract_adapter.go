@@ -39,8 +39,8 @@ the enum value carried on a named field.
 package deployment
 
 import (
-	commoncontractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/common/v1"
-	environmentscontractv1alpha1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
+	commoncontractv1 "github.com/BlanketOps/environments-contract/blanketops/common/v1"
+	environmentscontractv1alpha1 "github.com/BlanketOps/environments-contract/blanketops/environments/v1alpha1"
 )
 
 // ToDeploymentContract projects the resolved runtime deployment spec into a

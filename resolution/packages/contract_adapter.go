@@ -30,7 +30,7 @@ Controllers and domain logic MUST NOT consume the returned contract value.
 package packages
 
 import (
-	contractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
+	contractv1 "github.com/BlanketOps/environments-contract/blanketops/environments/v1alpha1"
 )
 
 // ToPackageContract projects the resolved runtime Package spec into a

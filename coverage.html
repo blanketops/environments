@@ -12460,7 +12460,7 @@ package deployment
 import (
         "fmt"
 
-        commoncontractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/common/v1"
+        commoncontractv1 "github.com/BlanketOps/environments-contract/blanketops/common/v1"
         "github.com/ntlaletsi70/blanketops-environments/resolution/serviceunit"
 )
 
@@ -14127,7 +14127,7 @@ import (
         "sigs.k8s.io/controller-runtime/pkg/client"
         "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-        contractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
+        contractv1 "github.com/BlanketOps/environments-contract/blanketops/environments/v1alpha1"
         "github.com/ntlaletsi70/blanketops-environments/pkg/apis/build/domain"
 )
 
@@ -14362,7 +14362,7 @@ a source of truth.
 */
 package build
 
-import contractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
+import contractv1 "github.com/BlanketOps/environments-contract/blanketops/environments/v1alpha1"
 
 // ToBuildContract projects the resolved runtime spec into a protobuf
 // contractv1.BuildSpec for infrastructure consumers (hashing, comparison,
@@ -14912,8 +14912,8 @@ the enum value carried on a named field.
 package deployment
 
 import (
-        commoncontractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/common/v1"
-        environmentscontractv1alpha1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
+        commoncontractv1 "github.com/BlanketOps/environments-contract/blanketops/common/v1"
+        environmentscontractv1alpha1 "github.com/BlanketOps/environments-contract/blanketops/environments/v1alpha1"
 )
 
 // ToDeploymentContract projects the resolved runtime deployment spec into a
@@ -15044,7 +15044,7 @@ import (
         "fmt"
 
         environmentv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
-        commoncontractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/common/v1"
+        commoncontractv1 "github.com/BlanketOps/environments-contract/blanketops/common/v1"
 )
 
 // -----------------------------------------------------------------------------
@@ -15477,8 +15477,8 @@ See also:
 package domain
 
 import (
-        commonv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/common/v1"
-        networkscontractv1alpha1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/networks/v1alpha1"
+        commonv1 "github.com/BlanketOps/environments-contract/blanketops/common/v1"
+        networkscontractv1alpha1 "github.com/BlanketOps/environments-contract/blanketops/networks/v1alpha1"
 )
 
 // ToDomainContract projects a ResolvedDomain into the canonical proto DomainSpec
@@ -15890,8 +15890,8 @@ Key generated type facts:
 package environment
 
 import (
-        commoncontractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/common/v1"
-        environmentscontractv1alpha1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
+        commoncontractv1 "github.com/BlanketOps/environments-contract/blanketops/common/v1"
+        environmentscontractv1alpha1 "github.com/BlanketOps/environments-contract/blanketops/environments/v1alpha1"
 )
 
 // ToEnvironmentContract projects the resolved runtime spec into a protobuf
@@ -16418,8 +16418,8 @@ The common proto wrapper pattern applies: EventType is projected as
 package githubevent
 
 import (
-        commoncontractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/common/v1"
-        eventscontractv1alpha1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/events/v1alpha1"
+        commoncontractv1 "github.com/BlanketOps/environments-contract/blanketops/common/v1"
+        eventscontractv1alpha1 "github.com/BlanketOps/environments-contract/blanketops/events/v1alpha1"
 )
 
 // ToGitHubEventContract projects the resolved runtime GitHubEvent spec into a
@@ -16846,8 +16846,8 @@ package gitrepository
 import (
         "fmt"
 
-        commoncontractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/common/v1"
-        sourcescontractv1alpha1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/sources/v1alpha1"
+        commoncontractv1 "github.com/BlanketOps/environments-contract/blanketops/common/v1"
+        sourcescontractv1alpha1 "github.com/BlanketOps/environments-contract/blanketops/sources/v1alpha1"
 )
 
 // ToGitRepositoryContract projects the resolved runtime GitRepository spec
@@ -17249,7 +17249,7 @@ Controllers and domain logic MUST NOT consume the returned contract value.
 package packages
 
 import (
-        contractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
+        contractv1 "github.com/BlanketOps/environments-contract/blanketops/environments/v1alpha1"
 )
 
 // ToPackageContract projects the resolved runtime Package spec into a
@@ -17737,8 +17737,8 @@ See also:
 package route
 
 import (
-        commonv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/common/v1"
-        networkscontractv1alpha1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/networks/v1alpha1"
+        commonv1 "github.com/BlanketOps/environments-contract/blanketops/common/v1"
+        networkscontractv1alpha1 "github.com/BlanketOps/environments-contract/blanketops/networks/v1alpha1"
 )
 
 // ToRouteContract projects a ResolvedRoute into the canonical proto RouteSpec
@@ -18137,8 +18137,8 @@ the two — the type switch operates on the enum value, not the wrapper.
 package serviceunit
 
 import (
-        commoncontractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/common/v1"
-        environmentscontractv1alpha1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/environments/v1alpha1"
+        commoncontractv1 "github.com/BlanketOps/environments-contract/blanketops/common/v1"
+        environmentscontractv1alpha1 "github.com/BlanketOps/environments-contract/blanketops/environments/v1alpha1"
 )
 
 // ToServiceUnitContract projects the resolved runtime ServiceUnit spec into a
@@ -18217,7 +18217,7 @@ package serviceunit
 
 import (
         environmentv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
-        commoncontractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/common/v1"
+        commoncontractv1 "github.com/BlanketOps/environments-contract/blanketops/common/v1"
 )
 
 // -----------------------------------------------------------------------------

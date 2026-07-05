@@ -38,8 +38,8 @@ The common proto wrapper pattern applies: EventType is projected as
 package githubevent
 
 import (
-	commoncontractv1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/common/v1"
-	eventscontractv1alpha1 "github.com/ntlaletsi70/blanketops-environments-contract/blanketops/events/v1alpha1"
+	commoncontractv1 "github.com/BlanketOps/environments-contract/blanketops/common/v1"
+	eventscontractv1alpha1 "github.com/BlanketOps/environments-contract/blanketops/events/v1alpha1"
 )
 
 // ToGitHubEventContract projects the resolved runtime GitHubEvent spec into a
