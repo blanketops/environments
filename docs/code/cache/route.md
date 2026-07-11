@@ -3,7 +3,7 @@
 # route
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/cache/route"
+import "github.com/BlanketOps/environments/cache/route"
 ```
 
 ## Index

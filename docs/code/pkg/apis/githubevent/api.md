@@ -3,7 +3,7 @@
 # api
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/pkg/apis/githubevent/api"
+import "github.com/BlanketOps/environments/pkg/apis/githubevent/api"
 ```
 
 This file owns the Provider interface for the GitHubEvent domain — the contract that all event ingress backends must satisfy.

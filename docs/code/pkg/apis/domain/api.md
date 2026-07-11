@@ -3,7 +3,7 @@
 # api
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/pkg/apis/domain/api"
+import "github.com/BlanketOps/environments/pkg/apis/domain/api"
 ```
 
 This file owns KnativeProvider — the implementation of the domain Provider interface that handles both TLS strategies via Knative networking and cert\-manager.

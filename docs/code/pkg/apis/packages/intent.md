@@ -3,7 +3,7 @@
 # intent
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/pkg/apis/packages/intent"
+import "github.com/BlanketOps/environments/pkg/apis/packages/intent"
 ```
 
 ## Index

@@ -3,7 +3,7 @@
 # application
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/pkg/apis/route/application"
+import "github.com/BlanketOps/environments/pkg/apis/route/application"
 ```
 
 This file owns BackendSelector — the routing layer that maps a domain.Route to the correct Provider implementation based on the Runtime field.

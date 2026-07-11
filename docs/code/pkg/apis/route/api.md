@@ -3,7 +3,7 @@
 # api
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/pkg/apis/route/api"
+import "github.com/BlanketOps/environments/pkg/apis/route/api"
 ```
 
 Package api — common.go

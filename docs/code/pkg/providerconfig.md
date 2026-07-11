@@ -3,7 +3,7 @@
 # secrets
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/pkg/providerconfig"
+import "github.com/BlanketOps/environments/pkg/providerconfig"
 ```
 
 ## Index

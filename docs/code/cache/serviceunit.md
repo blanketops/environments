@@ -3,7 +3,7 @@
 # serviceunit
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/cache/serviceunit"
+import "github.com/BlanketOps/environments/cache/serviceunit"
 ```
 
 ## Index

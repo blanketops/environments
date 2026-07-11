@@ -3,7 +3,7 @@
 # api
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/pkg/apis/build/api"
+import "github.com/BlanketOps/environments/pkg/apis/build/api"
 ```
 
 Package api implements the build provider layer for the BlanketOps Environments build domain.

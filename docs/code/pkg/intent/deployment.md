@@ -3,7 +3,7 @@
 # deployment
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/pkg/intent/deployment"
+import "github.com/BlanketOps/environments/pkg/intent/deployment"
 ```
 
 ## Index

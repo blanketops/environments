@@ -3,7 +3,7 @@
 # environment
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/cache/environment"
+import "github.com/BlanketOps/environments/cache/environment"
 ```
 
 ## Index

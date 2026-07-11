@@ -3,7 +3,7 @@
 # git
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/pkg/secrets/git"
+import "github.com/BlanketOps/environments/pkg/secrets/git"
 ```
 
 ## Index

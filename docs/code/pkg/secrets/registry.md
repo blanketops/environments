@@ -3,7 +3,7 @@
 # registry
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/pkg/secrets/registry"
+import "github.com/BlanketOps/environments/pkg/secrets/registry"
 ```
 
 ## Index

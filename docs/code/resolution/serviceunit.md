@@ -3,7 +3,7 @@
 # serviceunit
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/resolution/serviceunit"
+import "github.com/BlanketOps/environments/resolution/serviceunit"
 ```
 
 Package serviceunit implements resolution for the ServiceUnit CR.

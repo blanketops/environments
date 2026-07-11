@@ -3,7 +3,7 @@
 # utils
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/pkg/utils"
+import "github.com/BlanketOps/environments/pkg/utils"
 ```
 
 ## Index

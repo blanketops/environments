@@ -3,7 +3,7 @@
 # domain
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/resolution/domain"
+import "github.com/BlanketOps/environments/resolution/domain"
 ```
 
 Package domain — adapter.go

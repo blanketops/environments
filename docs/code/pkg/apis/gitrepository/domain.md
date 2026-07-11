@@ -3,7 +3,7 @@
 # domain
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/pkg/apis/gitrepository/domain"
+import "github.com/BlanketOps/environments/pkg/apis/gitrepository/domain"
 ```
 
 ## Index

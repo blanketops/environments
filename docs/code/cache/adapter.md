@@ -3,7 +3,7 @@
 # adapter
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/cache/adapter"
+import "github.com/BlanketOps/environments/cache/adapter"
 ```
 
 ## Index

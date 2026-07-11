@@ -3,7 +3,7 @@
 # build
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/resolution/build"
+import "github.com/BlanketOps/environments/resolution/build"
 ```
 
 Package build implements resolution for the Build CR.

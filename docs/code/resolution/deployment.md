@@ -3,7 +3,7 @@
 # deployment
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
+import "github.com/BlanketOps/environments/resolution/deployment"
 ```
 
 Package build implements resolution for the Deployment CR.

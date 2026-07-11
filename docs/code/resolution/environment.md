@@ -3,7 +3,7 @@
 # environment
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/resolution/environment"
+import "github.com/BlanketOps/environments/resolution/environment"
 ```
 
 Package environment implements resolution for the Environment CR.

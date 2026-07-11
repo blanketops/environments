@@ -3,7 +3,7 @@
 # deployment
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/cache/deployment"
+import "github.com/BlanketOps/environments/cache/deployment"
 ```
 
 ## Index
