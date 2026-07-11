@@ -1,6 +1,15 @@
-# Generate Go code documentation using gomarkdoc.
-# Runs on every push to main — commits generated docs back to the repo
-# and uploads them as a retained artifact.
+# =============================================================================
+# code-docs.yml — Generated Go Package Docs
+#
+# Runs on every push to main. Generates Go package docs via gomarkdoc and
+# commits them back to docs/code/, plus uploads a retained artifact copy.
+#
+# Secrets required:
+#   GH_PAT           — commit/push to main + private module access
+#   GPG_PRIVATE_KEY  — signs the generated-docs commit
+#   GPG_PASSPHRASE   — passphrase for GPG_PRIVATE_KEY
+# =============================================================================
+
 name: Code Docs
 
 on:
@@ -25,7 +34,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.25.8"
+          go-version-file: go.mod
           cache: false
 
       - name: Configure Git for private modules
@@ -33,7 +42,7 @@ jobs:
           git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
           go env -w GOPRIVATE=github.com/BlanketOps/*
           go env -w GONOSUMDB=github.com/BlanketOps/*
-          go env -w GOPROXY=https://proxy.golang.org,direct
+          go env -w GOPROXY=direct
 
       - name: Install gomarkdoc
         run: go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
@@ -50,14 +59,24 @@ jobs:
             ./resolution/... \
             ./runtime/...
 
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_config_global: true
+          git_committer_name: github-actions[bot]
+          git_committer_email: github-actions[bot]@users.noreply.github.com
+
       - name: Commit and push docs
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/code/ -f
           if ! git diff-index --quiet HEAD; then
-            git commit -m "docs: auto-generate code documentation [skip ci]"
-            git push --force origin main
+            git commit -S -m "docs: auto-generate code documentation [skip ci]"
+            git pull --rebase origin main
+            git push origin main
           else
             echo "No documentation changes to commit"
           fi
