@@ -29,6 +29,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/BlanketOps/blanketops-environments/pkg/utils"
 	"github.com/go-logr/logr"
 	shipwrightv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -39,9 +40,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/ntlaletsi70/blanketops-environments/pkg/apis/build/domain"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/utils"
-	buildResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
+	"github.com/BlanketOps/environments/pkg/apis/build/domain"
+	buildResolution "github.com/BlanketOps/environments/resolution/build"
 )
 
 // BuildpacksProvider orchestrates Shipwright Build and BuildRun resources

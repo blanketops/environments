@@ -20,9 +20,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	bocache "github.com/ntlaletsi70/blanketops-environments/cache"
-	"github.com/ntlaletsi70/blanketops-environments/core"
-	githubeventResolution "github.com/ntlaletsi70/blanketops-environments/resolution/githubevent"
+	"github.com/BlanketOps/blanketops-environments/core"
+	bocache "github.com/BlanketOps/environments/cache"
+	githubeventResolution "github.com/BlanketOps/environments/resolution/githubevent"
 )
 
 // GitHubEventCache provides domain-specific, field-level caching for GitHubEvent resources.

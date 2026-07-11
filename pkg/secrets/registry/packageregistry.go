@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	packageResolution "github.com/ntlaletsi70/blanketops-environments/resolution/packages"
+	packageResolution "github.com/BlanketOps/environments/resolution/packages"
 )
 
 type PackageRegistrySecretReconciler struct {

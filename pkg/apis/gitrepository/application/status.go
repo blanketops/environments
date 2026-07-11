@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	sourcesv1alpha1 "github.com/BlanketOps/environments-api/api/sources/v1alpha1"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/apis/gitrepository/domain"
+	"github.com/BlanketOps/blanketops-environments/pkg/apis/gitrepository/domain"
 )
 
 const (

@@ -39,9 +39,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	environmentv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/apis/deployment/render/builders"
-	intent "github.com/ntlaletsi70/blanketops-environments/pkg/intent/deployment"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/utils"
+	"github.com/BlanketOps/blanketops-environments/pkg/apis/deployment/render/builders"
+	intent "github.com/BlanketOps/blanketops-environments/pkg/intent/deployment"
+	"github.com/BlanketOps/blanketops-environments/pkg/utils"
 )
 
 const fieldManager = "blanketops-kustomize-provider"

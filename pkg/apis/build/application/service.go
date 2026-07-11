@@ -36,8 +36,8 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/ntlaletsi70/blanketops-environments/pkg/apis/build/domain"
-	bldResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
+	"github.com/BlanketOps/environments/pkg/apis/build/domain"
+	bldResolution "github.com/BlanketOps/environments/resolution/build"
 )
 
 // BuildService orchestrates the build reconciliation pipeline.

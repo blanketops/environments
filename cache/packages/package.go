@@ -20,9 +20,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	bocache "github.com/ntlaletsi70/blanketops-environments/cache"
-	"github.com/ntlaletsi70/blanketops-environments/core"
-	packagesResolution "github.com/ntlaletsi70/blanketops-environments/resolution/packages"
+	"github.com/BlanketOps/blanketops-environments/core"
+	bocache "github.com/BlanketOps/environments/cache"
+	packagesResolution "github.com/BlanketOps/environments/resolution/packages"
 )
 
 // PackageCache provides domain-specific, field-level caching for Package resources.

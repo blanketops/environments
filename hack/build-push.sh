@@ -4,9 +4,9 @@
 GOSUM_SHA=$(sha256sum go.sum | awk '{print $1}')
 
 # Login
-echo $GH_PAT | oras login ghcr.io -u ntlaletsi70 --password-stdin
+echo $GH_PAT | oras login ghcr.io -u BlanketOps --password-stdin
 
 # Push vendor snapshot
 oras push \
-  ghcr.io/ntlaletsi70/blanketops-environments-controller/tools:${GOSUM_SHA} \
+  ghcr.io/BlanketOps/environments/tools:${GOSUM_SHA} \
   ./vendor

@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	gitrepoResolution "github.com/ntlaletsi70/blanketops-environments/resolution/gitrepository"
+	gitrepoResolution "github.com/BlanketOps/environments/resolution/gitrepository"
 )
 
 const HookURLSecretKey = "url"

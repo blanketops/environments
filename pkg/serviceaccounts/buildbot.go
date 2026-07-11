@@ -26,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	buildResolution "github.com/ntlaletsi70/blanketops-environments/resolution/build"
+	buildResolution "github.com/BlanketOps/environments/resolution/build"
 )
 
 type ServiceAccountReconciler struct {

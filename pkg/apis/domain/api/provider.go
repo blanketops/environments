@@ -39,8 +39,8 @@ package api
 import (
 	"context"
 
-	"github.com/ntlaletsi70/blanketops-environments/pkg/apis/domain/domain"
-	domainResolution "github.com/ntlaletsi70/blanketops-environments/resolution/domain"
+	domainResolution "github.com/BlanketOps/environments/resolution/domain"
+	"github.com/BlanketOps/blanketops-environments/pkg/apis/domain/domain"
 )
 
 // Provider materializes and maintains the cert/mapping chain for a Domain CR.

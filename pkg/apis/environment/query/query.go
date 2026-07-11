@@ -28,8 +28,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	environmentapi "github.com/ntlaletsi70/blanketops-environments/pkg/apis/environment/api"
-	environmentresolution "github.com/ntlaletsi70/blanketops-environments/resolution/environment"
+	environmentresolution "github.com/BlanketOps/environments/resolution/environment"
+	environmentapi "github.com/BlanketOps/blanketops-environments/pkg/apis/environment/api"
 )
 
 const (

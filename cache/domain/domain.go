@@ -17,10 +17,10 @@ import (
 	"context"
 
 	"k8s.io/apimachinery/pkg/types"
-
-	bocache "github.com/ntlaletsi70/blanketops-environments/cache"
-	"github.com/ntlaletsi70/blanketops-environments/core"
-	domainResolution "github.com/ntlaletsi70/blanketops-environments/resolution/domain"
+	"github.com/BlanketOps/blanketops-environments/core"
+	bgctch.letsi70/blanketops-environments/core"cach"
+	domainRe.com/ntlaletsi70/blanketops-environs/remolutionedomtinore"
+	"github.com/BlanketOps/blanketops-environments/
 )
 
 // DomainCache provides domain-specific, field-level caching for Domain resources.

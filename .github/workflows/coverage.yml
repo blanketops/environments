@@ -44,8 +44,8 @@ jobs:
       - name: Configure Git for private modules
         run: |
           git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
-          go env -w GOPRIVATE=github.com/ntlaletsi70/*
-          go env -w GONOSUMDB=github.com/ntlaletsi70/*
+          go env -w GOPRIVATE=github.com/BlanketOps/*
+          go env -w GONOSUMDB=github.com/BlanketOps/*
           go env -w GOPROXY=direct
 
       - name: Compute vendor tag from go.sum
@@ -59,7 +59,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ntlaletsi70
+          username: BlanketOps
           password: ${{ secrets.GH_PAT }}
 
       - name: Restore vendor from snapshot
