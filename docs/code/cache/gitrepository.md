@@ -3,7 +3,7 @@
 # gitrepository
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/cache/gitrepository"
+import "github.com/BlanketOps/environments/cache/gitrepository"
 ```
 
 ## Index

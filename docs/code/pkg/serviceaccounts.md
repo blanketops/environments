@@ -3,7 +3,7 @@
 # serviceaccounts
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/pkg/serviceaccounts"
+import "github.com/BlanketOps/environments/pkg/serviceaccounts"
 ```
 
 ## Index

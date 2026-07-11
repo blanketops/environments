@@ -3,7 +3,7 @@
 # application
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/pkg/apis/githubevent/application"
+import "github.com/BlanketOps/environments/pkg/apis/githubevent/application"
 ```
 
 This file owns BackendSelector for the GitHubEvent domain. At present there is only one provider \(GitHub\), so selection is always a pass\-through. The selector exists to preserve the same layering pattern as the build and buildtrigger domains and to make adding future providers \(GitLab, Bitbucket\) a localised change.

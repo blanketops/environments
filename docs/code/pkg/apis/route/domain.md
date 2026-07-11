@@ -3,7 +3,7 @@
 # domain
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/pkg/apis/route/domain"
+import "github.com/BlanketOps/environments/pkg/apis/route/domain"
 ```
 
 This file owns the sentinel errors for the Route domain layer.

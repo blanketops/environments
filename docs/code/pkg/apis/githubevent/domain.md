@@ -3,7 +3,7 @@
 # domain
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/pkg/apis/githubevent/domain"
+import "github.com/BlanketOps/environments/pkg/apis/githubevent/domain"
 ```
 
 This file owns the sentinel errors for the GitHubEvent domain. Errors are grouped by concern — structural identity, event semantics, Git context, actor provenance, and lifecycle transitions. Callers use errors.Is to distinguish error kinds without importing provider implementation details.

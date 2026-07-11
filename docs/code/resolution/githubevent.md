@@ -3,7 +3,7 @@
 # githubevent
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/resolution/githubevent"
+import "github.com/BlanketOps/environments/resolution/githubevent"
 ```
 
 Package GitHubEvent implements resolution for the GitHubEvent CR.

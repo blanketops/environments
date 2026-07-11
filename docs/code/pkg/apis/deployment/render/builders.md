@@ -3,7 +3,7 @@
 # builders
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/pkg/apis/deployment/render/builders"
+import "github.com/BlanketOps/environments/pkg/apis/deployment/render/builders"
 ```
 
 ## Index

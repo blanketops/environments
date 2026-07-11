@@ -3,7 +3,7 @@
 # gitrepository
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/resolution/gitrepository"
+import "github.com/BlanketOps/environments/resolution/gitrepository"
 ```
 
 Package GitRepository implements resolution for the GitRepository CR.

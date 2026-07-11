@@ -3,7 +3,7 @@
 # route
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/resolution/route"
+import "github.com/BlanketOps/environments/resolution/route"
 ```
 
 Package Package implements resolution for the Package CR.

@@ -3,7 +3,7 @@
 # application
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/pkg/apis/gitrepository/application"
+import "github.com/BlanketOps/environments/pkg/apis/gitrepository/application"
 ```
 
 ## Index

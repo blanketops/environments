@@ -3,7 +3,7 @@
 # api
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/pkg/apis/environment/api"
+import "github.com/BlanketOps/environments/pkg/apis/environment/api"
 ```
 
 Package api resolves the platform ClusterSecretStore name from the environment contract's secretStore provider declaration.

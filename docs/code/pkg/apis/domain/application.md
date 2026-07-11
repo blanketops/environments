@@ -3,7 +3,7 @@
 # application
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/pkg/apis/domain/application"
+import "github.com/BlanketOps/environments/pkg/apis/domain/application"
 ```
 
 This file owns BackendSelector — the routing layer that maps a domain.Domain to the correct Provider implementation based on TLSStrategy.

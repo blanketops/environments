@@ -3,7 +3,7 @@
 # packages
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/resolution/packages"
+import "github.com/BlanketOps/environments/resolution/packages"
 ```
 
 Package Package implements resolution for the Package CR.

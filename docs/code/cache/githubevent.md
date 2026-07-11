@@ -3,7 +3,7 @@
 # githubevent
 
 ```go
-import "github.com/ntlaletsi70/blanketops-environments/cache/githubevent"
+import "github.com/BlanketOps/environments/cache/githubevent"
 ```
 
 ## Index
