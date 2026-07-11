@@ -31,7 +31,7 @@ package application
 import (
 	"fmt"
 
-	"github.com/BlanketOps/blanketops-environments/pkg/apis/route/domain"
+	"github.com/BlanketOps/environments/pkg/apis/route/domain"
 
 	routeResolution "github.com/BlanketOps/environments/resolution/route"
 )

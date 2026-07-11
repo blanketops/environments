@@ -20,7 +20,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/BlanketOps/blanketops-environments/core"
+	"github.com/BlanketOps/environments/core"
 	bocache "github.com/BlanketOps/environments/cache"
 	environmentResolution "github.com/BlanketOps/environments/resolution/environment"
 )

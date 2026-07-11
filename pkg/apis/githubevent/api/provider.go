@@ -29,7 +29,7 @@ import (
 	"context"
 
 	githubeventResolution "github.com/BlanketOps/environments/resolution/githubevent"
-	"github.com/BlanketOps/blanketops-environments/pkg/apis/githubevent/domain"
+	"github.com/BlanketOps/environments/pkg/apis/githubevent/domain"
 )
 
 // Provider provisions and maintains the event ingress infrastructure for a

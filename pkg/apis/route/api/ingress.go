@@ -68,7 +68,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	routeResolution "github.com/BlanketOps/environments/resolution/route"
-	"github.com/BlanketOps/blanketops-environments/pkg/apis/route/domain"
+	"github.com/BlanketOps/environments/pkg/apis/route/domain"
 )
 
 const (
