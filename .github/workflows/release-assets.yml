@@ -4,8 +4,7 @@
 # Fires on GitHub Release published. Bleeds four asset bundles:
 #
 #   install-{version}.yaml     — single-file controller installer (THE one)
-#                                kustomize build config/default with image tag
-#                                stamped. kubectl apply -f install.yaml = done.
+#                                kubectl apply -f install-{version}.yaml = done.
 #
 #   crds-{version}.tar.gz      — CRD YAML files only, for consumers who manage
 #                                CRDs separately from the controller rollout
@@ -16,19 +15,23 @@
 #
 # All assets are uploaded directly to the triggering GitHub Release.
 #
+# This repo has no cmd/ or config/ of its own — it is a pure domain/caching
+# library. The controller install manifests (kustomize config/, CRDs) live in
+# BlanketOps/environments-install, and the CLI lives in
+# BlanketOps/environments-cli. Both are versioned independently; every job
+# below always bundles whatever is newest in the relevant repo at release time.
+#
 # Asset ownership:
-#   install → built in the install job; kustomize build config/default
-#   CRDs    → built in the crds job; sourced from config/crd/bases/
+#   install → bundled in the install job from environments-install's latest release
+#   CRDs    → bundled in the crds job from environments-install's config/crd/bases/
 #   Docs    → built in the docs job; generated via gomarkdoc
-#   CLI     → bundled in the cli job from BlanketOps/environments-cli's latest
-#             release. The CLI is developed and versioned in that separate
-#             repo; this job always pulls whatever is newest there and
-#             re-uploads it as part of this release.
+#   CLI     → bundled in the cli job from environments-cli's latest release
 #
 # Image convention:
 #   ghcr.io/blanketops/environments-controller:{version}
-#   Stamped into config/manager/kustomization.yaml before kustomize build.
-#   The image must already exist in GHCR — pushed by the image CI workflow.
+#   Stamped into config/manager/kustomization.yaml in environments-install
+#   before that repo's kustomize build. The image must already exist in
+#   GHCR — pushed by the image CI workflow.
 #
 # Permissions:
 #   contents: write — required for gh release upload
@@ -53,52 +56,56 @@ jobs:
   #
   # Produces the single-file controller installer: install-{version}.yaml
   #
-  # What it contains (kustomize build config/default):
+  # What it contains (built by BlanketOps/environments-install via kustomize
+  # build config/default, published there as a release asset):
   #   - Namespace
   #   - CRDs
   #   - ServiceAccount + ClusterRole + ClusterRoleBinding
-  #   - Controller Deployment (image tag stamped to this release)
-  #   - Any platform ConfigMaps or webhooks declared in config/default
+  #   - Controller Deployment
+  #   - Any platform ConfigMaps or webhooks declared in that repo's config/default
   #
   # Consumer install:
   #   kubectl apply -f install-{version}.yaml
   #
-  # Image must already exist in GHCR. The image CI workflow (image.yml or
-  # ko.yml) is responsible for pushing the image before the release fires.
+  # This repo has no config/ of its own — the kustomize base, CRDs, and RBAC
+  # all live in BlanketOps/environments-install, versioned independently.
+  # This job always bundles whatever is newest there at release time.
   # ---------------------------------------------------------------------------
   install:
-    name: Build Install Manifest
+    name: Bundle Install Manifest
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install kustomize
-        uses: imranismail/setup-kustomize@v2
-
       - name: Resolve version
         id: version
         run: echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
 
-      - name: Stamp controller image tag
+      - name: Resolve latest environments-install release
+        id: install_version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION=${{ steps.version.outputs.tag }}
-          IMAGE="ghcr.io/blanketops/environments-controller:${VERSION}"
-          cd config/manager
-          kustomize edit set image controller="${IMAGE}"
-          echo "Stamped image: ${IMAGE}"
+          INSTALL_TAG=$(gh release list --repo BlanketOps/environments-install --limit 1 | awk '{print $1}')
+          echo "tag=${INSTALL_TAG}" >> "$GITHUB_OUTPUT"
+          echo "Bundling environments-install ${INSTALL_TAG}"
 
-      - name: Build install manifest
+      - name: Download install manifest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p .install-assets
+          gh release download "${{ steps.install_version.outputs.tag }}" \
+            --repo BlanketOps/environments-install \
+            --pattern "install.yaml" \
+            --dir .install-assets
+
+      - name: Rename and validate manifest
+        id: manifest
         run: |
           VERSION=${{ steps.version.outputs.tag }}
           MANIFEST="install-${VERSION}.yaml"
-          kustomize build config/default > "${MANIFEST}"
+          mv .install-assets/install.yaml "${MANIFEST}"
           echo "manifest=${MANIFEST}" >> "$GITHUB_OUTPUT"
-        id: manifest
-
-      - name: Validate manifest is non-empty
-        run: |
-          LINES=$(wc -l < "${{ steps.manifest.outputs.manifest }}")
+          LINES=$(wc -l < "${MANIFEST}")
           echo "Manifest lines: ${LINES}"
           if [ "${LINES}" -lt 10 ]; then
             echo "ERROR: install manifest suspiciously small (${LINES} lines) — aborting"
@@ -116,7 +123,6 @@ jobs:
       - name: Summary
         run: |
           VERSION=${{ steps.version.outputs.tag }}
-          IMAGE="ghcr.io/blanketops/environments-controller:${VERSION}"
           LINES=$(wc -l < "${{ steps.manifest.outputs.manifest }}")
           echo "### 🚀 Install Manifest" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
@@ -124,7 +130,7 @@ jobs:
           echo "|-------|---------|-------|" >> "$GITHUB_STEP_SUMMARY"
           echo "| \`${{ steps.manifest.outputs.manifest }}\` | \`${VERSION}\` | \`${LINES}\` |" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Controller image:** \`${IMAGE}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Bundled from:** \`BlanketOps/environments-install@${{ steps.install_version.outputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "**Install:**" >> "$GITHUB_STEP_SUMMARY"
           echo "\`\`\`bash" >> "$GITHUB_STEP_SUMMARY"
@@ -137,8 +143,9 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # CRDs
-  # Packages all CRD YAML files from config/crd/bases/ into a single tarball
-  # and uploads it to the release. Consumers apply with:
+  # Packages the CRD YAML files from BlanketOps/environments-install's
+  # config/crd/bases/ (at its latest release tag) into a single tarball and
+  # uploads it to this release. Consumers apply with:
   #   kubectl apply -f crds-{version}.tar.gz
   # or extract and apply individually.
   # ---------------------------------------------------------------------------
@@ -146,18 +153,33 @@ jobs:
     name: Package CRDs
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Resolve version
         id: version
         run: echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve latest environments-install release
+        id: install_version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          INSTALL_TAG=$(gh release list --repo BlanketOps/environments-install --limit 1 | awk '{print $1}')
+          echo "tag=${INSTALL_TAG}" >> "$GITHUB_OUTPUT"
+          echo "Bundling CRDs from environments-install ${INSTALL_TAG}"
+
+      - name: Checkout environments-install CRDs
+        uses: actions/checkout@v4
+        with:
+          repository: BlanketOps/environments-install
+          ref: ${{ steps.install_version.outputs.tag }}
+          path: environments-install
+          sparse-checkout: config/crd/bases
+          sparse-checkout-cone-mode: false
 
       - name: Package CRD bundle
         run: |
           VERSION=${{ steps.version.outputs.tag }}
           BUNDLE="crds-${VERSION}.tar.gz"
-          tar -czf "${BUNDLE}" -C config/crd/bases .
+          tar -czf "${BUNDLE}" -C environments-install/config/crd/bases .
           echo "bundle=${BUNDLE}" >> "$GITHUB_OUTPUT"
         id: bundle
 
@@ -176,6 +198,8 @@ jobs:
           echo "| Asset | Version |" >> "$GITHUB_STEP_SUMMARY"
           echo "|-------|---------|" >> "$GITHUB_STEP_SUMMARY"
           echo "| \`${{ steps.bundle.outputs.bundle }}\` | \`${{ steps.version.outputs.tag }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Bundled from:** \`BlanketOps/environments-install@${{ steps.install_version.outputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "**Contents:**" >> "$GITHUB_STEP_SUMMARY"
           tar -tzf "${{ steps.bundle.outputs.bundle }}" | sed 's/^/- `/' | sed 's/$/`/' >> "$GITHUB_STEP_SUMMARY"
