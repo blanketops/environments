@@ -18,8 +18,8 @@ package application
 import (
 	"fmt"
 
-	gitrepoResolution "github.com/BlanketOps/environments/resolution/gitrepository"
 	"github.com/BlanketOps/environments/pkg/apis/gitrepository/domain"
+	gitrepoResolution "github.com/BlanketOps/environments/resolution/gitrepository"
 )
 
 type Mapper struct{}

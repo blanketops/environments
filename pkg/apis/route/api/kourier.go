@@ -62,8 +62,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	routeResolution "github.com/BlanketOps/environments/resolution/route"
 	"github.com/BlanketOps/environments/pkg/apis/route/domain"
+	routeResolution "github.com/BlanketOps/environments/resolution/route"
 )
 
 // KourierProvider implements Provider for the Knative serving runtime.
