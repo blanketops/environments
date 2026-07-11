@@ -12,7 +12,7 @@
 #
 #   docs-{version}.tar.gz      — generated Go package docs via gomarkdoc
 #
-#   blanketops-{version}-{os}-{arch} — CLI binaries (multi-platform)
+#   bops, bops-static, bops-static-arm64 — CLI binaries
 #
 # All assets are uploaded directly to the triggering GitHub Release.
 #
@@ -20,19 +20,15 @@
 #   install → built in the install job; kustomize build config/default
 #   CRDs    → built in the crds job; sourced from config/crd/bases/
 #   Docs    → built in the docs job; generated via gomarkdoc
-#   CLI     → built in the cli job; cross-compiled for linux/darwin/windows
+#   CLI     → bundled in the cli job from BlanketOps/environments-cli's latest
+#             release. The CLI is developed and versioned in that separate
+#             repo; this job always pulls whatever is newest there and
+#             re-uploads it as part of this release.
 #
 # Image convention:
-#   ghcr.io/BlanketOps/blanketops-environments-controller:{version}
+#   ghcr.io/blanketops/environments-controller:{version}
 #   Stamped into config/manager/kustomization.yaml before kustomize build.
 #   The image must already exist in GHCR — pushed by the image CI workflow.
-#
-# CLI binary naming convention:
-#   bops-env-{version}-linux-amd64
-#   bops-env-{version}-linux-arm64
-#   bops-env-{version}-darwin-amd64
-#   bops-env-{version}-darwin-arm64
-#   bops-env-{version}-windows-amd64.exe
 #
 # Permissions:
 #   contents: write — required for gh release upload
@@ -87,7 +83,7 @@ jobs:
       - name: Stamp controller image tag
         run: |
           VERSION=${{ steps.version.outputs.tag }}
-          IMAGE="ghcr.io/BlanketOps/environments-controller:${VERSION}"
+          IMAGE="ghcr.io/blanketops/environments-controller:${VERSION}"
           cd config/manager
           kustomize edit set image controller="${IMAGE}"
           echo "Stamped image: ${IMAGE}"
@@ -120,7 +116,7 @@ jobs:
       - name: Summary
         run: |
           VERSION=${{ steps.version.outputs.tag }}
-          IMAGE="ghcr.io/ntlaletsi70/blanketops-environments-controller:${VERSION}"
+          IMAGE="ghcr.io/blanketops/environments-controller:${VERSION}"
           LINES=$(wc -l < "${{ steps.manifest.outputs.manifest }}")
           echo "### 🚀 Install Manifest" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
@@ -213,19 +209,23 @@ jobs:
         run: |
           mkdir -p .release-docs
           # Core packages
-          gomarkdoc --output .release-docs/cache.md          ./cache/...          || true
-          gomarkdoc --output .release-docs/core.md           ./core/...           || true
-          gomarkdoc --output .release-docs/logging.md        ./logging/...        || true
-          # Domain packages
-          gomarkdoc --output .release-docs/pkg-build.md      ./pkg/build/...      || true
-          gomarkdoc --output .release-docs/pkg-deployment.md ./pkg/deployment/... || true
-          gomarkdoc --output .release-docs/pkg-domain.md     ./pkg/domain/...     || true
-          gomarkdoc --output .release-docs/pkg-route.md      ./pkg/route/...      || true
-          gomarkdoc --output .release-docs/pkg-serviceunit.md ./pkg/serviceunit/... || true
-          gomarkdoc --output .release-docs/pkg-gitrepository.md ./pkg/gitrepository/... || true
-          gomarkdoc --output .release-docs/pkg-githubevent.md ./pkg/githubevent/... || true
+          gomarkdoc --output .release-docs/cache.md              ./cache/...                  || true
+          gomarkdoc --output .release-docs/core.md               ./core/...                   || true
+          # Domain packages (pkg/apis/<domain>)
+          gomarkdoc --output .release-docs/pkg-build.md          ./pkg/apis/build/...          || true
+          gomarkdoc --output .release-docs/pkg-deployment.md     ./pkg/apis/deployment/...     || true
+          gomarkdoc --output .release-docs/pkg-domain.md         ./pkg/apis/domain/...         || true
+          gomarkdoc --output .release-docs/pkg-environment.md    ./pkg/apis/environment/...    || true
+          gomarkdoc --output .release-docs/pkg-route.md          ./pkg/apis/route/...          || true
+          gomarkdoc --output .release-docs/pkg-packages.md       ./pkg/apis/packages/...       || true
+          gomarkdoc --output .release-docs/pkg-gitrepository.md  ./pkg/apis/gitrepository/...  || true
+          gomarkdoc --output .release-docs/pkg-githubevent.md    ./pkg/apis/githubevent/...    || true
+          # Shared pkg utilities
+          gomarkdoc --output .release-docs/pkg-utils.md          ./pkg/utils/...               || true
+          gomarkdoc --output .release-docs/pkg-secrets.md        ./pkg/secrets/...             || true
+          gomarkdoc --output .release-docs/pkg-intent.md         ./pkg/intent/...              || true
           # Resolution packages
-          gomarkdoc --output .release-docs/resolution.md     ./resolution/...     || true
+          gomarkdoc --output .release-docs/resolution.md         ./resolution/...              || true
 
       - name: Package docs bundle
         id: bundle
@@ -256,77 +256,54 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # CLI
-  # Cross-compiles the BlanketOps CLI binary for all supported platforms.
-  # Assumes cmd/blanketops/main.go as the CLI entrypoint.
-  # Binary naming: blanketops-{version}-{os}-{arch}[.exe]
+  # The `bops` CLI is developed and released independently in
+  # BlanketOps/environments-cli. This job always bundles whatever is newest
+  # there into this release, rather than building a CLI from this repo
+  # (there is no cmd/ entrypoint here).
   # ---------------------------------------------------------------------------
   cli:
-    name: Build CLI — ${{ matrix.os }}-${{ matrix.arch }}
+    name: Bundle CLI Binaries
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - os: linux
-            arch: amd64
-            ext: ""
-          - os: linux
-            arch: arm64
-            ext: ""
-          - os: darwin
-            arch: amd64
-            ext: ""
-          - os: darwin
-            arch: arm64
-            ext: ""
-          - os: windows
-            arch: amd64
-            ext: ".exe"
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: ${{ env.GO_VERSION_FILE }}
-          cache: true
-
       - name: Resolve version
         id: version
         run: echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
 
-      - name: Build CLI binary
+      - name: Resolve latest environments-cli release
+        id: cli_version
         env:
-          GOOS:   ${{ matrix.os }}
-          GOARCH: ${{ matrix.arch }}
-          CGO_ENABLED: "0"
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION=${{ steps.version.outputs.tag }}
-          BINARY="blanketops-${VERSION}-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }}"
-          go build \
-            -mod=vendor \
-            -trimpath \
-            -ldflags="-s -w -X main.version=${VERSION}" \
-            -o "${BINARY}" \
-            ./cmd/blanketops/...
-          echo "binary=${BINARY}" >> "$GITHUB_OUTPUT"
-        id: build
+          CLI_TAG=$(gh release list --repo BlanketOps/environments-cli --limit 1 | awk '{print $1}')
+          echo "tag=${CLI_TAG}" >> "$GITHUB_OUTPUT"
+          echo "Bundling environments-cli ${CLI_TAG}"
 
-      - name: Upload CLI binary to release
+      - name: Download CLI binaries
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p .cli-assets
+          gh release download "${{ steps.cli_version.outputs.tag }}" \
+            --repo BlanketOps/environments-cli \
+            --dir .cli-assets
+
+      - name: Upload CLI binaries to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload "${{ steps.version.outputs.tag }}" \
-            "${{ steps.build.outputs.binary }}" \
+            .cli-assets/* \
             --clobber
 
       - name: Summary
         run: |
-          echo "### 💻 CLI Binary — ${{ matrix.os }}/${{ matrix.arch }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "### 💻 CLI Binaries" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Asset | OS | Arch | Version |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|-------|----|------|---------|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| \`${{ steps.build.outputs.binary }}\` | \`${{ matrix.os }}\` | \`${{ matrix.arch }}\` | \`${{ steps.version.outputs.tag }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "Bundled from \`BlanketOps/environments-cli@${{ steps.cli_version.outputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          ls -lh "${{ steps.build.outputs.binary }}" | awk '{print "**Size:** `" $5 "`"}' >> "$GITHUB_STEP_SUMMARY"
+          echo "| Asset | Size |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-------|------|" >> "$GITHUB_STEP_SUMMARY"
+          for f in .cli-assets/*; do
+            SIZE=$(ls -lh "$f" | awk '{print $5}')
+            echo "| \`$(basename "$f")\` | \`${SIZE}\` |" >> "$GITHUB_STEP_SUMMARY"
+          done
