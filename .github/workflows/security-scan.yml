@@ -117,6 +117,12 @@ jobs:
         run: |
           govulncheck -format sarif ./... > govulncheck.sarif 2>/dev/null || true
 
+      - name: Run govulncheck (JSON)
+        env:
+          GOFLAGS: -mod=vendor
+        run: |
+          govulncheck -format json ./... > govulncheck.json 2>/dev/null || true
+
       - name: Upload scan artifacts
         uses: actions/upload-artifact@v4
         if: always()
@@ -125,12 +131,41 @@ jobs:
           path: |
             govulncheck.txt
             govulncheck.sarif
+            govulncheck.json
           retention-days: 30
 
       - name: Summary
         if: always()
         run: |
           STATUS="${{ steps.govulncheck.outputs.exit_code == '0' && '✅ No vulnerabilities found' || '⚠️ Vulnerabilities detected' }}"
+
+          # govulncheck streams an `osv` record for every DB match against a
+          # required/imported module, but only `finding` records are ones it
+          # determined are actually reachable — join on those, not raw osv.
+          ROWS=$(jq -s -r '
+            ( [ .[] | select(.finding) | .finding ] ) as $findings
+            | ( $findings | map(.osv) | unique ) as $ids
+            | ( [ .[] | select(.osv) | .osv ] | map({key: .id, value: .}) | from_entries ) as $osvs
+            | $ids[]
+            | . as $id
+            | ($osvs[$id]) as $o
+            | ( [$findings[] | select(.osv == $id) | .fixed_version] | map(select(. != null)) | unique ) as $fixed
+            | [
+                $id,
+                (( $o.affected // [] ) | map(.package.name) | unique | join(", ")),
+                ( if ($fixed|length) > 0 then ($fixed | join(", ")) else "unfixed" end ),
+                (( $o.summary // $o.details // "" ) | gsub("\n";" ") | if length > 90 then .[0:87] + "..." else . end )
+              ] | @tsv
+          ' govulncheck.json 2>/dev/null)
+
+          if [ -n "${ROWS}" ]; then
+            TABLE="| Vulnerability | Module(s) | Fixed in | Summary |
+          | --- | --- | --- | --- |
+          $(echo "${ROWS}" | awk -F'\t' '{printf "| [%s](https://pkg.go.dev/vuln/%s) | %s | %s | %s |\n", $1, $1, $2, $3, $4}')"
+          else
+            TABLE="No known vulnerabilities found."
+          fi
+
           cat >> "$GITHUB_STEP_SUMMARY" <<EOF
           # 🔍 Vulnerability Scan
 
@@ -139,11 +174,18 @@ jobs:
           **Vendor tag:** \`${{ steps.tag.outputs.tag }}\`
           **Tool:** \`govulncheck -mod=vendor ./...\`
 
-          ## Results
+          ## Findings
+
+          ${TABLE}
+
+          <details>
+          <summary>Full govulncheck output</summary>
 
           \`\`\`
           $(cat govulncheck.txt 2>/dev/null || echo "No output captured")
           \`\`\`
+
+          </details>
 
           > SARIF results uploaded to the [Security tab](${{ github.server_url }}/${{ github.repository }}/security/code-scanning).
           EOF
