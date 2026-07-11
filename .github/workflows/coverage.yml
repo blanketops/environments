@@ -21,7 +21,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  VENDOR_IMAGE: ghcr.io/${{ github.repository }}/tools
+  VENDOR_IMAGE: ghcr.io/blanketops/environments/tools
 
 jobs:
   coverage:
