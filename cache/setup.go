@@ -5,7 +5,7 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/BlanketOps/blanketops-environments/core"
+	"github.com/BlanketOps/environments/core"
 	"github.com/BlanketOps/environments/cache/adapter"
 )
 

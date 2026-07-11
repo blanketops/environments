@@ -22,7 +22,7 @@ import (
 
 	deploymentResolution "github.com/BlanketOps/environments/resolution/deployment"
 	serviceunitResolution "github.com/BlanketOps/environments/resolution/serviceunit"
-	"github.com/BlanketOps/blanketops-environments/pkg/apis/deployment/api"
+	"github.com/BlanketOps/environments/pkg/apis/deployment/api"
 )
 
 type DeploymentService struct {

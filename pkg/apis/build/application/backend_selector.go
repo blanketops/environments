@@ -29,8 +29,7 @@ package application
 import (
 	"strings"
 
-	"github.com/BlanketOps/blankbtops-elanketops-environments/pkg/sp/uild/api"
-domn
+	"github.com/BlanketOps/environments/pkg/apis/build/api"
 	"github.com/BlanketOps/environments/pkg/apis/build/domain"
 )
 

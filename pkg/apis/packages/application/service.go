@@ -19,7 +19,7 @@ import (
 	"context"
 
 	pkgResolution "github.com/BlanketOps/environments/resolution/packages"
-	pkgintent "github.com/BlanketOps/blanketops-environments/pkg/apis/packages/intent"
+	pkgintent "github.com/BlanketOps/environments/pkg/apis/packages/intent"
 )
 
 type PackageService struct {

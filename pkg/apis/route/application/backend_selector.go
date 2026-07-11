@@ -34,8 +34,8 @@ package application
 import (
 	"fmt"
 
-	"github.com/BlanketOps/blanketops-environments/pkg/apis/route/api"
-	"github.com/BlanketOps/blanketops-environments/pkg/apis/route/domain"
+	"github.com/BlanketOps/environments/pkg/apis/route/api"
+	"github.com/BlanketOps/environments/pkg/apis/route/domain"
 )
 
 // BackendSelector routes a domain.Route to the correct Provider implementation

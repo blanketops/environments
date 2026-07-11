@@ -39,7 +39,7 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"github.com/BlanketOps/blanketops-environments/pkg/apis/route/domain"
+	"github.com/BlanketOps/environments/pkg/apis/route/domain"
 
 	routeResolution "github.com/BlanketOps/environments/resolution/route"
 )
