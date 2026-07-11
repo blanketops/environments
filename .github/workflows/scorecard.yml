@@ -1,0 +1,100 @@
+# =============================================================================
+# scorecard.yml — OpenSSF Scorecard
+#
+# Runs the OpenSSF Scorecard (https://github.com/ossf/scorecard) against this
+# repo's supply-chain security posture (branch protection, pinned deps,
+# dangerous workflow patterns, token permissions, etc). No build/vendor step
+# required — Scorecard analyzes repo config and GitHub metadata directly.
+#
+# Private repo caveats:
+#   - publish_results is false. The public Scorecard API/badge only accepts
+#     results for public repositories; publishing from a private repo fails.
+#   - repo_token uses GH_PAT rather than the default GITHUB_TOKEN. Several
+#     checks (Branch-Protection, Token-Permissions across workflows, etc.)
+#     need read access GITHUB_TOKEN doesn't have on a private repo.
+#   - No SARIF upload to the Security tab — this repo has no GitHub Advanced
+#     Security/code-scanning enabled (private, no GHAS license). Results are
+#     JSON, rendered into the job summary and uploaded as a build artifact.
+#
+# Report-only: this job never fails the build on a low score — findings are
+# visible in the job summary and artifact, not blocking.
+#
+# Secrets required:
+#   GH_PAT — repo metadata read (branch protection, workflow permissions)
+# =============================================================================
+
+name: Scorecard
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    - cron: '0 6 * * 0'
+
+permissions:
+  contents: read
+
+jobs:
+  scorecard:
+    name: OpenSSF Scorecard
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Run Scorecard analysis
+        uses: ossf/scorecard-action@v2
+        with:
+          results_file: results.json
+          results_format: json
+          repo_token: ${{ secrets.GH_PAT }}
+          publish_results: false
+
+      - name: Upload results artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scorecard-results-${{ github.sha }}
+          path: results.json
+          retention-days: 30
+
+      - name: Summary
+        if: always()
+        run: |
+          OVERALL=$(jq -r '.score // "N/A"' results.json 2>/dev/null)
+
+          ROWS=$(jq -r '
+            .checks[]
+            | [ .name, (if .score == -1 then "N/A" else "\(.score)/10" end), (.reason // "") ]
+            | @tsv
+          ' results.json 2>/dev/null)
+
+          if [ -n "${ROWS}" ]; then
+            TABLE="| Check | Score | Reason |
+          | --- | --- | --- |
+          $(echo "${ROWS}" | awk -F'\t' '{printf "| %s | %s | %s |\n", $1, $2, $3}')"
+          else
+            TABLE="No results parsed — see the raw artifact."
+          fi
+
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          # 🛡️ OpenSSF Scorecard
+
+          **Overall score:** \`${OVERALL}/10\`
+          **Tool:** [ossf/scorecard-action](https://github.com/ossf/scorecard-action)
+
+          > Private repo — results are not published to the public Scorecard API/badge.
+
+          ## Checks
+
+          ${TABLE}
+
+          > Full JSON results uploaded as a build artifact (\`scorecard-results-${{ github.sha }}\`).
+          EOF
