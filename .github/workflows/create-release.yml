@@ -1,3 +1,14 @@
+# =============================================================================
+# create-release.yml — Cut a Release Branch
+#
+# Manually triggered. Branches release/{version} off develop, pushes it,
+# and opens a PR into main. Fix PRs land on the release branch; once ready,
+# run the Finalize Release workflow.
+#
+# Secrets required:
+#   GH_PAT — push release branch + open PR
+# =============================================================================
+
 name: Create Release
 
 on:
@@ -14,7 +25,6 @@ permissions:
 jobs:
   create:
     runs-on: ubuntu-latest
-
 
     steps:
       - name: Checkout develop
@@ -51,18 +61,25 @@ jobs:
 
       - name: Release Summary
         run: |
-          cat >> $GITHUB_STEP_SUMMARY <<EOF 
-          # 🚀 Release Branch Created 
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          # 🚀 Release Branch Created
+
           **Version:** \`${{ github.event.inputs.version }}\`
-          ## Completed 
-           - Checked out \`develop\`
-           - Created \`release/${{ github.event.inputs.version }}\` 
-           - Pushed release branch to origin 
-           - Opened (or attempted to open) a PR to \`main\` 
-           ## Release Flow 
-           -  develop → release/${{ github.event.inputs.version }} → main 
-           ## Next Steps 
-           1. Merge any release fixes into the release branch.
-           2. Validate the release candidate .
-           3. Run the **Finalize Release** workflow. 
+
+          ## Completed
+
+          - Checked out \`develop\`
+          - Created \`release/${{ github.event.inputs.version }}\`
+          - Pushed release branch to origin
+          - Opened (or attempted to open) a PR to \`main\`
+
+          ## Release Flow
+
+          develop → release/${{ github.event.inputs.version }} → main
+
+          ## Next Steps
+
+          1. Merge any release fixes into the release branch.
+          2. Validate the release candidate.
+          3. Run the **Finalize Release** workflow.
           EOF

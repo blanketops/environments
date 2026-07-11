@@ -1,5 +1,5 @@
 # =============================================================================
-# govulncheck.yml — Vulnerability Scanning
+# security-scan.yml — Vulnerability Scanning
 #
 # Runs govulncheck against the full dependency tree.
 # Vendor is restored from the GHCR snapshot — no network fetches at scan time.
@@ -31,11 +31,10 @@ on:
       - main
   pull_request:
   schedule:
-    - cron: '0 8 * * 1'  # weekly — Monday 08:00 UTC
+    - cron: '0 8 * * 1'
 
 permissions:
   contents: read
-  # security-events: write  # re-enable when SARIF upload is active (requires GHAS)
 
 env:
   REGISTRY: ghcr.io
@@ -49,7 +48,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Go version from go.mod — never hardcoded.
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -77,10 +75,6 @@ jobs:
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "Vendor tag: ${TAG}"
 
-      # Three-tier fallback:
-      #   1. content-addressed tag (exact go.sum match)
-      #   2. latest (most recent snapshot, may be slightly stale)
-      #   3. inline go mod vendor (slow but always works)
       - name: Restore vendor from snapshot
         run: |
           IMAGE_TAG="${{ env.VENDOR_IMAGE }}:${{ steps.tag.outputs.tag }}"
@@ -108,8 +102,6 @@ jobs:
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
 
-      # Text run — human-readable, drives the summary.
-      # Allowed to fail so SARIF upload always runs.
       - name: Run govulncheck
         id: govulncheck
         env:
@@ -119,22 +111,11 @@ jobs:
           echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
         continue-on-error: true
 
-      # SARIF run — machine-readable for GitHub Security tab.
-      # Runs even when text run finds vulnerabilities.
       - name: Run govulncheck (SARIF)
         env:
           GOFLAGS: -mod=vendor
         run: |
           govulncheck -format sarif ./... > govulncheck.sarif 2>/dev/null || true
-
-      # SARIF upload disabled — requires GitHub Advanced Security (GHAS).
-      # Enable when repo is public under the blanketops org.
-      # - name: Upload SARIF to GitHub Security tab
-      #   uses: github/codeql-action/upload-sarif@v4
-      #   if: always()
-      #   with:
-      #     sarif_file: govulncheck.sarif
-      #     category: govulncheck
 
       - name: Upload scan artifacts
         uses: actions/upload-artifact@v4
