@@ -122,7 +122,7 @@ jobs:
           | ------- | -------- |
           $(go tool cover -func=coverage.out 2>/dev/null | grep -v "^total" | awk '{
             pkg=$1; cov=$3;
-            gsub(/github.com\/ntlaletsi70\/blanketops-environments\//, "", pkg);
+            gsub(/github.com\/BlanketOps\/blanketops-environments\//, "", pkg);
             print "| " pkg " | " cov " |"
           }' || echo "| N/A | N/A |")
           EOF
