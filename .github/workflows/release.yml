@@ -6,7 +6,8 @@
 #
 # Secrets required:
 #   GITHUB_TOKEN     — commit changelog + create release (default token)
-#   SSH_PRIVATE_KEY  — signs the changelog commit
+#   GPG_PRIVATE_KEY  — signs the changelog commit
+#   GPG_PASSPHRASE   — passphrase for GPG_PRIVATE_KEY
 # =============================================================================
 
 name: Release
@@ -45,17 +46,16 @@ jobs:
       - name: Generate CHANGELOG.md
         run: git-cliff --config .cliff.toml --output CHANGELOG.md
 
-      - name: Configure SSH commit signing
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/signing_key
-          chmod 600 ~/.ssh/signing_key
-          ssh-keygen -y -f ~/.ssh/signing_key > ~/.ssh/signing_key.pub
-          git config --global gpg.format ssh
-          git config --global user.signingkey ~/.ssh/signing_key.pub
-          git config --global commit.gpgsign true
-          git config --global user.name "github-actions"
-          git config --global user.email "actions@github.com"
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_config_global: true
+          git_committer_name: github-actions
+          git_committer_email: actions@github.com
 
       - name: Commit changelog
         run: |

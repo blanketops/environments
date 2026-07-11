@@ -6,7 +6,8 @@
 #
 # Secrets required:
 #   GH_PAT           — commit/push to main + private module access
-#   SSH_PRIVATE_KEY  — signs the generated-docs commit
+#   GPG_PRIVATE_KEY  — signs the generated-docs commit
+#   GPG_PASSPHRASE   — passphrase for GPG_PRIVATE_KEY
 # =============================================================================
 
 name: Code Docs
@@ -58,17 +59,16 @@ jobs:
             ./resolution/... \
             ./runtime/...
 
-      - name: Configure SSH commit signing
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/signing_key
-          chmod 600 ~/.ssh/signing_key
-          ssh-keygen -y -f ~/.ssh/signing_key > ~/.ssh/signing_key.pub
-          git config --global gpg.format ssh
-          git config --global user.signingkey ~/.ssh/signing_key.pub
-          git config --global commit.gpgsign true
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_config_global: true
+          git_committer_name: github-actions[bot]
+          git_committer_email: github-actions[bot]@users.noreply.github.com
 
       - name: Commit and push docs
         run: |
