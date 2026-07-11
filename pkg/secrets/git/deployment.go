@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	deploymentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
+	deploymentResolution "github.com/BlanketOps/environments/resolution/deployment"
 )
 
 type DeploymentGitSSHSecretReconciler struct {

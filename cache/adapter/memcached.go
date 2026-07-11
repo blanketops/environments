@@ -23,7 +23,7 @@ import (
 
 	"github.com/bradfitz/gomemcache/memcache"
 
-	"github.com/ntlaletsi70/blanketops-environments/core"
+	"github.com/BlanketOps/blanketops-environments/core"
 )
 
 // MemcachedConfig holds connection settings for the Memcached backend.

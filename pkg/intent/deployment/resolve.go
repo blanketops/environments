@@ -18,8 +18,8 @@ package deployment
 import (
 	"time"
 
-	deploymentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
-	serviceunitResolution "github.com/ntlaletsi70/blanketops-environments/resolution/serviceunit"
+	deploymentResolution "github.com/BlanketOps/environments/resolution/deployment"
+	serviceunitResolution "github.com/BlanketOps/environments/resolution/serviceunit"
 )
 
 func ResolveDeploymentIntent(

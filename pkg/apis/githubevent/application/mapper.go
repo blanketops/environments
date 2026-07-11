@@ -27,8 +27,8 @@ package application
 import (
 	"strings"
 
-	"github.com/ntlaletsi70/blanketops-environments/pkg/apis/githubevent/domain"
-	githubeventResolution "github.com/ntlaletsi70/blanketops-environments/resolution/githubevent"
+	githubeventResolution "github.com/BlanketOps/environments/resolution/githubevent"
+	"github.com/BlanketOps/blanketops-environments/pkg/apis/githubevent/domain"
 )
 
 // Mapper converts a ResolvedGitHubEvent into a pure domain.GitHubEvent.

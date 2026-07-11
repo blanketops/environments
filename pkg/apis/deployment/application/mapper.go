@@ -18,8 +18,8 @@ package application
 import (
 	"fmt"
 
-	"github.com/ntlaletsi70/blanketops-environments/pkg/apis/deployment/domain"
-	deploymentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
+	deploymentResolution "github.com/BlanketOps/environments/resolution/deployment"
+	"github.com/BlanketOps/blanketops-environments/pkg/apis/deployment/domain"
 )
 
 type Mapper struct{}
