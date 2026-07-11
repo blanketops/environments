@@ -23,16 +23,16 @@
 #   CLI     → built in the cli job; cross-compiled for linux/darwin/windows
 #
 # Image convention:
-#   ghcr.io/ntlaletsi70/blanketops-environments-controller:{version}
+#   ghcr.io/BlanketOps/blanketops-environments-controller:{version}
 #   Stamped into config/manager/kustomization.yaml before kustomize build.
 #   The image must already exist in GHCR — pushed by the image CI workflow.
 #
 # CLI binary naming convention:
-#   blanketops-{version}-linux-amd64
-#   blanketops-{version}-linux-arm64
-#   blanketops-{version}-darwin-amd64
-#   blanketops-{version}-darwin-arm64
-#   blanketops-{version}-windows-amd64.exe
+#   bops-env-{version}-linux-amd64
+#   bops-env-{version}-linux-arm64
+#   bops-env-{version}-darwin-amd64
+#   bops-env-{version}-darwin-arm64
+#   bops-env-{version}-windows-amd64.exe
 #
 # Permissions:
 #   contents: write — required for gh release upload
@@ -87,7 +87,7 @@ jobs:
       - name: Stamp controller image tag
         run: |
           VERSION=${{ steps.version.outputs.tag }}
-          IMAGE="ghcr.io/ntlaletsi70/blanketops-environments-controller:${VERSION}"
+          IMAGE="ghcr.io/BlanketOps/environments-controller:${VERSION}"
           cd config/manager
           kustomize edit set image controller="${IMAGE}"
           echo "Stamped image: ${IMAGE}"

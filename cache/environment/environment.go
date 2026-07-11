@@ -20,9 +20,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	bocache "github.com/ntlaletsi70/blanketops-environments/cache"
-	"github.com/ntlaletsi70/blanketops-environments/core"
-	environmentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/environment"
+	"github.com/BlanketOps/blanketops-environments/core"
+	bocache "github.com/BlanketOps/environments/cache"
+	environmentResolution "github.com/BlanketOps/environments/resolution/environment"
 )
 
 // EnvironmentCache provides domain-specific, field-level caching for Environment resources.

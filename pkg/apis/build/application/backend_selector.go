@@ -29,8 +29,9 @@ package application
 import (
 	"strings"
 
-	"github.com/ntlaletsi70/blanketops-environments/pkg/apis/build/api"
-	"github.com/ntlaletsi70/blanketops-environments/pkg/apis/build/domain"
+	"github.com/BlanketOps/blankbtops-elanketops-environments/pkg/sp/uild/api"
+domn
+	"github.com/BlanketOps/environments/pkg/apis/build/domain"
 )
 
 // BackendSelector routes a BuildSpec to the correct Provider implementation

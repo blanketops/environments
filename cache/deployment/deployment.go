@@ -18,11 +18,10 @@ package deployment
 import (
 	"context"
 
+	"github.com/BlanketOps/blanketops-environments/core"
 	"k8s.io/apimachinery/pkg/types"
 
-	bocache "github.com/ntlaletsi70/blanketops-environments/cache"
-	"github.com/ntlaletsi70/blanketops-environments/core"
-	deploymentResolution "github.com/ntlaletsi70/blanketops-environments/resolution/deployment"
+	bocache "github.com/BlanketOps/environments/cache"
 )
 
 // DeploymentCache provides domain-specific, field-level caching for Deployment resources.
