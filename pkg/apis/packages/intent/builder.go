@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	"github.com/BlanketOps/environments/resolution/packages"
-	"github.com/BlanketOps/blanketops-environments/pkg/apis/packages/domain"
+	"github.com/BlanketOps/environments/pkg/apis/packages/domain"
 )
 
 // BuildPackageIntent compiles a RESOLVED Package into an immutable execution plan.

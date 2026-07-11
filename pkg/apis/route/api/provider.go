@@ -38,7 +38,7 @@ import (
 	"context"
 
 	routeResolution "github.com/BlanketOps/environments/resolution/route"
-	"github.com/BlanketOps/blanketops-environments/pkg/apis/route/domain"
+	"github.com/BlanketOps/environments/pkg/apis/route/domain"
 )
 
 // Provider materializes and maintains the runtime resource for a Route CR.

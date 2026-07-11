@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	gitrepoResolution "github.com/BlanketOps/environments/resolution/gitrepository"
-	"github.com/BlanketOps/blanketops-environments/pkg/apis/gitrepository/domain"
+	"github.com/BlanketOps/environments/pkg/apis/gitrepository/domain"
 )
 
 type Mapper struct{}
