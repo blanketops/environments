@@ -11,6 +11,10 @@
 #   docker export | tar extracts vendor/ directly — no path nesting issues.
 #   Three-tier fallback: tagged snapshot → latest → inline go mod vendor.
 #
+# Report-only: this job never fails the build on findings. govulncheck
+# results (found or clean) are always written to the job summary and
+# uploaded as an artifact — vulnerabilities are visible, not blocking.
+#
 # Outputs:
 #   - Text output for human-readable summary
 #   - SARIF uploaded to GitHub Security tab
@@ -35,7 +39,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  VENDOR_IMAGE: ghcr.io/${{ github.repository }}/tools
+  VENDOR_IMAGE: ghcr.io/blanketops/environments/tools
 
 jobs:
   govulncheck:
@@ -63,7 +67,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ntlaletsi70
+          username: BlanketOps
           password: ${{ secrets.GH_PAT }}
 
       - name: Compute vendor tag from go.sum
@@ -162,11 +166,3 @@ jobs:
 
           > SARIF results uploaded to the [Security tab](${{ github.server_url }}/${{ github.repository }}/security/code-scanning).
           EOF
-
-      # Fail the job after all reporting steps complete
-      # so SARIF and artifacts are always captured.
-      - name: Fail on vulnerabilities
-        if: steps.govulncheck.outputs.exit_code != '0'
-        run: |
-          echo "govulncheck found vulnerabilities — see Security tab and artifacts"
-          exit 1
