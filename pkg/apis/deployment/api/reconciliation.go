@@ -22,8 +22,8 @@ import (
 	"github.com/go-logr/logr"
 
 	environmentv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
-	"github.com/BlanketOps/blanketops-environments/pkg/apis/deployment/domain"
-	intent "github.com/BlanketOps/blanketops-environments/pkg/intent/deployment"
+	"github.com/BlanketOps/environments/pkg/apis/deployment/domain"
+	intent "github.com/BlanketOps/environments/pkg/intent/deployment"
 )
 
 type ReconciliationExecutor struct {

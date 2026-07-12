@@ -64,8 +64,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/BlanketOps/environments/pkg/apis/domain/domain"
 	domainResolution "github.com/BlanketOps/environments/resolution/domain"
-	"github.com/BlanketOps/blanketops-environments/pkg/apis/domain/domain"
 )
 
 // ACMEConfig carries the HTTP01 ACME issuer configuration injected at
@@ -264,7 +264,7 @@ func (p *KnativeProvider) ensureCertificate(
 		spec := certmanagerv1.CertificateSpec{
 			DNSNames:   []string{d.Host},
 			SecretName: certSecretName(d.Host),
-			IssuerRef: cmmeta.ObjectReference{ //nolint:staticcheck
+			IssuerRef: cmmeta.IssuerReference{
 				Name: issuerName(d.Namespace),
 				Kind: "Issuer",
 			},

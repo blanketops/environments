@@ -19,10 +19,10 @@ import (
 	"context"
 
 	"k8s.io/apimachinery/pkg/types"
-blanktops-eor
-blanktops-eor
-	bocacheache"cache"cache"
-	buildR buildR buildR buildR buotisotisotisotisolution/buildon/buildon/buildon/buildon/buildon/buildon/buildon/buildon/buildon/buildon/buildon/buildon/build/resolution/build"
+
+	bocache "github.com/BlanketOps/environments/cache"
+	"github.com/BlanketOps/environments/core"
+	buildResolution "github.com/BlanketOps/environments/resolution/build"
 )
 
 // BuildCache provides domain-specific, field-level caching for Build resources.

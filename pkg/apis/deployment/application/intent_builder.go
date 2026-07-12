@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"time"
 
+	intent "github.com/BlanketOps/environments/pkg/intent/deployment"
 	deploymentResolution "github.com/BlanketOps/environments/resolution/deployment"
 	serviceunitResolution "github.com/BlanketOps/environments/resolution/serviceunit"
-	intent "github.com/BlanketOps/blanketops-environments/pkg/intent/deployment"
 )
 
 type IntentBuilder struct{}
