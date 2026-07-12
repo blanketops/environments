@@ -31,8 +31,8 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/BlanketOps/environments/pkg/apis/packages/domain"
-	"github.com/BlanketOps/environments/pkg/apis/packages/intent"
+	"github.com/blanketops/environments/pkg/apis/packages/domain"
+	"github.com/blanketops/environments/pkg/apis/packages/intent"
 )
 
 type ApplicationProvider struct {

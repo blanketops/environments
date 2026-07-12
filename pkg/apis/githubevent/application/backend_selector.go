@@ -21,8 +21,8 @@ change.
 package application
 
 import (
-	"github.com/BlanketOps/environments/pkg/apis/githubevent/api"
-	"github.com/BlanketOps/environments/pkg/apis/githubevent/domain"
+	"github.com/blanketops/environments/pkg/apis/githubevent/api"
+	"github.com/blanketops/environments/pkg/apis/githubevent/domain"
 )
 
 // BackendSelector routes a GitHubEvent to the correct Provider.

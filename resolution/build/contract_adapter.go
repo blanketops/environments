@@ -31,7 +31,7 @@ a source of truth.
 */
 package build
 
-import contractv1 "github.com/BlanketOps/environments-contract/blanketops/environments/v1alpha1"
+import contractv1 "github.com/blanketops/environments-contract/blanketops/environments/v1alpha1"
 
 // ToBuildContract projects the resolved runtime spec into a protobuf
 // contractv1.BuildSpec for infrastructure consumers (hashing, comparison,

@@ -18,9 +18,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	bocache "github.com/BlanketOps/environments/cache"
-	"github.com/BlanketOps/environments/core"
-	routeResolution "github.com/BlanketOps/environments/resolution/route"
+	bocache "github.com/blanketops/environments/cache"
+	"github.com/blanketops/environments/core"
+	routeResolution "github.com/blanketops/environments/resolution/route"
 )
 
 // RouteCache provides domain-specific, field-level caching for Route resources.

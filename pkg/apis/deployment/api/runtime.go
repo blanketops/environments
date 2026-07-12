@@ -24,8 +24,8 @@ import (
 	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/BlanketOps/environments/pkg/apis/deployment/domain"
-	intent "github.com/BlanketOps/environments/pkg/intent/deployment"
+	"github.com/blanketops/environments/pkg/apis/deployment/domain"
+	intent "github.com/blanketops/environments/pkg/intent/deployment"
 )
 
 type RuntimeProvider struct {

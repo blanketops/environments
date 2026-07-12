@@ -16,8 +16,8 @@ limitations under the License.
 package application
 
 import (
-	packageapi "github.com/BlanketOps/environments/pkg/apis/packages/api"
-	"github.com/BlanketOps/environments/pkg/apis/packages/intent"
+	packageapi "github.com/blanketops/environments/pkg/apis/packages/api"
+	"github.com/blanketops/environments/pkg/apis/packages/intent"
 )
 
 // BackendSelector is intentionally boring.

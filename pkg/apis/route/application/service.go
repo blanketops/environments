@@ -38,10 +38,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/BlanketOps/environments/pkg/apis/route/domain"
+	"github.com/blanketops/environments/pkg/apis/route/domain"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	routeResolution "github.com/BlanketOps/environments/resolution/route"
+	routeResolution "github.com/blanketops/environments/resolution/route"
 )
 
 // RouteService orchestrates the route reconciliation pipeline.

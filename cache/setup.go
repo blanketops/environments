@@ -5,8 +5,8 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/BlanketOps/environments/cache/adapter"
-	"github.com/BlanketOps/environments/core"
+	"github.com/blanketops/environments/cache/adapter"
+	"github.com/blanketops/environments/core"
 )
 
 type Backend string

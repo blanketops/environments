@@ -18,8 +18,8 @@ package api
 import (
 	"context"
 
-	"github.com/BlanketOps/environments/pkg/apis/packages/domain"
-	"github.com/BlanketOps/environments/pkg/apis/packages/intent"
+	"github.com/blanketops/environments/pkg/apis/packages/domain"
+	"github.com/blanketops/environments/pkg/apis/packages/intent"
 )
 
 // Provider executes a PackageIntent against a concrete backend (e.g. kapp).

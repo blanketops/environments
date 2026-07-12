@@ -30,8 +30,8 @@ the two — the type switch operates on the enum value, not the wrapper.
 package serviceunit
 
 import (
-	commoncontractv1 "github.com/BlanketOps/environments-contract/blanketops/common/v1"
-	environmentscontractv1alpha1 "github.com/BlanketOps/environments-contract/blanketops/environments/v1alpha1"
+	commoncontractv1 "github.com/blanketops/environments-contract/blanketops/common/v1"
+	environmentscontractv1alpha1 "github.com/blanketops/environments-contract/blanketops/environments/v1alpha1"
 )
 
 // ToServiceUnitContract projects the resolved runtime ServiceUnit spec into a

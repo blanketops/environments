@@ -53,8 +53,8 @@ See also:
 package route
 
 import (
-	commonv1 "github.com/BlanketOps/environments-contract/blanketops/common/v1"
-	networkscontractv1alpha1 "github.com/BlanketOps/environments-contract/blanketops/networks/v1alpha1"
+	commonv1 "github.com/blanketops/environments-contract/blanketops/common/v1"
+	networkscontractv1alpha1 "github.com/blanketops/environments-contract/blanketops/networks/v1alpha1"
 )
 
 // ToRouteContract projects a ResolvedRoute into the canonical proto RouteSpec

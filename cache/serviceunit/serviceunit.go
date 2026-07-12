@@ -20,9 +20,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	bocache "github.com/BlanketOps/environments/cache"
-	"github.com/BlanketOps/environments/core"
-	serviceunitResolution "github.com/BlanketOps/environments/resolution/serviceunit"
+	bocache "github.com/blanketops/environments/cache"
+	"github.com/blanketops/environments/core"
+	serviceunitResolution "github.com/blanketops/environments/resolution/serviceunit"
 )
 
 // ServiceUnitCache provides domain-specific, field-level caching for ServiceUnit resources.

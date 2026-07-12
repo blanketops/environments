@@ -18,8 +18,8 @@ package application
 import (
 	"context"
 
-	deploymentResolution "github.com/BlanketOps/environments/resolution/deployment"
-	serviceunitResolution "github.com/BlanketOps/environments/resolution/serviceunit"
+	deploymentResolution "github.com/blanketops/environments/resolution/deployment"
+	serviceunitResolution "github.com/blanketops/environments/resolution/serviceunit"
 )
 
 type DeploymentService struct {
