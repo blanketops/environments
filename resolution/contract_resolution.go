@@ -21,7 +21,6 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	//networksv1alpha1 "github.com/blanketops/environments-api/api/networks/v1alpha1"
 	environments1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
 	eventsv1alpha1 "github.com/blanketops/environments-api/api/events/v1alpha1"
 	sourcesv1alpha1 "github.com/blanketops/environments-api/api/sources/v1alpha1"

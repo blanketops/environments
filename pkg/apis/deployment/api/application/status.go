@@ -26,7 +26,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	env1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
-	env1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
 	"github.com/blanketops/environments/pkg/apis/deployment/domain"
 )
 
