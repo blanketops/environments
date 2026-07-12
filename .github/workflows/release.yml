@@ -1,76 +1,103 @@
+# =============================================================================
+# release.yml — Publish GitHub Release
+#
+# Fires on push of a v* tag. Generates CHANGELOG.md via git-cliff, commits
+# it to main, then publishes a GitHub Release with the latest release notes.
+#
+# Secrets required:
+#   GITHUB_TOKEN     — commit changelog + create release (default token)
+#   GPG_PRIVATE_KEY  — signs the changelog commit
+#   GPG_PASSPHRASE   — passphrase for GPG_PRIVATE_KEY
+# =============================================================================
+
 name: Release
+
 on:
-    push:
-        tags:
-            - "v*"
+  push:
+    tags:
+      - "v*"
+
 permissions:
-    contents: write
+  contents: write
+
 jobs:
-    release:
-      runs-on: ubuntu-latest
-      steps:
-        - name: Checkout tag
-          uses: actions/checkout@v4
-          with:
-            fetch-depth: 0
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-        - name: Install git-cliff
-          run: |
-              GITCLIFF_VERSION="2.13.0"
-              curl -L "https://github.com/orhun/git-cliff/releases/download/v${GITCLIFF_VERSION}/git-cliff-${GITCLIFF_VERSION}-x86_64-unknown-linux-gnu.tar.gz" -o git-cliff.tar.gz
-              tar xzf git-cliff.tar.gz
-              sudo mv "git-cliff-${GITCLIFF_VERSION}/git-cliff" /usr/local/bin/git-cliff
-              rm -rf git-cliff.tar.gz "git-cliff-${GITCLIFF_VERSION}"
-              git-cliff --version
+      - name: Install git-cliff
+        run: |
+          GITCLIFF_VERSION="2.13.0"
+          curl -L "https://github.com/orhun/git-cliff/releases/download/v${GITCLIFF_VERSION}/git-cliff-${GITCLIFF_VERSION}-x86_64-unknown-linux-gnu.tar.gz" -o git-cliff.tar.gz
+          tar xzf git-cliff.tar.gz
+          sudo mv "git-cliff-${GITCLIFF_VERSION}/git-cliff" /usr/local/bin/git-cliff
+          rm -rf git-cliff.tar.gz "git-cliff-${GITCLIFF_VERSION}"
+          git-cliff --version
 
-        - name: Checkout main
-          run: |
-              git checkout main
-              git pull origin main
+      - name: Checkout main
+        run: |
+          git checkout main
+          git pull origin main
 
-        - name: Generate CHANGELOG.md
-          run: git-cliff --config .cliff.toml --output CHANGELOG.md
+      - name: Generate CHANGELOG.md
+        run: git-cliff --config .cliff.toml --output CHANGELOG.md
 
-        - name: Commit changelog
-          run: |
-              git config user.name "github-actions"
-              git config user.email "actions@github.com"
-              git add CHANGELOG.md
-              git commit -m "chore(release): update changelog for ${{ github.ref_name }}" || echo "No changes"
-              git push origin main
+      # v6 targets Node 20, which Actions now force-runs under a Node 24
+      # shim — this intermittently broke gpg-agent's pinentry hand-off
+      # during signing ("Inappropriate ioctl for device"). v7 runs
+      # natively on Node 24, same inputs/outputs.
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v7
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_config_global: true
+          git_committer_name: github-actions
+          git_committer_email: actions@github.com
 
-        - name: Generate release notes
-          run: git-cliff --config .cliff.toml --latest --output RELEASE_NOTES.md
+      - name: Commit changelog
+        run: |
+          git add CHANGELOG.md
+          git commit -S -m "chore(release): update changelog for ${{ github.ref_name }}" || echo "No changes"
+          git push origin main
 
-        - name: Create GitHub Release
-          uses: softprops/action-gh-release@v2
-          with:
-            body_path: RELEASE_NOTES.md
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate release notes
+        run: git-cliff --config .cliff.toml --latest --output RELEASE_NOTES.md
 
-        - name: Release Summary
-          run: |
-              cat >> $GITHUB_STEP_SUMMARY <<EOF
-              # 📦 GitHub Release Published
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: RELEASE_NOTES.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-              **Version:** \`${{ github.ref_name }}\`
+      - name: Release Summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          # 📦 GitHub Release Published
 
-              ## Completed
+          **Version:** \`${{ github.ref_name }}\`
 
-              - Generated CHANGELOG.md using git-cliff
-              - Committed changelog updates to main
-              - Generated release notes
-              - Published GitHub Release
+          ## Completed
 
-              ## Artifacts
+          - Generated CHANGELOG.md using git-cliff
+          - Committed changelog updates to main
+          - Generated release notes
+          - Published GitHub Release
 
-              - CHANGELOG.md
-              - RELEASE_NOTES.md
-              - GitHub Release
+          ## Artifacts
 
-               ## Source Tag
+          - CHANGELOG.md
+          - RELEASE_NOTES.md
+          - GitHub Release
 
-               \`${{ github.ref_name }}\`
+          ## Source Tag
 
-              EOF
+          \`${{ github.ref_name }}\`
+          EOF

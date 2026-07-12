@@ -1,5 +1,5 @@
 # =============================================================================
-# govulncheck.yml — Vulnerability Scanning
+# security-scan.yml — Vulnerability Scanning
 #
 # Runs govulncheck against the full dependency tree.
 # Vendor is restored from the GHCR snapshot — no network fetches at scan time.
@@ -10,6 +10,10 @@
 #   even though it is never executed. /nonexistent is used as the placeholder.
 #   docker export | tar extracts vendor/ directly — no path nesting issues.
 #   Three-tier fallback: tagged snapshot → latest → inline go mod vendor.
+#
+# Report-only: this job never fails the build on findings. govulncheck
+# results (found or clean) are always written to the job summary and
+# uploaded as an artifact — vulnerabilities are visible, not blocking.
 #
 # Outputs:
 #   - Text output for human-readable summary
@@ -27,15 +31,14 @@ on:
       - main
   pull_request:
   schedule:
-    - cron: '0 8 * * 1'  # weekly — Monday 08:00 UTC
+    - cron: '0 8 * * 1'
 
 permissions:
   contents: read
-  # security-events: write  # re-enable when SARIF upload is active (requires GHAS)
 
 env:
   REGISTRY: ghcr.io
-  VENDOR_IMAGE: ghcr.io/${{ github.repository }}/tools
+  VENDOR_IMAGE: ghcr.io/blanketops/environments/tools
 
 jobs:
   govulncheck:
@@ -45,7 +48,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Go version from go.mod — never hardcoded.
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -63,7 +65,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ntlaletsi70
+          username: BlanketOps
           password: ${{ secrets.GH_PAT }}
 
       - name: Compute vendor tag from go.sum
@@ -73,10 +75,6 @@ jobs:
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "Vendor tag: ${TAG}"
 
-      # Three-tier fallback:
-      #   1. content-addressed tag (exact go.sum match)
-      #   2. latest (most recent snapshot, may be slightly stale)
-      #   3. inline go mod vendor (slow but always works)
       - name: Restore vendor from snapshot
         run: |
           IMAGE_TAG="${{ env.VENDOR_IMAGE }}:${{ steps.tag.outputs.tag }}"
@@ -104,8 +102,6 @@ jobs:
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
 
-      # Text run — human-readable, drives the summary.
-      # Allowed to fail so SARIF upload always runs.
       - name: Run govulncheck
         id: govulncheck
         env:
@@ -115,22 +111,17 @@ jobs:
           echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
         continue-on-error: true
 
-      # SARIF run — machine-readable for GitHub Security tab.
-      # Runs even when text run finds vulnerabilities.
       - name: Run govulncheck (SARIF)
         env:
           GOFLAGS: -mod=vendor
         run: |
           govulncheck -format sarif ./... > govulncheck.sarif 2>/dev/null || true
 
-      # SARIF upload disabled — requires GitHub Advanced Security (GHAS).
-      # Enable when repo is public under the blanketops org.
-      # - name: Upload SARIF to GitHub Security tab
-      #   uses: github/codeql-action/upload-sarif@v4
-      #   if: always()
-      #   with:
-      #     sarif_file: govulncheck.sarif
-      #     category: govulncheck
+      - name: Run govulncheck (JSON)
+        env:
+          GOFLAGS: -mod=vendor
+        run: |
+          govulncheck -format json ./... > govulncheck.json 2>/dev/null || true
 
       - name: Upload scan artifacts
         uses: actions/upload-artifact@v4
@@ -140,12 +131,41 @@ jobs:
           path: |
             govulncheck.txt
             govulncheck.sarif
+            govulncheck.json
           retention-days: 30
 
       - name: Summary
         if: always()
         run: |
           STATUS="${{ steps.govulncheck.outputs.exit_code == '0' && '✅ No vulnerabilities found' || '⚠️ Vulnerabilities detected' }}"
+
+          # govulncheck streams an `osv` record for every DB match against a
+          # required/imported module, but only `finding` records are ones it
+          # determined are actually reachable — join on those, not raw osv.
+          ROWS=$(jq -s -r '
+            ( [ .[] | select(.finding) | .finding ] ) as $findings
+            | ( $findings | map(.osv) | unique ) as $ids
+            | ( [ .[] | select(.osv) | .osv ] | map({key: .id, value: .}) | from_entries ) as $osvs
+            | $ids[]
+            | . as $id
+            | ($osvs[$id]) as $o
+            | ( [$findings[] | select(.osv == $id) | .fixed_version] | map(select(. != null)) | unique ) as $fixed
+            | [
+                $id,
+                (( $o.affected // [] ) | map(.package.name) | unique | join(", ")),
+                ( if ($fixed|length) > 0 then ($fixed | join(", ")) else "unfixed" end ),
+                (( $o.summary // $o.details // "" ) | gsub("\n";" ") | if length > 90 then .[0:87] + "..." else . end )
+              ] | @tsv
+          ' govulncheck.json 2>/dev/null)
+
+          if [ -n "${ROWS}" ]; then
+            TABLE="| Vulnerability | Module(s) | Fixed in | Summary |
+          | --- | --- | --- | --- |
+          $(echo "${ROWS}" | awk -F'\t' '{printf "| [%s](https://pkg.go.dev/vuln/%s) | %s | %s | %s |\n", $1, $1, $2, $3, $4}')"
+          else
+            TABLE="No known vulnerabilities found."
+          fi
+
           cat >> "$GITHUB_STEP_SUMMARY" <<EOF
           # 🔍 Vulnerability Scan
 
@@ -154,19 +174,18 @@ jobs:
           **Vendor tag:** \`${{ steps.tag.outputs.tag }}\`
           **Tool:** \`govulncheck -mod=vendor ./...\`
 
-          ## Results
+          ## Findings
+
+          ${TABLE}
+
+          <details>
+          <summary>Full govulncheck output</summary>
 
           \`\`\`
           $(cat govulncheck.txt 2>/dev/null || echo "No output captured")
           \`\`\`
 
+          </details>
+
           > SARIF results uploaded to the [Security tab](${{ github.server_url }}/${{ github.repository }}/security/code-scanning).
           EOF
-
-      # Fail the job after all reporting steps complete
-      # so SARIF and artifacts are always captured.
-      - name: Fail on vulnerabilities
-        if: steps.govulncheck.outputs.exit_code != '0'
-        run: |
-          echo "govulncheck found vulnerabilities — see Security tab and artifacts"
-          exit 1

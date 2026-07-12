@@ -47,8 +47,8 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/BlanketOps/environments/pkg/apis/domain/domain"
 	domainResolution "github.com/BlanketOps/environments/resolution/domain"
-	"github.com/BlanketOps/blanketops-environments/pkg/apis/domain/domain"
 )
 
 // DomainService orchestrates the domain reconciliation pipeline.
