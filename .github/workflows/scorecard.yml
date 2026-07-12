@@ -49,8 +49,10 @@ jobs:
         with:
           persist-credentials: false
 
+      # ossf/scorecard-action has no moving "v2" tag — only exact releases
+      # (v2.4.3 etc). @v2 fails to resolve, so it's pinned explicitly.
       - name: Run Scorecard analysis
-        uses: ossf/scorecard-action@v2
+        uses: ossf/scorecard-action@v2.4.3
         with:
           results_file: results.json
           results_format: json
