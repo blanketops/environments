@@ -123,6 +123,7 @@ jobs:
         run: |
           gh release upload "${{ steps.version.outputs.tag }}" \
             "${{ steps.manifest.outputs.manifest }}" \
+            --repo "${{ github.repository }}" \
             --clobber
 
       - name: Summary
@@ -194,6 +195,7 @@ jobs:
         run: |
           gh release upload "${{ steps.version.outputs.tag }}" \
             "${{ steps.bundle.outputs.bundle }}" \
+            --repo "${{ github.repository }}" \
             --clobber
 
       - name: Summary
@@ -270,6 +272,7 @@ jobs:
         run: |
           gh release upload "${{ steps.version.outputs.tag }}" \
             "${{ steps.bundle.outputs.bundle }}" \
+            --repo "${{ github.repository }}" \
             --clobber
 
       - name: Summary
@@ -322,6 +325,7 @@ jobs:
         run: |
           gh release upload "${{ steps.version.outputs.tag }}" \
             .cli-assets/* \
+            --repo "${{ github.repository }}" \
             --clobber
 
       - name: Summary
