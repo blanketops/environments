@@ -54,7 +54,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	buildv1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
+	buildv1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
 	eventsv1alpha1 "github.com/BlanketOps/environments-api/api/events/v1alpha1"
 	"github.com/blanketops/environments/pkg/apis/build/domain"
 	buildResolution "github.com/blanketops/environments/resolution/build"

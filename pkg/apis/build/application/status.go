@@ -25,7 +25,7 @@ package application
 import (
 	"context"
 
-	buildv1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
+	buildv1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	retry "k8s.io/client-go/util/retry"

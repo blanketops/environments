@@ -24,7 +24,7 @@ import (
 	"context"
 	"fmt"
 
-	environmentsv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
+	environmentsv1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
