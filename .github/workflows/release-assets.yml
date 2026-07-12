@@ -42,6 +42,11 @@ name: Release Assets
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag to attach assets to (e.g. v0.7.1)"
+        required: true
 
 permissions:
   contents: write
@@ -77,7 +82,7 @@ jobs:
     steps:
       - name: Resolve version
         id: version
-        run: echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+        run: echo "tag=${{ github.event.inputs.version || github.ref_name }}" >> "$GITHUB_OUTPUT"
 
       - name: Resolve latest environments-install release
         id: install_version
@@ -114,10 +119,11 @@ jobs:
 
       - name: Upload install manifest to release
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT_PAT }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           gh release upload "${{ steps.version.outputs.tag }}" \
             "${{ steps.manifest.outputs.manifest }}" \
+            --repo "${{ github.repository }}" \
             --clobber
 
       - name: Summary
@@ -155,7 +161,7 @@ jobs:
     steps:
       - name: Resolve version
         id: version
-        run: echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+        run: echo "tag=${{ github.event.inputs.version || github.ref_name }}" >> "$GITHUB_OUTPUT"
 
       - name: Resolve latest environments-install release
         id: install_version
@@ -189,6 +195,7 @@ jobs:
         run: |
           gh release upload "${{ steps.version.outputs.tag }}" \
             "${{ steps.bundle.outputs.bundle }}" \
+            --repo "${{ github.repository }}" \
             --clobber
 
       - name: Summary
@@ -227,7 +234,7 @@ jobs:
 
       - name: Resolve version
         id: version
-        run: echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+        run: echo "tag=${{ github.event.inputs.version || github.ref_name }}" >> "$GITHUB_OUTPUT"
 
       - name: Generate docs
         run: |
@@ -265,6 +272,7 @@ jobs:
         run: |
           gh release upload "${{ steps.version.outputs.tag }}" \
             "${{ steps.bundle.outputs.bundle }}" \
+            --repo "${{ github.repository }}" \
             --clobber
 
       - name: Summary
@@ -291,7 +299,7 @@ jobs:
     steps:
       - name: Resolve version
         id: version
-        run: echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+        run: echo "tag=${{ github.event.inputs.version || github.ref_name }}" >> "$GITHUB_OUTPUT"
 
       - name: Resolve latest environments-cli release
         id: cli_version
@@ -317,6 +325,7 @@ jobs:
         run: |
           gh release upload "${{ steps.version.outputs.tag }}" \
             .cli-assets/* \
+            --repo "${{ github.repository }}" \
             --clobber
 
       - name: Summary

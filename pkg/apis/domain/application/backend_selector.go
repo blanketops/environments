@@ -32,8 +32,8 @@ package application
 import (
 	"fmt"
 
-	"github.com/BlanketOps/environments/pkg/apis/domain/api"
-	"github.com/BlanketOps/environments/pkg/apis/domain/domain"
+	"github.com/blanketops/environments/pkg/apis/domain/api"
+	"github.com/blanketops/environments/pkg/apis/domain/domain"
 )
 
 // BackendSelector maps a domain.Domain to the correct Provider based on TLSStrategy.

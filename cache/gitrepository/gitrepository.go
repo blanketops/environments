@@ -20,9 +20,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	bocache "github.com/BlanketOps/environments/cache"
-	"github.com/BlanketOps/environments/core"
-	gitrepositoryResolution "github.com/BlanketOps/environments/resolution/gitrepository"
+	bocache "github.com/blanketops/environments/cache"
+	"github.com/blanketops/environments/core"
+	gitrepositoryResolution "github.com/blanketops/environments/resolution/gitrepository"
 )
 
 // GitRepositoryCache provides domain-specific, field-level caching for GitRepository resources.

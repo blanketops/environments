@@ -23,7 +23,7 @@ import (
 
 	goredis "github.com/redis/go-redis/v9"
 
-	"github.com/BlanketOps/environments/core"
+	"github.com/blanketops/environments/core"
 )
 
 // RedisConfig holds connection settings for the Redis backend.

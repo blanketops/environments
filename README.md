@@ -219,7 +219,7 @@ The full BlanketOps Environments documentation is available at:
 ## 📦 Installation
 
 ```bash
-go get github.com/BlanketOps/blanketops-environments@v0.6.0
+go get github.com/blanketops/blanketops-environments@v0.6.0
 ```
 
 ---
@@ -285,7 +285,7 @@ This module powers:
 - Delivery orchestration layers.
 - Reconciliation engines.
 
-If you are looking for the controller runtime, see the [BlanketOps Environments Controller](https://github.com/BlanketOps/blanketops-environments-controller) repository.
+If you are looking for the controller runtime, see the [BlanketOps Environments Controller](https://github.com/blanketops/blanketops-environments-controller) repository.
 
 ---
 

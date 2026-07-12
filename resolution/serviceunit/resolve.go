@@ -30,7 +30,7 @@ package serviceunit
 
 import (
 	environmentv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
-	commoncontractv1 "github.com/BlanketOps/environments-contract/blanketops/common/v1"
+	commoncontractv1 "github.com/blanketops/environments-contract/blanketops/common/v1"
 )
 
 // -----------------------------------------------------------------------------

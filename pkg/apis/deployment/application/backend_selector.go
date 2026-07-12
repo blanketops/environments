@@ -18,8 +18,8 @@ package application
 import (
 	"fmt"
 
-	"github.com/BlanketOps/environments/pkg/apis/deployment/api"
-	intent "github.com/BlanketOps/environments/pkg/intent/deployment"
+	"github.com/blanketops/environments/pkg/apis/deployment/api"
+	intent "github.com/blanketops/environments/pkg/intent/deployment"
 )
 
 // BackendSelector resolves and prepares a Provider

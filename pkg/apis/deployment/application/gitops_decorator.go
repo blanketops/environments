@@ -18,9 +18,9 @@ package application
 import (
 	"context"
 
-	"github.com/BlanketOps/environments/pkg/apis/deployment/api"
-	"github.com/BlanketOps/environments/pkg/apis/deployment/domain"
-	intent "github.com/BlanketOps/environments/pkg/intent/deployment"
+	"github.com/blanketops/environments/pkg/apis/deployment/api"
+	"github.com/blanketops/environments/pkg/apis/deployment/domain"
+	intent "github.com/blanketops/environments/pkg/intent/deployment"
 )
 
 type GitOpsDecorator struct {
