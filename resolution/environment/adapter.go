@@ -31,7 +31,7 @@ package environment
 import (
 	"context"
 
-	environmentv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
+	environmentv1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
 )
 
 type Adapter struct {

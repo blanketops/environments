@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"time"
 
-	env1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
+	env1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
 	"github.com/blanketops/environments/pkg/apis/packages/domain"
 
 	"github.com/go-logr/logr"

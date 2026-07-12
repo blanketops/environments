@@ -30,7 +30,7 @@ package deployment
 import (
 	"context"
 
-	environmentv1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
+	environmentv1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
 )
 
 // Adapter wraps the Deployment resolution function for interface-based injection.

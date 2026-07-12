@@ -37,7 +37,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	eventsv1alpha1 "github.com/BlanketOps/environments-api/api/events/v1alpha1"
+	eventsv1alpha1 "github.com/blanketops/environments-api/api/events/v1alpha1"
 )
 
 type StatusWriter struct {
