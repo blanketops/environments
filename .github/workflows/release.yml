@@ -46,8 +46,12 @@ jobs:
       - name: Generate CHANGELOG.md
         run: git-cliff --config .cliff.toml --output CHANGELOG.md
 
+      # v6 targets Node 20, which Actions now force-runs under a Node 24
+      # shim — this intermittently broke gpg-agent's pinentry hand-off
+      # during signing ("Inappropriate ioctl for device"). v7 runs
+      # natively on Node 24, same inputs/outputs.
       - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@v6
+        uses: crazy-max/ghaction-import-gpg@v7
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
