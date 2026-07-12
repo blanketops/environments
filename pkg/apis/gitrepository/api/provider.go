@@ -18,7 +18,7 @@ package api
 import (
 	"context"
 
-	sourcesv1alpha1 "github.com/BlanketOps/environments-api/api/sources/v1alpha1"
+	sourcesv1alpha1 "github.com/blanketops/environments-api/api/sources/v1alpha1"
 	"github.com/blanketops/environments/pkg/apis/gitrepository/domain"
 )
 
