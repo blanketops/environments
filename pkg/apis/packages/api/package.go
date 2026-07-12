@@ -20,9 +20,9 @@ import (
 	"time"
 
 	kappctrlv1alpha1 "carvel.dev/kapp-controller/pkg/apis/kappctrl/v1alpha1"
-	"github.com/go-logr/logr"
 	"github.com/BlanketOps/environments/pkg/apis/packages/domain"
 	"github.com/BlanketOps/environments/pkg/apis/packages/intent"
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/events"
