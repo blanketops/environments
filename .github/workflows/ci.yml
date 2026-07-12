@@ -29,8 +29,7 @@ on:
   pull_request:
 
 permissions:
-  contents: write
-  packages: write
+  contents: read
 
 env:
   REGISTRY: ghcr.io
