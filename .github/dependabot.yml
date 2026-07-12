@@ -1,0 +1,50 @@
+# =============================================================================
+# dependabot.yml
+#
+# Two ecosystems:
+#   github-actions — keeps action versions pinned to real, resolvable tags.
+#                     Would have caught ossf/scorecard-action@v2 (no such tag)
+#                     and the crazy-max/ghaction-import-gpg@v6 Node 20 warning
+#                     before they became CI problems.
+#   gomod          — keeps go.mod dependencies current, including
+#                     github.com/blanketops/environments-api and
+#                     github.com/blanketops/environments-contract.
+#
+# Private modules: environments-api and environments-contract are private
+# GitHub repos under this same org. Dependabot needs org-level permission to
+# reach them — see Settings > Code security > Dependabot > "Dependabot can
+# access private repositories owned by this organization". Without it,
+# updates for those two modules will silently fail to open PRs.
+# =============================================================================
+
+version: 2
+
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "chore(ci)"
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      go-dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "github.com/blanketops/environments-api"
+          - "github.com/blanketops/environments-contract"
+    commit-message:
+      prefix: "chore(deps)"
+    open-pull-requests-limit: 10
