@@ -173,7 +173,7 @@ jobs:
           echo "Bundling CRDs from environments-install ${INSTALL_TAG}"
 
       - name: Checkout environments-install CRDs
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: BlanketOps/environments-install
           ref: ${{ steps.install_version.outputs.tag }}
@@ -221,10 +221,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: ${{ env.GO_VERSION_FILE }}
           cache: true
