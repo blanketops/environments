@@ -29,8 +29,8 @@ package application
 import (
 	"fmt"
 
-	domainResolution "github.com/BlanketOps/environments/resolution/domain"
 	"github.com/BlanketOps/environments/pkg/apis/domain/domain"
+	domainResolution "github.com/BlanketOps/environments/resolution/domain"
 )
 
 // Mapper translates a ResolvedDomain into a domain.Domain aggregate.

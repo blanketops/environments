@@ -18,8 +18,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/BlanketOps/environments/core"
 	bocache "github.com/BlanketOps/environments/cache"
+	"github.com/BlanketOps/environments/core"
 	domainResolution "github.com/BlanketOps/environments/resolution/domain"
 )
 
