@@ -31,9 +31,9 @@ package application
 import (
 	"fmt"
 
-	"github.com/BlanketOps/environments/pkg/apis/route/domain"
+	"github.com/blanketops/environments/pkg/apis/route/domain"
 
-	routeResolution "github.com/BlanketOps/environments/resolution/route"
+	routeResolution "github.com/blanketops/environments/resolution/route"
 )
 
 // Mapper translates a ResolvedRoute into a domain.Route.

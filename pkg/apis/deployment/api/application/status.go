@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	env1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
-	"github.com/BlanketOps/environments/pkg/apis/deployment/domain"
+	"github.com/blanketops/environments/pkg/apis/deployment/domain"
 )
 
 type StatusWriter struct {

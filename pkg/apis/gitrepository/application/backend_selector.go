@@ -18,8 +18,8 @@ package application
 import (
 	"strings"
 
-	"github.com/BlanketOps/environments/pkg/apis/gitrepository/api"
-	"github.com/BlanketOps/environments/pkg/apis/gitrepository/domain"
+	"github.com/blanketops/environments/pkg/apis/gitrepository/api"
+	"github.com/blanketops/environments/pkg/apis/gitrepository/domain"
 )
 
 // BackendSelector selects the appropriate repository provider.

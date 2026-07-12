@@ -22,7 +22,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/BlanketOps/environments/core"
+	"github.com/blanketops/environments/core"
 )
 
 // ObjectCache provides namespace-aware, generation-scoped field caching

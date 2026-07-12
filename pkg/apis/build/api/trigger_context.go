@@ -17,7 +17,7 @@ package api
 
 import (
 	buildv1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
-	"github.com/BlanketOps/environments/pkg/apis/build/domain"
+	"github.com/blanketops/environments/pkg/apis/build/domain"
 )
 
 // ExtractTriggerContext derives execution trigger metadata from Build

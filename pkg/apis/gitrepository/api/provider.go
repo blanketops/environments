@@ -19,7 +19,7 @@ import (
 	"context"
 
 	sourcesv1alpha1 "github.com/BlanketOps/environments-api/api/sources/v1alpha1"
-	"github.com/BlanketOps/environments/pkg/apis/gitrepository/domain"
+	"github.com/blanketops/environments/pkg/apis/gitrepository/domain"
 )
 
 // Provider is the orchestration interface for GitRepository backend providers.
