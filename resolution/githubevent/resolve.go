@@ -33,7 +33,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	eventsv1alpha1 "github.com/BlanketOps/environments-api/api/events/v1alpha1"
+	eventsv1alpha1 "github.com/blanketops/environments-api/api/events/v1alpha1"
 )
 
 // -----------------------------------------------------------------------------

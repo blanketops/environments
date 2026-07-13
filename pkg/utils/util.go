@@ -29,8 +29,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	contractv1 "github.com/BlanketOps/environments-contract/blanketops/environments/v1alpha1"
-	"github.com/BlanketOps/environments/pkg/apis/build/domain"
+	contractv1 "github.com/blanketops/environments-contract/blanketops/environments/v1alpha1"
+	"github.com/blanketops/environments/pkg/apis/build/domain"
 )
 
 // -----------------------------------------------------------------------------

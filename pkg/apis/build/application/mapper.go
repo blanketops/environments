@@ -29,8 +29,8 @@ package application
 import (
 	"fmt"
 
-	"github.com/BlanketOps/environments/pkg/apis/build/domain"
-	bldResolution "github.com/BlanketOps/environments/resolution/build"
+	"github.com/blanketops/environments/pkg/apis/build/domain"
+	bldResolution "github.com/blanketops/environments/resolution/build"
 )
 
 // Mapper translates a ResolvedBuild into a domain.BuildSpec.

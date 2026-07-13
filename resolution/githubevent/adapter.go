@@ -30,7 +30,7 @@ package githubevent
 import (
 	"context"
 
-	eventsv1alpha1 "github.com/BlanketOps/environments-api/api/events/v1alpha1"
+	eventsv1alpha1 "github.com/blanketops/environments-api/api/events/v1alpha1"
 )
 
 // Adapter wraps the GitHubEvent resolution function for interface-based injection.

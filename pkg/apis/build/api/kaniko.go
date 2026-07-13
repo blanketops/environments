@@ -43,7 +43,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/BlanketOps/environments/pkg/utils"
+	"github.com/blanketops/environments/pkg/utils"
 	"github.com/go-logr/logr"
 	shipwrightv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -54,11 +54,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	buildv1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
-	eventsv1alpha1 "github.com/BlanketOps/environments-api/api/events/v1alpha1"
-	"github.com/BlanketOps/environments/pkg/apis/build/domain"
-	buildResolution "github.com/BlanketOps/environments/resolution/build"
-	githubeventResolution "github.com/BlanketOps/environments/resolution/githubevent"
+	buildv1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
+	eventsv1alpha1 "github.com/blanketops/environments-api/api/events/v1alpha1"
+	"github.com/blanketops/environments/pkg/apis/build/domain"
+	buildResolution "github.com/blanketops/environments/resolution/build"
+	githubeventResolution "github.com/blanketops/environments/resolution/githubevent"
 )
 
 const (

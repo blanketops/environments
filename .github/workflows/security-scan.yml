@@ -46,10 +46,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: false
@@ -57,12 +57,12 @@ jobs:
       - name: Configure Git for private modules
         run: |
           git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
-          go env -w GOPRIVATE=github.com/BlanketOps/*
-          go env -w GONOSUMDB=github.com/BlanketOps/*
+          go env -w GOPRIVATE=github.com/BlanketOps/*,github.com/blanketops/*
+          go env -w GONOSUMDB=github.com/BlanketOps/*,github.com/blanketops/*
           go env -w GOPROXY=direct
 
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: BlanketOps
@@ -124,7 +124,7 @@ jobs:
           govulncheck -format json ./... > govulncheck.json 2>/dev/null || true
 
       - name: Upload scan artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: govulncheck-${{ github.sha }}

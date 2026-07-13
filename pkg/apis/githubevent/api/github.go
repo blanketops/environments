@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/BlanketOps/environments/pkg/apis/githubevent/domain"
-	githubeventResolution "github.com/BlanketOps/environments/resolution/githubevent"
+	"github.com/blanketops/environments/pkg/apis/githubevent/domain"
+	githubeventResolution "github.com/blanketops/environments/resolution/githubevent"
 )
 
 const argoEventsNamespace = "argo-events"

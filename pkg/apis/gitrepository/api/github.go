@@ -26,8 +26,8 @@ import (
 	"k8s.io/client-go/tools/events"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	sourcesv1alpha1 "github.com/BlanketOps/environments-api/api/sources/v1alpha1"
-	"github.com/BlanketOps/environments/pkg/apis/gitrepository/domain"
+	sourcesv1alpha1 "github.com/blanketops/environments-api/api/sources/v1alpha1"
+	"github.com/blanketops/environments/pkg/apis/gitrepository/domain"
 )
 
 // Compile-time assertion — GitHubProvider must satisfy Provider.

@@ -21,19 +21,19 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	environments1alpha1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
-	eventsv1alpha1 "github.com/BlanketOps/environments-api/api/events/v1alpha1"
-	sourcesv1alpha1 "github.com/BlanketOps/environments-api/api/sources/v1alpha1"
+	environments1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
+	eventsv1alpha1 "github.com/blanketops/environments-api/api/events/v1alpha1"
+	sourcesv1alpha1 "github.com/blanketops/environments-api/api/sources/v1alpha1"
 
-	//networksv1alpha1 "github.com/BlanketOps/environments-api/api/networks/v1alpha1"
-	build "github.com/BlanketOps/environments/resolution/build"
-	deployment "github.com/BlanketOps/environments/resolution/deployment"
-	gitHubEvent "github.com/BlanketOps/environments/resolution/githubevent"
-	gitRepository "github.com/BlanketOps/environments/resolution/gitrepository"
-	packages "github.com/BlanketOps/environments/resolution/packages"
-	// serviceunit "github.com/BlanketOps/environments/resolution/serviceunit"
-	// route "github.com/BlanketOps/environments/resolution/route"
-	// domain "github.com/BlanketOps/environments/resolution/domain"
+	//networksv1alpha1 "github.com/blanketops/environments-api/api/networks/v1alpha1"
+	build "github.com/blanketops/environments/resolution/build"
+	deployment "github.com/blanketops/environments/resolution/deployment"
+	gitHubEvent "github.com/blanketops/environments/resolution/githubevent"
+	gitRepository "github.com/blanketops/environments/resolution/gitrepository"
+	packages "github.com/blanketops/environments/resolution/packages"
+	// serviceunit "github.com/blanketops/environments/resolution/serviceunit"
+	// route "github.com/blanketops/environments/resolution/route"
+	// domain "github.com/blanketops/environments/resolution/domain"
 )
 
 type Adapter struct {

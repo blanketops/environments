@@ -16,8 +16,8 @@ limitations under the License.
 package api
 
 import (
-	buildv1 "github.com/BlanketOps/environments-api/api/environments/v1alpha1"
-	"github.com/BlanketOps/environments/pkg/apis/build/domain"
+	buildv1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
+	"github.com/blanketops/environments/pkg/apis/build/domain"
 )
 
 // ExtractTriggerContext derives execution trigger metadata from Build

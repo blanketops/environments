@@ -15,16 +15,19 @@ name: Build
 on:
   push:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: true
@@ -32,7 +35,20 @@ jobs:
       - name: Configure Git for private modules
         run: |
           git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
-          go env -w GOPRIVATE=github.com/BlanketOps/*
+          go env -w GOPRIVATE=github.com/BlanketOps/*,github.com/blanketops/*
 
       - name: Build
         run: go build ./...
+
+      - name: Summary
+        if: always()
+        run: |
+          STATUS="${{ job.status == 'success' && '✅ Build passed' || '❌ Build failed' }}"
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          # 🔨 Fast Build Check
+
+          **Status:** ${STATUS}
+          **Go Version:** \`$(go version | awk '{print $3}')\`
+          **Branch:** \`${{ github.ref_name }}\`
+          **Commit:** \`${{ github.sha }}\`
+          EOF

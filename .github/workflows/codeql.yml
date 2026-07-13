@@ -1,0 +1,125 @@
+# =============================================================================
+# codeql.yml — CodeQL (Advanced)
+#
+# Replaces GitHub's platform-managed "default setup" CodeQL with an explicit
+# workflow. Default setup leaves no file in the repo, so OpenSSF Scorecard's
+# SAST check — which scans workflow YAML for known SAST tool usage — can't
+# see it and scores 0/10 regardless of whether CodeQL is actually running.
+# This workflow is visible to Scorecard and gives us a job summary, which
+# default setup can't provide either.
+#
+# build-mode: manual, not autobuild — this repo has private Go modules
+# (github.com/blanketops/environments-api, environments-contract) that need
+# GH_PAT-based git config and GOPRIVATE/GONOSUMDB before `go build` will
+# resolve; autobuild doesn't reliably carry that through.
+#
+# SARIF upload to the Security tab is attempted but allowed to fail
+# (continue-on-error) — this repo has no GitHub Advanced Security license
+# (private repo), so /code-scanning/* API calls 403. Findings are always
+# rendered into the job summary and uploaded as a build artifact regardless
+# of whether the Security tab upload succeeds.
+#
+# Secrets required:
+#   GH_PAT — private module access
+# =============================================================================
+
+name: CodeQL
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 7 * * 3'
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze (Go)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Configure Git for private modules
+        run: |
+          git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
+          go env -w GOPRIVATE=github.com/blanketops/*
+          go env -w GONOSUMDB=github.com/blanketops/*
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: go
+          build-mode: manual
+
+      - name: Build
+        run: go build ./...
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          output: sarif-results
+          upload: false
+          category: "/language:go"
+
+      - name: Upload to code-scanning (best effort)
+        uses: github/codeql-action/upload-sarif@v3
+        continue-on-error: true
+        with:
+          sarif_file: sarif-results/go.sarif
+
+      - name: Upload SARIF artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codeql-results-${{ github.sha }}
+          path: sarif-results/go.sarif
+          retention-days: 30
+
+      - name: Summary
+        if: always()
+        run: |
+          ROWS=$(jq -r '
+            .runs[0].results[]
+            | [
+                (.level // "warning"),
+                .ruleId,
+                ((.locations[0].physicalLocation.artifactLocation.uri // "?") + ":" + ((.locations[0].physicalLocation.region.startLine // 0) | tostring)),
+                (.message.text | gsub("\n";" ") | if length > 90 then .[0:87] + "..." else . end)
+              ] | @tsv
+          ' sarif-results/go.sarif 2>/dev/null)
+
+          COUNT=$(echo "${ROWS}" | grep -c . || true)
+
+          if [ -n "${ROWS}" ]; then
+            TABLE="| Severity | Rule | Location | Message |
+          | --- | --- | --- | --- |
+          $(echo "${ROWS}" | awk -F'\t' '{printf "| %s | %s | `%s` | %s |\n", $1, $2, $3, $4}')"
+          else
+            TABLE="No findings."
+            COUNT=0
+          fi
+
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          # 🔎 CodeQL Analysis (Go)
+
+          **Findings:** ${COUNT}
+
+          ${TABLE}
+
+          > Full SARIF uploaded as a build artifact (\`codeql-results-${{ github.sha }}\`). Security-tab upload is best-effort — this private repo has no GitHub Advanced Security license, so that step may show as failed without affecting this run's outcome.
+          EOF

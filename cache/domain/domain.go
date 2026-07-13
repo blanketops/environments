@@ -18,9 +18,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	bocache "github.com/BlanketOps/environments/cache"
-	"github.com/BlanketOps/environments/core"
-	domainResolution "github.com/BlanketOps/environments/resolution/domain"
+	bocache "github.com/blanketops/environments/cache"
+	"github.com/blanketops/environments/core"
+	domainResolution "github.com/blanketops/environments/resolution/domain"
 )
 
 // DomainCache provides domain-specific, field-level caching for Domain resources.

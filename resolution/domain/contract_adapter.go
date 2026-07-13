@@ -44,8 +44,8 @@ See also:
 package domain
 
 import (
-	commonv1 "github.com/BlanketOps/environments-contract/blanketops/common/v1"
-	networkscontractv1alpha1 "github.com/BlanketOps/environments-contract/blanketops/networks/v1alpha1"
+	commonv1 "github.com/blanketops/environments-contract/blanketops/common/v1"
+	networkscontractv1alpha1 "github.com/blanketops/environments-contract/blanketops/networks/v1alpha1"
 )
 
 // ToDomainContract projects a ResolvedDomain into the canonical proto DomainSpec

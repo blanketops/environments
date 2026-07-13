@@ -16,7 +16,7 @@ limitations under the License.
 package intent
 
 import (
-	"github.com/BlanketOps/environments/pkg/apis/packages/domain"
+	"github.com/blanketops/environments/pkg/apis/packages/domain"
 )
 
 // PackageIntent is the compiled, immutable execution plan.

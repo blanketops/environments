@@ -1,3 +1,43 @@
+## [0.7.1] - 2026-07-12
+
+### 🚀 Features
+
+- Add minimal per-push build workflow
+- Add OpenSSF Scorecard CI workflow
+
+### 🐛 Bug Fixes
+
+- Repair broken import paths from botched module rename
+- Correct ghcr.io casing and align release-assets.yml with actual repo layout
+- Bundle install manifest and CRDs from environments-install
+- Make vulnerability scan report-only, never fail the build
+- Clean up CI workflow comments and align inconsistencies across pipelines
+- Switch commit signing from SSH to GPG
+- Bump ghaction-import-gpg to v7 to fix intermittent signing failures (#228)
+- Switch commit signing from SSH to GPG
+- Hardcode lowercase GHCR path in coverage.yml
+- Pin Scorecard action to exact release tag
+- Render govulncheck findings as a markdown table in the job summary
+
+### 💼 Other
+
+- Merge release/v0.7.1 into main
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.7.0
+- Add temporary GPG secret diagnostic workflow (#229)
+- Remove temporary GPG secret diagnostic workflow
+## [0.7.0] - 2026-07-11
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.6.9
+- Sync develop with main after release/v0.6.9
 ## [0.6.9] - 2026-07-05
 
 ### ⚙️ Miscellaneous Tasks

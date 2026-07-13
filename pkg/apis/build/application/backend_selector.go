@@ -29,8 +29,8 @@ package application
 import (
 	"strings"
 
-	"github.com/BlanketOps/environments/pkg/apis/build/api"
-	"github.com/BlanketOps/environments/pkg/apis/build/domain"
+	"github.com/blanketops/environments/pkg/apis/build/api"
+	"github.com/blanketops/environments/pkg/apis/build/domain"
 )
 
 // BackendSelector routes a BuildSpec to the correct Provider implementation
