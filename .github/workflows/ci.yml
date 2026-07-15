@@ -1,0 +1,226 @@
+# =============================================================================
+# ci.yml — Blanketops Environments Library CI
+#
+# Two-job pipeline:
+#   1. vendor-snapshot — builds and caches vendor/ as an OCI image in GHCR.
+#      Only rebuilds when go.sum changes (content-addressed by sha256 of go.sum).
+#   2. validate        — restores vendor/ from snapshot, runs full pipeline.
+#      No network at build time — vendor/ is authoritative.
+#
+# Go version:
+#   Extracted from go.mod at runtime — never hardcoded in this file.
+#   Passed as GO_VERSION build-arg to tools/Dockerfile.
+#
+# vendor restore:
+#   FROM scratch images have no default CMD — docker create requires a command
+#   even though it is never executed. /nonexistent is used as the placeholder.
+#   docker export | tar extracts vendor/ directly — no path nesting issues.
+#
+# Secrets required:
+#   GH_PAT — GHCR push/pull + private module access
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+  VENDOR_IMAGE: ghcr.io/blanketops/environments/tools
+
+jobs:
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Job 1: Vendor Snapshot
+  # Builds and pushes the vendor image only when go.sum has changed.
+  # All subsequent jobs restore vendor/ from this image — zero network at build.
+  # ───────────────────────────────────────────────────────────────────────────
+  vendor-snapshot:
+    name: Vendor Snapshot
+    runs-on: ubuntu-latest
+    outputs:
+      vendor-tag: ${{ steps.tag.outputs.tag }}
+      cache-hit: ${{ steps.check.outputs.hit }}
+      go-minor: ${{ steps.goversion.outputs.minor }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Extract Go version from go.mod
+        id: goversion
+        run: |
+          FULL=$(grep '^go ' go.mod | awk '{print $2}')
+          MINOR=$(echo "${FULL}" | cut -d. -f1,2)
+          echo "full=${FULL}" >> "$GITHUB_OUTPUT"
+          echo "minor=${MINOR}" >> "$GITHUB_OUTPUT"
+          echo "Go version: ${FULL} → image tag: ${MINOR}"
+
+      - name: Compute vendor tag from go.sum
+        id: tag
+        run: |
+          TAG=$(sha256sum go.sum | cut -d' ' -f1 | cut -c1-12)
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Vendor tag: ${TAG}"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: BlanketOps
+          password: ${{ secrets.GH_PAT }}
+
+      - name: Check if vendor snapshot already exists
+        id: check
+        run: |
+          if docker manifest inspect ${{ env.VENDOR_IMAGE }}:${{ steps.tag.outputs.tag }} > /dev/null 2>&1; then
+            echo "hit=true" >> "$GITHUB_OUTPUT"
+            echo "Vendor snapshot exists — skipping build"
+          else
+            echo "hit=false" >> "$GITHUB_OUTPUT"
+            echo "No snapshot found — will build"
+          fi
+
+      - name: Configure Git for private modules
+        if: steps.check.outputs.hit == 'false'
+        run: |
+          git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
+
+      - name: Set up Go
+        if: steps.check.outputs.hit == 'false'
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ steps.goversion.outputs.full }}
+
+      - name: Vendor dependencies
+        if: steps.check.outputs.hit == 'false'
+        run: go mod vendor
+
+      - name: Build and push vendor snapshot
+        if: steps.check.outputs.hit == 'false'
+        id: push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          provenance: false
+          file: tools/Dockerfile
+          push: true
+          tags: |
+            ${{ env.VENDOR_IMAGE }}:${{ steps.tag.outputs.tag }}
+            ${{ env.VENDOR_IMAGE }}:latest
+          build-args: |
+            GO_VERSION=${{ steps.goversion.outputs.minor }}
+          secrets: |
+            GH_PAT=${{ secrets.GH_PAT }}
+
+      # Build provenance attestation — disabled. Artifact attestations require
+      # a public repo or a GitHub Team/Enterprise plan; this repo is private.
+      # Also needs `permissions: attestations: write` and `id-token: write`
+      # on the job. Re-enable if the plan/visibility changes.
+      # - name: Attest vendor image provenance
+      #   if: steps.check.outputs.hit == 'false'
+      #   uses: actions/attest-build-provenance@v1
+      #   with:
+      #     subject-name: ${{ env.VENDOR_IMAGE }}
+      #     subject-digest: ${{ steps.push.outputs.digest }}
+      #     push-to-registry: true
+  # ───────────────────────────────────────────────────────────────────────────
+  # Job 2: Validate
+  # Restores vendor/ from the snapshot image then runs the full pipeline.
+  # go mod tidy and go mod vendor are NOT run here — snapshot is authoritative.
+  # ───────────────────────────────────────────────────────────────────────────
+  validate:
+    name: Lint, Vet, Test
+    runs-on: ubuntu-latest
+    needs: vendor-snapshot
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          token: ${{ secrets.GH_PAT }}
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Configure Git for private modules
+        run: |
+          git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
+          go env -w GOPRIVATE=github.com/BlanketOps/*,github.com/blanketops/*
+          go env -w GONOSUMDB=github.com/BlanketOps/*,github.com/blanketops/*
+          go env -w GOPROXY=direct
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: BlanketOps
+          password: ${{ secrets.GH_PAT }}
+
+      - name: Restore vendor from snapshot
+        run: |
+          IMAGE="${{ env.VENDOR_IMAGE }}:${{ needs.vendor-snapshot.outputs.vendor-tag }}"
+          echo "Restoring vendor from ${IMAGE}"
+          docker pull "${IMAGE}"
+          CONTAINER=$(docker create "${IMAGE}" /nonexistent)
+          rm -rf ./vendor
+          docker export "${CONTAINER}" | tar -xf - vendor/
+          docker rm "${CONTAINER}"
+          echo "vendor/ restored — $(find vendor -mindepth 1 -maxdepth 1 -type d | wc -l) packages"
+          echo "modules.txt present: $(test -f vendor/modules.txt && echo yes || echo NO)"
+
+      - name: Build
+        run: go build -mod=vendor ./...
+
+      - name: Vet
+        run: go vet -mod=vendor ./...
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
+          args: --timeout=5m
+
+      - name: Test
+        run: go test -mod=vendor ./... -coverprofile=coverage.out -covermode=atomic
+
+      - name: Ensure coverage file exists
+        run: test -f coverage.out
+
+      - name: CI Summary
+        if: always()
+        run: |
+          VENDOR_STATUS="${{ needs.vendor-snapshot.outputs.cache-hit == 'true' && '✅ Cache hit' || '🔨 Rebuilt' }}"
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          # ✅ Validation Complete
+
+          **Go Version:** \`${{ needs.vendor-snapshot.outputs.go-minor }}\`
+
+          ## Vendor Snapshot
+          | Key | Value |
+          | --- | --- |
+          | Tag | \`${{ needs.vendor-snapshot.outputs.vendor-tag }}\` |
+          | Status | ${VENDOR_STATUS} |
+          | Image | \`${{ env.VENDOR_IMAGE }}\` |
+
+          ## Checks Executed
+          | Step | Tool |
+          | --- | --- |
+          | Build | \`go build -mod=vendor\` |
+          | Vet | \`go vet -mod=vendor\` |
+          | Lint | \`golangci-lint\` |
+          | Test | \`go test -mod=vendor\` |
+          | Coverage | \`coverage.out\` |
+          EOF

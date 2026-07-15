@@ -1,0 +1,59 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+
+#Certs
+
+*.crt
+*.key
+*.pub
+*key
+
+# Output of the go coverage tool
+*.out
+*.cover
+coverage.out
+
+# Go workspace file
+go.work
+
+# Dependency directories
+vendor/
+docs/code/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+
+# Build directories
+/bin
+/dist
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# Kubebuilder artifacts
+config/crd/bases
+config/rbac/role.yaml
+
+# Controller-gen artifacts
+api/**/zz_generated*.go
+
+# Testing
+.test/
+*.log

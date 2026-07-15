@@ -1,0 +1,94 @@
+# =============================================================================
+# finalize-release.yml — Merge, Tag, and Sync a Release
+#
+# Manually triggered. Merges release/{version} into main, tags it, syncs
+# main back into develop, then deletes the release branch. Pushing the tag
+# triggers the Release workflow (changelog + GitHub Release).
+#
+# Secrets required:
+#   GH_PAT           — merge/push to main and develop, delete release branch
+#   GPG_PRIVATE_KEY  — signs the merge commits and release tag
+#   GPG_PASSPHRASE   — passphrase for GPG_PRIVATE_KEY
+# =============================================================================
+
+name: Finalize Release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version to finalize (e.g. v0.0.9)"
+        required: true
+permissions:
+  contents: read
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      # v6 targets Node 20, which Actions now force-runs under a Node 24
+      # shim — this intermittently broke gpg-agent's pinentry hand-off
+      # during signing ("Inappropriate ioctl for device"). v7 runs
+      # natively on Node 24, same inputs/outputs.
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v7
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_tag_gpgsign: true
+          git_config_global: true
+          git_committer_name: github-actions
+          git_committer_email: actions@github.com
+
+      - name: Merge release into main
+        run: |
+          git checkout main
+          git pull origin main
+          git merge --no-ff -S -m "release: merge release/${{ github.event.inputs.version }} into main" \
+            origin/release/${{ github.event.inputs.version }}
+          git push origin main
+
+      - name: Tag release
+        run: |
+          git tag -s ${{ github.event.inputs.version }} -m "Release ${{ github.event.inputs.version }}"
+          git push origin ${{ github.event.inputs.version }}
+
+      - name: Merge main back into develop
+        run: |
+          git checkout develop
+          git pull origin develop
+          git merge --no-ff -S -m "chore: sync develop with main after release/${{ github.event.inputs.version }}" \
+            origin/main
+          git push origin develop
+
+      - name: Delete release branch
+        run: |
+          git push origin --delete release/${{ github.event.inputs.version }}
+      - name: Release Summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          # 🎉 Release Finalized
+
+          **Version:** \`${{ github.event.inputs.version }}\`
+
+          ## Completed
+
+          - Merged \`release/${{ github.event.inputs.version }}\` into \`main\`
+          - Created Git tag \`${{ github.event.inputs.version }}\`
+          - Synced \`main\` back into \`develop\`
+          - Deleted release branch
+
+          ## Branch Flow
+
+          release/${{ github.event.inputs.version }} → main → develop
+
+          ## Next Steps
+
+          - Pushing the tag triggers the **Release** workflow which generates the changelog and GitHub Release.
+          EOF
