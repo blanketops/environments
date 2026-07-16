@@ -33,7 +33,7 @@ Both are supported transparently — the caller uses the same Normal/Warn/Info
 surface regardless of which recorder was injected. A nil or empty recorder is
 always safe; all methods guard against nil receivers and nil objects.
 */
-package core
+package events
 
 import (
 	"fmt"

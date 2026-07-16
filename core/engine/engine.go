@@ -37,7 +37,7 @@ The Engine supports two execution modes:
 When no workers are configured (workers == 0), Queue() falls through to
 Execute() so callers need not distinguish between modes.
 */
-package core
+package engine
 
 import (
 	"context"
@@ -46,6 +46,9 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+
+	command "github.com/blanketops/environments/core/command"
+	registry "github.com/blanketops/environments/core/registry"
 )
 
 // Engine routes Commands to the correct Domain and supports both synchronous
@@ -53,14 +56,14 @@ import (
 // controllers registered with the manager.
 type Engine struct {
 	// registry is the source of Domain lookups by GVK.
-	registry *Registry
+	registry *registry.Registry
 
 	// mu guards workers and related fields.
 	mu sync.RWMutex
 
 	// queue is the buffered command channel drained by the worker pool.
 	// Capacity 1024 provides backpressure headroom before Queue blocks.
-	queue chan Command
+	queue chan command.Command
 
 	// workers is the number of async goroutines draining the queue.
 	// Zero means synchronous execution (inline via Execute).
@@ -77,10 +80,10 @@ type Engine struct {
 // NewEngine constructs an Engine bound to the given Registry and logger.
 // The engine starts in synchronous mode (workers == 0). Call SetWorkers
 // and StartWorkers to enable async execution.
-func NewEngine(registry *Registry, logger logr.Logger) *Engine {
+func NewEngine(registry *registry.Registry, logger logr.Logger) *Engine {
 	return &Engine{
 		registry:   registry,
-		queue:      make(chan Command, 1024),
+		queue:      make(chan command.Command, 1024),
 		workers:    0,
 		workerStop: make(chan struct{}),
 		logger:     logger.WithName("core.Engine"),
@@ -98,7 +101,7 @@ func (e *Engine) SetWorkers(n int) {
 // Execute dispatches a Command synchronously to the Domain registered for
 // cmd.GVK. Returns an error if no Domain is registered or if Handle fails.
 // The error propagates back to controller-runtime as a requeue signal.
-func (e *Engine) Execute(ctx context.Context, cmd Command) error {
+func (e *Engine) Execute(ctx context.Context, cmd command.Command) error {
 	d, ok := e.registry.GetDomain(cmd.GVK)
 	if !ok {
 		return fmt.Errorf("no domain registered for GVK %s", cmd.GVK.String())
@@ -110,7 +113,7 @@ func (e *Engine) Execute(ctx context.Context, cmd Command) error {
 // Queue enqueues a Command for async processing when workers > 0, or falls
 // through to Execute when in synchronous mode. Blocks if the queue is full
 // and returns ctx.Err() if the context is cancelled while waiting.
-func (e *Engine) Queue(ctx context.Context, cmd Command) error {
+func (e *Engine) Queue(ctx context.Context, cmd command.Command) error {
 	if e.workers <= 0 {
 		return e.Execute(ctx, cmd)
 	}

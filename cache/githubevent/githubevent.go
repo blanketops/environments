@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	bocache "github.com/blanketops/environments/cache"
-	"github.com/blanketops/environments/core"
+	"github.com/blanketops/environments/core/cache"
 	githubeventResolution "github.com/blanketops/environments/resolution/githubevent"
 )
 
@@ -30,8 +30,8 @@ type GitHubEventCache struct {
 	*bocache.ObjectCache
 }
 
-// NewGitHubEventCache constructs a new GitHubEventCache with the provided core.Cache.
-func NewGitHubEventCache(c *core.Cache) *GitHubEventCache {
+// NewGitHubEventCache constructs a new GitHubEventCache with the provided cache.Cache.
+func NewGitHubEventCache(c *cache.Cache) *GitHubEventCache {
 	return &GitHubEventCache{ObjectCache: bocache.NewObjectCache(c, "githubevent", 0)}
 }
 

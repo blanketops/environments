@@ -23,7 +23,7 @@ import (
 
 	goredis "github.com/redis/go-redis/v9"
 
-	"github.com/blanketops/environments/core"
+	"github.com/blanketops/environments/core/cache"
 )
 
 // RedisConfig holds connection settings for the Redis backend.
@@ -33,12 +33,12 @@ type RedisConfig struct {
 	DB       int
 }
 
-// RedisCache implements core.ExternalCache backed by Redis.
+// RedisCache implements cache.ExternalCache backed by Redis.
 type RedisCache struct {
 	client *goredis.Client
 }
 
-var _ core.ExternalCache = (*RedisCache)(nil)
+var _ cache.ExternalCache = (*RedisCache)(nil)
 
 func NewRedis(cfg RedisConfig) *RedisCache {
 	return &RedisCache{client: goredis.NewClient(&goredis.Options{

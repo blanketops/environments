@@ -19,7 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	bocache "github.com/blanketops/environments/cache"
-	"github.com/blanketops/environments/core"
+	"github.com/blanketops/environments/core/cache"
 	routeResolution "github.com/blanketops/environments/resolution/route"
 )
 
@@ -28,8 +28,8 @@ type RouteCache struct {
 	*bocache.ObjectCache
 }
 
-// NewRouteCache constructs a new RouteCache with the provided core.Cache.
-func NewRouteCache(c *core.Cache) *RouteCache {
+// NewRouteCache constructs a new RouteCache with the provided cache.Cache.
+func NewRouteCache(c *cache.Cache) *RouteCache {
 	return &RouteCache{ObjectCache: bocache.NewObjectCache(c, "route", 0)}
 }
 

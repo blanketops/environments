@@ -34,7 +34,7 @@ The two layers are composed in Cache and never cross-wired: the informer
 cache provides correctness, the external cache provides observability and
 opportunistic reuse within a generation.
 */
-package core
+package cache
 
 import (
 	"context"

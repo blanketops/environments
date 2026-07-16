@@ -27,7 +27,7 @@ The flow is strictly one-directional:
 
 	controller-runtime event → Command → Engine → Domain → reconciliation
 */
-package core
+package command
 
 import (
 	"fmt"
