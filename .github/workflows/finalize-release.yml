@@ -5,8 +5,14 @@
 # main back into develop, then deletes the release branch. Pushing the tag
 # triggers the Release workflow (changelog + GitHub Release).
 #
+# Auth:
+#   Uses the BlanketOps-Environments GitHub App instead of a personal-account
+#   PAT for merge/push/branch-delete — see ci.yml's header for the reasoning.
+#   GPG signing is unrelated and unchanged: the App token authenticates the
+#   push, GPG_PRIVATE_KEY is what makes the merge commits and tag "Verified".
+#
 # Secrets required:
-#   GH_PAT           — merge/push to main and develop, delete release branch
+#   APP_ID, APP_PRIVATE_KEY — GitHub App credentials
 #   GPG_PRIVATE_KEY  — signs the merge commits and release tag
 #   GPG_PASSPHRASE   — passphrase for GPG_PRIVATE_KEY
 # =============================================================================
@@ -24,11 +30,20 @@ jobs:
   finalize:
     runs-on: ubuntu-latest
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments
+
       - name: Checkout
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ steps.app-token.outputs.token }}
 
       # v6 targets Node 20, which Actions now force-runs under a Node 24
       # shim — this intermittently broke gpg-agent's pinentry hand-off

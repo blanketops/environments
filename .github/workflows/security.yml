@@ -1,0 +1,420 @@
+# =============================================================================
+# security.yml — Security & Supply-Chain Scanning
+#
+# Three jobs (merges the former codeql.yml, scorecard.yml, security-scan.yml),
+# each keeping its original trigger scope via a job-level `if:` gate against
+# the combined top-level trigger:
+#
+#   codeql       — CodeQL static analysis (Go). Was: push (any branch) +
+#                  pull_request + Wed 07:00 UTC.
+#   scorecard    — OpenSSF Scorecard supply-chain posture check. Was: push
+#                  to main + pull_request + Sun 06:00 UTC.
+#   govulncheck  — reachable-vulnerability scan against the vendored
+#                  dependency tree. Was: push to main + pull_request +
+#                  Mon 08:00 UTC.
+#
+# All three are report-only — none fail the build. Findings render into each
+# job's summary and are uploaded as build artifacts. SARIF upload to the
+# Security tab is attempted (codeql, govulncheck) but allowed to fail — this
+# repo has no GitHub Advanced Security license (private repo), so those
+# /code-scanning/* calls 403 without affecting the run's outcome.
+#
+# codeql build-mode is manual, not autobuild — this repo has private Go
+# modules (environments-api, environments-contract) that need App-token git
+# config and GOPRIVATE/GONOSUMDB before `go build` will resolve; autobuild
+# doesn't reliably carry that through.
+#
+# Auth:
+#   Private-module git config uses the BlanketOps-Environments GitHub App —
+#   see ci.yml's header for why (installation tokens vs. an expiring PAT).
+#   govulncheck's GHCR pull uses GITHUB_TOKEN, not the App token — same
+#   reasoning as ci.yml: the App token is denied package writes/some pulls
+#   against this org-scoped package regardless of permission granted;
+#   GITHUB_TOKEN is scoped to this repo, which is all a same-repo pull needs.
+#   scorecard's repo_token stays on the App token — Branch-Protection and
+#   Token-Permissions checks need read access GITHUB_TOKEN's default scoping
+#   can't grant on a private repo, App token or PAT is required either way.
+#
+# Secrets required:
+#   APP_ID, APP_PRIVATE_KEY — GitHub App credentials
+# =============================================================================
+
+name: Security
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 7 * * 3' # CodeQL — Wednesday 07:00 UTC
+    - cron: '0 6 * * 0' # Scorecard — Sunday 06:00 UTC
+    - cron: '0 8 * * 1' # govulncheck — Monday 08:00 UTC
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+  VENDOR_IMAGE: ghcr.io/blanketops/environments/tools
+
+jobs:
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Job 1: CodeQL (from codeql.yml)
+  # Original scope: push (any branch), pull_request (any), Wed 07:00 UTC.
+  # ───────────────────────────────────────────────────────────────────────────
+  codeql:
+    name: CodeQL (Go)
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'push' || github.event_name == 'pull_request' ||
+      github.event.schedule == '0 7 * * 3'
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments,environments-api,environments-contract
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Configure Git for private modules
+        run: |
+          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "https://github.com/"
+          go env -w GOPRIVATE=github.com/blanketops/*
+          go env -w GONOSUMDB=github.com/blanketops/*
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: go
+          build-mode: manual
+
+      - name: Build
+        run: go build ./...
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          output: sarif-results
+          upload: false
+          category: "/language:go"
+
+      - name: Upload to code-scanning (best effort)
+        uses: github/codeql-action/upload-sarif@v3
+        continue-on-error: true
+        with:
+          sarif_file: sarif-results/go.sarif
+
+      - name: Upload SARIF artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codeql-results-${{ github.sha }}
+          path: sarif-results/go.sarif
+          retention-days: 30
+
+      - name: Summary
+        if: always()
+        run: |
+          ROWS=$(jq -r '
+            .runs[0].results[]
+            | [
+                (.level // "warning"),
+                .ruleId,
+                ((.locations[0].physicalLocation.artifactLocation.uri // "?") + ":" + ((.locations[0].physicalLocation.region.startLine // 0) | tostring)),
+                (.message.text | gsub("\n";" ") | if length > 90 then .[0:87] + "..." else . end)
+              ] | @tsv
+          ' sarif-results/go.sarif 2>/dev/null)
+
+          COUNT=$(echo "${ROWS}" | grep -c . || true)
+
+          if [ -n "${ROWS}" ]; then
+            TABLE="| Severity | Rule | Location | Message |
+          | --- | --- | --- | --- |
+          $(echo "${ROWS}" | awk -F'\t' '{printf "| %s | %s | `%s` | %s |\n", $1, $2, $3, $4}')"
+          else
+            TABLE="No findings."
+            COUNT=0
+          fi
+
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          # 🔎 CodeQL Analysis (Go)
+
+          **Findings:** ${COUNT}
+
+          ${TABLE}
+
+          > Full SARIF uploaded as a build artifact (\`codeql-results-${{ github.sha }}\`). Security-tab upload is best-effort — this private repo has no GitHub Advanced Security license, so that step may show as failed without affecting this run's outcome.
+          EOF
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Job 2: Scorecard (from scorecard.yml)
+  # Original scope: push to main, pull_request (any), Sun 06:00 UTC.
+  #
+  # Private repo caveats:
+  #   - publish_results is false — the public Scorecard API/badge only
+  #     accepts results for public repositories.
+  #   - No SARIF upload — no GitHub Advanced Security/code-scanning on this
+  #     private repo. Results are JSON, rendered into the summary + artifact.
+  # ───────────────────────────────────────────────────────────────────────────
+  scorecard:
+    name: OpenSSF Scorecard
+    runs-on: ubuntu-latest
+    if: >
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      github.event_name == 'pull_request' ||
+      github.event.schedule == '0 6 * * 0'
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # ossf/scorecard-action has no moving "v2" tag — only exact releases
+      # (v2.4.3 etc). @v2 fails to resolve, so it's pinned explicitly.
+      - name: Run Scorecard analysis
+        uses: ossf/scorecard-action@v2.4.3
+        with:
+          results_file: results.json
+          results_format: json
+          repo_token: ${{ steps.app-token.outputs.token }}
+          publish_results: false
+
+      - name: Upload results artifact
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: scorecard-results-${{ github.sha }}
+          path: results.json
+          retention-days: 30
+
+      - name: Summary
+        if: always()
+        run: |
+          OVERALL=$(jq -r '.score // "N/A"' results.json 2>/dev/null)
+
+          ROWS=$(jq -r '
+            .checks[]
+            | [ .name, (if .score == -1 then "N/A" else "\(.score)/10" end), (.reason // "") ]
+            | @tsv
+          ' results.json 2>/dev/null)
+
+          if [ -n "${ROWS}" ]; then
+            TABLE="| Check | Score | Reason |
+          | --- | --- | --- |
+          $(echo "${ROWS}" | awk -F'\t' '{printf "| %s | %s | %s |\n", $1, $2, $3}')"
+          else
+            TABLE="No results parsed — see the raw artifact."
+          fi
+
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          # 🛡️ OpenSSF Scorecard
+
+          **Overall score:** \`${OVERALL}/10\`
+          **Tool:** [ossf/scorecard-action](https://github.com/ossf/scorecard-action)
+
+          > Private repo — results are not published to the public Scorecard API/badge.
+
+          ## Checks
+
+          ${TABLE}
+
+          > Full JSON results uploaded as a build artifact (\`scorecard-results-${{ github.sha }}\`).
+          EOF
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Job 3: govulncheck (from security-scan.yml)
+  # Original scope: push to main, pull_request (any), Mon 08:00 UTC.
+  #
+  # vendor restore: three-tier fallback — tagged snapshot → latest →
+  # inline go mod vendor.
+  # ───────────────────────────────────────────────────────────────────────────
+  govulncheck:
+    name: govulncheck
+    runs-on: ubuntu-latest
+    if: >
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      github.event_name == 'pull_request' ||
+      github.event.schedule == '0 8 * * 1'
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments,environments-api,environments-contract
+
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Configure Git for private modules
+        run: |
+          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "https://github.com/"
+          go env -w GOPRIVATE=github.com/BlanketOps/*,github.com/blanketops/*
+          go env -w GONOSUMDB=github.com/BlanketOps/*,github.com/blanketops/*
+          go env -w GOPROXY=direct
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute vendor tag from go.sum
+        id: tag
+        run: |
+          TAG=$(sha256sum go.sum | cut -d' ' -f1 | cut -c1-12)
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Vendor tag: ${TAG}"
+
+      - name: Restore vendor from snapshot
+        run: |
+          IMAGE_TAG="${{ env.VENDOR_IMAGE }}:${{ steps.tag.outputs.tag }}"
+          IMAGE_LATEST="${{ env.VENDOR_IMAGE }}:latest"
+          rm -rf ./vendor
+
+          if docker pull "${IMAGE_TAG}" 2>/dev/null; then
+            echo "Restoring vendor from tagged snapshot: ${IMAGE_TAG}"
+            CONTAINER=$(docker create "${IMAGE_TAG}" /nonexistent)
+            docker export "${CONTAINER}" | tar -xf - vendor/
+            docker rm "${CONTAINER}"
+          elif docker pull "${IMAGE_LATEST}" 2>/dev/null; then
+            echo "Tagged snapshot not found — restoring from latest: ${IMAGE_LATEST}"
+            CONTAINER=$(docker create "${IMAGE_LATEST}" /nonexistent)
+            docker export "${CONTAINER}" | tar -xf - vendor/
+            docker rm "${CONTAINER}"
+          else
+            echo "No snapshot available — building vendor inline"
+            go mod vendor
+          fi
+
+          echo "vendor/ ready — $(find vendor -mindepth 1 -maxdepth 1 -type d | wc -l) packages"
+          echo "modules.txt present: $(test -f vendor/modules.txt && echo yes || echo NO)"
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Run govulncheck
+        id: govulncheck
+        env:
+          GOFLAGS: -mod=vendor
+        run: |
+          govulncheck ./... 2>&1 | tee govulncheck.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      - name: Run govulncheck (SARIF)
+        env:
+          GOFLAGS: -mod=vendor
+        run: |
+          govulncheck -format sarif ./... > govulncheck.sarif 2>/dev/null || true
+
+      - name: Run govulncheck (JSON)
+        env:
+          GOFLAGS: -mod=vendor
+        run: |
+          govulncheck -format json ./... > govulncheck.json 2>/dev/null || true
+
+      - name: Upload scan artifacts
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: govulncheck-${{ github.sha }}
+          path: |
+            govulncheck.txt
+            govulncheck.sarif
+            govulncheck.json
+          retention-days: 30
+
+      - name: Summary
+        if: always()
+        run: |
+          STATUS="${{ steps.govulncheck.outputs.exit_code == '0' && '✅ No vulnerabilities found' || '⚠️ Vulnerabilities detected' }}"
+
+          # govulncheck streams an `osv` record for every DB match against a
+          # required/imported module, but only `finding` records are ones it
+          # determined are actually reachable — join on those, not raw osv.
+          ROWS=$(jq -s -r '
+            ( [ .[] | select(.finding) | .finding ] ) as $findings
+            | ( $findings | map(.osv) | unique ) as $ids
+            | ( [ .[] | select(.osv) | .osv ] | map({key: .id, value: .}) | from_entries ) as $osvs
+            | $ids[]
+            | . as $id
+            | ($osvs[$id]) as $o
+            | ( [$findings[] | select(.osv == $id) | .fixed_version] | map(select(. != null)) | unique ) as $fixed
+            | [
+                $id,
+                (( $o.affected // [] ) | map(.package.name) | unique | join(", ")),
+                ( if ($fixed|length) > 0 then ($fixed | join(", ")) else "unfixed" end ),
+                (( $o.summary // $o.details // "" ) | gsub("\n";" ") | if length > 90 then .[0:87] + "..." else . end )
+              ] | @tsv
+          ' govulncheck.json 2>/dev/null)
+
+          if [ -n "${ROWS}" ]; then
+            TABLE="| Vulnerability | Module(s) | Fixed in | Summary |
+          | --- | --- | --- | --- |
+          $(echo "${ROWS}" | awk -F'\t' '{printf "| [%s](https://pkg.go.dev/vuln/%s) | %s | %s | %s |\n", $1, $1, $2, $3, $4}')"
+          else
+            TABLE="No known vulnerabilities found."
+          fi
+
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          # 🔍 Vulnerability Scan
+
+          **Status:** ${STATUS}
+          **Go Version:** \`$(go version | awk '{print $3}')\`
+          **Vendor tag:** \`${{ steps.tag.outputs.tag }}\`
+          **Tool:** \`govulncheck -mod=vendor ./...\`
+
+          ## Findings
+
+          ${TABLE}
+
+          <details>
+          <summary>Full govulncheck output</summary>
+
+          \`\`\`
+          $(cat govulncheck.txt 2>/dev/null || echo "No output captured")
+          \`\`\`
+
+          </details>
+
+          > SARIF results uploaded to the [Security tab](${{ github.server_url }}/${{ github.repository }}/security/code-scanning).
+          EOF
