@@ -5,8 +5,12 @@
 # and opens a PR into main. Fix PRs land on the release branch; once ready,
 # run the Finalize Release workflow.
 #
+# Auth:
+#   Uses the BlanketOps-Environments GitHub App instead of a personal-account
+#   PAT — see ci.yml's header for the reasoning.
+#
 # Secrets required:
-#   GH_PAT — push release branch + open PR
+#   APP_ID, APP_PRIVATE_KEY — GitHub App credentials
 # =============================================================================
 
 name: Create Release
@@ -26,12 +30,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments
+
       - name: Checkout develop
         uses: actions/checkout@v7
         with:
           ref: develop
           fetch-depth: 0
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Configure git
         run: |
@@ -45,7 +58,7 @@ jobs:
 
       - name: Open PR to main
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh pr create \
             --base main \

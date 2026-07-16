@@ -80,6 +80,15 @@ jobs:
     name: Bundle Install Manifest
     runs-on: ubuntu-latest
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments
+
       - name: Resolve version
         id: version
         run: echo "tag=${{ github.event.inputs.version || github.ref_name }}" >> "$GITHUB_OUTPUT"
@@ -119,7 +128,7 @@ jobs:
 
       - name: Upload install manifest to release
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh release upload "${{ steps.version.outputs.tag }}" \
             "${{ steps.manifest.outputs.manifest }}" \

@@ -1,11 +1,22 @@
 # =============================================================================
 # ci.yml — Blanketops Environments Library CI
 #
-# Two-job pipeline:
-#   1. vendor-snapshot — builds and caches vendor/ as an OCI image in GHCR.
-#      Only rebuilds when go.sum changes (content-addressed by sha256 of go.sum).
-#   2. validate        — restores vendor/ from snapshot, runs full pipeline.
-#      No network at build time — vendor/ is authoritative.
+# Four-job pipeline (merges the former ci.yml, build.yml, coverage.yml):
+#   1. build           — fast compile check on every push, any branch. Gives
+#                         feature-branch pushes a quick signal without paying
+#                         for the full vendor-snapshot/lint/test/coverage cost.
+#   2. vendor-snapshot  — builds and caches vendor/ as an OCI image in GHCR.
+#                         Only rebuilds when go.sum changes (content-addressed
+#                         by sha256 of go.sum). Runs on push to main + PRs only.
+#   3. validate         — restores vendor/ from snapshot, runs lint/vet/test.
+#                         No network at build time — vendor/ is authoritative.
+#   4. coverage         — restores the same snapshot, runs gofmt + coverage.
+#                         Runs on push to main/develop + PRs targeting main.
+#
+# Each job below carries its own trigger scope forward from the file it was
+# merged from via an `if:` gate, rather than broadening every job to the
+# combined (union) top-level trigger — see each job's gate for its original
+# scope.
 #
 # Go version:
 #   Extracted from go.mod at runtime — never hardcoded in this file.
@@ -17,24 +28,27 @@
 #   docker export | tar extracts vendor/ directly — no path nesting issues.
 #
 # Auth:
-#   Uses the BlanketOps-Environments GitHub App (via actions/create-github-app-token)
-#   instead of a personal-account PAT. The app is installed on this repo plus
-#   environments-api and environments-contract (the private modules this repo
-#   imports), with Contents: read/write and Packages: read/write permissions.
-#   Installation tokens are minted fresh at the start of each job and expire
-#   in an hour — no more breaking when a PAT's own expiry silently lapses.
+#   Private-module git config (environments-api, environments-contract) uses
+#   the BlanketOps-Environments GitHub App (via actions/create-github-app-token)
+#   instead of a personal-account PAT — installation tokens are minted fresh
+#   per job and expire in an hour, instead of a PAT's expiry silently lapsing.
+#
+#   GHCR push/pull uses GITHUB_TOKEN, not the App token — the App installation
+#   token was denied "Write organization package" against this GHCR package
+#   regardless of what permission was granted (repository Packages,
+#   organization Packages, explicit per-package "Manage Actions access"
+#   linkage — same denial every time). GITHUB_TOKEN is scoped to this repo
+#   only, which is exactly what a same-repo package push/pull needs.
 #
 # Secrets required:
 #   APP_ID, APP_PRIVATE_KEY — GitHub App credentials, exchanged for a
-#   short-lived installation token per job
+#   short-lived installation token per job (private-module access only)
 # =============================================================================
 
 name: CI
 
 on:
   push:
-    branches:
-      - main
   pull_request:
 
 permissions:
@@ -48,13 +62,62 @@ env:
 jobs:
 
   # ───────────────────────────────────────────────────────────────────────────
-  # Job 1: Vendor Snapshot
+  # Job 1: Build (from build.yml)
+  # Original scope: push, every branch, no pull_request trigger.
+  # ───────────────────────────────────────────────────────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments,environments-api,environments-contract
+
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Configure Git for private modules
+        run: |
+          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "https://github.com/"
+          go env -w GOPRIVATE=github.com/BlanketOps/*,github.com/blanketops/*
+
+      - name: Build
+        run: go build ./...
+
+      - name: Summary
+        if: always()
+        run: |
+          STATUS="${{ job.status == 'success' && '✅ Build passed' || '❌ Build failed' }}"
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          # 🔨 Fast Build Check
+
+          **Status:** ${STATUS}
+          **Go Version:** \`$(go version | awk '{print $3}')\`
+          **Branch:** \`${{ github.ref_name }}\`
+          **Commit:** \`${{ github.sha }}\`
+          EOF
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Job 2: Vendor Snapshot
+  # Original scope: push to main, or any pull_request.
   # Builds and pushes the vendor image only when go.sum has changed.
-  # All subsequent jobs restore vendor/ from this image — zero network at build.
   # ───────────────────────────────────────────────────────────────────────────
   vendor-snapshot:
     name: Vendor Snapshot
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     outputs:
       vendor-tag: ${{ steps.tag.outputs.tag }}
       cache-hit: ${{ steps.check.outputs.hit }}
@@ -91,15 +154,6 @@ jobs:
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "Vendor tag: ${TAG}"
 
-      # GHCR push uses GITHUB_TOKEN, not the App token — the App installation
-      # token was denied "Write organization package" against this GHCR
-      # package regardless of what App/org/repo permissions were granted
-      # (tried repository Packages, organization Packages, and explicit
-      # per-package "Manage Actions access" linkage — same denial every
-      # time). GITHUB_TOKEN is scoped to this repo only, which is exactly
-      # what a same-repo package push needs; it can't reach environments-api
-      # or environments-contract, which is why the App token is still used
-      # for the private-module git config below.
       - name: Log in to GHCR
         uses: docker/login-action@v4
         with:
@@ -147,8 +201,6 @@ jobs:
             ${{ env.VENDOR_IMAGE }}:latest
           build-args: |
             GO_VERSION=${{ steps.goversion.outputs.minor }}
-          secrets: |
-            GH_PAT=${{ steps.app-token.outputs.token }}
 
       # Build provenance attestation — disabled. Artifact attestations require
       # a public repo or a GitHub Team/Enterprise plan; this repo is private.
@@ -161,10 +213,12 @@ jobs:
       #     subject-name: ${{ env.VENDOR_IMAGE }}
       #     subject-digest: ${{ steps.push.outputs.digest }}
       #     push-to-registry: true
+
   # ───────────────────────────────────────────────────────────────────────────
-  # Job 2: Validate
+  # Job 3: Validate
   # Restores vendor/ from the snapshot image then runs the full pipeline.
   # go mod tidy and go mod vendor are NOT run here — snapshot is authoritative.
+  # Skips automatically whenever vendor-snapshot skips (needs:).
   # ───────────────────────────────────────────────────────────────────────────
   validate:
     name: Lint, Vet, Test
@@ -203,8 +257,8 @@ jobs:
         uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
-          username: x-access-token
-          password: ${{ steps.app-token.outputs.token }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Restore vendor from snapshot
         run: |
@@ -260,4 +314,125 @@ jobs:
           | Lint | \`golangci-lint\` |
           | Test | \`go test -mod=vendor\` |
           | Coverage | \`coverage.out\` |
+          EOF
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Job 4: Coverage (from coverage.yml)
+  # Original scope: push to main or develop, or a pull_request targeting main.
+  # Mirrors the vendor restore pattern from validate exactly — separate
+  # standalone restore (not needs: vendor-snapshot) since the original ran
+  # independently and can target develop, which vendor-snapshot does not.
+  # ───────────────────────────────────────────────────────────────────────────
+  coverage:
+    name: Test and Coverage
+    runs-on: ubuntu-latest
+    if: >
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')) ||
+      (github.event_name == 'pull_request' && github.base_ref == 'main')
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments,environments-api,environments-contract
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Configure Git for private modules
+        run: |
+          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "https://github.com/"
+          go env -w GOPRIVATE=github.com/BlanketOps/*,github.com/blanketops/*
+          go env -w GONOSUMDB=github.com/BlanketOps/*,github.com/blanketops/*
+          go env -w GOPROXY=direct
+
+      - name: Compute vendor tag from go.sum
+        id: vendor
+        run: |
+          TAG=$(sha256sum go.sum | cut -d' ' -f1 | cut -c1-12)
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Vendor tag: ${TAG}"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Restore vendor from snapshot
+        run: |
+          IMAGE="${{ env.VENDOR_IMAGE }}:${{ steps.vendor.outputs.tag }}"
+          echo "Restoring vendor from ${IMAGE}"
+          docker pull "${IMAGE}"
+          CONTAINER=$(docker create "${IMAGE}" /nonexistent)
+          rm -rf ./vendor
+          docker export "${CONTAINER}" | tar -xf - vendor/
+          docker rm "${CONTAINER}"
+          echo "vendor/ restored — $(find vendor -mindepth 1 -maxdepth 1 -type d | wc -l) packages"
+          echo "modules.txt present: $(test -f vendor/modules.txt && echo yes || echo NO)"
+
+      - name: Check formatting
+        run: |
+          UNFORMATTED=$(gofmt -l $(find . -name "*.go" -not -path "./vendor/*"))
+          if [ -n "${UNFORMATTED}" ]; then
+            echo "The following files are not formatted:"
+            echo "${UNFORMATTED}"
+            exit 1
+          fi
+          echo "All files formatted correctly"
+
+      - name: Run tests and generate coverage
+        run: |
+          go test -mod=vendor \
+            -v \
+            -coverprofile=coverage.out \
+            -covermode=atomic \
+            ./...
+
+      - name: Generate coverage HTML
+        run: go tool cover -html=coverage.out -o coverage.html
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v7
+        continue-on-error: true
+        with:
+          name: coverage-report-${{ github.sha }}
+          path: |
+            coverage.out
+            coverage.html
+          retention-days: 14
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          TOTAL=$(go tool cover -func=coverage.out 2>/dev/null | grep "^total" | awk '{print $3}' || echo "N/A")
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          # 📊 Coverage Report
+
+          **Go Version:** \`$(grep '^go ' go.mod | awk '{print $2}')\`
+          **Vendor Tag:** \`${{ steps.vendor.outputs.tag }}\`
+          **Total Coverage:** \`${TOTAL}\`
+
+          ## Package Coverage
+
+          | Package | Coverage |
+          | ------- | -------- |
+          $(go tool cover -func=coverage.out 2>/dev/null | grep -v "^total" | awk '{
+            pkg=$1; cov=$3;
+            gsub(/github.com\/BlanketOps\/blanketops-environments\//, "", pkg);
+            print "| " pkg " | " cov " |"
+          }' || echo "| N/A | N/A |")
           EOF
