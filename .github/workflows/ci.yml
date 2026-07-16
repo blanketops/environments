@@ -16,8 +16,17 @@
 #   even though it is never executed. /nonexistent is used as the placeholder.
 #   docker export | tar extracts vendor/ directly — no path nesting issues.
 #
+# Auth:
+#   Uses the BlanketOps-Environments GitHub App (via actions/create-github-app-token)
+#   instead of a personal-account PAT. The app is installed on this repo plus
+#   environments-api and environments-contract (the private modules this repo
+#   imports), with Contents: read/write and Packages: read/write permissions.
+#   Installation tokens are minted fresh at the start of each job and expire
+#   in an hour — no more breaking when a PAT's own expiry silently lapses.
+#
 # Secrets required:
-#   GH_PAT — GHCR push/pull + private module access
+#   APP_ID, APP_PRIVATE_KEY — GitHub App credentials, exchanged for a
+#   short-lived installation token per job
 # =============================================================================
 
 name: CI
@@ -50,11 +59,20 @@ jobs:
       cache-hit: ${{ steps.check.outputs.hit }}
       go-minor: ${{ steps.goversion.outputs.minor }}
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments,environments-api,environments-contract
+
       - name: Checkout
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Extract Go version from go.mod
         id: goversion
@@ -76,8 +94,8 @@ jobs:
         uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
-          username: BlanketOps
-          password: ${{ secrets.GH_PAT }}
+          username: x-access-token
+          password: ${{ steps.app-token.outputs.token }}
 
       - name: Check if vendor snapshot already exists
         id: check
@@ -93,7 +111,7 @@ jobs:
       - name: Configure Git for private modules
         if: steps.check.outputs.hit == 'false'
         run: |
-          git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "https://github.com/"
 
       - name: Set up Go
         if: steps.check.outputs.hit == 'false'
@@ -120,7 +138,7 @@ jobs:
           build-args: |
             GO_VERSION=${{ steps.goversion.outputs.minor }}
           secrets: |
-            GH_PAT=${{ secrets.GH_PAT }}
+            GH_PAT=${{ steps.app-token.outputs.token }}
 
       # Build provenance attestation — disabled. Artifact attestations require
       # a public repo or a GitHub Team/Enterprise plan; this repo is private.
@@ -143,10 +161,19 @@ jobs:
     runs-on: ubuntu-latest
     needs: vendor-snapshot
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments,environments-api,environments-contract
+
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
 
       - name: Set up Go
@@ -157,7 +184,7 @@ jobs:
 
       - name: Configure Git for private modules
         run: |
-          git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "https://github.com/"
           go env -w GOPRIVATE=github.com/BlanketOps/*,github.com/blanketops/*
           go env -w GONOSUMDB=github.com/BlanketOps/*,github.com/blanketops/*
           go env -w GOPROXY=direct
@@ -166,8 +193,8 @@ jobs:
         uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
-          username: BlanketOps
-          password: ${{ secrets.GH_PAT }}
+          username: x-access-token
+          password: ${{ steps.app-token.outputs.token }}
 
       - name: Restore vendor from snapshot
         run: |
