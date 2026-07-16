@@ -31,17 +31,18 @@ MeaningfulChangePredicate enforces this by type-switching on the concrete CR
 kind and comparing specs directly. All other event types (Create, Delete,
 Generic) pass through unconditionally — only Update events are filtered.
 */
-package core
+package predicates
 
 import (
 	"reflect"
+
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	environmentsv1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
 	eventsv1alpha1 "github.com/blanketops/environments-api/api/events/v1alpha1"
 	networksv1alpha1 "github.com/blanketops/environments-api/api/networks/v1alpha1"
 	sourcesv1alpha1 "github.com/blanketops/environments-api/api/sources/v1alpha1"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // MeaningfulChangePredicate returns a predicate.Funcs that suppresses Update

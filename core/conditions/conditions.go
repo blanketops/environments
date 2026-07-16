@@ -14,22 +14,19 @@ limitations under the License.
 */
 
 /*
-Package core defines the foundational contracts and primitives shared across
-all BlanketOps Environments domains.
-
-This file owns condition management. Conditions are the canonical mechanism
-for communicating reconciliation state on a CR's status subresource. Every
-domain writes conditions at each stage of its pipeline via SetCondition so
-that operators and tooling can observe fine-grained progress without reading
-logs.
+Package conditions owns condition management. Conditions are the canonical
+mechanism for communicating reconciliation state on a CR's status
+subresource. Every domain writes conditions at each stage of its pipeline
+via SetCondition so that operators and tooling can observe fine-grained
+progress without reading logs.
 
 Condition types are domain-defined (e.g. "BuildResolved", "BuildTriggered")
 and written at each reconciliation stage. The three status aliases here
 (ConditionTrue, ConditionFalse, ConditionUnknown) are re-exported from
-metav1 so domain code imports only core and never reaches into k8s.io
-directly for condition status values.
+metav1 so domain code imports only conditions and never reaches into
+k8s.io directly for condition status values.
 */
-package core
+package conditions
 
 import (
 	"time"
@@ -40,7 +37,7 @@ import (
 // Re-exported metav1 condition status constants. Domain code uses these
 // aliases so condition writes read naturally at the call site:
 //
-//	core.SetCondition(&cr.Status.Conditions, "BuildResolved", core.ConditionTrue, ...)
+//	conditions.SetCondition(&cr.Status.Conditions, "BuildResolved", conditions.ConditionTrue, ...)
 const (
 	ConditionTrue    = metav1.ConditionTrue
 	ConditionFalse   = metav1.ConditionFalse
@@ -55,8 +52,8 @@ const (
 //
 // Called by domains at each pipeline stage to record progress:
 //
-//	core.SetCondition(&build.Status.Conditions, "BuildResolved", core.ConditionTrue, "Resolved", "...")
-//	core.SetCondition(&build.Status.Conditions, "BuildTriggered", core.ConditionFalse, "TriggerFailed", err.Error())
+//	conditions.SetCondition(&build.Status.Conditions, "BuildResolved", conditions.ConditionTrue, "Resolved", "...")
+//	conditions.SetCondition(&build.Status.Conditions, "BuildTriggered", conditions.ConditionFalse, "TriggerFailed", err.Error())
 //
 // The conditions pointer must not be nil; a nil slice is initialised
 // on first write.
@@ -102,7 +99,7 @@ func GetCondition(conditions []metav1.Condition, conditionType string) *metav1.C
 // exists in the slice. Useful for predicate checks without needing the
 // full condition struct.
 //
-//	if core.HasCondition(build.Status.Conditions, "BuildResolved", core.ConditionTrue) { ... }
+//	if conditions.HasCondition(build.Status.Conditions, "BuildResolved", conditions.ConditionTrue) { ... }
 func HasCondition(conditions []metav1.Condition, conditionType string, status metav1.ConditionStatus) bool {
 	for _, cond := range conditions {
 		if cond.Type == conditionType && cond.Status == status {

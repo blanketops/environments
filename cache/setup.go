@@ -6,7 +6,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/blanketops/environments/cache/adapter"
-	"github.com/blanketops/environments/core"
+	corecache "github.com/blanketops/environments/core/cache"
 )
 
 type Backend string
@@ -24,21 +24,21 @@ type Options struct {
 }
 
 // NewExternal is the single composition point for the external cache.
-// Called once from main; everything downstream sees only core.ExternalCache.
-func NewExternal(opts Options) (core.ExternalCache, error) {
+// Called once from main; everything downstream sees only corecache.ExternalCache.
+func NewExternal(opts Options) (corecache.ExternalCache, error) {
 	log := ctrl.Log.WithName("external-cache")
 	switch opts.Backend {
 	case BackendRedis:
 		log.Info("external cache enabled", "backend", "redis", "addr", opts.Redis.Addr)
 		// TODO: wire up a real Redis external cache implementation using adapter when available.
-		return core.NoopExternalCache{}, nil
+		return corecache.NoopExternalCache{}, nil
 	case BackendMemcached:
 		log.Info("external cache enabled", "backend", "memcached", "servers", opts.Memcached.Servers)
 		// TODO: wire up a real Memcached external cache implementation using adapter when available.
-		return core.NoopExternalCache{}, nil
+		return corecache.NoopExternalCache{}, nil
 	case BackendNone, "":
 		log.Info("external cache disabled", "backend", "noop")
-		return core.NoopExternalCache{}, nil
+		return corecache.NoopExternalCache{}, nil
 	default:
 		return nil, fmt.Errorf("unknown external cache backend %q (valid: redis|memcached|none)", opts.Backend)
 	}

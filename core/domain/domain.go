@@ -26,13 +26,15 @@ Registering a Domain with the Engine is the only wiring required — the Engine
 handles routing, predicate evaluation, and dispatch. Domains never call each
 other directly.
 */
-package core
+package domain
 
 import (
 	"context"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	command "github.com/blanketops/environments/core/command"
 )
 
 // Domain is the contract every resource domain must implement to participate
@@ -59,7 +61,7 @@ type Domain interface {
 	// Handle executes the reconciliation pipeline for the given Command.
 	// Called synchronously by the Engine after predicate evaluation passes.
 	// Returning an error signals the Engine to requeue.
-	Handle(ctx context.Context, cmd Command) error
+	Handle(ctx context.Context, cmd command.Command) error
 
 	// CanCreate reports whether the object should trigger a create pipeline.
 	// Implementations typically assert the object's concrete type.
