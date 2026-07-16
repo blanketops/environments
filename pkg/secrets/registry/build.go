@@ -13,6 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package registry reconciles container registry credential secrets into
+Kubernetes, keeping them in sync with the resolved contracts owned by Build
+and Package resources.
+
+This file owns the Build registry credential secret — the ExternalSecret
+backing the Build's image-pull ServiceAccount, and the teardown of both
+that ExternalSecret and its ESO-materialized Secret when the Build is
+deleted.
+*/
 package registry
 
 import (
