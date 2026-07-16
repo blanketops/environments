@@ -13,6 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package github reconciles GitHub-related secrets into Kubernetes, keeping
+them in sync with the resolved contracts owned by GitHubEvent resources and
+platform-level provider configuration.
+
+This file owns the Crossplane GitHub provider credential secret — a
+cluster-scoped ExternalSecret consumed by the Crossplane GitHub (Upjet)
+provider in crossplane-system. It is not owned by any CR and has no
+teardown: the provider is a platform singleton, not a per-resource
+lifecycle.
+*/
 package github
 
 import (
@@ -29,13 +40,15 @@ type GitHubProviderSecretReconciler struct {
 	Client    client.Client
 	Log       logr.Logger
 	StoreName string
+	StoreKind string
 }
 
-func NewGitHubProviderSecretReconciler(c client.Client, log logr.Logger, storeName string) *GitHubProviderSecretReconciler {
+func NewGitHubProviderSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *GitHubProviderSecretReconciler {
 	return &GitHubProviderSecretReconciler{
 		Client:    c,
 		Log:       log,
 		StoreName: storeName,
+		StoreKind: storeKind,
 	}
 }
 
@@ -61,7 +74,7 @@ func (r *GitHubProviderSecretReconciler) Reconcile(ctx context.Context) error {
 				"refreshInterval": "10s",
 				"secretStoreRef": map[string]any{
 					"name": r.StoreName,
-					"kind": "ClusterSecretStore",
+					"kind": r.StoreKind,
 				},
 				"target": map[string]any{
 					"name":           "example-creds",

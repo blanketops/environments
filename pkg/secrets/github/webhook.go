@@ -13,6 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package github reconciles GitHub-related secrets into Kubernetes, keeping
+them in sync with the resolved contracts owned by GitHubEvent resources and
+platform-level provider configuration.
+
+This file owns the GitHub webhook secret — the ExternalSecret backing the
+shared secret GitHub signs webhook deliveries with, scoped to a GitHubEvent
+resource, and the teardown of both that ExternalSecret and its
+ESO-materialized Secret when the GitHubEvent is deleted.
+*/
 package github
 
 import (
@@ -20,6 +30,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -76,7 +87,7 @@ func (r *GitHubWebhookSecretReconciler) Reconcile(ctx context.Context, resolved 
 				"refreshInterval": "10s",
 				"secretStoreRef": map[string]any{
 					"name": r.StoreName,
-					"kind": "ClusterSecretStore",
+					"kind": r.StoreKind,
 				},
 				"target": map[string]any{
 					"name": secretName,
@@ -116,7 +127,10 @@ func (r *GitHubWebhookSecretReconciler) Reconcile(ctx context.Context, resolved 
 	return r.Client.Create(ctx, desired)
 }
 
-// github/webhook.go — append
+// Delete removes both the ExternalSecret and the Secret ESO materialized
+// from it. See git.BuildGitSSHSecretReconciler.Delete for why the Secret
+// must be deleted explicitly rather than left to the ExternalSecret's
+// ownerReference GC cascade.
 func (r *GitHubWebhookSecretReconciler) Delete(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent) error {
 	if resolved == nil || resolved.Event == nil || resolved.Spec == nil {
 		return nil
@@ -125,13 +139,23 @@ func (r *GitHubWebhookSecretReconciler) Delete(ctx context.Context, resolved *gi
 	if webhook.SecretRef.Name == "" {
 		return nil
 	}
+	namespace := resolved.Event.Namespace
+
 	obj := &unstructured.Unstructured{}
 	obj.SetAPIVersion("external-secrets.io/v1")
 	obj.SetKind("ExternalSecret")
 	obj.SetName(webhook.SecretRef.Name)
-	obj.SetNamespace(resolved.Event.Namespace)
+	obj.SetNamespace(namespace)
 	if err := r.Client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
+
+	secret := &corev1.Secret{}
+	secret.SetName(webhook.SecretRef.Name)
+	secret.SetNamespace(namespace)
+	if err := r.Client.Delete(ctx, secret); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+
 	return nil
 }
