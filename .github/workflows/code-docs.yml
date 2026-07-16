@@ -4,8 +4,15 @@
 # Runs on every push to main. Generates Go package docs via gomarkdoc and
 # commits them back to docs/code/, plus uploads a retained artifact copy.
 #
+# Auth:
+#   Uses the BlanketOps-Environments GitHub App instead of a personal-account
+#   PAT for checkout/push and private-module git config — see ci.yml's header
+#   for the reasoning. GPG signing is unrelated and unchanged: the App token
+#   authenticates the push, GPG_PRIVATE_KEY is what makes the resulting
+#   commit show as "Verified".
+#
 # Secrets required:
-#   GH_PAT           — commit/push to main + private module access
+#   APP_ID, APP_PRIVATE_KEY — GitHub App credentials
 #   GPG_PRIVATE_KEY  — signs the generated-docs commit
 #   GPG_PASSPHRASE   — passphrase for GPG_PRIVATE_KEY
 # =============================================================================
@@ -25,10 +32,19 @@ jobs:
     name: Generate Code Docs
     runs-on: ubuntu-latest
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments,environments-api,environments-contract
+
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
 
       - name: Set up Go
@@ -39,7 +55,7 @@ jobs:
 
       - name: Configure Git for private modules
         run: |
-          git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "https://github.com/"
           go env -w GOPRIVATE=github.com/BlanketOps/*,github.com/blanketops/*
           go env -w GONOSUMDB=github.com/BlanketOps/*,github.com/blanketops/*
           go env -w GOPROXY=direct
@@ -67,8 +83,8 @@ jobs:
           git_user_signingkey: true
           git_commit_gpgsign: true
           git_config_global: true
-          git_committer_name: github-actions
-          git_committer_email: actions@github.com
+          git_committer_name: github-actions[bot]
+          git_committer_email: github-actions[bot]@users.noreply.github.com
 
       - name: Commit and push docs
         run: |
