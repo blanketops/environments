@@ -39,6 +39,7 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 env:
   REGISTRY: ghcr.io
@@ -90,12 +91,21 @@ jobs:
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "Vendor tag: ${TAG}"
 
+      # GHCR push uses GITHUB_TOKEN, not the App token — the App installation
+      # token was denied "Write organization package" against this GHCR
+      # package regardless of what App/org/repo permissions were granted
+      # (tried repository Packages, organization Packages, and explicit
+      # per-package "Manage Actions access" linkage — same denial every
+      # time). GITHUB_TOKEN is scoped to this repo only, which is exactly
+      # what a same-repo package push needs; it can't reach environments-api
+      # or environments-contract, which is why the App token is still used
+      # for the private-module git config below.
       - name: Log in to GHCR
         uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
-          username: x-access-token
-          password: ${{ steps.app-token.outputs.token }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check if vendor snapshot already exists
         id: check
