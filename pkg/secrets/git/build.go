@@ -20,6 +20,7 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -178,15 +179,37 @@ func (r *BuildGitSSHSecretReconciler) Reconcile(ctx context.Context, build *buil
 	return nil
 }
 
+// Delete removes both the ExternalSecret and the Secret ESO materialized
+// from it. The Secret carries an ownerReference back to the ExternalSecret,
+// so it would eventually be removed by Kubernetes' garbage collector on its
+// own — but that GC cascade runs on its own async reconcile loop and is not
+// bounded by this call returning. A caller that deletes a Build and
+// immediately recreates it (same name, same derived secretName) can lose
+// the race: the new ExternalSecret's target Secret collides with the old
+// Secret still awaiting GC, and ESO refuses to adopt a Secret it doesn't
+// own, leaving the new Build without a working secret until GC catches up
+// and ESO retries. Deleting the Secret directly here closes that window —
+// plain Secrets carry no finalizers, so this delete is synchronous from the
+// API server's perspective.
 func (r *BuildGitSSHSecretReconciler) Delete(ctx context.Context, build *buildResolution.ResolvedBuild) error {
 	secretName := build.Spec.Source.CloneSecret
+	namespace := build.Build.Namespace
+
 	obj := &unstructured.Unstructured{}
 	obj.SetAPIVersion("external-secrets.io/v1")
 	obj.SetKind("ExternalSecret")
 	obj.SetName(secretName)
-	obj.SetNamespace(build.Build.Namespace)
+	obj.SetNamespace(namespace)
 	if err := r.Client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
+
+	secret := &corev1.Secret{}
+	secret.SetName(secretName)
+	secret.SetNamespace(namespace)
+	if err := r.Client.Delete(ctx, secret); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+
 	return nil
 }
