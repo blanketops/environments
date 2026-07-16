@@ -14,15 +14,11 @@ limitations under the License.
 */
 
 /*
-Package git reconciles Git-related secrets into Kubernetes, keeping them in
-sync with the resolved contracts owned by Build, Deployment, and Package
-resources.
-
-This file owns the Deployment git-ssh clone secret — the same ExternalSecret
-lifecycle as the Build variant (see build.go), scoped to the Deployment's
-manifests repository.
+Package deployment reconciles the Deployment git-ssh clone secret — the same
+ExternalSecret lifecycle as the Build variant (pkg/secrets/git/build),
+scoped to the Deployment's manifests repository.
 */
-package git
+package deployment
 
 import (
 	"context"
