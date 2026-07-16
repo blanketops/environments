@@ -13,6 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package registry reconciles container registry credential secrets into
+Kubernetes, keeping them in sync with the resolved contracts owned by Build
+and Package resources.
+
+This file owns the Package registry credential secret — the same
+ExternalSecret lifecycle as the Build variant (see build.go), scoped to a
+Package's declared package repository.
+*/
 package registry
 
 import (
@@ -20,6 +29,7 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -130,7 +140,10 @@ func (r *PackageRegistrySecretReconciler) Reconcile(ctx context.Context, resolve
 	return nil
 }
 
-// registry/packageregistry.go — append
+// Delete removes both the ExternalSecret and the Secret ESO materialized
+// from it. See git.BuildGitSSHSecretReconciler.Delete for why the Secret
+// must be deleted explicitly rather than left to the ExternalSecret's
+// ownerReference GC cascade.
 func (r *PackageRegistrySecretReconciler) Delete(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage) error {
 	if resolvedPackage == nil || resolvedPackage.Package == nil {
 		return nil
@@ -139,13 +152,23 @@ func (r *PackageRegistrySecretReconciler) Delete(ctx context.Context, resolvedPa
 	if secretName == "" {
 		return nil
 	}
+	namespace := resolvedPackage.Package.Namespace
+
 	obj := &unstructured.Unstructured{}
 	obj.SetAPIVersion("external-secrets.io/v1")
 	obj.SetKind("ExternalSecret")
 	obj.SetName(secretName)
-	obj.SetNamespace(resolvedPackage.Package.Namespace)
+	obj.SetNamespace(namespace)
 	if err := r.Client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
+
+	secret := &corev1.Secret{}
+	secret.SetName(secretName)
+	secret.SetNamespace(namespace)
+	if err := r.Client.Delete(ctx, secret); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+
 	return nil
 }

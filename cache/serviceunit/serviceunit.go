@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	bocache "github.com/blanketops/environments/cache"
-	"github.com/blanketops/environments/core"
+	"github.com/blanketops/environments/core/cache"
 	serviceunitResolution "github.com/blanketops/environments/resolution/serviceunit"
 )
 
@@ -30,8 +30,8 @@ type ServiceUnitCache struct {
 	*bocache.ObjectCache
 }
 
-// NewServiceUnitCache constructs a new ServiceUnitCache with the provided core.Cache.
-func NewServiceUnitCache(c *core.Cache) *ServiceUnitCache {
+// NewServiceUnitCache constructs a new ServiceUnitCache with the provided cache.Cache.
+func NewServiceUnitCache(c *cache.Cache) *ServiceUnitCache {
 	return &ServiceUnitCache{ObjectCache: bocache.NewObjectCache(c, "serviceunit", 0)}
 }
 

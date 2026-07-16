@@ -32,12 +32,14 @@ Two registries are maintained in a single struct:
     build strategies (e.g. "buildpacks-v3", "dockerfile"). Typed retrieval
     is the caller's responsibility via a type assertion after GetStrategy.
 */
-package core
+package registry
 
 import (
 	"sync"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	domain "github.com/blanketops/environments/core/domain"
 )
 
 // Registry is the runtime lookup table for Domains and strategies.
@@ -50,7 +52,7 @@ type Registry struct {
 
 	// domains maps GroupVersionKind → Domain for Engine routing.
 	// One Domain per GVK; duplicate registration overwrites silently.
-	domains map[schema.GroupVersionKind]Domain
+	domains map[schema.GroupVersionKind]domain.Domain
 
 	// strategies maps strategy name → implementation for pluggable
 	// build strategy dispatch. Typed access requires a caller-side assertion.
@@ -61,7 +63,7 @@ type Registry struct {
 // registration. Called once during manager setup before any controllers start.
 func NewRegistry() *Registry {
 	return &Registry{
-		domains:    make(map[schema.GroupVersionKind]Domain),
+		domains:    make(map[schema.GroupVersionKind]domain.Domain),
 		strategies: make(map[string]any),
 	}
 }
@@ -69,7 +71,7 @@ func NewRegistry() *Registry {
 // RegisterDomain registers a Domain for the given GVK. Called at startup for
 // each CR kind the platform manages. Duplicate registration overwrites the
 // previous entry — registration order is the caller's responsibility.
-func (r *Registry) RegisterDomain(gvk schema.GroupVersionKind, d Domain) {
+func (r *Registry) RegisterDomain(gvk schema.GroupVersionKind, d domain.Domain) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.domains[gvk] = d
@@ -77,7 +79,7 @@ func (r *Registry) RegisterDomain(gvk schema.GroupVersionKind, d Domain) {
 
 // GetDomain retrieves the Domain registered for gvk. Returns false if no
 // Domain is registered — the Engine surfaces this as an error to the caller.
-func (r *Registry) GetDomain(gvk schema.GroupVersionKind) (Domain, bool) {
+func (r *Registry) GetDomain(gvk schema.GroupVersionKind) (domain.Domain, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	d, ok := r.domains[gvk]

@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	bocache "github.com/blanketops/environments/cache"
-	"github.com/blanketops/environments/core"
+	"github.com/blanketops/environments/core/cache"
 	gitrepositoryResolution "github.com/blanketops/environments/resolution/gitrepository"
 )
 
@@ -30,8 +30,8 @@ type GitRepositoryCache struct {
 	*bocache.ObjectCache
 }
 
-// NewGitRepositoryCache constructs a new GitRepositoryCache with the provided core.Cache.
-func NewGitRepositoryCache(c *core.Cache) *GitRepositoryCache {
+// NewGitRepositoryCache constructs a new GitRepositoryCache with the provided cache.Cache.
+func NewGitRepositoryCache(c *cache.Cache) *GitRepositoryCache {
 	return &GitRepositoryCache{ObjectCache: bocache.NewObjectCache(c, "gitrepository", 0)}
 
 }
