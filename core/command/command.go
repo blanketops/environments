@@ -14,14 +14,11 @@ limitations under the License.
 */
 
 /*
-Package core defines the foundational contracts and primitives shared across
-all BlanketOps Environments domains.
-
-This file owns the command model — the atomic unit of intent that flows
-through the CQRS engine. Controllers observe Kubernetes events, translate
-them into Commands, and hand them to the Engine. The Engine routes each
-Command to the correct Domain by GVK. Domains act on the Command and never
-interact with the controller layer directly.
+Package command owns the command model — the atomic unit of intent that
+flows through the CQRS engine. Controllers observe Kubernetes events,
+translate them into Commands, and hand them to the Engine. The Engine
+routes each Command to the correct Domain by GVK. Domains act on the
+Command and never interact with the controller layer directly.
 
 The flow is strictly one-directional:
 

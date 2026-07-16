@@ -14,13 +14,10 @@ limitations under the License.
 */
 
 /*
-Package core defines the foundational contracts and primitives shared across
-all BlanketOps Environments domains.
-
-This file owns event recording. Kubernetes events are the primary observability
-surface for reconciliation progress — they appear in kubectl describe output and
-are consumed by monitoring tooling. Every domain stage that succeeds or fails
-emits an event via EventRecorder.
+Package events owns event recording. Kubernetes events are the primary
+observability surface for reconciliation progress — they appear in kubectl
+describe output and are consumed by monitoring tooling. Every domain stage
+that succeeds or fails emits an event via EventRecorder.
 
 EventRecorder abstracts over two client-go recorder APIs:
 

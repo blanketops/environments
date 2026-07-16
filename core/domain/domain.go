@@ -14,13 +14,10 @@ limitations under the License.
 */
 
 /*
-Package core defines the foundational contracts and primitives shared across
-all BlanketOps Environments domains.
-
-This file owns the Domain interface — the contract every resource domain must
-satisfy to participate in the CQRS engine. A Domain is the single authoritative
-handler for one CRD kind. It owns the reconciliation pipeline for that kind
-from command receipt through to status write.
+Package domain owns the Domain interface — the contract every resource
+domain must satisfy to participate in the CQRS engine. A Domain is the
+single authoritative handler for one CRD kind. It owns the reconciliation
+pipeline for that kind from command receipt through to status write.
 
 Registering a Domain with the Engine is the only wiring required — the Engine
 handles routing, predicate evaluation, and dispatch. Domains never call each

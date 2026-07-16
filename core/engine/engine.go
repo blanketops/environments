@@ -14,13 +14,10 @@ limitations under the License.
 */
 
 /*
-Package core defines the foundational contracts and primitives shared across
-all BlanketOps Environments domains.
-
-This file owns the Engine — the central command router of the CQRS architecture.
-The Engine receives Commands from controllers, resolves the correct Domain from
-the Registry by GVK, and dispatches Handle. It is the only component that
-bridges the controller layer and the domain layer.
+Package engine owns the Engine — the central command router of the CQRS
+architecture. The Engine receives Commands from controllers, resolves the
+correct Domain from the Registry by GVK, and dispatches Handle. It is the
+only component that bridges the controller layer and the domain layer.
 
 The Engine supports two execution modes:
 
