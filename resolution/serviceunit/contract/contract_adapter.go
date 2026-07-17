@@ -72,6 +72,12 @@ func ToServiceUnitContract(s *resolve.ResolvedServiceUnitSpec) *environmentscont
 		}
 	}
 
+	if s.RouteRef != nil {
+		out.Route = &environmentscontractv1alpha1.RouteReference{
+			Name: s.RouteRef.Name,
+		}
+	}
+
 	return out
 }
 

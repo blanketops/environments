@@ -20,10 +20,13 @@ import (
 	"testing"
 )
 
-func TestAdapter_Resolve(t *testing.T) {
+func TestAdapter_Resolve_NilServiceUnit(t *testing.T) {
 	a := NewAdapter()
 	resolved, err := a.Resolve(context.Background(), nil)
-	if resolved != nil || err != nil {
-		t.Fatalf("expected (nil, nil), got (%+v, %v)", resolved, err)
+	if resolved != nil {
+		t.Errorf("expected nil ResolvedServiceUnit, got %+v", resolved)
+	}
+	if err == nil {
+		t.Fatalf("expected an error for a nil serviceunit, got nil")
 	}
 }
