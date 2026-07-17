@@ -1,3 +1,34 @@
+## [0.7.2] - 2026-07-13
+
+### 🚀 Features
+
+- Add advanced CodeQL workflow with job summary (#240)
+
+### 🐛 Bug Fixes
+
+- Add workflow_dispatch to release-assets.yml, fix GH_PAT typo (#230)
+- Pass --repo explicitly to gh release upload calls (#231)
+- Resolve environments-api go.mod/import casing mismatch on main (#236)
+- Tighten workflow token permissions (#241)
+- Run CodeQL on every push, not just main (#242)
+
+### 💼 Other
+
+- Merge release/v0.7.2 into main
+
+### 📚 Documentation
+
+- Add SECURITY.md (#238)
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.7.1
+- Lowercase github.com/BlanketOps org in imports and go.mod (#233) (#232)
+- Add dependabot config for github-actions and gomod (#237)
+- *(ci)* Bump the github-actions group with 8 updates (#239)
+- Sync develop with main after release/v0.7.1
+- Lowercase github.com/BlanketOps org in imports and go.mod (#233)
+- Complete environments-api rename, add build.yml summary (#234)
 ## [0.7.1] - 2026-07-12
 
 ### 🚀 Features
