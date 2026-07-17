@@ -40,7 +40,7 @@ import (
 	"context"
 
 	"github.com/blanketops/environments/pkg/apis/domain/domain"
-	domainResolution "github.com/blanketops/environments/resolution/domain"
+	domainResolution "github.com/blanketops/environments/resolution/domain/resolve"
 )
 
 // Provider materializes and maintains the cert/mapping chain for a Domain CR.

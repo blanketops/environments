@@ -20,7 +20,7 @@ import (
 
 	bocache "github.com/blanketops/environments/cache"
 	"github.com/blanketops/environments/core/cache"
-	routeResolution "github.com/blanketops/environments/resolution/route"
+	routeResolution "github.com/blanketops/environments/resolution/route/resolve"
 )
 
 // RouteCache provides domain-specific, field-level caching for Route resources.

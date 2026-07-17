@@ -19,12 +19,12 @@ import (
 	"fmt"
 
 	"github.com/blanketops/environments/pkg/apis/packages/domain"
-	"github.com/blanketops/environments/resolution/packages"
+	"github.com/blanketops/environments/resolution/packages/resolve"
 )
 
 // BuildPackageIntent compiles a RESOLVED Package into an immutable execution plan.
 func BuildPackageIntent(
-	rp *packages.ResolvedPackage,
+	rp *resolve.ResolvedPackage,
 ) (*PackageIntent, error) {
 
 	if rp == nil || rp.Spec == nil {
