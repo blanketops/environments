@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	"github.com/blanketops/environments/pkg/apis/packages/domain"
-	pkgResolution "github.com/blanketops/environments/resolution/packages"
+	pkgResolution "github.com/blanketops/environments/resolution/packages/resolve"
 )
 
 type Mapper struct{}

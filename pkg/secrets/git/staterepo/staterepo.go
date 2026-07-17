@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	packageResolution "github.com/blanketops/environments/resolution/packages"
+	packageResolution "github.com/blanketops/environments/resolution/packages/resolve"
 )
 
 type PackageStateRepositorySecretReconciler struct {

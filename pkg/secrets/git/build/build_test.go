@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	environmentv1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
-	buildResolution "github.com/blanketops/environments/resolution/build"
+	buildResolution "github.com/blanketops/environments/resolution/build/resolve"
 
 	"github.com/blanketops/environments/pkg/secrets/internal/testutil"
 )

@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	commoncontractv1 "github.com/blanketops/environments-contract/blanketops/common/v1"
-	"github.com/blanketops/environments/resolution/serviceunit"
+	serviceunit "github.com/blanketops/environments/resolution/serviceunit/resolve"
 )
 
 type ServiceUnitIntent struct {

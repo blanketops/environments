@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	eventsv1alpha1 "github.com/blanketops/environments-api/api/events/v1alpha1"
-	githubeventResolution "github.com/blanketops/environments/resolution/githubevent"
+	githubeventResolution "github.com/blanketops/environments/resolution/githubevent/resolve"
 
 	"github.com/blanketops/environments/pkg/secrets/internal/testutil"
 )

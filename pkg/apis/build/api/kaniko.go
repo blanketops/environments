@@ -57,8 +57,10 @@ import (
 	buildv1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
 	eventsv1alpha1 "github.com/blanketops/environments-api/api/events/v1alpha1"
 	"github.com/blanketops/environments/pkg/apis/build/domain"
-	buildResolution "github.com/blanketops/environments/resolution/build"
-	githubeventResolution "github.com/blanketops/environments/resolution/githubevent"
+	buildContract "github.com/blanketops/environments/resolution/build/contract"
+	buildResolution "github.com/blanketops/environments/resolution/build/resolve"
+	githubeventContract "github.com/blanketops/environments/resolution/githubevent/contract"
+	githubeventResolution "github.com/blanketops/environments/resolution/githubevent/resolve"
 )
 
 const (
@@ -258,7 +260,7 @@ func (p *KanikoProvider) Run(ctx context.Context, build *buildResolution.Resolve
 	// Stage 2: Create the BuildRun (idempotent by hash).
 	// ------------------------------------------------
 	tc := ExtractTriggerContext(build.Build)
-	hash, err := utils.ComputeExecutionHash(build.Spec.ToBuildContract(), tc)
+	hash, err := utils.ComputeExecutionHash(buildContract.ToBuildContract(build.Spec), tc)
 
 	p.Log.Info("execution identity", "retryAttempt", tc.RetryAttempt, "triggerType", tc.Type)
 
@@ -327,7 +329,7 @@ func PatchBuildTriggerFromGitHubEvent(ctx context.Context, c client.Client, buil
 			continue
 		}
 
-		contract := resolved.Spec.ToGitHubEventContract()
+		contract := githubeventContract.ToGitHubEventContract(resolved.Spec)
 		if contract.GetEventId() == "" {
 			continue
 		}
@@ -350,7 +352,7 @@ func PatchBuildTriggerFromGitHubEvent(ctx context.Context, c client.Client, buil
 		build.Annotations = map[string]string{}
 	}
 
-	ghContract := latestResolved.Spec.ToGitHubEventContract()
+	ghContract := githubeventContract.ToGitHubEventContract(latestResolved.Spec)
 	build.Annotations[triggerTypeAnnotation] = string(ghContract.GetEventType().Type)
 	build.Annotations[triggerRefAnnotation] = ghContract.GetRef()
 	build.Annotations[triggerSHAAnnotation] = string(ghContract.GetCommitSha())

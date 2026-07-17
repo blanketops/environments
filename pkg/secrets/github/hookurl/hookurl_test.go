@@ -28,7 +28,7 @@ import (
 
 	sourcesv1alpha1 "github.com/blanketops/environments-api/api/sources/v1alpha1"
 	testutil "github.com/blanketops/environments/pkg/secrets/internal/testutil"
-	gitrepoResolution "github.com/blanketops/environments/resolution/gitrepository"
+	gitrepoResolution "github.com/blanketops/environments/resolution/gitrepository/resolve"
 )
 
 func newResolvedGitRepository(name, namespace, hookURL string) *gitrepoResolution.ResolvedGitRepository {
