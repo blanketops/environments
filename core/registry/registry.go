@@ -14,13 +14,10 @@ limitations under the License.
 */
 
 /*
-Package core defines the foundational contracts and primitives shared across
-all BlanketOps Environments domains.
-
-This file owns the Registry — the runtime lookup table that wires Domains and
-strategies into the Engine. The Registry is populated once at manager startup
-and then read concurrently by the Engine during reconciliation. All methods
-are safe for concurrent use.
+Package registry owns the Registry — the runtime lookup table that wires
+Domains and strategies into the Engine. The Registry is populated once at
+manager startup and then read concurrently by the Engine during
+reconciliation. All methods are safe for concurrent use.
 
 Two registries are maintained in a single struct:
 

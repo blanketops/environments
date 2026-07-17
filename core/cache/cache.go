@@ -14,11 +14,8 @@ limitations under the License.
 */
 
 /*
-Package core defines the foundational contracts and primitives shared across
-all BlanketOps Environments domains.
-
-This file owns the cache layer. There are two distinct caching concerns in
-the platform:
+Package cache owns the cache layer. There are two distinct caching concerns
+in the platform:
 
  1. The informer cache — the controller-runtime shared cache backed by
     Kubernetes API watches. This is the SOURCE OF TRUTH for all CR reads.
