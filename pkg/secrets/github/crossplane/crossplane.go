@@ -14,17 +14,13 @@ limitations under the License.
 */
 
 /*
-Package github reconciles GitHub-related secrets into Kubernetes, keeping
-them in sync with the resolved contracts owned by GitHubEvent resources and
-platform-level provider configuration.
-
-This file owns the Crossplane GitHub provider credential secret — a
-cluster-scoped ExternalSecret consumed by the Crossplane GitHub (Upjet)
-provider in crossplane-system. It is not owned by any CR and has no
+Package crossplane reconciles the Crossplane GitHub provider credential
+secret — a cluster-scoped ExternalSecret consumed by the Crossplane GitHub
+(Upjet) provider in crossplane-system. It is not owned by any CR and has no
 teardown: the provider is a platform singleton, not a per-resource
 lifecycle.
 */
-package github
+package crossplane
 
 import (
 	"context"

@@ -14,17 +14,13 @@ limitations under the License.
 */
 
 /*
-Package git reconciles Git-related secrets into Kubernetes, keeping them in
-sync with the resolved contracts owned by Build, Deployment, and Package
-resources.
-
-This file owns the Flux git-ssh deploy keypair — a self-generated Secret
-(no ExternalSecret involved, since the key has no external source of
+Package fluxcd reconciles the Flux git-ssh deploy keypair — a self-generated
+Secret (no ExternalSecret involved, since the key has no external source of
 truth) whose public half is registered as a deploy key on the Deployment's
 manifests repository. The keypair is stable for the lifetime of the
 Deployment CR and is never rotated automatically.
 */
-package git
+package fluxcd
 
 import (
 	"context"
