@@ -1,3 +1,30 @@
+## [0.7.3] - 2026-07-17
+
+### 🐛 Bug Fixes
+
+- Delete the underlying Secret, not just the ExternalSecret, on Build teardown (#248)
+- Bring pkg/secrets reconcilers up to convention (#250)
+
+### 💼 Other
+
+- Merge release/v0.7.3 into main
+
+### 🚜 Refactor
+
+- Split core into per-concern subpackages (#252)
+
+### 🧪 Testing
+
+- Split pkg/secrets into per-reconciler subpackages with full coverage (#251)
+- Add full coverage for core/{cache,command,conditions,engine,events,predicates,registry} (#254)
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.7.2
+- Authenticate via GitHub App instead of expired GH_PAT (#249)
+- Reconcile main with develop history
+- Prune old vendor-snapshot GHCR images on a schedule (#257)
+- Prune old vendor-snapshot GHCR images on a schedule (#256) (#258)
 ## [0.7.2] - 2026-07-13
 
 ### 🚀 Features
@@ -22,11 +49,11 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Sync develop with main after release/v0.7.1
 - *(release)* Update changelog for v0.7.1
 - Lowercase github.com/BlanketOps org in imports and go.mod (#233) (#232)
 - Add dependabot config for github-actions and gomod (#237)
 - *(ci)* Bump the github-actions group with 8 updates (#239)
-- Sync develop with main after release/v0.7.1
 - Lowercase github.com/BlanketOps org in imports and go.mod (#233)
 - Complete environments-api rename, add build.yml summary (#234)
 ## [0.7.1] - 2026-07-12
@@ -862,3 +889,7 @@
 
 - *(release)* Update changelog for v0.0.7
 ## [0.0.1] - 2026-03-01
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
