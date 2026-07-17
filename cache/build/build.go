@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	bocache "github.com/blanketops/environments/cache"
-	"github.com/blanketops/environments/core"
+	"github.com/blanketops/environments/core/cache"
 	buildResolution "github.com/blanketops/environments/resolution/build"
 )
 
@@ -30,8 +30,8 @@ type BuildCache struct {
 	*bocache.ObjectCache
 }
 
-// NewBuildCache constructs a new BuildCache with the provided core.Cache.
-func NewBuildCache(c *core.Cache) *BuildCache {
+// NewBuildCache constructs a new BuildCache with the provided cache.Cache.
+func NewBuildCache(c *cache.Cache) *BuildCache {
 	return &BuildCache{ObjectCache: bocache.NewObjectCache(c, "build", 0)}
 }
 

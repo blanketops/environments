@@ -21,6 +21,7 @@
 *.out
 *.cover
 coverage.out
+coverage.html
 
 # Go workspace file
 go.work

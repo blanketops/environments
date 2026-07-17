@@ -19,7 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	bocache "github.com/blanketops/environments/cache"
-	"github.com/blanketops/environments/core"
+	"github.com/blanketops/environments/core/cache"
 	domainResolution "github.com/blanketops/environments/resolution/domain"
 )
 
@@ -28,8 +28,8 @@ type DomainCache struct {
 	*bocache.ObjectCache
 }
 
-// NewDomainCache constructs a new DomainCache with the provided core.Cache.
-func NewDomainCache(c *core.Cache) *DomainCache {
+// NewDomainCache constructs a new DomainCache with the provided cache.Cache.
+func NewDomainCache(c *cache.Cache) *DomainCache {
 	return &DomainCache{ObjectCache: bocache.NewObjectCache(c, "domain", 0)}
 }
 

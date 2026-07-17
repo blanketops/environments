@@ -22,7 +22,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/blanketops/environments/core"
+	corecache "github.com/blanketops/environments/core/cache"
 )
 
 // ObjectCache provides namespace-aware, generation-scoped field caching
@@ -33,12 +33,12 @@ import (
 // (they expire via TTL) — no invalidation hook required, and it works
 // identically on backends without key enumeration (Memcached).
 type ObjectCache struct {
-	cache *core.Cache
+	cache *corecache.Cache
 	kind  string
 	ttl   time.Duration
 }
 
-func NewObjectCache(c *core.Cache, kind string, ttl time.Duration) *ObjectCache {
+func NewObjectCache(c *corecache.Cache, kind string, ttl time.Duration) *ObjectCache {
 	if ttl <= 0 {
 		ttl = 1 * time.Hour
 	}

@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	bocache "github.com/blanketops/environments/cache"
-	"github.com/blanketops/environments/core"
+	"github.com/blanketops/environments/core/cache"
 	environmentResolution "github.com/blanketops/environments/resolution/environment"
 )
 
@@ -30,8 +30,8 @@ type EnvironmentCache struct {
 	*bocache.ObjectCache
 }
 
-// NewEnvironmentCache constructs a new EnvironmentCache with the provided core.Cache.
-func NewEnvironmentCache(c *core.Cache) *EnvironmentCache {
+// NewEnvironmentCache constructs a new EnvironmentCache with the provided cache.Cache.
+func NewEnvironmentCache(c *cache.Cache) *EnvironmentCache {
 	return &EnvironmentCache{ObjectCache: bocache.NewObjectCache(c, "environment", 0)}
 }
 

@@ -23,7 +23,7 @@ import (
 
 	"github.com/bradfitz/gomemcache/memcache"
 
-	"github.com/blanketops/environments/core"
+	cache "github.com/blanketops/environments/core/cache"
 )
 
 // MemcachedConfig holds connection settings for the Memcached backend.
@@ -36,7 +36,7 @@ type MemcachedCache struct {
 	client *memcache.Client
 }
 
-var _ core.ExternalCache = (*MemcachedCache)(nil)
+var _ cache.ExternalCache = (*MemcachedCache)(nil)
 
 func NewMemcached(cfg MemcachedConfig) *MemcachedCache {
 	return &MemcachedCache{client: memcache.New(cfg.Servers...)}

@@ -18,7 +18,7 @@ package deployment
 import (
 	"context"
 
-	"github.com/blanketops/environments/core"
+	"github.com/blanketops/environments/core/cache"
 	"k8s.io/apimachinery/pkg/types"
 
 	bocache "github.com/blanketops/environments/cache"
@@ -30,8 +30,8 @@ type DeploymentCache struct {
 	*bocache.ObjectCache
 }
 
-// NewDeploymentCache constructs a new DeploymentCache with the provided core.Cache.
-func NewDeploymentCache(c *core.Cache) *DeploymentCache {
+// NewDeploymentCache constructs a new DeploymentCache with the provided cache.Cache.
+func NewDeploymentCache(c *cache.Cache) *DeploymentCache {
 	return &DeploymentCache{ObjectCache: bocache.NewObjectCache(c, "deployment", 0)}
 }
 

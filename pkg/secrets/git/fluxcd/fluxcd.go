@@ -1,0 +1,200 @@
+/*
+Copyright 2026 The BlanketOps Authors.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+/*
+Package fluxcd reconciles the Flux git-ssh deploy keypair — a self-generated
+Secret (no ExternalSecret involved, since the key has no external source of
+truth) whose public half is registered as a deploy key on the Deployment's
+manifests repository. The keypair is stable for the lifetime of the
+Deployment CR and is never rotated automatically.
+*/
+package fluxcd
+
+import (
+	"context"
+	"crypto/ed25519"
+	"crypto/rand"
+	"encoding/pem"
+	"fmt"
+
+	"github.com/go-logr/logr"
+	"golang.org/x/crypto/ssh"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	deploymentResolution "github.com/blanketops/environments/resolution/deployment"
+)
+
+const githubKnownHosts = "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl"
+
+type DeploymentFluxGitSSHSecretReconciler struct {
+	Client client.Client
+	Log    logr.Logger
+}
+
+func NewDeploymentFluxGitSSHSecretReconciler(
+	c client.Client,
+	log logr.Logger,
+) *DeploymentFluxGitSSHSecretReconciler {
+	return &DeploymentFluxGitSSHSecretReconciler{
+		Client: c,
+		Log:    log,
+	}
+}
+
+func (r *DeploymentFluxGitSSHSecretReconciler) Reconcile(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) error {
+	secretName := fmt.Sprintf("%s-flux-ssh", deployment.Deployment.Name)
+	namespace := deployment.Deployment.Namespace
+
+	// Check if secret already exists — if so, leave it alone.
+	// We never rotate keys automatically; the keypair is stable for
+	// the lifetime of the Deployment CR.
+	existing := &corev1.Secret{}
+	err := r.Client.Get(ctx, client.ObjectKey{
+		Name:      secretName,
+		Namespace: namespace,
+	}, existing)
+
+	if err == nil {
+		// Already exists — nothing to do, key is stable
+		r.Log.V(1).Info(
+			"Flux Git SSH secret already exists, skipping",
+			"deployment", deployment.Deployment.Name,
+			"secret", secretName,
+		)
+		return nil
+	}
+
+	if !apierrors.IsNotFound(err) {
+		return fmt.Errorf("get flux ssh secret: %w", err)
+	}
+
+	// ── Secret does not exist — generate a fresh unique keypair ──
+	r.Log.Info(
+		"Generating new Flux Git SSH keypair",
+		"deployment", deployment.Deployment.Name,
+		"secret", secretName,
+	)
+
+	privateKeyPEM, publicKeyAuthorized, err := generateSSHKeypair(
+		fmt.Sprintf("flux-%s", deployment.Deployment.Name),
+	)
+	if err != nil {
+		return fmt.Errorf("generate ssh keypair: %w", err)
+	}
+
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"blanketops.dev/managed":    "true",
+				"blanketops.dev/purpose":    "flux-git-ssh",
+				"blanketops.dev/deployment": deployment.Deployment.Name,
+			},
+		},
+		Type: corev1.SecretTypeOpaque,
+		Data: map[string][]byte{
+			"identity":     privateKeyPEM,
+			"identity.pub": publicKeyAuthorized,
+			"known_hosts":  []byte(githubKnownHosts),
+		},
+	}
+
+	if err := controllerutil.SetControllerReference(
+		deployment.Deployment,
+		secret,
+		r.Client.Scheme(),
+	); err != nil {
+		return fmt.Errorf("set owner reference: %w", err)
+	}
+
+	if err := r.Client.Create(ctx, secret); err != nil {
+		return fmt.Errorf("create flux ssh secret: %w", err)
+	}
+
+	r.Log.Info(
+		"Flux Git SSH secret created",
+		"deployment", deployment.Deployment.Name,
+		"secret", secretName,
+		"publicKey", string(publicKeyAuthorized),
+	)
+
+	return nil
+}
+
+// PublicKey returns the authorized_keys format public key from an existing secret.
+// Used by ensureDeployKey to register the key on GitHub.
+func (r *DeploymentFluxGitSSHSecretReconciler) PublicKey(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) (string, error) {
+	secretName := fmt.Sprintf("%s-flux-ssh", deployment.Deployment.Name)
+	secret := &corev1.Secret{}
+	if err := r.Client.Get(ctx, client.ObjectKey{
+		Name:      secretName,
+		Namespace: deployment.Deployment.Namespace,
+	}, secret); err != nil {
+		return "", fmt.Errorf("get flux ssh secret: %w", err)
+	}
+
+	pub, ok := secret.Data["identity.pub"]
+	if !ok {
+		// Fall back to deriving it from the private key
+		signer, err := ssh.ParsePrivateKey(secret.Data["identity"])
+		if err != nil {
+			return "", fmt.Errorf("parse private key: %w", err)
+		}
+		return string(ssh.MarshalAuthorizedKey(signer.PublicKey())), nil
+	}
+
+	return string(pub), nil
+}
+
+// generateSSHKeypair generates a fresh ed25519 keypair.
+// Returns (privateKeyPEM, publicKeyAuthorizedKeys, error).
+func generateSSHKeypair(comment string) ([]byte, []byte, error) {
+	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Marshal private key to OpenSSH PEM format
+	pemBlock, err := ssh.MarshalPrivateKey(privKey, comment)
+	if err != nil {
+		return nil, nil, fmt.Errorf("marshal private key: %w", err)
+	}
+	privateKeyPEM := pem.EncodeToMemory(pemBlock)
+
+	// Marshal public key to authorized_keys format
+	sshPubKey, err := ssh.NewPublicKey(pubKey)
+	if err != nil {
+		return nil, nil, fmt.Errorf("derive public key: %w", err)
+	}
+	publicKeyAuthorized := ssh.MarshalAuthorizedKey(sshPubKey)
+
+	return privateKeyPEM, publicKeyAuthorized, nil
+}
+
+func (r *DeploymentFluxGitSSHSecretReconciler) Delete(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) error {
+	secretName := fmt.Sprintf("%s-flux-ssh", deployment.Deployment.Name)
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: deployment.Deployment.Namespace},
+	}
+	if err := r.Client.Delete(ctx, secret); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+	return nil
+}
