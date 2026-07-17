@@ -24,16 +24,15 @@ import (
 	environments1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
 	eventsv1alpha1 "github.com/blanketops/environments-api/api/events/v1alpha1"
 	sourcesv1alpha1 "github.com/blanketops/environments-api/api/sources/v1alpha1"
-
 	//networksv1alpha1 "github.com/blanketops/environments-api/api/networks/v1alpha1"
 	build "github.com/blanketops/environments/resolution/build/adapter"
 	deployment "github.com/blanketops/environments/resolution/deployment/adapter"
 	gitHubEvent "github.com/blanketops/environments/resolution/githubevent/adapter"
 	gitRepository "github.com/blanketops/environments/resolution/gitrepository/adapter"
 	packages "github.com/blanketops/environments/resolution/packages/adapter"
-	// serviceunit "github.com/blanketops/environments/resolution/serviceunit"
-	// route "github.com/blanketops/environments/resolution/route"
-	// domain "github.com/blanketops/environments/resolution/domain"
+	serviceunit "github.com/blanketops/environments/resolution/serviceunit/adapter"
+	// route "github.com/blanketops/environments/resolution/route/adapter"
+	// domain "github.com/blanketops/environments/resolution/domain/adapter"
 )
 
 type Adapter struct {
@@ -42,7 +41,7 @@ type Adapter struct {
 	gitrepository *gitRepository.Adapter
 	githubevent   *gitHubEvent.Adapter
 	packages      *packages.Adapter
-	// serviceunit   *serviceunit.Adapter
+	serviceunit   *serviceunit.Adapter
 	// domain        *domain.Adapter
 	// route         *route.Adapter
 }
@@ -54,7 +53,7 @@ func NewAdapter() *Adapter {
 		gitrepository: gitRepository.NewAdapter(),
 		githubevent:   gitHubEvent.NewAdapter(),
 		packages:      packages.NewAdapter(),
-		// serviceunit:     serviceunit.NewAdapter(),
+		serviceunit:   serviceunit.NewAdapter(),
 		// domain:          domain.NewAdapter(),
 		// route:           route.NewAdapter(),
 	}
@@ -71,9 +70,9 @@ func (a *Adapter) Resolve(ctx context.Context, obj client.Object) error {
 		_, err := a.deployment.Resolve(ctx, o)
 		return err
 
-		// case *environments1alpha1.ServiceUnit:
-		// _, err := a.serviceunit.Resolve(ctx,o)
-		//return err
+	case *environments1alpha1.ServiceUnit:
+		_, err := a.serviceunit.Resolve(ctx, o)
+		return err
 
 	case *eventsv1alpha1.GitHubEvent:
 		_, err := a.githubevent.Resolve(ctx, o)
