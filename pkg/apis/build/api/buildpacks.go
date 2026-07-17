@@ -41,7 +41,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/blanketops/environments/pkg/apis/build/domain"
-	buildResolution "github.com/blanketops/environments/resolution/build"
+	buildContract "github.com/blanketops/environments/resolution/build/contract"
+	buildResolution "github.com/blanketops/environments/resolution/build/resolve"
 )
 
 // BuildpacksProvider orchestrates Shipwright Build and BuildRun resources
@@ -186,7 +187,7 @@ func (p *BuildpacksProvider) Run(
 
 	// Stage 2: create BuildRun (idempotent by execution hash).
 	tc := ExtractTriggerContext(build.Build)
-	hash, err := utils.ComputeExecutionHash(build.Spec.ToBuildContract(), tc)
+	hash, err := utils.ComputeExecutionHash(buildContract.ToBuildContract(build.Spec), tc)
 	p.Log.Info("execution identity", "retryAttempt", tc.RetryAttempt, "triggerType", tc.Type)
 	if err != nil {
 		res.Message = err.Error()

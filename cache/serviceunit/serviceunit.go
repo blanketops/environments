@@ -22,7 +22,7 @@ import (
 
 	bocache "github.com/blanketops/environments/cache"
 	"github.com/blanketops/environments/core/cache"
-	serviceunitResolution "github.com/blanketops/environments/resolution/serviceunit"
+	serviceunitResolution "github.com/blanketops/environments/resolution/serviceunit/resolve"
 )
 
 // ServiceUnitCache provides domain-specific, field-level caching for ServiceUnit resources.

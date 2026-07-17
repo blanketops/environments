@@ -20,7 +20,7 @@ import (
 
 	bocache "github.com/blanketops/environments/cache"
 	"github.com/blanketops/environments/core/cache"
-	domainResolution "github.com/blanketops/environments/resolution/domain"
+	domainResolution "github.com/blanketops/environments/resolution/domain/resolve"
 )
 
 // DomainCache provides domain-specific, field-level caching for Domain resources.

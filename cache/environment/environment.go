@@ -22,7 +22,7 @@ import (
 
 	bocache "github.com/blanketops/environments/cache"
 	"github.com/blanketops/environments/core/cache"
-	environmentResolution "github.com/blanketops/environments/resolution/environment"
+	environmentResolution "github.com/blanketops/environments/resolution/environment/resolve"
 )
 
 // EnvironmentCache provides domain-specific, field-level caching for Environment resources.

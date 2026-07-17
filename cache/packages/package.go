@@ -22,7 +22,7 @@ import (
 
 	bocache "github.com/blanketops/environments/cache"
 	"github.com/blanketops/environments/core/cache"
-	packagesResolution "github.com/blanketops/environments/resolution/packages"
+	packagesResolution "github.com/blanketops/environments/resolution/packages/resolve"
 )
 
 // PackageCache provides domain-specific, field-level caching for Package resources.

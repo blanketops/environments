@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	buildResolution "github.com/blanketops/environments/resolution/build"
+	buildResolution "github.com/blanketops/environments/resolution/build/resolve"
 )
 
 type BuildGitSSHSecretReconciler struct {

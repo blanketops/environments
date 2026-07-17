@@ -30,7 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/blanketops/environments/pkg/apis/githubevent/domain"
-	githubeventResolution "github.com/blanketops/environments/resolution/githubevent"
+	githubeventResolution "github.com/blanketops/environments/resolution/githubevent/resolve"
 )
 
 // GitHubEventService orchestrates GitHubEvent reconciliation.

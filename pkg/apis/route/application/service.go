@@ -41,7 +41,7 @@ import (
 	"github.com/blanketops/environments/pkg/apis/route/domain"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	routeResolution "github.com/blanketops/environments/resolution/route"
+	routeResolution "github.com/blanketops/environments/resolution/route/resolve"
 )
 
 // RouteService orchestrates the route reconciliation pipeline.
