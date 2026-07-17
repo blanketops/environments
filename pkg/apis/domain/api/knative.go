@@ -65,7 +65,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/blanketops/environments/pkg/apis/domain/domain"
-	domainResolution "github.com/blanketops/environments/resolution/domain"
+	domainResolution "github.com/blanketops/environments/resolution/domain/resolve"
 )
 
 // ACMEConfig carries the HTTP01 ACME issuer configuration injected at

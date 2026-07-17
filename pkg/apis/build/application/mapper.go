@@ -30,7 +30,7 @@ import (
 	"fmt"
 
 	"github.com/blanketops/environments/pkg/apis/build/domain"
-	bldResolution "github.com/blanketops/environments/resolution/build"
+	bldResolution "github.com/blanketops/environments/resolution/build/resolve"
 )
 
 // Mapper translates a ResolvedBuild into a domain.BuildSpec.

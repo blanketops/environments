@@ -18,7 +18,7 @@ package application
 import (
 	"context"
 
-	gitrepoResolution "github.com/blanketops/environments/resolution/gitrepository"
+	gitrepoResolution "github.com/blanketops/environments/resolution/gitrepository/resolve"
 )
 
 // GitRepositoryService orchestrates GitRepository reconciliation.

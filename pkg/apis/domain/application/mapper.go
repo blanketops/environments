@@ -30,7 +30,7 @@ import (
 	"fmt"
 
 	"github.com/blanketops/environments/pkg/apis/domain/domain"
-	domainResolution "github.com/blanketops/environments/resolution/domain"
+	domainResolution "github.com/blanketops/environments/resolution/domain/resolve"
 )
 
 // Mapper translates a ResolvedDomain into a domain.Domain aggregate.

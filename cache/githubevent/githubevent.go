@@ -22,7 +22,7 @@ import (
 
 	bocache "github.com/blanketops/environments/cache"
 	"github.com/blanketops/environments/core/cache"
-	githubeventResolution "github.com/blanketops/environments/resolution/githubevent"
+	githubeventResolution "github.com/blanketops/environments/resolution/githubevent/resolve"
 )
 
 // GitHubEventCache provides domain-specific, field-level caching for GitHubEvent resources.

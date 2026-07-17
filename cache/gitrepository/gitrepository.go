@@ -22,7 +22,7 @@ import (
 
 	bocache "github.com/blanketops/environments/cache"
 	"github.com/blanketops/environments/core/cache"
-	gitrepositoryResolution "github.com/blanketops/environments/resolution/gitrepository"
+	gitrepositoryResolution "github.com/blanketops/environments/resolution/gitrepository/resolve"
 )
 
 // GitRepositoryCache provides domain-specific, field-level caching for GitRepository resources.

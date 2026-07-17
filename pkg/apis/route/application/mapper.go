@@ -33,7 +33,7 @@ import (
 
 	"github.com/blanketops/environments/pkg/apis/route/domain"
 
-	routeResolution "github.com/blanketops/environments/resolution/route"
+	routeResolution "github.com/blanketops/environments/resolution/route/resolve"
 )
 
 // Mapper translates a ResolvedRoute into a domain.Route.

@@ -29,7 +29,7 @@ import (
 	"context"
 
 	"github.com/blanketops/environments/pkg/apis/build/domain"
-	buildResolution "github.com/blanketops/environments/resolution/build"
+	buildResolution "github.com/blanketops/environments/resolution/build/resolve"
 )
 
 // Provider is the build execution contract implemented by all build backends.

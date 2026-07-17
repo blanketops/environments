@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	environmentapi "github.com/blanketops/environments/pkg/apis/environment/api"
-	environmentresolution "github.com/blanketops/environments/resolution/environment"
+	environmentresolution "github.com/blanketops/environments/resolution/environment/resolve"
 )
 
 const (
