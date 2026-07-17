@@ -14,16 +14,12 @@ limitations under the License.
 */
 
 /*
-Package github reconciles GitHub-related secrets into Kubernetes, keeping
-them in sync with the resolved contracts owned by GitHubEvent resources and
-platform-level provider configuration.
-
-This file owns the webhook hook-url secret — a plain Secret (no ESO
-involvement, since the URL is user-declared on the GitRepository CR rather
-than sourced from an external store) that exists only because Upjet's
-RepositoryWebhook consumes the URL via urlSecretRef.
+Package hookurl reconciles the webhook hook-url secret — a plain Secret (no
+ESO involvement, since the URL is user-declared on the GitRepository CR
+rather than sourced from an external store) that exists only because
+Upjet's RepositoryWebhook consumes the URL via urlSecretRef.
 */
-package github
+package hookurl
 
 import (
 	"context"

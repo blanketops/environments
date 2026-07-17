@@ -14,15 +14,13 @@ limitations under the License.
 */
 
 /*
-Package registry reconciles container registry credential secrets into
-Kubernetes, keeping them in sync with the resolved contracts owned by Build
-and Package resources.
-
-This file owns the Package registry credential secret — the same
-ExternalSecret lifecycle as the Build variant (see build.go), scoped to a
-Package's declared package repository.
+Package staterepo reconciles the Package state-repository clone secret —
+the same ExternalSecret lifecycle as the Build/Deployment variants
+(pkg/secrets/git/build, pkg/secrets/git/deployment), scoped to a Package's
+declared state repository. Named staterepo rather than package: "package"
+is a reserved Go keyword.
 */
-package registry
+package staterepo
 
 import (
 	"context"
@@ -38,15 +36,15 @@ import (
 	packageResolution "github.com/blanketops/environments/resolution/packages"
 )
 
-type PackageRegistrySecretReconciler struct {
+type PackageStateRepositorySecretReconciler struct {
 	Client    client.Client
 	Log       logr.Logger
 	StoreName string
 	StoreKind string
 }
 
-func NewPackageRegistrySecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *PackageRegistrySecretReconciler {
-	return &PackageRegistrySecretReconciler{
+func NewPackageStateRepositorySecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *PackageStateRepositorySecretReconciler {
+	return &PackageStateRepositorySecretReconciler{
 		Client:    c,
 		Log:       log,
 		StoreName: storeName,
@@ -54,13 +52,13 @@ func NewPackageRegistrySecretReconciler(c client.Client, log logr.Logger, storeN
 	}
 }
 
-func (r *PackageRegistrySecretReconciler) Reconcile(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage) error {
+func (r *PackageStateRepositorySecretReconciler) Reconcile(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage) error {
 	if resolvedPackage == nil || resolvedPackage.Package == nil {
 		return nil
 	}
 
 	pkg := resolvedPackage.Package
-	secretName := resolvedPackage.Spec.PackageRepository.CredentialsSecret
+	secretName := resolvedPackage.Spec.StateRepository.CloneSecret
 	if secretName == "" {
 		return nil
 	}
@@ -87,18 +85,26 @@ func (r *PackageRegistrySecretReconciler) Reconcile(ctx context.Context, resolve
 				"target": map[string]any{
 					"name": secretName,
 					"template": map[string]any{
-						"type": "kubernetes.io/dockerconfigjson",
+						"type": "Opaque",
 						"data": map[string]any{
-							".dockerconfigjson": "{{ .dockerconfigjson }}",
+							"ssh-privatekey": "{{ .ssh_privatekey }}",
+							"ssh-publickey":  "{{ .ssh_publickey }}",
+							"known_hosts":    "{{ .known_hosts }}",
 						},
 					},
 				},
 				"data": []any{
 					map[string]any{
-						"secretKey": "dockerconfigjson",
-						"remoteRef": map[string]any{
-							"key": "/blanketops/registry/config",
-						},
+						"secretKey": "ssh_privatekey",
+						"remoteRef": map[string]any{"key": "/blanketops/git/ssh-privatekey"},
+					},
+					map[string]any{
+						"secretKey": "ssh_publickey",
+						"remoteRef": map[string]any{"key": "/blanketops/git/ssh-publickey"},
+					},
+					map[string]any{
+						"secretKey": "known_hosts",
+						"remoteRef": map[string]any{"key": "/blanketops/git/known-hosts"},
 					},
 				},
 			},
@@ -115,7 +121,7 @@ func (r *PackageRegistrySecretReconciler) Reconcile(ctx context.Context, resolve
 	err := r.Client.Get(ctx, client.ObjectKeyFromObject(desired), &existing)
 
 	if apierrors.IsNotFound(err) {
-		r.Log.Info("creating ExternalSecret for package registry credentials",
+		r.Log.Info("creating ExternalSecret for package state repository",
 			"package", pkg.Name, "secret", secretName, "store", r.StoreName)
 		return r.Client.Create(ctx, desired)
 	}
@@ -130,25 +136,25 @@ func (r *PackageRegistrySecretReconciler) Reconcile(ctx context.Context, resolve
 		if err := unstructured.SetNestedMap(existing.Object, desiredSpec, "spec"); err != nil {
 			return err
 		}
-		r.Log.Info("updating ExternalSecret for package registry credentials",
+		r.Log.Info("updating ExternalSecret for package state repository",
 			"package", pkg.Name, "secret", secretName, "store", r.StoreName)
 		return r.Client.Update(ctx, &existing)
 	}
 
-	r.Log.V(1).Info("ExternalSecret for package registry credentials already up-to-date",
+	r.Log.V(1).Info("ExternalSecret for package state repository already up-to-date",
 		"package", pkg.Name, "secret", secretName)
 	return nil
 }
 
 // Delete removes both the ExternalSecret and the Secret ESO materialized
-// from it. See git.BuildGitSSHSecretReconciler.Delete for why the Secret
-// must be deleted explicitly rather than left to the ExternalSecret's
-// ownerReference GC cascade.
-func (r *PackageRegistrySecretReconciler) Delete(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage) error {
+// from it. See BuildGitSSHSecretReconciler.Delete for why the Secret must be
+// deleted explicitly rather than left to the ExternalSecret's ownerReference
+// GC cascade.
+func (r *PackageStateRepositorySecretReconciler) Delete(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage) error {
 	if resolvedPackage == nil || resolvedPackage.Package == nil {
 		return nil
 	}
-	secretName := resolvedPackage.Spec.PackageRepository.CredentialsSecret
+	secretName := resolvedPackage.Spec.StateRepository.CloneSecret
 	if secretName == "" {
 		return nil
 	}

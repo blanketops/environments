@@ -14,12 +14,10 @@ limitations under the License.
 */
 
 /*
-Package core defines the foundational contracts and primitives shared across
-all BlanketOps Environments domains.
-
-This file owns controller-runtime predicate filtering. Predicates are the
-first line of defence against unnecessary reconciliation — they run in the
-informer goroutine before a reconcile request ever enters the work queue.
+Package predicates owns controller-runtime predicate filtering. Predicates
+are the first line of defence against unnecessary reconciliation — they run
+in the informer goroutine before a reconcile request ever enters the work
+queue.
 
 The key filtering concern for BlanketOps is spec-only reconciliation: status
 updates and metadata changes (labels, annotations, finalizers) must not
@@ -53,7 +51,7 @@ import (
 // BlanketOps CR controllers. It is the primary guard against reconciliation
 // loops caused by status writes re-enqueuing the same object.
 //
-// The type switch covers all ten CR kinds managed by the platform. Unknown
+// The type switch covers all nine CR kinds managed by the platform. Unknown
 // types fall through to true (reconcile) as a safe default — an unknown kind
 // reaching this predicate indicates a registration gap, not a reason to drop
 // the event.

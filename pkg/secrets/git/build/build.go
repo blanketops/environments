@@ -14,16 +14,12 @@ limitations under the License.
 */
 
 /*
-Package git reconciles Git-related secrets into Kubernetes, keeping them in
-sync with the resolved contracts owned by Build, Deployment, and Package
-resources.
-
-This file owns the Build git-ssh clone secret — the ExternalSecret used to
-clone the Build's source/state repository over SSH, and the teardown of
-both that ExternalSecret and its ESO-materialized Secret when the Build is
-deleted.
+Package build reconciles the Build git-ssh clone secret — the ExternalSecret
+used to clone the Build's source/state repository over SSH, and the
+teardown of both that ExternalSecret and its ESO-materialized Secret when
+the Build is deleted.
 */
-package git
+package build
 
 import (
 	"context"

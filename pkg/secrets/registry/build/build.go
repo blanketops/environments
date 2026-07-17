@@ -14,20 +14,15 @@ limitations under the License.
 */
 
 /*
-Package github reconciles GitHub-related secrets into Kubernetes, keeping
-them in sync with the resolved contracts owned by GitHubEvent resources and
-platform-level provider configuration.
-
-This file owns the GitHub webhook secret — the ExternalSecret backing the
-shared secret GitHub signs webhook deliveries with, scoped to a GitHubEvent
-resource, and the teardown of both that ExternalSecret and its
-ESO-materialized Secret when the GitHubEvent is deleted.
+Package build reconciles the Build registry credential secret — the
+ExternalSecret backing the Build's image-pull ServiceAccount, and the
+teardown of both that ExternalSecret and its ESO-materialized Secret when
+the Build is deleted.
 */
-package github
+package build
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -36,18 +31,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	githubeventResolution "github.com/blanketops/environments/resolution/githubevent"
+	buildResolution "github.com/blanketops/environments/resolution/build"
 )
 
-type GitHubWebhookSecretReconciler struct {
+type BuildRegistryExternalSecretReconciler struct {
 	Client    client.Client
 	Log       logr.Logger
 	StoreName string
 	StoreKind string
 }
 
-func NewGitHubWebhookSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *GitHubWebhookSecretReconciler {
-	return &GitHubWebhookSecretReconciler{
+func NewBuildRegistryExternalSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *BuildRegistryExternalSecretReconciler {
+	return &BuildRegistryExternalSecretReconciler{
 		Client:    c,
 		Log:       log,
 		StoreName: storeName,
@@ -55,20 +50,18 @@ func NewGitHubWebhookSecretReconciler(c client.Client, log logr.Logger, storeNam
 	}
 }
 
-func (r *GitHubWebhookSecretReconciler) Reconcile(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent) error {
-	if resolved == nil || resolved.Event == nil || resolved.Spec == nil {
-		return fmt.Errorf("nil ResolvedGitHubEvent (resolver bug)")
+func (r *BuildRegistryExternalSecretReconciler) Reconcile(ctx context.Context, build *buildResolution.ResolvedBuild) error {
+	if build == nil || build.Build == nil || build.Spec == nil {
+		return nil
 	}
-
-	event := resolved.Event
-	webhook := resolved.Spec.Webhook
-
-	if webhook.SecretRef.Name == "" || webhook.SecretRef.Key == "" {
+	if build.Spec.ServiceAccount == nil {
 		return nil
 	}
 
-	secretName := webhook.SecretRef.Name
-	secretKey := webhook.SecretRef.Key
+	secretName := build.Spec.ServiceAccount.Secret
+	if secretName == "" {
+		return nil
+	}
 
 	desired := &unstructured.Unstructured{
 		Object: map[string]any{
@@ -76,11 +69,11 @@ func (r *GitHubWebhookSecretReconciler) Reconcile(ctx context.Context, resolved 
 			"kind":       "ExternalSecret",
 			"metadata": map[string]any{
 				"name":      secretName,
-				"namespace": event.Namespace,
+				"namespace": build.Build.Namespace,
 				"labels": map[string]any{
 					"blanketops.dev/managed": "true",
-					"blanketops.dev/domain":  "githubevent",
-					"blanketops.dev/event":   event.Name,
+					"blanketops.dev/purpose": "registry",
+					"blanketops.dev/build":   build.Build.Name,
 				},
 			},
 			"spec": map[string]any{
@@ -92,14 +85,14 @@ func (r *GitHubWebhookSecretReconciler) Reconcile(ctx context.Context, resolved 
 				"target": map[string]any{
 					"name": secretName,
 					"template": map[string]any{
-						"type": "Opaque",
+						"type": "kubernetes.io/dockerconfigjson",
 					},
 				},
 				"data": []any{
 					map[string]any{
-						"secretKey": secretKey,
+						"secretKey": ".dockerconfigjson",
 						"remoteRef": map[string]any{
-							"key": "/blanketops/github/webhook/secret",
+							"key": "/blanketops/registry/config",
 						},
 					},
 				},
@@ -107,7 +100,7 @@ func (r *GitHubWebhookSecretReconciler) Reconcile(ctx context.Context, resolved 
 		},
 	}
 
-	if err := controllerutil.SetControllerReference(event, desired, r.Client.Scheme()); err != nil {
+	if err := controllerutil.SetControllerReference(build.Build, desired, r.Client.Scheme()); err != nil {
 		return err
 	}
 
@@ -122,36 +115,37 @@ func (r *GitHubWebhookSecretReconciler) Reconcile(ctx context.Context, resolved 
 		return err
 	}
 
-	r.Log.Info("creating ExternalSecret for GitHub webhook",
-		"event", event.Name, "secret", secretName, "store", r.StoreName)
+	r.Log.Info("creating ExternalSecret for registry credentials",
+		"build", build.Build.Name, "secret", secretName, "store", r.StoreName)
 	return r.Client.Create(ctx, desired)
 }
 
 // Delete removes both the ExternalSecret and the Secret ESO materialized
-// from it. See git.BuildGitSSHSecretReconciler.Delete for why the Secret
-// must be deleted explicitly rather than left to the ExternalSecret's
-// ownerReference GC cascade.
-func (r *GitHubWebhookSecretReconciler) Delete(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent) error {
-	if resolved == nil || resolved.Event == nil || resolved.Spec == nil {
+// from it. See BuildGitSSHSecretReconciler.Delete for why the Secret must be
+// deleted explicitly rather than left to the ExternalSecret's
+// ownerReference GC cascade — the same delete-then-recreate race applies
+// here to the registry credentials secret.
+func (r *BuildRegistryExternalSecretReconciler) Delete(ctx context.Context, build *buildResolution.ResolvedBuild) error {
+	if build == nil || build.Build == nil || build.Spec == nil || build.Spec.ServiceAccount == nil {
 		return nil
 	}
-	webhook := resolved.Spec.Webhook
-	if webhook.SecretRef.Name == "" {
+	secretName := build.Spec.ServiceAccount.Secret
+	if secretName == "" {
 		return nil
 	}
-	namespace := resolved.Event.Namespace
+	namespace := build.Build.Namespace
 
 	obj := &unstructured.Unstructured{}
 	obj.SetAPIVersion("external-secrets.io/v1")
 	obj.SetKind("ExternalSecret")
-	obj.SetName(webhook.SecretRef.Name)
+	obj.SetName(secretName)
 	obj.SetNamespace(namespace)
 	if err := r.Client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
 
 	secret := &corev1.Secret{}
-	secret.SetName(webhook.SecretRef.Name)
+	secret.SetName(secretName)
 	secret.SetNamespace(namespace)
 	if err := r.Client.Delete(ctx, secret); err != nil && !apierrors.IsNotFound(err) {
 		return err
