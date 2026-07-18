@@ -34,6 +34,7 @@ import (
 
 	"github.com/blanketops/environments/pkg/apis/deployment/domain"
 	intent "github.com/blanketops/environments/pkg/intent/deployment"
+	serviceunitIntent "github.com/blanketops/environments/pkg/intent/serviceunit"
 )
 
 type K8SProvider struct {
@@ -164,7 +165,7 @@ func (p *K8SProvider) executeBlueGreen(
 func (p *K8SProvider) applyServiceUnit(
 	ctx context.Context,
 	intent *intent.DeploymentIntent,
-	su *intent.ServiceUnitIntent,
+	su *serviceunitIntent.ServiceUnitIntent,
 ) (*domain.ServiceUnitResult, error) {
 
 	if err := p.applyDeployment(ctx, intent, su); err != nil {
@@ -197,7 +198,7 @@ func (p *K8SProvider) applyServiceUnit(
 func (p *K8SProvider) applyDeployment(
 	ctx context.Context,
 	intent *intent.DeploymentIntent,
-	su *intent.ServiceUnitIntent,
+	su *serviceunitIntent.ServiceUnitIntent,
 ) error {
 
 	deploy := &appsv1.Deployment{
@@ -253,7 +254,7 @@ func (p *K8SProvider) applyDeployment(
 func (p *K8SProvider) applyService(
 	ctx context.Context,
 	intent *intent.DeploymentIntent,
-	su *intent.ServiceUnitIntent,
+	su *serviceunitIntent.ServiceUnitIntent,
 ) error {
 
 	svc := &corev1.Service{
@@ -291,7 +292,7 @@ func (p *K8SProvider) applyService(
 func (p *K8SProvider) isDeploymentReady(
 	ctx context.Context,
 	intent *intent.DeploymentIntent,
-	su *intent.ServiceUnitIntent,
+	su *serviceunitIntent.ServiceUnitIntent,
 ) (bool, error) {
 
 	var deploy appsv1.Deployment

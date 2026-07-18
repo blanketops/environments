@@ -19,6 +19,7 @@ import (
 	"time"
 
 	environmentv1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
+	serviceunitIntent "github.com/blanketops/environments/pkg/intent/serviceunit"
 )
 
 type DeploymentIntent struct {
@@ -30,7 +31,7 @@ type DeploymentIntent struct {
 	Runtime  Runtime
 	Strategy Strategy
 
-	ServiceUnits []ServiceUnitIntent
+	ServiceUnits []serviceunitIntent.ServiceUnitIntent
 
 	ReconciliationStrategy ReconciliationStrategy
 	ImageAutomation        bool

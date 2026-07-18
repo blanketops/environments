@@ -13,19 +13,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package deployment
+package serviceunit
 
 import "fmt"
 
-func ErrServiceUnitNotFound(name string) error {
-	return fmt.Errorf("serviceunit %q not found", name)
+func ErrBuildNotReady(name string) error {
+	return fmt.Errorf("build for serviceunit %q not ready", name)
 }
 
-// ErrInvalidDeployment indicates a semantic error in a resolved Deployment.
+// ErrInvalidServiceUnit indicates a semantic error in a resolved ServiceUnit.
 // This means the resolver violated an invariant or the contract is invalid.
-func ErrInvalidDeployment(reason string) error {
+func ErrInvalidServiceUnit(name, reason string) error {
 	return fmt.Errorf(
-		"invalid deployment: %s",
+		"invalid serviceunit %q: %s",
+		name,
 		reason,
 	)
 }

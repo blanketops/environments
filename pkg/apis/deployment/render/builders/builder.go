@@ -22,11 +22,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	intent "github.com/blanketops/environments/pkg/intent/deployment"
+	serviceunitIntent "github.com/blanketops/environments/pkg/intent/serviceunit"
 )
 
 func BuildDeployment(
 	intent *intent.DeploymentIntent,
-	su *intent.ServiceUnitIntent,
+	su *serviceunitIntent.ServiceUnitIntent,
 ) *appsv1.Deployment {
 
 	return &appsv1.Deployment{
@@ -72,7 +73,7 @@ func BuildDeployment(
 
 func BuildService(
 	intent *intent.DeploymentIntent,
-	su *intent.ServiceUnitIntent,
+	su *serviceunitIntent.ServiceUnitIntent,
 ) *corev1.Service {
 
 	return &corev1.Service{

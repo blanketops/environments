@@ -21,19 +21,20 @@ import (
 	"github.com/go-logr/logr"
 
 	"github.com/blanketops/environments/pkg/apis/deployment/api"
+	intent "github.com/blanketops/environments/pkg/intent/deployment"
 	deploymentResolution "github.com/blanketops/environments/resolution/deployment/resolve"
 	serviceunitResolution "github.com/blanketops/environments/resolution/serviceunit/resolve"
 )
 
 type DeploymentService struct {
-	intentBuilder          *IntentBuilder
+	intentBuilder          *intent.IntentBuilder
 	status                 *StatusWriter
 	reconciliationExecutor *api.ReconciliationExecutor
 	log                    logr.Logger
 }
 
 func NewDeploymentService(
-	intentBuilder *IntentBuilder,
+	intentBuilder *intent.IntentBuilder,
 	status *StatusWriter,
 	reconciliationExecutor *api.ReconciliationExecutor,
 	log logr.Logger) *DeploymentService {
