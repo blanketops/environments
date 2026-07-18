@@ -9,7 +9,7 @@ import "github.com/blanketops/environments/cache/build"
 ## Index
 
 - [type BuildCache](<#BuildCache>)
-  - [func NewBuildCache\(c \*core.Cache\) \*BuildCache](<#NewBuildCache>)
+  - [func NewBuildCache\(c \*cache.Cache\) \*BuildCache](<#NewBuildCache>)
   - [func \(b \*BuildCache\) GetImage\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#BuildCache.GetImage>)
   - [func \(b \*BuildCache\) GetPolicy\(ctx context.Context, nn types.NamespacedName, gen int64, into any\) \(bool, error\)](<#BuildCache.GetPolicy>)
   - [func \(b \*BuildCache\) GetServiceAccount\(ctx context.Context, nn types.NamespacedName, gen int64, into any\) \(bool, error\)](<#BuildCache.GetServiceAccount>)
@@ -38,10 +38,10 @@ type BuildCache struct {
 ### func NewBuildCache
 
 ```go
-func NewBuildCache(c *core.Cache) *BuildCache
+func NewBuildCache(c *cache.Cache) *BuildCache
 ```
 
-NewBuildCache constructs a new BuildCache with the provided core.Cache.
+NewBuildCache constructs a new BuildCache with the provided cache.Cache.
 
 <a name="BuildCache.GetImage"></a>
 ### func \(\*BuildCache\) GetImage

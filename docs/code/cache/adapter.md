@@ -95,7 +95,7 @@ type MemcachedConfig struct {
 <a name="RedisCache"></a>
 ## type RedisCache
 
-RedisCache implements core.ExternalCache backed by Redis.
+RedisCache implements cache.ExternalCache backed by Redis.
 
 ```go
 type RedisCache struct {
