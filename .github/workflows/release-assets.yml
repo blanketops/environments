@@ -13,25 +13,13 @@
 #
 #   bops, bops-static, bops-static-arm64 — CLI binaries
 #
-# All assets are uploaded directly to the triggering GitHub Release. Once all
-# four are up, the provenance-subjects/provenance jobs run last (gated via
-# `needs:` on the four asset jobs, not a second `release:` trigger, so there's
-# no race with GitHub's release-asset propagation): they download every asset
-# just uploaded, hash them, and generate SLSA level-3 build provenance for the
-# whole release via slsa-framework/slsa-github-generator, uploaded back onto
-# the same release as `<name>.intoto.jsonl` files. This is a Signed-Releases
-# (OpenSSF Scorecard) fix — that check scans release assets for exactly this
-# kind of file.
+# All assets are uploaded directly to the triggering GitHub Release.
 #
 # This repo has no cmd/ or config/ of its own — it is a pure domain/caching
 # library. The controller install manifests (kustomize config/, CRDs) live in
 # BlanketOps/environments-install, and the CLI lives in
 # BlanketOps/environments-cli. Both are versioned independently; every job
 # below always bundles whatever is newest in the relevant repo at release time.
-# The provenance generated here attests to what *this workflow run* processed
-# and published to *this* release — it does not claim environments-install or
-# environments-cli's artifacts were built from this repo's source. Each of
-# those repos is responsible for its own provenance over its own releases.
 #
 # Asset ownership:
 #   install → bundled in the install job from environments-install's latest release
@@ -46,10 +34,7 @@
 #   GHCR — pushed by the image CI workflow.
 #
 # Permissions:
-#   contents: write — required for gh release upload (workflow default)
-#   provenance job additionally needs actions: read + id-token: write for
-#   keyless (Sigstore) signing — declared at job level, not the workflow
-#   default, matching this repo's convention elsewhere (see security.yml).
+#   contents: write — required for gh release upload
 # =============================================================================
 
 name: Release Assets
@@ -364,66 +349,3 @@ jobs:
             SIZE=$(ls -lh "$f" | awk '{print $5}')
             echo "| \`$(basename "$f")\` | \`${SIZE}\` |" >> "$GITHUB_STEP_SUMMARY"
           done
-
-  # ---------------------------------------------------------------------------
-  # Provenance subjects
-  # Runs after every asset job has uploaded (needs: gates on all four, so
-  # this always sees the complete, final set of release assets — no race
-  # with GitHub's asset propagation). Downloads everything just uploaded to
-  # this release and hashes it into the sha256sum-formatted, base64-encoded
-  # subject list the SLSA generator expects.
-  # ---------------------------------------------------------------------------
-  provenance-subjects:
-    name: Collect Release Assets for Provenance
-    needs: [install, crds, docs, cli]
-    runs-on: ubuntu-latest
-    outputs:
-      digests: ${{ steps.hash.outputs.digests }}
-      tag: ${{ steps.version.outputs.tag }}
-    steps:
-      - name: Resolve version
-        id: version
-        run: echo "tag=${{ github.event.inputs.version || github.ref_name }}" >> "$GITHUB_OUTPUT"
-
-      - name: Download all release assets
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          mkdir -p .provenance-assets
-          gh release download "${{ steps.version.outputs.tag }}" \
-            --repo "${{ github.repository }}" \
-            --dir .provenance-assets \
-            --clobber
-
-      - name: Generate subject hashes
-        id: hash
-        working-directory: .provenance-assets
-        run: |
-          set -euo pipefail
-          files=$(ls)
-          echo "hashes=$(sha256sum $files | base64 -w0)" >> "${GITHUB_OUTPUT}"
-
-  # ---------------------------------------------------------------------------
-  # SLSA provenance
-  # Generates SLSA level-3 build provenance over every asset uploaded to this
-  # release and attaches it back to the same release as *.intoto.jsonl. This
-  # attests to what this workflow run processed and published — see the
-  # file-header note on scope (does not claim to attest environments-install
-  # or environments-cli's own build provenance).
-  #
-  # private-repository: true is required — this repo is private, and without
-  # it the generator refuses to post to the public Rekor transparency log.
-  # ---------------------------------------------------------------------------
-  provenance:
-    name: Generate SLSA Provenance
-    needs: [provenance-subjects]
-    permissions:
-      actions: read   # To read the workflow path.
-      id-token: write # To sign the provenance.
-      contents: write # To add assets to a release.
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
-    with:
-      base64-subjects: "${{ needs.provenance-subjects.outputs.digests }}"
-      upload-assets: true
-      upload-tag-name: ${{ needs.provenance-subjects.outputs.tag }}
-      private-repository: true
