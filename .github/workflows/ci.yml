@@ -296,6 +296,13 @@ jobs:
         if: steps.build.outcome == 'failure'
         run: |
           echo "::warning::Restored vendor snapshot (tag ${{ needs.vendor-snapshot.outputs.vendor-tag }}) is incomplete — rebuilding locally and pushing a corrected snapshot."
+          # This job's earlier GOPROXY=direct is fine for restore-only runs,
+          # but a full `go mod vendor` (needed here) can hit vanity import
+          # paths (e.g. honnef.co/go/tools) that time out under direct
+          # fetch. vendor-snapshot — the job actually designed to run a full
+          # vendor — never sets GOPROXY at all; match its (more robust,
+          # proxy-first) default here instead of inheriting the override.
+          go env -w GOPROXY=https://proxy.golang.org,direct
           go mod vendor
 
       - name: Push corrected vendor snapshot
@@ -443,6 +450,9 @@ jobs:
         if: steps.vendor-check.outcome == 'failure'
         run: |
           echo "::warning::Restored vendor snapshot (tag ${{ steps.vendor.outputs.tag }}) is incomplete — rebuilding locally and pushing a corrected snapshot."
+          # See the matching comment in the validate job — reset GOPROXY off
+          # the direct-fetch override before a full go mod vendor.
+          go env -w GOPROXY=https://proxy.golang.org,direct
           go mod vendor
 
       - name: Push corrected vendor snapshot
