@@ -26,6 +26,10 @@ pipeline is:
  1. Map the resolved ServiceUnit contract to a domain ServiceUnit (Mapper).
  2. Derive the outcome directly from the mapped fields (deriveResult).
  3. Write the outcome back to the ServiceUnit CR status (StatusWriter).
+ 4. Publish the resolved contract to the field-level cache (ServiceUnitCache),
+    best-effort — a cache write failure costs queryability for downstream
+    readers (e.g. a Deployment doing a fast-path lookup), never correctness
+    of this reconcile. Never allowed to fail the Reconcile call.
 
 This write is the authoritative signal downstream consumers (e.g. a
 Deployment CR referencing this unit) should read, rather than re-deriving
@@ -39,7 +43,9 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
+	serviceunitCache "github.com/blanketops/environments/cache/serviceunit"
 	"github.com/blanketops/environments/pkg/apis/serviceunit/domain"
 	serviceunitResolution "github.com/blanketops/environments/resolution/serviceunit/resolve"
 )
@@ -49,18 +55,21 @@ import (
 type ServiceUnitService struct {
 	mapper *Mapper
 	status *StatusWriter
+	cache  *serviceunitCache.ServiceUnitCache
 }
 
 // NewServiceUnitService constructs a ServiceUnitService with the required collaborators.
-func NewServiceUnitService(mapper *Mapper, status *StatusWriter) *ServiceUnitService {
+func NewServiceUnitService(mapper *Mapper, status *StatusWriter, cache *serviceunitCache.ServiceUnitCache) *ServiceUnitService {
 	return &ServiceUnitService{
 		mapper: mapper,
 		status: status,
+		cache:  cache,
 	}
 }
 
 // Reconcile executes the full ServiceUnit pipeline for a resolved
-// ServiceUnit CR. It maps, derives, and writes status in sequence.
+// ServiceUnit CR. It maps, derives, writes status, and publishes to the
+// field-level cache in sequence.
 func (s *ServiceUnitService) Reconcile(ctx context.Context, resolved *serviceunitResolution.ResolvedServiceUnit) error {
 	if resolved == nil {
 		return domain.ErrServiceUnitNil
@@ -70,7 +79,16 @@ func (s *ServiceUnitService) Reconcile(ctx context.Context, resolved *serviceuni
 	result := deriveResult(unit)
 	conditions := serviceUnitConditions(result)
 
-	return s.status.Write(ctx, resolved.ServiceUnit, conditions...)
+	if err := s.status.Write(ctx, resolved.ServiceUnit, conditions...); err != nil {
+		return err
+	}
+
+	// Best-effort: see the package doc for why a cache failure must not
+	// fail reconciliation.
+	nn := types.NamespacedName{Namespace: resolved.ServiceUnit.Namespace, Name: resolved.ServiceUnit.Name}
+	_ = s.cache.PublishResolved(ctx, nn, resolved.ServiceUnit.Generation, resolved)
+
+	return nil
 }
 
 // deriveResult derives the ServiceUnit's outcome directly from its mapped
