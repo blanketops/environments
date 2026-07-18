@@ -464,6 +464,26 @@ jobs:
       - name: Generate coverage HTML
         run: go tool cover -html=coverage.out -o coverage.html
 
+      # gocov's tagged releases (and current master, last touched 2024-10-11)
+      # pin golang.org/x/tools@v0.13.0, which fails to compile under this
+      # repo's Go toolchain (confirmed: same failure on a plain `go install`
+      # and on master — this is stale upstream, not a version-pin mistake on
+      # our side). Building from source with a forced newer x/tools is the
+      # only way to get a working gocov binary here.
+      - name: Build gocov (patched for this Go toolchain)
+        run: |
+          git clone --depth 1 --branch v1.2.1 https://github.com/axw/gocov.git /tmp/gocov-src
+          cd /tmp/gocov-src
+          go mod edit -replace golang.org/x/tools=golang.org/x/tools@v0.48.0
+          go mod tidy
+          go build -o "$(go env GOPATH)/bin/gocov" ./gocov
+
+      - name: Install gocov-html
+        run: go install github.com/matm/gocov-html/cmd/gocov-html@latest
+
+      - name: Generate beauty coverage report
+        run: gocov convert coverage.out | gocov-html > beauty-report.html
+
       - name: Upload coverage artifacts
         uses: actions/upload-artifact@v7
         continue-on-error: true
@@ -472,6 +492,7 @@ jobs:
           path: |
             coverage.out
             coverage.html
+            beauty-report.html
           retention-days: 14
 
       - name: Coverage summary
@@ -523,4 +544,6 @@ jobs:
           ${TABLE}
 
           </details>
+
+          > 📦 Download artifact \`coverage-report-${{ github.sha }}\` from this run for the full \`gocov-html\` report (\`beauty-report.html\`) with per-function detail, plus the raw \`coverage.out\`/\`coverage.html\`.
           EOF
