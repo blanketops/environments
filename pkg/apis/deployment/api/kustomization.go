@@ -39,7 +39,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	environmentv1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
-	"github.com/blanketops/environments/pkg/apis/deployment/intent"
+	intent "github.com/blanketops/environments/intent/deployment"
 	"github.com/blanketops/environments/pkg/apis/deployment/render/builders"
 	"github.com/blanketops/environments/pkg/utils"
 )

@@ -23,7 +23,7 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"github.com/blanketops/environments/pkg/apis/deployment/intent"
+	intent "github.com/blanketops/environments/intent/deployment"
 )
 
 // capturingSink records every Info() message so the test can prove which

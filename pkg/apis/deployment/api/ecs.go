@@ -21,7 +21,7 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/blanketops/environments/pkg/apis/deployment/intent"
+	intent "github.com/blanketops/environments/intent/deployment"
 )
 
 type ECSReconciler struct {

@@ -13,22 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package intent
+package deployment
 
-type Runtime string
-
-const (
-	RuntimeKubernetes Runtime = "kubernetes.io/container-runtime"
-	RuntimeKnative    Runtime = "knative.dev/service-runtime"
-	RuntimeWASM       Runtime = "blanketops.dev/wasm-runtime"
-	RuntimeECS        Runtime = "blanketops.dev/aws-ecs"
-	RuntimeAzure      Runtime = "blanketops.dev/azure-container"
-)
-
-type Strategy string
+type ReconciliationStrategy string
 
 const (
-	StrategyRolling   Strategy = "Rolling"
-	StrategyBlueGreen Strategy = "BlueGreen"
-	StrategyCanary    Strategy = "Canary"
+	ReconciliationImperative ReconciliationStrategy = "Imperative"
+	ReconciliationKustomize  ReconciliationStrategy = "Kustomize"
+	ReconciliationHelm       ReconciliationStrategy = "Helm"
 )

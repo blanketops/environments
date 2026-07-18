@@ -21,7 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/blanketops/environments/pkg/apis/deployment/intent"
+	intent "github.com/blanketops/environments/intent/deployment"
 )
 
 func BuildDeployment(
