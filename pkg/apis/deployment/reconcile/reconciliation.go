@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package api
+package reconcile
 
 import (
 	"context"
@@ -22,19 +22,24 @@ import (
 	"github.com/go-logr/logr"
 
 	environmentv1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
+	"github.com/blanketops/environments/pkg/apis/deployment/api"
 	"github.com/blanketops/environments/pkg/apis/deployment/domain"
+	"github.com/blanketops/environments/pkg/apis/deployment/strategy"
 	intent "github.com/blanketops/environments/pkg/intent/deployment"
 )
 
+// ReconciliationExecutor dispatches on the DeploymentIntent's
+// ReconciliationStrategy — imperative (apply live via a strategy.RuntimeProvider)
+// vs GitOps (commit manifests via api.KustomizeStrategyProvider).
 type ReconciliationExecutor struct {
-	RuntimeProvider *RuntimeProvider
-	Kustomizer      *KustomizeStrategyProvider
+	RuntimeProvider *strategy.RuntimeProvider
+	Kustomizer      *api.KustomizeStrategyProvider
 	Log             logr.Logger
 }
 
 func NewReconciliationExecutor(
-	runtime *RuntimeProvider,
-	kust *KustomizeStrategyProvider,
+	runtime *strategy.RuntimeProvider,
+	kust *api.KustomizeStrategyProvider,
 	log logr.Logger,
 ) *ReconciliationExecutor {
 	return &ReconciliationExecutor{
@@ -43,8 +48,6 @@ func NewReconciliationExecutor(
 		Log:             log,
 	}
 }
-
-// Execute(ctx context.Context, sourceCR *environmentv1alpha1.Deployment, rIntent *intent.DeploymentIntent)
 
 func (r *ReconciliationExecutor) Execute(
 	ctx context.Context,
