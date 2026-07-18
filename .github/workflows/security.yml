@@ -264,6 +264,9 @@ jobs:
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       github.event_name == 'pull_request' ||
       github.event.schedule == '0 8 * * 1'
+    permissions:
+      contents: read
+      packages: write # to push a corrected vendor snapshot when the restored one is stale
     steps:
       - name: Generate GitHub App token
         id: app-token
@@ -327,6 +330,36 @@ jobs:
 
           echo "vendor/ ready — $(find vendor -mindepth 1 -maxdepth 1 -type d | wc -l) packages"
           echo "modules.txt present: $(test -f vendor/modules.txt && echo yes || echo NO)"
+
+      # go.sum only changes when a required module's version changes — a
+      # test newly importing an already-required module's not-yet-vendored
+      # subpackage (e.g. .../client/fake) leaves go.sum untouched, so the
+      # sha256(go.sum) tag never busts and a snapshot built before that
+      # import existed keeps getting restored as if it were current. Catch
+      # that here instead of govulncheck failing deep with an opaque
+      # "import lookup disabled by -mod=vendor" error.
+      - name: Verify vendor completeness
+        id: vendor-check
+        continue-on-error: true
+        run: go build -mod=vendor ./...
+
+      - name: Rebuild vendor (stale snapshot detected)
+        if: steps.vendor-check.outcome == 'failure'
+        run: |
+          echo "::warning::Restored vendor snapshot (tag ${{ steps.tag.outputs.tag }}) is incomplete — rebuilding locally and pushing a corrected snapshot."
+          go mod vendor
+
+      - name: Push corrected vendor snapshot
+        if: steps.vendor-check.outcome == 'failure'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          provenance: false
+          file: tools/Dockerfile
+          push: true
+          tags: |
+            ${{ env.VENDOR_IMAGE }}:${{ steps.tag.outputs.tag }}
+            ${{ env.VENDOR_IMAGE }}:latest
 
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest

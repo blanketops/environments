@@ -272,7 +272,38 @@ jobs:
           echo "vendor/ restored — $(find vendor -mindepth 1 -maxdepth 1 -type d | wc -l) packages"
           echo "modules.txt present: $(test -f vendor/modules.txt && echo yes || echo NO)"
 
+      # go.sum only changes when a required module's version changes — adding
+      # a new import of an already-required module's not-yet-vendored
+      # subpackage (e.g. a test newly importing .../client/fake) leaves
+      # go.sum untouched, so the sha256(go.sum) cache tag never busts and a
+      # snapshot built before that import existed is silently reused forever.
+      # This step catches that case directly instead of failing deep inside
+      # Test with an opaque "import lookup disabled by -mod=vendor" error.
       - name: Build
+        id: build
+        continue-on-error: true
+        run: go build -mod=vendor ./...
+
+      - name: Rebuild vendor (stale snapshot detected)
+        if: steps.build.outcome == 'failure'
+        run: |
+          echo "::warning::Restored vendor snapshot (tag ${{ needs.vendor-snapshot.outputs.vendor-tag }}) is incomplete — rebuilding locally and pushing a corrected snapshot."
+          go mod vendor
+
+      - name: Push corrected vendor snapshot
+        if: steps.build.outcome == 'failure'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          provenance: false
+          file: tools/Dockerfile
+          push: true
+          tags: |
+            ${{ env.VENDOR_IMAGE }}:${{ needs.vendor-snapshot.outputs.vendor-tag }}
+            ${{ env.VENDOR_IMAGE }}:latest
+
+      - name: Build (retry after rebuild)
+        if: steps.build.outcome == 'failure'
         run: go build -mod=vendor ./...
 
       - name: Vet
@@ -384,6 +415,34 @@ jobs:
           echo "vendor/ restored — $(find vendor -mindepth 1 -maxdepth 1 -type d | wc -l) packages"
           echo "modules.txt present: $(test -f vendor/modules.txt && echo yes || echo NO)"
 
+      # See the matching comment in the validate job: go.sum doesn't change
+      # when a test newly imports a not-yet-vendored subpackage of an
+      # already-required module, so the sha256(go.sum) cache tag can point
+      # at a permanently-stale snapshot. Catch that here instead of failing
+      # deep inside Test with an opaque "import lookup disabled" error.
+      - name: Verify vendor completeness
+        id: vendor-check
+        continue-on-error: true
+        run: go build -mod=vendor ./...
+
+      - name: Rebuild vendor (stale snapshot detected)
+        if: steps.vendor-check.outcome == 'failure'
+        run: |
+          echo "::warning::Restored vendor snapshot (tag ${{ steps.vendor.outputs.tag }}) is incomplete — rebuilding locally and pushing a corrected snapshot."
+          go mod vendor
+
+      - name: Push corrected vendor snapshot
+        if: steps.vendor-check.outcome == 'failure'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          provenance: false
+          file: tools/Dockerfile
+          push: true
+          tags: |
+            ${{ env.VENDOR_IMAGE }}:${{ steps.vendor.outputs.tag }}
+            ${{ env.VENDOR_IMAGE }}:latest
+
       - name: Check formatting
         run: |
           UNFORMATTED=$(gofmt -l $(find . -name "*.go" -not -path "./vendor/*"))
@@ -419,6 +478,36 @@ jobs:
         if: always()
         run: |
           TOTAL=$(go tool cover -func=coverage.out 2>/dev/null | grep "^total" | awk '{print $3}' || echo "N/A")
+
+          # coverage.out is a per-statement profile (mode: atomic\nfile:line.col,line.col numStmt count),
+          # not per-package — aggregate statement counts by package directory
+          # instead of dumping go tool cover -func's one-row-per-function
+          # output, which runs to hundreds of rows in a repo this size.
+          PKG_ROWS=$(awk '
+            NR==1 { next }
+            {
+              split($1, fp, ":")
+              n = split(fp[1], dirs, "/")
+              pkg = ""
+              for (i = 1; i < n; i++) pkg = pkg (i > 1 ? "/" : "") dirs[i]
+              total[pkg] += $2
+              if ($3 > 0) covered[pkg] += $2
+            }
+            END {
+              for (p in total) {
+                pct = (total[p] > 0) ? (covered[p] / total[p] * 100) : 0
+                printf "%.1f\t%s\n", pct, p
+              }
+            }
+          ' coverage.out 2>/dev/null | sort -n)
+
+          PKG_COUNT=$(echo "${PKG_ROWS}" | grep -c . || echo 0)
+
+          TABLE=$(echo "${PKG_ROWS}" | awk -F'\t' '{
+            pkg=$2; gsub(/github.com\/blanketops\/environments\//, "", pkg);
+            printf "| %s | %.1f%% |\n", pkg, $1
+          }')
+
           cat >> "$GITHUB_STEP_SUMMARY" <<EOF
           # 📊 Coverage Report
 
@@ -426,13 +515,12 @@ jobs:
           **Vendor Tag:** \`${{ steps.vendor.outputs.tag }}\`
           **Total Coverage:** \`${TOTAL}\`
 
-          ## Package Coverage
+          <details>
+          <summary>Package coverage (${PKG_COUNT} packages, weakest first)</summary>
 
           | Package | Coverage |
           | ------- | -------- |
-          $(go tool cover -func=coverage.out 2>/dev/null | grep -v "^total" | awk '{
-            pkg=$1; cov=$3;
-            gsub(/github.com\/BlanketOps\/blanketops-environments\//, "", pkg);
-            print "| " pkg " | " cov " |"
-          }' || echo "| N/A | N/A |")
+          ${TABLE}
+
+          </details>
           EOF
