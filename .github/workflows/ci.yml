@@ -279,10 +279,18 @@ jobs:
       # snapshot built before that import existed is silently reused forever.
       # This step catches that case directly instead of failing deep inside
       # Test with an opaque "import lookup disabled by -mod=vendor" error.
-      - name: Build
+      #
+      # Must include `go vet`, not just `go build` — build does not
+      # type-check _test.go files, and the missing-subpackage case above is
+      # exactly the kind of import that only ever appears in a test file. A
+      # build-only probe would report "complete" while vet (and test) still
+      # fail on the same stale vendor.
+      - name: Build + Vet
         id: build
         continue-on-error: true
-        run: go build -mod=vendor ./...
+        run: |
+          go build -mod=vendor ./...
+          go vet -mod=vendor ./...
 
       - name: Rebuild vendor (stale snapshot detected)
         if: steps.build.outcome == 'failure'
@@ -302,12 +310,11 @@ jobs:
             ${{ env.VENDOR_IMAGE }}:${{ needs.vendor-snapshot.outputs.vendor-tag }}
             ${{ env.VENDOR_IMAGE }}:latest
 
-      - name: Build (retry after rebuild)
+      - name: Build + Vet (retry after rebuild)
         if: steps.build.outcome == 'failure'
-        run: go build -mod=vendor ./...
-
-      - name: Vet
-        run: go vet -mod=vendor ./...
+        run: |
+          go build -mod=vendor ./...
+          go vet -mod=vendor ./...
 
       - name: Lint
         uses: golangci/golangci-lint-action@v9
@@ -420,10 +427,17 @@ jobs:
       # already-required module, so the sha256(go.sum) cache tag can point
       # at a permanently-stale snapshot. Catch that here instead of failing
       # deep inside Test with an opaque "import lookup disabled" error.
+      #
+      # Must include `go vet`, not just `go build` — build does not
+      # type-check _test.go files, and this class of staleness is exactly a
+      # missing test-only import. Build-only would report "complete" while
+      # the Test step right after still fails on the same stale vendor.
       - name: Verify vendor completeness
         id: vendor-check
         continue-on-error: true
-        run: go build -mod=vendor ./...
+        run: |
+          go build -mod=vendor ./...
+          go vet -mod=vendor ./...
 
       - name: Rebuild vendor (stale snapshot detected)
         if: steps.vendor-check.outcome == 'failure'
