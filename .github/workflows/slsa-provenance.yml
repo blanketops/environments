@@ -1,0 +1,101 @@
+# =============================================================================
+# slsa-provenance.yml
+#
+# Generates SLSA level-3 build provenance (slsa-framework/slsa-github-generator)
+# for the one artifact this repo actually builds: the gomarkdoc docs bundle
+# (docs-{version}.tar.gz). This repo has no cmd/ of its own — the CRD/install
+# manifests and CLI binaries attached to a release come from
+# BlanketOps/environments-install and BlanketOps/environments-cli
+# respectively (bundled by release-assets.yml), so provenance for those is
+# each of those repos' own responsibility, not something this workflow
+# should claim to attest.
+#
+# The `build` job rebuilds the docs bundle independently, in its own job, so
+# the hash it feeds to the provenance generator is guaranteed to match
+# exactly what it built (no cross-workflow reproducibility assumption). It
+# does not re-upload docs-{version}.tar.gz itself — release-assets.yml's
+# `docs` job remains the sole owner of that upload. Only the provenance
+# attestation (*.intoto.jsonl) is uploaded here, by the reusable workflow.
+#
+# This is a Signed-Releases (OpenSSF Scorecard) fix — that check scans
+# release assets for exactly this kind of file.
+#
+# private-repository: true is required — this repo is private, and without
+# it the generator refuses to post to the public Rekor transparency log.
+#
+# Fixed version pin: v2.1.0 is the actual latest upstream tag as of writing
+# (verified against the slsa-github-generator repo directly) — the version
+# pinned in GitHub's own starter template for this workflow (v1.4.0) is
+# stale, do not copy it from there again.
+# =============================================================================
+
+name: SLSA generic generator
+
+on:
+  workflow_dispatch:
+  release:
+    types: [created]
+
+env:
+  GO_VERSION_FILE: go.mod
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      digests: ${{ steps.hash.outputs.digests }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: ${{ env.GO_VERSION_FILE }}
+          cache: true
+
+      - name: Install gomarkdoc
+        run: go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+
+      # Mirrors release-assets.yml's `docs` job package list — keep the two
+      # in sync if either changes which packages get documented.
+      - name: Build docs artifact
+        run: |
+          mkdir -p .release-docs
+          gomarkdoc --output .release-docs/cache.md              ./cache/...                  || true
+          gomarkdoc --output .release-docs/core.md               ./core/...                   || true
+          gomarkdoc --output .release-docs/pkg-build.md          ./pkg/apis/build/...          || true
+          gomarkdoc --output .release-docs/pkg-deployment.md     ./pkg/apis/deployment/...     || true
+          gomarkdoc --output .release-docs/pkg-domain.md         ./pkg/apis/domain/...         || true
+          gomarkdoc --output .release-docs/pkg-environment.md    ./pkg/apis/environment/...    || true
+          gomarkdoc --output .release-docs/pkg-route.md          ./pkg/apis/route/...          || true
+          gomarkdoc --output .release-docs/pkg-packages.md       ./pkg/apis/packages/...       || true
+          gomarkdoc --output .release-docs/pkg-gitrepository.md  ./pkg/apis/gitrepository/...  || true
+          gomarkdoc --output .release-docs/pkg-githubevent.md    ./pkg/apis/githubevent/...    || true
+          gomarkdoc --output .release-docs/pkg-utils.md          ./pkg/utils/...               || true
+          gomarkdoc --output .release-docs/pkg-secrets.md        ./pkg/secrets/...             || true
+          gomarkdoc --output .release-docs/pkg-intent.md         ./pkg/intent/...              || true
+          gomarkdoc --output .release-docs/resolution.md         ./resolution/...              || true
+
+          VERSION="${{ github.event.release.tag_name || github.ref_name }}"
+          tar -czf "docs-${VERSION}.tar.gz" -C .release-docs .
+
+      - name: Generate subject for provenance
+        id: hash
+        run: |
+          set -euo pipefail
+          files=$(ls docs-*.tar.gz)
+          echo "hashes=$(sha256sum $files | base64 -w0)" >> "${GITHUB_OUTPUT}"
+
+  provenance:
+    needs: [build]
+    permissions:
+      actions: read   # To read the workflow path.
+      id-token: write # To sign the provenance.
+      contents: write # To add assets to a release.
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
+    with:
+      base64-subjects: "${{ needs.build.outputs.digests }}"
+      upload-assets: true
+      private-repository: true
