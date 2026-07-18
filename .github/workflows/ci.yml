@@ -272,11 +272,56 @@ jobs:
           echo "vendor/ restored — $(find vendor -mindepth 1 -maxdepth 1 -type d | wc -l) packages"
           echo "modules.txt present: $(test -f vendor/modules.txt && echo yes || echo NO)"
 
-      - name: Build
-        run: go build -mod=vendor ./...
+      # go.sum only changes when a required module's version changes — adding
+      # a new import of an already-required module's not-yet-vendored
+      # subpackage (e.g. a test newly importing .../client/fake) leaves
+      # go.sum untouched, so the sha256(go.sum) cache tag never busts and a
+      # snapshot built before that import existed is silently reused forever.
+      # This step catches that case directly instead of failing deep inside
+      # Test with an opaque "import lookup disabled by -mod=vendor" error.
+      #
+      # Must include `go vet`, not just `go build` — build does not
+      # type-check _test.go files, and the missing-subpackage case above is
+      # exactly the kind of import that only ever appears in a test file. A
+      # build-only probe would report "complete" while vet (and test) still
+      # fail on the same stale vendor.
+      - name: Build + Vet
+        id: build
+        continue-on-error: true
+        run: |
+          go build -mod=vendor ./...
+          go vet -mod=vendor ./...
 
-      - name: Vet
-        run: go vet -mod=vendor ./...
+      - name: Rebuild vendor (stale snapshot detected)
+        if: steps.build.outcome == 'failure'
+        run: |
+          echo "::warning::Restored vendor snapshot (tag ${{ needs.vendor-snapshot.outputs.vendor-tag }}) is incomplete — rebuilding locally and pushing a corrected snapshot."
+          # This job's earlier GOPROXY=direct is fine for restore-only runs,
+          # but a full `go mod vendor` (needed here) can hit vanity import
+          # paths (e.g. honnef.co/go/tools) that time out under direct
+          # fetch. vendor-snapshot — the job actually designed to run a full
+          # vendor — never sets GOPROXY at all; match its (more robust,
+          # proxy-first) default here instead of inheriting the override.
+          go env -w GOPROXY=https://proxy.golang.org,direct
+          go mod vendor
+
+      - name: Push corrected vendor snapshot
+        if: steps.build.outcome == 'failure'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          provenance: false
+          file: tools/Dockerfile
+          push: true
+          tags: |
+            ${{ env.VENDOR_IMAGE }}:${{ needs.vendor-snapshot.outputs.vendor-tag }}
+            ${{ env.VENDOR_IMAGE }}:latest
+
+      - name: Build + Vet (retry after rebuild)
+        if: steps.build.outcome == 'failure'
+        run: |
+          go build -mod=vendor ./...
+          go vet -mod=vendor ./...
 
       - name: Lint
         uses: golangci/golangci-lint-action@v9
@@ -384,6 +429,44 @@ jobs:
           echo "vendor/ restored — $(find vendor -mindepth 1 -maxdepth 1 -type d | wc -l) packages"
           echo "modules.txt present: $(test -f vendor/modules.txt && echo yes || echo NO)"
 
+      # See the matching comment in the validate job: go.sum doesn't change
+      # when a test newly imports a not-yet-vendored subpackage of an
+      # already-required module, so the sha256(go.sum) cache tag can point
+      # at a permanently-stale snapshot. Catch that here instead of failing
+      # deep inside Test with an opaque "import lookup disabled" error.
+      #
+      # Must include `go vet`, not just `go build` — build does not
+      # type-check _test.go files, and this class of staleness is exactly a
+      # missing test-only import. Build-only would report "complete" while
+      # the Test step right after still fails on the same stale vendor.
+      - name: Verify vendor completeness
+        id: vendor-check
+        continue-on-error: true
+        run: |
+          go build -mod=vendor ./...
+          go vet -mod=vendor ./...
+
+      - name: Rebuild vendor (stale snapshot detected)
+        if: steps.vendor-check.outcome == 'failure'
+        run: |
+          echo "::warning::Restored vendor snapshot (tag ${{ steps.vendor.outputs.tag }}) is incomplete — rebuilding locally and pushing a corrected snapshot."
+          # See the matching comment in the validate job — reset GOPROXY off
+          # the direct-fetch override before a full go mod vendor.
+          go env -w GOPROXY=https://proxy.golang.org,direct
+          go mod vendor
+
+      - name: Push corrected vendor snapshot
+        if: steps.vendor-check.outcome == 'failure'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          provenance: false
+          file: tools/Dockerfile
+          push: true
+          tags: |
+            ${{ env.VENDOR_IMAGE }}:${{ steps.vendor.outputs.tag }}
+            ${{ env.VENDOR_IMAGE }}:latest
+
       - name: Check formatting
         run: |
           UNFORMATTED=$(gofmt -l $(find . -name "*.go" -not -path "./vendor/*"))
@@ -405,6 +488,26 @@ jobs:
       - name: Generate coverage HTML
         run: go tool cover -html=coverage.out -o coverage.html
 
+      # gocov's tagged releases (and current master, last touched 2024-10-11)
+      # pin golang.org/x/tools@v0.13.0, which fails to compile under this
+      # repo's Go toolchain (confirmed: same failure on a plain `go install`
+      # and on master — this is stale upstream, not a version-pin mistake on
+      # our side). Building from source with a forced newer x/tools is the
+      # only way to get a working gocov binary here.
+      - name: Build gocov (patched for this Go toolchain)
+        run: |
+          git clone --depth 1 --branch v1.2.1 https://github.com/axw/gocov.git /tmp/gocov-src
+          cd /tmp/gocov-src
+          go mod edit -replace golang.org/x/tools=golang.org/x/tools@v0.48.0
+          go mod tidy
+          go build -o "$(go env GOPATH)/bin/gocov" ./gocov
+
+      - name: Install gocov-html
+        run: go install github.com/matm/gocov-html/cmd/gocov-html@latest
+
+      - name: Generate beauty coverage report
+        run: gocov convert coverage.out | gocov-html > beauty-report.html
+
       - name: Upload coverage artifacts
         uses: actions/upload-artifact@v7
         continue-on-error: true
@@ -413,12 +516,43 @@ jobs:
           path: |
             coverage.out
             coverage.html
+            beauty-report.html
           retention-days: 14
 
       - name: Coverage summary
         if: always()
         run: |
           TOTAL=$(go tool cover -func=coverage.out 2>/dev/null | grep "^total" | awk '{print $3}' || echo "N/A")
+
+          # coverage.out is a per-statement profile (mode: atomic\nfile:line.col,line.col numStmt count),
+          # not per-package — aggregate statement counts by package directory
+          # instead of dumping go tool cover -func's one-row-per-function
+          # output, which runs to hundreds of rows in a repo this size.
+          PKG_ROWS=$(awk '
+            NR==1 { next }
+            {
+              split($1, fp, ":")
+              n = split(fp[1], dirs, "/")
+              pkg = ""
+              for (i = 1; i < n; i++) pkg = pkg (i > 1 ? "/" : "") dirs[i]
+              total[pkg] += $2
+              if ($3 > 0) covered[pkg] += $2
+            }
+            END {
+              for (p in total) {
+                pct = (total[p] > 0) ? (covered[p] / total[p] * 100) : 0
+                printf "%.1f\t%s\n", pct, p
+              }
+            }
+          ' coverage.out 2>/dev/null | sort -n)
+
+          PKG_COUNT=$(echo "${PKG_ROWS}" | grep -c . || echo 0)
+
+          TABLE=$(echo "${PKG_ROWS}" | awk -F'\t' '{
+            pkg=$2; gsub(/github.com\/blanketops\/environments\//, "", pkg);
+            printf "| %s | %.1f%% |\n", pkg, $1
+          }')
+
           cat >> "$GITHUB_STEP_SUMMARY" <<EOF
           # 📊 Coverage Report
 
@@ -426,13 +560,14 @@ jobs:
           **Vendor Tag:** \`${{ steps.vendor.outputs.tag }}\`
           **Total Coverage:** \`${TOTAL}\`
 
-          ## Package Coverage
+          <details>
+          <summary>Package coverage (${PKG_COUNT} packages, weakest first)</summary>
 
           | Package | Coverage |
           | ------- | -------- |
-          $(go tool cover -func=coverage.out 2>/dev/null | grep -v "^total" | awk '{
-            pkg=$1; cov=$3;
-            gsub(/github.com\/BlanketOps\/blanketops-environments\//, "", pkg);
-            print "| " pkg " | " cov " |"
-          }' || echo "| N/A | N/A |")
+          ${TABLE}
+
+          </details>
+
+          > 📦 Download artifact \`coverage-report-${{ github.sha }}\` from this run for the full \`gocov-html\` report (\`beauty-report.html\`) with per-function detail, plus the raw \`coverage.out\`/\`coverage.html\`.
           EOF
