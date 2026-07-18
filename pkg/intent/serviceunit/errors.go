@@ -13,16 +13,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package api
+package serviceunit
 
-import (
-	"context"
+import "fmt"
 
-	"github.com/blanketops/environments/pkg/apis/packages/domain"
-	"github.com/blanketops/environments/pkg/intent/package"
-)
+func ErrBuildNotReady(name string) error {
+	return fmt.Errorf("build for serviceunit %q not ready", name)
+}
 
-// Provider executes a PackageIntent against a concrete backend (e.g. kapp).
-type Provider interface {
-	Execute(ctx context.Context, intent *intent.PackageIntent) (*domain.PackageResult, error)
+// ErrInvalidServiceUnit indicates a semantic error in a resolved ServiceUnit.
+// This means the resolver violated an invariant or the contract is invalid.
+func ErrInvalidServiceUnit(name, reason string) error {
+	return fmt.Errorf(
+		"invalid serviceunit %q: %s",
+		name,
+		reason,
+	)
 }

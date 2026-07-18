@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	intent "github.com/blanketops/environments/pkg/intent/deployment"
+	serviceunitIntent "github.com/blanketops/environments/pkg/intent/serviceunit"
 )
 
 type ECSReconciler struct {
@@ -40,7 +41,7 @@ func NewECSReconciler(scheme *runtime.Scheme, log logr.Logger) *ECSReconciler {
 // Reconcile executes a ServiceUnitIntent on ECS
 func (r *ECSReconciler) Reconcile(
 	ctx context.Context,
-	su intent.ServiceUnitIntent,
+	su serviceunitIntent.ServiceUnitIntent,
 ) (intent.ServiceUnitResult, error) {
 
 	r.Log.Info("Reconciling ECS ServiceUnit",
@@ -76,7 +77,7 @@ func (r *ECSReconciler) Reconcile(
 
 func (r *ECSReconciler) registerTaskDefinition(
 	ctx context.Context,
-	su intent.ServiceUnitIntent,
+	su serviceunitIntent.ServiceUnitIntent,
 ) error {
 	r.Log.Info("Registering ECS TaskDefinition (stub)", "serviceUnit", su.Name)
 	return nil
@@ -84,7 +85,7 @@ func (r *ECSReconciler) registerTaskDefinition(
 
 func (r *ECSReconciler) ensureService(
 	ctx context.Context,
-	su intent.ServiceUnitIntent,
+	su serviceunitIntent.ServiceUnitIntent,
 ) error {
 	r.Log.Info("Ensuring ECS Service (stub)", "serviceUnit", su.Name)
 	return nil

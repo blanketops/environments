@@ -31,7 +31,7 @@ Image resolution for BUILD-type units (reading the referenced Build CR's
 produced image) is explicitly out of scope here — every resolver in this
 repo is pure/stateless, taking an already-fetched CR object with no cross-CR
 reads. Image stays empty for BUILD type until that's designed separately;
-downstream (pkg/intent/deployment/serviceunit.go) already guards this with
+downstream (intent/deployment/serviceunit.go) already guards this with
 ErrBuildNotReady.
 */
 package resolve
