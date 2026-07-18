@@ -18,6 +18,7 @@ package serviceunit
 import (
 	"context"
 
+	commoncontractv1 "github.com/blanketops/environments-contract/blanketops/common/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	bocache "github.com/blanketops/environments/cache"
@@ -157,10 +158,15 @@ func (s *ServiceUnitCache) PublishResolved(ctx context.Context, nn types.Namespa
 		record(s.SetSize(ctx, nn, gen, int(r.Spec.Size)))
 	}
 	// Type-discriminated: static units carry an image, build units a buildRef.
-	switch r.Spec.Type.String() {
-	case "static":
+	// Compares the enum value directly, not r.Spec.Type.String() — that
+	// returns the full generated constant name (e.g.
+	// "SERVICE_UNIT_TYPE_STATIC"), which a prior version of this switch
+	// compared against the bare "static"/"build", so neither branch ever
+	// matched and image/buildRef were silently never cached.
+	switch r.Spec.Type {
+	case commoncontractv1.ServiceUnitType_SERVICE_UNIT_TYPE_STATIC:
 		record(s.SetImage(ctx, nn, gen, r.Spec.Image))
-	case "build":
+	case commoncontractv1.ServiceUnitType_SERVICE_UNIT_TYPE_BUILD:
 		if r.Spec.BuildRef != nil {
 			record(s.SetBuildRef(ctx, nn, gen, r.Spec.BuildRef))
 		}
