@@ -13,6 +13,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package intent (imported as pkg/intent/package — "package" is a Go
+keyword, so the directory is named singular while the package itself is
+still named intent, matching pkg/intent/deployment and
+pkg/intent/serviceunit's naming) owns PackageIntent, the compiled,
+immutable execution plan for a Package CR: its stable identity, manifest
+source, GitOps state repository, and apply strategy.
+
+BuildPackageIntent (builder.go) is the constructor, compiling a resolved
+Package (resolution/packages/resolve.ResolvedPackage) into a PackageIntent
+once ahead of execution — the same "resolve once, execute from an
+immutable plan" shape used by pkg/intent/deployment.IntentBuilder.
+*/
 package intent
 
 import (

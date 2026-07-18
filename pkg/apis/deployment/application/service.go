@@ -13,6 +13,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package application owns DeploymentService, the single entry point that
+orchestrates a Deployment's reconciliation: build a DeploymentIntent from
+resolved inputs (pkg/intent/deployment.IntentBuilder), execute it across the
+Imperative/GitOps axis (pkg/apis/deployment/reconcile.ReconciliationExecutor),
+then persist the outcome as CR status and conditions (StatusWriter).
+
+This mirrors every other CR's application layer. mapper.go's Mapper /
+MapResolvedToDomain is not part of that flow — DeploymentService goes
+straight from ResolvedDeployment through IntentBuilder, never through this
+Mapper's domain.DeploymentSpec — it predates the Intent layer and has no
+callers.
+*/
 package application
 
 import (

@@ -13,6 +13,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package reconcile dispatches a DeploymentIntent across the Imperative-vs-
+GitOps axis: apply the resolved workload live via
+pkg/apis/deployment/strategy.RuntimeProvider, or commit manifests for Flux
+to reconcile via pkg/apis/deployment/api.KustomizeStrategyProvider.
+
+ReconciliationExecutor is the single entry point application.DeploymentService
+calls once intent has been built — it does not know about ServiceUnits,
+runtimes, or rollout strategies, only which reconciliation mode the intent
+requested (intent.ManifestsRepo == nil selects imperative; otherwise the
+mode is intent.ReconciliationStrategy).
+*/
 package reconcile
 
 import (
