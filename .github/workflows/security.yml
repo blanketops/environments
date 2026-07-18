@@ -264,6 +264,9 @@ jobs:
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       github.event_name == 'pull_request' ||
       github.event.schedule == '0 8 * * 1'
+    permissions:
+      contents: read
+      packages: write # to push a corrected vendor snapshot when the restored one is stale
     steps:
       - name: Generate GitHub App token
         id: app-token
@@ -327,6 +330,54 @@ jobs:
 
           echo "vendor/ ready — $(find vendor -mindepth 1 -maxdepth 1 -type d | wc -l) packages"
           echo "modules.txt present: $(test -f vendor/modules.txt && echo yes || echo NO)"
+
+      # go.sum only changes when a required module's version changes — a
+      # test newly importing an already-required module's not-yet-vendored
+      # subpackage (e.g. .../client/fake) leaves go.sum untouched, so the
+      # sha256(go.sum) tag never busts and a snapshot built before that
+      # import existed keeps getting restored as if it were current. Catch
+      # that here instead of govulncheck failing deep with an opaque
+      # "import lookup disabled by -mod=vendor" error.
+      #
+      # Must include `go vet`, not just `go build` — build does not
+      # type-check _test.go files, and this class of staleness is exactly a
+      # missing test-only import. Build-only would report "complete" while
+      # govulncheck (which also walks test files) still fails on the same
+      # stale vendor.
+      - name: Verify vendor completeness
+        id: vendor-check
+        continue-on-error: true
+        run: |
+          go build -mod=vendor ./...
+          go vet -mod=vendor ./...
+
+      - name: Rebuild vendor (stale snapshot detected)
+        if: steps.vendor-check.outcome == 'failure'
+        run: |
+          echo "::warning::Restored vendor snapshot (tag ${{ steps.tag.outputs.tag }}) is incomplete — rebuilding locally and pushing a corrected snapshot."
+          # This job's earlier GOPROXY=direct is fine for restore-only runs,
+          # but a full `go mod vendor` (needed here) can hit vanity import
+          # paths (e.g. honnef.co/go/tools) that time out under direct
+          # fetch. vendor-snapshot (ci.yml) — the job actually designed to
+          # run a full vendor — never sets GOPROXY at all; match its (more
+          # robust, proxy-first) default here instead of inheriting the
+          # override. Confirmed this was the real failure mode, not
+          # transient flakiness: honnef.co?go-get=1 TLS handshake timeout
+          # under GOPROXY=direct on the first live run of this step.
+          go env -w GOPROXY=https://proxy.golang.org,direct
+          go mod vendor
+
+      - name: Push corrected vendor snapshot
+        if: steps.vendor-check.outcome == 'failure'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          provenance: false
+          file: tools/Dockerfile
+          push: true
+          tags: |
+            ${{ env.VENDOR_IMAGE }}:${{ steps.tag.outputs.tag }}
+            ${{ env.VENDOR_IMAGE }}:latest
 
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
