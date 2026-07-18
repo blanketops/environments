@@ -18,7 +18,7 @@ package application
 import (
 	"context"
 
-	pkgintent "github.com/blanketops/environments/pkg/apis/packages/intent"
+	pkgintent "github.com/blanketops/environments/pkg/intent/package"
 	pkgResolution "github.com/blanketops/environments/resolution/packages/resolve"
 )
 

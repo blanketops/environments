@@ -21,7 +21,7 @@ import (
 
 	kappctrlv1alpha1 "carvel.dev/kapp-controller/pkg/apis/kappctrl/v1alpha1"
 	"github.com/blanketops/environments/pkg/apis/packages/domain"
-	"github.com/blanketops/environments/pkg/apis/packages/intent"
+	"github.com/blanketops/environments/pkg/intent/package"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
