@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package api
+package strategy
 
 import (
 	"context"
@@ -23,11 +23,12 @@ import (
 
 	"github.com/go-logr/logr"
 
+	"github.com/blanketops/environments/pkg/apis/deployment/api"
 	intent "github.com/blanketops/environments/pkg/intent/deployment"
 )
 
 // capturingSink records every Info() message so the test can prove which
-// branch of K8SProvider.Execute's strategy switch actually ran — with an
+// branch of K8SStrategy.Execute's strategy switch actually ran — with an
 // empty ServiceUnits list, executeRolling and executeBlueGreen return
 // identical *domain.DeploymentResult values (executeBlueGreen just calls
 // executeRolling), so the returned value alone can't distinguish "the
@@ -61,7 +62,7 @@ func (s *capturingSink) contains(substr string) bool {
 	return false
 }
 
-func TestK8SProvider_Execute_StrategyDispatch(t *testing.T) {
+func TestK8SStrategy_Execute_StrategyDispatch(t *testing.T) {
 	const blueGreenLog = "BlueGreen currently mapped to rolling behavior"
 
 	tests := []struct {
@@ -78,7 +79,8 @@ func TestK8SProvider_Execute_StrategyDispatch(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sink := &capturingSink{}
-			p := &K8SProvider{Log: logr.New(sink)}
+			log := logr.New(sink)
+			s := NewK8SStrategy(&api.K8SProvider{Log: log}, log)
 
 			// Empty ServiceUnits — avoids needing a fake client for
 			// Patch/Get, since the point of this test is the strategy
@@ -90,7 +92,7 @@ func TestK8SProvider_Execute_StrategyDispatch(t *testing.T) {
 				Strategy:  tt.strategy,
 			}
 
-			result, err := p.Execute(context.Background(), di)
+			result, err := s.Execute(context.Background(), di)
 
 			if tt.wantErr {
 				if err == nil {

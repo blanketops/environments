@@ -59,110 +59,14 @@ func NewK8SProvider(
 }
 
 //
-// Provider Interface Implementation
-//
-
-func (p *K8SProvider) Runtime() intent.Runtime {
-	return intent.RuntimeKubernetes
-}
-
-func (p *K8SProvider) Supports(
-	strategy intent.Strategy,
-) bool {
-
-	switch strategy {
-	case intent.StrategyRolling,
-		intent.StrategyBlueGreen:
-		return true
-	default:
-		return false
-	}
-}
-
-func (p *K8SProvider) Execute(
-	ctx context.Context,
-	dIntent *intent.DeploymentIntent,
-) (*domain.DeploymentResult, error) {
-
-	if !p.Supports(dIntent.Strategy) {
-		return nil, fmt.Errorf(
-			"strategy %s not supported for runtime %s",
-			dIntent.Strategy,
-			p.Runtime(),
-		)
-	}
-
-	// Parameter renamed to dIntent (not intent) specifically so these case
-	// labels can reference the intent package's constants — a parameter
-	// named intent here previously shadowed the package, so both cases
-	// resolved to dIntent.Strategy itself (switch X { case X: }), making
-	// the first case always match and executeBlueGreen unreachable.
-	switch dIntent.Strategy {
-
-	case intent.StrategyRolling:
-		return p.executeRolling(ctx, dIntent)
-
-	case intent.StrategyBlueGreen:
-		return p.executeBlueGreen(ctx, dIntent)
-
-	default:
-		return nil, fmt.Errorf("unknown strategy: %s", dIntent.Strategy)
-	}
-}
-
-//
-// Strategy Implementations
-//
-
-func (p *K8SProvider) executeRolling(
-	ctx context.Context,
-	intent *intent.DeploymentIntent,
-) (*domain.DeploymentResult, error) {
-
-	results := make([]domain.ServiceUnitResult, 0, len(intent.ServiceUnits))
-
-	for _, su := range intent.ServiceUnits {
-		res, err := p.applyServiceUnit(ctx, intent, &su)
-		if err != nil {
-			results = append(results, domain.ServiceUnitResult{
-				Name:               su.Name,
-				Phase:              domain.ServiceUnitPhase("Failed"),
-				Image:              su.Image,
-				Runtime:            domain.Runtime(intent.Runtime),
-				Error:              err.Error(),
-				LastTransitionTime: time.Now(),
-			})
-			continue
-		}
-		results = append(results, *res)
-	}
-
-	return &domain.DeploymentResult{
-		Phase:          deriveDeploymentPhase(results),
-		Runtime:        domain.Runtime(intent.Runtime),
-		Strategy:       domain.Strategy(intent.Strategy),
-		ServiceUnits:   results,
-		LastUpdateTime: time.Now(),
-	}, nil
-}
-
-// For now BlueGreen reuses rolling behavior.
-// Later you can split traffic or manage dual deployments.
-func (p *K8SProvider) executeBlueGreen(
-	ctx context.Context,
-	intent *intent.DeploymentIntent,
-) (*domain.DeploymentResult, error) {
-
-	p.Log.Info("BlueGreen currently mapped to rolling behavior")
-
-	return p.executeRolling(ctx, intent)
-}
-
-//
 // Core Apply Logic
 //
+// Strategy dispatch (which Strategy, which Runtime) lives in
+// pkg/apis/deployment/strategy — this provider only knows how to apply and
+// tear down the Kubernetes objects for a single ServiceUnit.
+//
 
-func (p *K8SProvider) applyServiceUnit(
+func (p *K8SProvider) ApplyServiceUnit(
 	ctx context.Context,
 	intent *intent.DeploymentIntent,
 	su *serviceunitIntent.ServiceUnitIntent,
@@ -312,37 +216,6 @@ func (p *K8SProvider) isDeploymentReady(
 	}
 
 	return deploy.Status.ReadyReplicas == *deploy.Spec.Replicas, nil
-}
-
-func deriveDeploymentPhase(
-	results []domain.ServiceUnitResult,
-) domain.DeploymentPhase {
-
-	if len(results) == 0 {
-		return domain.DeploymentPhase("Pending")
-	}
-
-	allReady := true
-
-	for _, r := range results {
-		switch r.Phase {
-
-		case domain.ServiceUnitPhase("Failed"):
-			return domain.DeploymentPhase("Failed")
-
-		case domain.ServiceUnitPhase("Ready"):
-			// still possibly all ready
-
-		default:
-			allReady = false
-		}
-	}
-
-	if allReady {
-		return domain.DeploymentPhase("Ready")
-	}
-
-	return domain.DeploymentPhase("Deploying")
 }
 
 // Teardown deletes the Kubernetes Deployment and Service this provider

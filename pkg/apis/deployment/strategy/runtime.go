@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package api
+package strategy
 
 import (
 	"context"
@@ -24,15 +24,21 @@ import (
 	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/blanketops/environments/pkg/apis/deployment/api"
 	"github.com/blanketops/environments/pkg/apis/deployment/domain"
 	intent "github.com/blanketops/environments/pkg/intent/deployment"
 )
 
+// RuntimeProvider dispatches a DeploymentIntent's Runtime (Kubernetes,
+// Knative, ECS) to the strategy that implements it. Runtime and Strategy
+// are the same axis in this domain — which runtime to deploy to is itself
+// a deployment strategy choice — so this and K8SStrategy live together in
+// this package, not split across a separate "runtime" concept.
 type RuntimeProvider struct {
 	Client client.Client
 	Scheme *runtime.Scheme
 	Log    logr.Logger
-	K8S    *K8SProvider
+	K8S    *K8SStrategy
 }
 
 func NewRuntimeProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, Recorder events.EventRecorder) *RuntimeProvider {
@@ -40,7 +46,7 @@ func NewRuntimeProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger
 		Client: c,
 		Scheme: scheme,
 		Log:    log,
-		K8S:    NewK8SProvider(c, scheme, log, Recorder), // ⚡ initialize here
+		K8S:    NewK8SStrategy(api.NewK8SProvider(c, scheme, log, Recorder), log),
 	}
 }
 
