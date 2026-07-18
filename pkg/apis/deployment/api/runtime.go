@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/blanketops/environments/pkg/apis/deployment/domain"
-	intent "github.com/blanketops/environments/pkg/intent/deployment"
+	"github.com/blanketops/environments/pkg/apis/deployment/intent"
 )
 
 type RuntimeProvider struct {

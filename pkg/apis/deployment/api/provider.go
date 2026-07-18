@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	"github.com/blanketops/environments/pkg/apis/deployment/domain"
-	intent "github.com/blanketops/environments/pkg/intent/deployment"
+	"github.com/blanketops/environments/pkg/apis/deployment/intent"
 )
 
 // Provider executes a DeploymentIntent against a specific runtime backend.

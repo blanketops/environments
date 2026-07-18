@@ -13,13 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package deployment
+package intent
 
-// WorkloadIntent points to the concrete runtime object created
-// (Deployment, Knative Service, ECS Service, etc)
-type WorkloadIntent struct {
-	APIVersion string
-	Kind       string
-	Name       string
-	Namespace  string
-}
+type ReconciliationStrategy string
+
+const (
+	ReconciliationImperative ReconciliationStrategy = "Imperative"
+	ReconciliationKustomize  ReconciliationStrategy = "Kustomize"
+	ReconciliationHelm       ReconciliationStrategy = "Helm"
+)

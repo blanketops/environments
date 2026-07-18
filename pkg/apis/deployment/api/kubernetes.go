@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/blanketops/environments/pkg/apis/deployment/domain"
-	intent "github.com/blanketops/environments/pkg/intent/deployment"
+	"github.com/blanketops/environments/pkg/apis/deployment/intent"
 )
 
 type K8SProvider struct {
@@ -80,27 +80,32 @@ func (p *K8SProvider) Supports(
 
 func (p *K8SProvider) Execute(
 	ctx context.Context,
-	intent *intent.DeploymentIntent,
+	dIntent *intent.DeploymentIntent,
 ) (*domain.DeploymentResult, error) {
 
-	if !p.Supports(intent.Strategy) {
+	if !p.Supports(dIntent.Strategy) {
 		return nil, fmt.Errorf(
 			"strategy %s not supported for runtime %s",
-			intent.Strategy,
+			dIntent.Strategy,
 			p.Runtime(),
 		)
 	}
 
-	switch intent.Strategy {
+	// Parameter renamed to dIntent (not intent) specifically so these case
+	// labels can reference the intent package's constants — a parameter
+	// named intent here previously shadowed the package, so both cases
+	// resolved to dIntent.Strategy itself (switch X { case X: }), making
+	// the first case always match and executeBlueGreen unreachable.
+	switch dIntent.Strategy {
 
-	case intent.Strategy:
-		return p.executeRolling(ctx, intent)
+	case intent.StrategyRolling:
+		return p.executeRolling(ctx, dIntent)
 
-	case intent.Strategy:
-		return p.executeBlueGreen(ctx, intent)
+	case intent.StrategyBlueGreen:
+		return p.executeBlueGreen(ctx, dIntent)
 
 	default:
-		return nil, fmt.Errorf("unknown strategy: %s", intent.Strategy)
+		return nil, fmt.Errorf("unknown strategy: %s", dIntent.Strategy)
 	}
 }
 
