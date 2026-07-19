@@ -14,30 +14,25 @@ limitations under the License.
 */
 
 /*
-Copyright 2025.
+Package domain holds the pure Deployment domain model: DeploymentSpec (the
+desired state), DeploymentResult/ServiceUnitResult (the outcome of a
+reconciliation), and the Runtime/Strategy/ReconciliationStrategy/Phase enums
+shared across pkg/apis/deployment's other layers.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-*/
-
-package domain
-
-import "time"
-
-/*
-DOMAIN PRINCIPLES
+# DOMAIN PRINCIPLES
 
 - No Kubernetes imports
 - No controller-runtime
 - No side effects
 - No persistence concerns
 
-This file represents the *intent* and *result* of a Deployment,
-not how it is reconciled.
+This package represents the *intent* and *result* of a Deployment, not how
+it is reconciled — dispatch and execution live in
+pkg/apis/deployment/{reconcile,strategy,api}.
 */
+package domain
+
+import "time"
 
 // DeploymentSpec represents the desired state of a Deployment.
 // This is the canonical domain input used by application logic.

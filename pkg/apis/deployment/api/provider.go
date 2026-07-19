@@ -13,6 +13,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package api owns the infra that actually materializes a DeploymentIntent
+onto a backend — it does not decide which backend or strategy to use (that
+dispatch lives in pkg/apis/deployment/strategy and pkg/apis/deployment/reconcile).
+
+K8SProvider applies/tears down Kubernetes Deployment and Service objects via
+server-side apply. KustomizeStrategyProvider takes the GitOps path instead:
+it renders manifests (via render/builders), commits them to a repo, and
+ensures the Flux GitRepository/Kustomization CRs that make the cluster
+reconcile them. Provider and ProviderRegistry describe the interface every
+runtime-specific implementation conforms to, so a caller can resolve one by
+intent.Runtime without knowing the concrete type.
+*/
 package api
 
 import (
