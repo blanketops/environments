@@ -6,6 +6,10 @@
 import "github.com/blanketops/environments/pkg/intent/serviceunit"
 ```
 
+Package serviceunit owns ServiceUnitIntent and its constructor, ResolveServiceUnitIntent — a ServiceUnit resolves its own deployment intent \(image, port, size, routes, workload\) here rather than Deployment reaching into it, the same "resolve yourself" principle already applied to ServiceUnit's own resolution and domain layers elsewhere in the repo.
+
+RouteIntent \(route.go\) and WorkloadIntent \(workload.go\) are populated as part of this resolution and carried on ServiceUnitIntent for whatever consumes it next — pkg/apis/deployment's api/strategy/render layers, chiefly.
+
 ## Index
 
 - [func ErrBuildNotReady\(name string\) error](<#ErrBuildNotReady>)

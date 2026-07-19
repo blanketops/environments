@@ -6,10 +6,14 @@
 import "github.com/blanketops/environments/pkg/apis/deployment/application"
 ```
 
+Package application owns DeploymentService, the single entry point that orchestrates a Deployment's reconciliation: build a DeploymentIntent from resolved inputs \(pkg/intent/deployment.IntentBuilder\), execute it across the Imperative/GitOps axis \(pkg/apis/deployment/reconcile.ReconciliationExecutor\), then persist the outcome as CR status and conditions \(StatusWriter\).
+
+This mirrors every other CR's application layer. mapper.go's Mapper / MapResolvedToDomain is not part of that flow — DeploymentService goes straight from ResolvedDeployment through IntentBuilder, never through this Mapper's domain.DeploymentSpec — it predates the Intent layer and has no callers.
+
 ## Index
 
 - [type DeploymentService](<#DeploymentService>)
-  - [func NewDeploymentService\(intentBuilder \*intent.IntentBuilder, status \*StatusWriter, reconciliationExecutor \*api.ReconciliationExecutor, log logr.Logger\) \*DeploymentService](<#NewDeploymentService>)
+  - [func NewDeploymentService\(intentBuilder \*intent.IntentBuilder, status \*StatusWriter, reconciliationExecutor \*reconcile.ReconciliationExecutor, log logr.Logger\) \*DeploymentService](<#NewDeploymentService>)
   - [func \(s \*DeploymentService\) Reconcile\(ctx context.Context, resolved \*deploymentResolution.ResolvedDeployment, serviceUnits \[\]serviceunitResolution.ResolvedServiceUnit, log logr.Logger\) error](<#DeploymentService.Reconcile>)
 - [type Mapper](<#Mapper>)
   - [func NewMapper\(\) \*Mapper](<#NewMapper>)
@@ -34,7 +38,7 @@ type DeploymentService struct {
 ### func NewDeploymentService
 
 ```go
-func NewDeploymentService(intentBuilder *intent.IntentBuilder, status *StatusWriter, reconciliationExecutor *api.ReconciliationExecutor, log logr.Logger) *DeploymentService
+func NewDeploymentService(intentBuilder *intent.IntentBuilder, status *StatusWriter, reconciliationExecutor *reconcile.ReconciliationExecutor, log logr.Logger) *DeploymentService
 ```
 
 

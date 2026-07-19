@@ -6,6 +6,8 @@
 import "github.com/blanketops/environments/pkg/apis/deployment/render/builders"
 ```
 
+Package builders owns BuildDeployment and BuildService — pure functions that translate a DeploymentIntent and a single ServiceUnitIntent into Kubernetes object literals. No client, no side effects: both the imperative path \(pkg/apis/deployment/api.K8SProvider, which applies these objects live\) and the GitOps path \(pkg/apis/deployment/api.KustomizeStrategyProvider, which renders them into committed manifests\) share this same construction logic, so the two paths can't silently drift apart on what a ServiceUnit's Kubernetes objects look like.
+
 ## Index
 
 - [func BuildDeployment\(intent \*intent.DeploymentIntent, su \*serviceunitIntent.ServiceUnitIntent\) \*appsv1.Deployment](<#BuildDeployment>)

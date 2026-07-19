@@ -6,19 +6,16 @@
 import "github.com/blanketops/environments/pkg/apis/deployment/api"
 ```
 
+Package api owns the infra that actually materializes a DeploymentIntent onto a backend — it does not decide which backend or strategy to use \(that dispatch lives in pkg/apis/deployment/strategy and pkg/apis/deployment/reconcile\).
+
+K8SProvider applies/tears down Kubernetes Deployment and Service objects via server\-side apply. KustomizeStrategyProvider takes the GitOps path instead: it renders manifests \(via render/builders\), commits them to a repo, and ensures the Flux GitRepository/Kustomization CRs that make the cluster reconcile them. Provider and ProviderRegistry describe the interface every runtime\-specific implementation conforms to, so a caller can resolve one by intent.Runtime without knowing the concrete type.
+
 ## Index
 
-- [type ECSReconciler](<#ECSReconciler>)
-  - [func NewECSReconciler\(scheme \*runtime.Scheme, log logr.Logger\) \*ECSReconciler](<#NewECSReconciler>)
-  - [func \(r \*ECSReconciler\) Reconcile\(ctx context.Context, su serviceunitIntent.ServiceUnitIntent\) \(intent.ServiceUnitResult, error\)](<#ECSReconciler.Reconcile>)
 - [type K8SProvider](<#K8SProvider>)
   - [func NewK8SProvider\(c client.Client, scheme \*runtime.Scheme, log logr.Logger, rec events.EventRecorder\) \*K8SProvider](<#NewK8SProvider>)
-  - [func \(p \*K8SProvider\) Execute\(ctx context.Context, dIntent \*intent.DeploymentIntent\) \(\*domain.DeploymentResult, error\)](<#K8SProvider.Execute>)
-  - [func \(p \*K8SProvider\) Runtime\(\) intent.Runtime](<#K8SProvider.Runtime>)
-  - [func \(p \*K8SProvider\) Supports\(strategy intent.Strategy\) bool](<#K8SProvider.Supports>)
+  - [func \(p \*K8SProvider\) ApplyServiceUnit\(ctx context.Context, intent \*intent.DeploymentIntent, su \*serviceunitIntent.ServiceUnitIntent\) \(\*domain.ServiceUnitResult, error\)](<#K8SProvider.ApplyServiceUnit>)
   - [func \(p \*K8SProvider\) Teardown\(ctx context.Context, deploymentIntent \*intent.DeploymentIntent\) error](<#K8SProvider.Teardown>)
-- [type KnativeReconciler](<#KnativeReconciler>)
-  - [func NewKnativeReconciler\(c client.Client, scheme \*runtime.Scheme, log logr.Logger\) \*KnativeReconciler](<#NewKnativeReconciler>)
 - [type KustomizationProvider](<#KustomizationProvider>)
 - [type KustomizeStrategyProvider](<#KustomizeStrategyProvider>)
   - [func NewKustomizationProvider\(c client.Client, scheme \*runtime.Scheme, log logr.Logger, Recorder record.EventRecorder\) \*KustomizeStrategyProvider](<#NewKustomizationProvider>)
@@ -32,43 +29,7 @@ import "github.com/blanketops/environments/pkg/apis/deployment/api"
   - [func NewProviderRegistry\(providers ...Provider\) \*ProviderRegistry](<#NewProviderRegistry>)
   - [func \(r \*ProviderRegistry\) Register\(provider Provider\)](<#ProviderRegistry.Register>)
   - [func \(r \*ProviderRegistry\) Resolve\(runtime intent.Runtime\) \(Provider, error\)](<#ProviderRegistry.Resolve>)
-- [type ReconciliationExecutor](<#ReconciliationExecutor>)
-  - [func NewReconciliationExecutor\(runtime \*RuntimeProvider, kust \*KustomizeStrategyProvider, log logr.Logger\) \*ReconciliationExecutor](<#NewReconciliationExecutor>)
-  - [func \(r \*ReconciliationExecutor\) Execute\(ctx context.Context, sourceCR \*environmentv1alpha1.Deployment, rIntent \*intent.DeploymentIntent\) \(\*domain.DeploymentResult, error\)](<#ReconciliationExecutor.Execute>)
-- [type RuntimeProvider](<#RuntimeProvider>)
-  - [func NewRuntimeProvider\(c client.Client, scheme \*runtime.Scheme, log logr.Logger, Recorder events.EventRecorder\) \*RuntimeProvider](<#NewRuntimeProvider>)
-  - [func \(p \*RuntimeProvider\) Execute\(ctx context.Context, dIntent \*intent.DeploymentIntent\) \(\*domain.DeploymentResult, error\)](<#RuntimeProvider.Execute>)
 
-
-<a name="ECSReconciler"></a>
-## type ECSReconciler
-
-
-
-```go
-type ECSReconciler struct {
-    Log    logr.Logger
-    Scheme *runtime.Scheme
-}
-```
-
-<a name="NewECSReconciler"></a>
-### func NewECSReconciler
-
-```go
-func NewECSReconciler(scheme *runtime.Scheme, log logr.Logger) *ECSReconciler
-```
-
-
-
-<a name="ECSReconciler.Reconcile"></a>
-### func \(\*ECSReconciler\) Reconcile
-
-```go
-func (r *ECSReconciler) Reconcile(ctx context.Context, su serviceunitIntent.ServiceUnitIntent) (intent.ServiceUnitResult, error)
-```
-
-Reconcile executes a ServiceUnitIntent on ECS
 
 <a name="K8SProvider"></a>
 ## type K8SProvider
@@ -93,29 +54,11 @@ func NewK8SProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, re
 
 
 
-<a name="K8SProvider.Execute"></a>
-### func \(\*K8SProvider\) Execute
+<a name="K8SProvider.ApplyServiceUnit"></a>
+### func \(\*K8SProvider\) ApplyServiceUnit
 
 ```go
-func (p *K8SProvider) Execute(ctx context.Context, dIntent *intent.DeploymentIntent) (*domain.DeploymentResult, error)
-```
-
-
-
-<a name="K8SProvider.Runtime"></a>
-### func \(\*K8SProvider\) Runtime
-
-```go
-func (p *K8SProvider) Runtime() intent.Runtime
-```
-
-
-
-<a name="K8SProvider.Supports"></a>
-### func \(\*K8SProvider\) Supports
-
-```go
-func (p *K8SProvider) Supports(strategy intent.Strategy) bool
+func (p *K8SProvider) ApplyServiceUnit(ctx context.Context, intent *intent.DeploymentIntent, su *serviceunitIntent.ServiceUnitIntent) (*domain.ServiceUnitResult, error)
 ```
 
 
@@ -130,28 +73,6 @@ func (p *K8SProvider) Teardown(ctx context.Context, deploymentIntent *intent.Dep
 Teardown deletes the Kubernetes Deployment and Service this provider created for each ServiceUnit in the intent. Required, not optional — applyDeployment/applyService use server\-side apply with no ownerReference, so Kubernetes GC will not reclaim these when the parent Deployment CR is removed. Teardown is the only mechanism that cleans them up.
 
 Idempotent — a missing Deployment or Service is not an error. Attempts both objects for every ServiceUnit regardless of individual failures and aggregates errors, so one stuck object doesn't block cleanup of the rest.
-
-<a name="KnativeReconciler"></a>
-## type KnativeReconciler
-
-
-
-```go
-type KnativeReconciler struct {
-    Client client.Client
-    Scheme *runtime.Scheme
-    Log    logr.Logger
-}
-```
-
-<a name="NewKnativeReconciler"></a>
-### func NewKnativeReconciler
-
-```go
-func NewKnativeReconciler(c client.Client, scheme *runtime.Scheme, log logr.Logger) *KnativeReconciler
-```
-
-
 
 <a name="KustomizationProvider"></a>
 ## type KustomizationProvider
@@ -296,68 +217,5 @@ func (r *ProviderRegistry) Resolve(runtime intent.Runtime) (Provider, error)
 ```
 
 Resolve returns a provider for the given runtime.
-
-<a name="ReconciliationExecutor"></a>
-## type ReconciliationExecutor
-
-
-
-```go
-type ReconciliationExecutor struct {
-    RuntimeProvider *RuntimeProvider
-    Kustomizer      *KustomizeStrategyProvider
-    Log             logr.Logger
-}
-```
-
-<a name="NewReconciliationExecutor"></a>
-### func NewReconciliationExecutor
-
-```go
-func NewReconciliationExecutor(runtime *RuntimeProvider, kust *KustomizeStrategyProvider, log logr.Logger) *ReconciliationExecutor
-```
-
-
-
-<a name="ReconciliationExecutor.Execute"></a>
-### func \(\*ReconciliationExecutor\) Execute
-
-```go
-func (r *ReconciliationExecutor) Execute(ctx context.Context, sourceCR *environmentv1alpha1.Deployment, rIntent *intent.DeploymentIntent) (*domain.DeploymentResult, error)
-```
-
-
-
-<a name="RuntimeProvider"></a>
-## type RuntimeProvider
-
-
-
-```go
-type RuntimeProvider struct {
-    Client client.Client
-    Scheme *runtime.Scheme
-    Log    logr.Logger
-    K8S    *K8SProvider
-}
-```
-
-<a name="NewRuntimeProvider"></a>
-### func NewRuntimeProvider
-
-```go
-func NewRuntimeProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, Recorder events.EventRecorder) *RuntimeProvider
-```
-
-
-
-<a name="RuntimeProvider.Execute"></a>
-### func \(\*RuntimeProvider\) Execute
-
-```go
-func (p *RuntimeProvider) Execute(ctx context.Context, dIntent *intent.DeploymentIntent) (*domain.DeploymentResult, error)
-```
-
-
 
 Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
