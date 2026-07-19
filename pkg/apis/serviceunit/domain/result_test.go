@@ -13,16 +13,29 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package api
+package domain
 
-import (
-	"context"
+import "testing"
 
-	"github.com/blanketops/environments/pkg/apis/packages/domain"
-	"github.com/blanketops/environments/pkg/intent/package"
-)
+func TestResult_Ready(t *testing.T) {
+	tests := []struct {
+		name  string
+		phase Phase
+		want  bool
+	}{
+		{"ready", PhaseReady, true},
+		{"pending", PhasePending, false},
+		{"deploying", PhaseDeploying, false},
+		{"failed", PhaseFailed, false},
+		{"zero value", "", false},
+	}
 
-// Provider executes a PackageIntent against a concrete backend (e.g. kapp).
-type Provider interface {
-	Execute(ctx context.Context, intent *intent.PackageIntent) (*domain.PackageResult, error)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := Result{Phase: tt.phase}
+			if got := r.Ready(); got != tt.want {
+				t.Errorf("Ready() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

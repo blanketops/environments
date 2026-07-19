@@ -13,28 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package intent
+package serviceunit
 
-import (
-	"github.com/blanketops/environments/pkg/apis/packages/domain"
-)
-
-// PackageIntent is the compiled, immutable execution plan.
-type PackageIntent struct {
-	// Stable identity
-	ID domain.PackageID
-
-	// Source of manifests
-	Source domain.PackageSource
-
-	// State repository (GitOps anchor)
-	StateRepo domain.StateRepository
-
-	// Execution behavior
-	DiffEnabled bool
-	Strategy    domain.ApplyStrategy
-
-	// Resolved ref (branch/tag/commit)
-	ResolvedRef    string
-	ResolvedCommit string
+type RouteIntent struct {
+	Host       string
+	Path       string
+	TLSEnabled bool
+	//Runtime    Runtime
 }

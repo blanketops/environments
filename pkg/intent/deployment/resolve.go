@@ -20,6 +20,8 @@ import (
 
 	deploymentResolution "github.com/blanketops/environments/resolution/deployment/resolve"
 	serviceunitResolution "github.com/blanketops/environments/resolution/serviceunit/resolve"
+
+	serviceunitIntent "github.com/blanketops/environments/pkg/intent/serviceunit"
 )
 
 func ResolveDeploymentIntent(
@@ -45,7 +47,7 @@ func ResolveDeploymentIntent(
 			return nil, ErrServiceUnitNotFound(suName)
 		}
 
-		suIntent, err := ResolveServiceUnitIntent(su)
+		suIntent, err := serviceunitIntent.ResolveServiceUnitIntent(su)
 		if err != nil {
 			return nil, err
 		}

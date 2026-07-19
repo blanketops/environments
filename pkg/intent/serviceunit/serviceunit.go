@@ -13,13 +13,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package deployment
+/*
+Package serviceunit owns ServiceUnitIntent and its constructor,
+ResolveServiceUnitIntent — a ServiceUnit resolves its own deployment
+intent (image, port, size, routes, workload) here rather than Deployment
+reaching into it, the same "resolve yourself" principle already applied to
+ServiceUnit's own resolution and domain layers elsewhere in the repo.
+
+RouteIntent (route.go) and WorkloadIntent (workload.go) are populated as
+part of this resolution and carried on ServiceUnitIntent for whatever
+consumes it next — pkg/apis/deployment's api/strategy/render layers, chiefly.
+*/
+package serviceunit
 
 import (
 	"fmt"
 
 	commoncontractv1 "github.com/blanketops/environments-contract/blanketops/common/v1"
-	serviceunit "github.com/blanketops/environments/resolution/serviceunit/resolve"
+	serviceunitResolution "github.com/blanketops/environments/resolution/serviceunit/resolve"
 )
 
 type ServiceUnitIntent struct {
@@ -33,7 +44,7 @@ type ServiceUnitIntent struct {
 }
 
 func ResolveServiceUnitIntent(
-	su *serviceunit.ResolvedServiceUnit,
+	su *serviceunitResolution.ResolvedServiceUnit,
 ) (*ServiceUnitIntent, error) {
 	if su == nil || su.Spec == nil {
 		return nil, fmt.Errorf("resolved serviceunit is nil")

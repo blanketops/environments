@@ -13,14 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package application
+package deployment
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	intent "github.com/blanketops/environments/pkg/intent/deployment"
+	serviceunitIntent "github.com/blanketops/environments/pkg/intent/serviceunit"
 	deploymentResolution "github.com/blanketops/environments/resolution/deployment/resolve"
 	serviceunitResolution "github.com/blanketops/environments/resolution/serviceunit/resolve"
 )
@@ -38,25 +38,24 @@ func NewIntentBuilder() *IntentBuilder {
 // - No Kubernetes types allowed
 // - No string-to-enum logic allowed
 // - Any invalid state is a resolver bug
-
 func (b *IntentBuilder) Build(
 	ctx context.Context,
 	depl *deploymentResolution.ResolvedDeployment,
 	serviceUnits []serviceunitResolution.ResolvedServiceUnit,
-) (*intent.DeploymentIntent, error) {
+) (*DeploymentIntent, error) {
 
 	if depl == nil || depl.Spec == nil {
 		return nil, fmt.Errorf("nil ResolvedDeployment (resolver bug)")
 	}
 
-	// ------------------------------------------------------------
-	// Resolve ServiceUnit intents
-	// ------------------------------------------------------------
+	// ---------------------------------------------------------------------
+	// Resolve ServiceUnit intents (already resolved inputs)
+	// ---------------------------------------------------------------------
 
-	units := make([]intent.ServiceUnitIntent, 0, len(serviceUnits))
+	units := make([]serviceunitIntent.ServiceUnitIntent, 0, len(serviceUnits))
 
 	for _, su := range serviceUnits {
-		suIntent, err := intent.ResolveServiceUnitIntent(&su)
+		suIntent, err := serviceunitIntent.ResolveServiceUnitIntent(&su)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"serviceunit %s: %w",
@@ -66,19 +65,36 @@ func (b *IntentBuilder) Build(
 		}
 		units = append(units, *suIntent)
 	}
+	var manifestsRepo *ManifestsRepo
 
-	// ------------------------------------------------------------
-	// Build Deployment intent (pure semantic)
-	// ------------------------------------------------------------
+	if depl.Spec.ManifestsRepo != nil {
+		manifestsRepo = &ManifestsRepo{
+			URL:         depl.Spec.ManifestsRepo.URL,
+			Path:        depl.Spec.ManifestsRepo.Path,
+			CloneSecret: depl.Spec.ManifestsRepo.CloneSecret,
+		}
+	}
 
-	return &intent.DeploymentIntent{
-		Name:         depl.Deployment.Name,
-		Namespace:    depl.Deployment.Namespace,
-		Runtime:      intent.Runtime(depl.Spec.Runtime),
-		Strategy:     intent.Strategy(depl.Spec.Strategy),
+	// ---------------------------------------------------------------------
+	// Build Deployment intent (semantic, domain-level)
+	// ---------------------------------------------------------------------
+
+	return &DeploymentIntent{
+		Name:      depl.Deployment.Name,
+		Namespace: depl.Deployment.Namespace,
+
+		Runtime:  Runtime(depl.Spec.Runtime),
+		Strategy: Strategy(depl.Spec.Strategy),
+
+		ReconciliationStrategy: ReconciliationStrategy(
+			depl.Spec.ReconciliationStrategy,
+		),
+
+		ManifestsRepo: manifestsRepo,
+
 		ServiceUnits: units,
-		GeneratedAt:  time.Now(),
 
-		Source: depl.Deployment, // ← REQUIRED
+		GeneratedAt: time.Now(),
 	}, nil
+
 }

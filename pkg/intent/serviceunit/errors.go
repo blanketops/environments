@@ -13,11 +13,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package deployment
+package serviceunit
 
-type RouteIntent struct {
-	Host       string
-	Path       string
-	TLSEnabled bool
-	//Runtime    Runtime
+import "fmt"
+
+func ErrBuildNotReady(name string) error {
+	return fmt.Errorf("build for serviceunit %q not ready", name)
+}
+
+// ErrInvalidServiceUnit indicates a semantic error in a resolved ServiceUnit.
+// This means the resolver violated an invariant or the contract is invalid.
+func ErrInvalidServiceUnit(name, reason string) error {
+	return fmt.Errorf(
+		"invalid serviceunit %q: %s",
+		name,
+		reason,
+	)
 }
