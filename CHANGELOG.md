@@ -1,3 +1,16 @@
+## [0.7.4] - 2026-07-17
+
+### 💼 Other
+
+- V0.7.4 (#261)
+- Resolve main into release/v0.7.4
+- Merge release/v0.7.4 into main
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.7.3
+- Prune old vendor-snapshot GHCR images on a schedule (#256)
+- Sync develop with main after release/v0.7.3
 ## [0.7.3] - 2026-07-17
 
 ### 🐛 Bug Fixes
