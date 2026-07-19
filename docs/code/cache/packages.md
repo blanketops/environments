@@ -9,7 +9,7 @@ import "github.com/blanketops/environments/cache/packages"
 ## Index
 
 - [type PackageCache](<#PackageCache>)
-  - [func NewPackageCache\(c \*core.Cache\) \*PackageCache](<#NewPackageCache>)
+  - [func NewPackageCache\(c \*cache.Cache\) \*PackageCache](<#NewPackageCache>)
   - [func \(p \*PackageCache\) GetChecksum\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#PackageCache.GetChecksum>)
   - [func \(p \*PackageCache\) GetEnabled\(ctx context.Context, nn types.NamespacedName, gen int64\) \(bool, bool, error\)](<#PackageCache.GetEnabled>)
   - [func \(p \*PackageCache\) GetKappDiff\(ctx context.Context, nn types.NamespacedName, gen int64\) \(bool, bool, error\)](<#PackageCache.GetKappDiff>)
@@ -40,10 +40,10 @@ type PackageCache struct {
 ### func NewPackageCache
 
 ```go
-func NewPackageCache(c *core.Cache) *PackageCache
+func NewPackageCache(c *cache.Cache) *PackageCache
 ```
 
-NewPackageCache constructs a new PackageCache with the provided core.Cache.
+NewPackageCache constructs a new PackageCache with the provided cache.Cache.
 
 <a name="PackageCache.GetChecksum"></a>
 ### func \(\*PackageCache\) GetChecksum

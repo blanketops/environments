@@ -10,10 +10,10 @@ import "github.com/blanketops/environments/pkg/apis/deployment/api"
 
 - [type ECSReconciler](<#ECSReconciler>)
   - [func NewECSReconciler\(scheme \*runtime.Scheme, log logr.Logger\) \*ECSReconciler](<#NewECSReconciler>)
-  - [func \(r \*ECSReconciler\) Reconcile\(ctx context.Context, su intent.ServiceUnitIntent\) \(intent.ServiceUnitResult, error\)](<#ECSReconciler.Reconcile>)
+  - [func \(r \*ECSReconciler\) Reconcile\(ctx context.Context, su serviceunitIntent.ServiceUnitIntent\) \(intent.ServiceUnitResult, error\)](<#ECSReconciler.Reconcile>)
 - [type K8SProvider](<#K8SProvider>)
   - [func NewK8SProvider\(c client.Client, scheme \*runtime.Scheme, log logr.Logger, rec events.EventRecorder\) \*K8SProvider](<#NewK8SProvider>)
-  - [func \(p \*K8SProvider\) Execute\(ctx context.Context, intent \*intent.DeploymentIntent\) \(\*domain.DeploymentResult, error\)](<#K8SProvider.Execute>)
+  - [func \(p \*K8SProvider\) Execute\(ctx context.Context, dIntent \*intent.DeploymentIntent\) \(\*domain.DeploymentResult, error\)](<#K8SProvider.Execute>)
   - [func \(p \*K8SProvider\) Runtime\(\) intent.Runtime](<#K8SProvider.Runtime>)
   - [func \(p \*K8SProvider\) Supports\(strategy intent.Strategy\) bool](<#K8SProvider.Supports>)
   - [func \(p \*K8SProvider\) Teardown\(ctx context.Context, deploymentIntent \*intent.DeploymentIntent\) error](<#K8SProvider.Teardown>)
@@ -65,7 +65,7 @@ func NewECSReconciler(scheme *runtime.Scheme, log logr.Logger) *ECSReconciler
 ### func \(\*ECSReconciler\) Reconcile
 
 ```go
-func (r *ECSReconciler) Reconcile(ctx context.Context, su intent.ServiceUnitIntent) (intent.ServiceUnitResult, error)
+func (r *ECSReconciler) Reconcile(ctx context.Context, su serviceunitIntent.ServiceUnitIntent) (intent.ServiceUnitResult, error)
 ```
 
 Reconcile executes a ServiceUnitIntent on ECS
@@ -97,7 +97,7 @@ func NewK8SProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, re
 ### func \(\*K8SProvider\) Execute
 
 ```go
-func (p *K8SProvider) Execute(ctx context.Context, intent *intent.DeploymentIntent) (*domain.DeploymentResult, error)
+func (p *K8SProvider) Execute(ctx context.Context, dIntent *intent.DeploymentIntent) (*domain.DeploymentResult, error)
 ```
 
 

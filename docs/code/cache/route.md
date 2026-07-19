@@ -9,7 +9,7 @@ import "github.com/blanketops/environments/cache/route"
 ## Index
 
 - [type RouteCache](<#RouteCache>)
-  - [func NewRouteCache\(c \*core.Cache\) \*RouteCache](<#NewRouteCache>)
+  - [func NewRouteCache\(c \*cache.Cache\) \*RouteCache](<#NewRouteCache>)
   - [func \(r \*RouteCache\) GetEnabled\(ctx context.Context, nn types.NamespacedName, gen int64\) \(bool, bool, error\)](<#RouteCache.GetEnabled>)
   - [func \(r \*RouteCache\) GetHost\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#RouteCache.GetHost>)
   - [func \(r \*RouteCache\) GetPath\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#RouteCache.GetPath>)
@@ -40,10 +40,10 @@ type RouteCache struct {
 ### func NewRouteCache
 
 ```go
-func NewRouteCache(c *core.Cache) *RouteCache
+func NewRouteCache(c *cache.Cache) *RouteCache
 ```
 
-NewRouteCache constructs a new RouteCache with the provided core.Cache.
+NewRouteCache constructs a new RouteCache with the provided cache.Cache.
 
 <a name="RouteCache.GetEnabled"></a>
 ### func \(\*RouteCache\) GetEnabled

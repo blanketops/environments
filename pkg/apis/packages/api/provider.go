@@ -19,7 +19,7 @@ import (
 	"context"
 
 	"github.com/blanketops/environments/pkg/apis/packages/domain"
-	"github.com/blanketops/environments/pkg/apis/packages/intent"
+	"github.com/blanketops/environments/pkg/intent/package"
 )
 
 // Provider executes a PackageIntent against a concrete backend (e.g. kapp).

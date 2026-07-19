@@ -34,6 +34,7 @@ import (
 
 	"github.com/blanketops/environments/pkg/apis/deployment/domain"
 	intent "github.com/blanketops/environments/pkg/intent/deployment"
+	serviceunitIntent "github.com/blanketops/environments/pkg/intent/serviceunit"
 )
 
 type K8SProvider struct {
@@ -58,108 +59,17 @@ func NewK8SProvider(
 }
 
 //
-// Provider Interface Implementation
-//
-
-func (p *K8SProvider) Runtime() intent.Runtime {
-	return intent.RuntimeKubernetes
-}
-
-func (p *K8SProvider) Supports(
-	strategy intent.Strategy,
-) bool {
-
-	switch strategy {
-	case intent.StrategyRolling,
-		intent.StrategyBlueGreen:
-		return true
-	default:
-		return false
-	}
-}
-
-func (p *K8SProvider) Execute(
-	ctx context.Context,
-	intent *intent.DeploymentIntent,
-) (*domain.DeploymentResult, error) {
-
-	if !p.Supports(intent.Strategy) {
-		return nil, fmt.Errorf(
-			"strategy %s not supported for runtime %s",
-			intent.Strategy,
-			p.Runtime(),
-		)
-	}
-
-	switch intent.Strategy {
-
-	case intent.Strategy:
-		return p.executeRolling(ctx, intent)
-
-	case intent.Strategy:
-		return p.executeBlueGreen(ctx, intent)
-
-	default:
-		return nil, fmt.Errorf("unknown strategy: %s", intent.Strategy)
-	}
-}
-
-//
-// Strategy Implementations
-//
-
-func (p *K8SProvider) executeRolling(
-	ctx context.Context,
-	intent *intent.DeploymentIntent,
-) (*domain.DeploymentResult, error) {
-
-	results := make([]domain.ServiceUnitResult, 0, len(intent.ServiceUnits))
-
-	for _, su := range intent.ServiceUnits {
-		res, err := p.applyServiceUnit(ctx, intent, &su)
-		if err != nil {
-			results = append(results, domain.ServiceUnitResult{
-				Name:               su.Name,
-				Phase:              domain.ServiceUnitPhase("Failed"),
-				Image:              su.Image,
-				Runtime:            domain.Runtime(intent.Runtime),
-				Error:              err.Error(),
-				LastTransitionTime: time.Now(),
-			})
-			continue
-		}
-		results = append(results, *res)
-	}
-
-	return &domain.DeploymentResult{
-		Phase:          deriveDeploymentPhase(results),
-		Runtime:        domain.Runtime(intent.Runtime),
-		Strategy:       domain.Strategy(intent.Strategy),
-		ServiceUnits:   results,
-		LastUpdateTime: time.Now(),
-	}, nil
-}
-
-// For now BlueGreen reuses rolling behavior.
-// Later you can split traffic or manage dual deployments.
-func (p *K8SProvider) executeBlueGreen(
-	ctx context.Context,
-	intent *intent.DeploymentIntent,
-) (*domain.DeploymentResult, error) {
-
-	p.Log.Info("BlueGreen currently mapped to rolling behavior")
-
-	return p.executeRolling(ctx, intent)
-}
-
-//
 // Core Apply Logic
 //
+// Strategy dispatch (which Strategy, which Runtime) lives in
+// pkg/apis/deployment/strategy — this provider only knows how to apply and
+// tear down the Kubernetes objects for a single ServiceUnit.
+//
 
-func (p *K8SProvider) applyServiceUnit(
+func (p *K8SProvider) ApplyServiceUnit(
 	ctx context.Context,
 	intent *intent.DeploymentIntent,
-	su *intent.ServiceUnitIntent,
+	su *serviceunitIntent.ServiceUnitIntent,
 ) (*domain.ServiceUnitResult, error) {
 
 	if err := p.applyDeployment(ctx, intent, su); err != nil {
@@ -192,7 +102,7 @@ func (p *K8SProvider) applyServiceUnit(
 func (p *K8SProvider) applyDeployment(
 	ctx context.Context,
 	intent *intent.DeploymentIntent,
-	su *intent.ServiceUnitIntent,
+	su *serviceunitIntent.ServiceUnitIntent,
 ) error {
 
 	deploy := &appsv1.Deployment{
@@ -248,7 +158,7 @@ func (p *K8SProvider) applyDeployment(
 func (p *K8SProvider) applyService(
 	ctx context.Context,
 	intent *intent.DeploymentIntent,
-	su *intent.ServiceUnitIntent,
+	su *serviceunitIntent.ServiceUnitIntent,
 ) error {
 
 	svc := &corev1.Service{
@@ -286,7 +196,7 @@ func (p *K8SProvider) applyService(
 func (p *K8SProvider) isDeploymentReady(
 	ctx context.Context,
 	intent *intent.DeploymentIntent,
-	su *intent.ServiceUnitIntent,
+	su *serviceunitIntent.ServiceUnitIntent,
 ) (bool, error) {
 
 	var deploy appsv1.Deployment
@@ -306,37 +216,6 @@ func (p *K8SProvider) isDeploymentReady(
 	}
 
 	return deploy.Status.ReadyReplicas == *deploy.Spec.Replicas, nil
-}
-
-func deriveDeploymentPhase(
-	results []domain.ServiceUnitResult,
-) domain.DeploymentPhase {
-
-	if len(results) == 0 {
-		return domain.DeploymentPhase("Pending")
-	}
-
-	allReady := true
-
-	for _, r := range results {
-		switch r.Phase {
-
-		case domain.ServiceUnitPhase("Failed"):
-			return domain.DeploymentPhase("Failed")
-
-		case domain.ServiceUnitPhase("Ready"):
-			// still possibly all ready
-
-		default:
-			allReady = false
-		}
-	}
-
-	if allReady {
-		return domain.DeploymentPhase("Ready")
-	}
-
-	return domain.DeploymentPhase("Deploying")
 }
 
 // Teardown deletes the Kubernetes Deployment and Service this provider

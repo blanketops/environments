@@ -9,7 +9,7 @@ import "github.com/blanketops/environments/cache/environment"
 ## Index
 
 - [type EnvironmentCache](<#EnvironmentCache>)
-  - [func NewEnvironmentCache\(c \*core.Cache\) \*EnvironmentCache](<#NewEnvironmentCache>)
+  - [func NewEnvironmentCache\(c \*cache.Cache\) \*EnvironmentCache](<#NewEnvironmentCache>)
   - [func \(e \*EnvironmentCache\) GetApplicationName\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#EnvironmentCache.GetApplicationName>)
   - [func \(e \*EnvironmentCache\) GetBuild\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#EnvironmentCache.GetBuild>)
   - [func \(e \*EnvironmentCache\) GetDeployment\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#EnvironmentCache.GetDeployment>)
@@ -50,10 +50,10 @@ type EnvironmentCache struct {
 ### func NewEnvironmentCache
 
 ```go
-func NewEnvironmentCache(c *core.Cache) *EnvironmentCache
+func NewEnvironmentCache(c *cache.Cache) *EnvironmentCache
 ```
 
-NewEnvironmentCache constructs a new EnvironmentCache with the provided core.Cache.
+NewEnvironmentCache constructs a new EnvironmentCache with the provided cache.Cache.
 
 <a name="EnvironmentCache.GetApplicationName"></a>
 ### func \(\*EnvironmentCache\) GetApplicationName
