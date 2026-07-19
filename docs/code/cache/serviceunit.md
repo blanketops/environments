@@ -9,7 +9,7 @@ import "github.com/blanketops/environments/cache/serviceunit"
 ## Index
 
 - [type ServiceUnitCache](<#ServiceUnitCache>)
-  - [func NewServiceUnitCache\(c \*core.Cache\) \*ServiceUnitCache](<#NewServiceUnitCache>)
+  - [func NewServiceUnitCache\(c \*cache.Cache\) \*ServiceUnitCache](<#NewServiceUnitCache>)
   - [func \(s \*ServiceUnitCache\) GetAppType\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#ServiceUnitCache.GetAppType>)
   - [func \(s \*ServiceUnitCache\) GetBuildRef\(ctx context.Context, nn types.NamespacedName, gen int64, into any\) \(bool, error\)](<#ServiceUnitCache.GetBuildRef>)
   - [func \(s \*ServiceUnitCache\) GetContainerPort\(ctx context.Context, nn types.NamespacedName, gen int64\) \(int, bool, error\)](<#ServiceUnitCache.GetContainerPort>)
@@ -42,10 +42,10 @@ type ServiceUnitCache struct {
 ### func NewServiceUnitCache
 
 ```go
-func NewServiceUnitCache(c *core.Cache) *ServiceUnitCache
+func NewServiceUnitCache(c *cache.Cache) *ServiceUnitCache
 ```
 
-NewServiceUnitCache constructs a new ServiceUnitCache with the provided core.Cache.
+NewServiceUnitCache constructs a new ServiceUnitCache with the provided cache.Cache.
 
 <a name="ServiceUnitCache.GetAppType"></a>
 ### func \(\*ServiceUnitCache\) GetAppType

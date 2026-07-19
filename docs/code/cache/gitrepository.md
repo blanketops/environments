@@ -9,7 +9,7 @@ import "github.com/blanketops/environments/cache/gitrepository"
 ## Index
 
 - [type GitRepositoryCache](<#GitRepositoryCache>)
-  - [func NewGitRepositoryCache\(c \*core.Cache\) \*GitRepositoryCache](<#NewGitRepositoryCache>)
+  - [func NewGitRepositoryCache\(c \*cache.Cache\) \*GitRepositoryCache](<#NewGitRepositoryCache>)
   - [func \(g \*GitRepositoryCache\) GetHookURL\(ctx context.Context, nn types.NamespacedName, gen int64, name string\) \(string, bool, error\)](<#GitRepositoryCache.GetHookURL>)
   - [func \(g \*GitRepositoryCache\) GetProvider\(ctx context.Context, nn types.NamespacedName, gen int64, name string\) \(string, bool, error\)](<#GitRepositoryCache.GetProvider>)
   - [func \(g \*GitRepositoryCache\) GetRepository\(ctx context.Context, nn types.NamespacedName, gen int64, name string, into any\) \(bool, error\)](<#GitRepositoryCache.GetRepository>)
@@ -36,10 +36,10 @@ type GitRepositoryCache struct {
 ### func NewGitRepositoryCache
 
 ```go
-func NewGitRepositoryCache(c *core.Cache) *GitRepositoryCache
+func NewGitRepositoryCache(c *cache.Cache) *GitRepositoryCache
 ```
 
-NewGitRepositoryCache constructs a new GitRepositoryCache with the provided core.Cache.
+NewGitRepositoryCache constructs a new GitRepositoryCache with the provided cache.Cache.
 
 <a name="GitRepositoryCache.GetHookURL"></a>
 ### func \(\*GitRepositoryCache\) GetHookURL
