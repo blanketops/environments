@@ -6,15 +6,20 @@
 #
 # Auth:
 #   Uses the BlanketOps-Environments GitHub App instead of a personal-account
-#   PAT for checkout/push and private-module git config — see ci.yml's header
-#   for the reasoning. GPG signing is unrelated and unchanged: the App token
-#   authenticates the push, GPG_PRIVATE_KEY is what makes the resulting
-#   commit show as "Verified".
+#   PAT for checkout and private-module git config — see ci.yml's header for
+#   the reasoning. The generated-docs commit itself is NOT made with `git
+#   commit` — it's built directly through the Git Data API (blob/tree/commit/
+#   ref) using the App's installation token. Commits created this way show as
+#   "Verified" automatically (GitHub attests them server-side, same mechanism
+#   as an edit made in the web UI), so there's no GPG key to hold, rotate, or
+#   lose. This replaced an earlier `git commit -S` + imported-GPG-key
+#   approach — see git history if you need to compare.
 #
 # Secrets required:
-#   APP_ID, APP_PRIVATE_KEY — GitHub App credentials
-#   GPG_PRIVATE_KEY  — signs the generated-docs commit
-#   GPG_PASSPHRASE   — passphrase for GPG_PRIVATE_KEY
+#   APP_ID, APP_PRIVATE_KEY — GitHub App credentials. The App's "Contents"
+#     repository permission must be Read & write for the Git Data API calls
+#     below (getRef/getCommit/createTree/createCommit/updateRef) to succeed —
+#     the same permission checkout/push already relies on.
 # =============================================================================
 
 name: Code Docs
@@ -75,27 +80,67 @@ jobs:
             ./resolution/... \
             ./runtime/...
 
-      - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@v7
+      # Builds the commit through the Git Data API instead of `git commit` —
+      # see the header comment for why. git add/status here only compute
+      # *which* paths changed; nothing is committed or pushed locally.
+      - name: Commit and push docs via the Git Data API
+        uses: actions/github-script@v8
         with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.GPG_PASSPHRASE }}
-          git_user_signingkey: true
-          git_commit_gpgsign: true
-          git_config_global: true
-          git_committer_name: github-actions
-          git_committer_email: actions@github.com
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { execSync } = require('child_process');
+            const fs = require('fs');
 
-      - name: Commit and push docs
-        run: |
-          git add docs/code/ -f
-          if ! git diff-index --quiet HEAD; then
-            git commit -S -m "docs: auto-generate code documentation [skip ci]"
-            git pull --rebase origin main
-            git push origin main
-          else
-            echo "No documentation changes to commit"
-          fi
+            execSync('git add docs/code/ -f');
+            const status = execSync(
+              'git status --porcelain --no-renames -- docs/code/',
+              { encoding: 'utf8' }
+            ).trim();
+
+            if (!status) {
+              core.info('No documentation changes to commit');
+              return;
+            }
+
+            const changes = status.split('\n').map(line => ({
+              indexStatus: line.slice(0, 2).trim(),
+              path: line.slice(3),
+            }));
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const branch = 'main';
+            const message = 'docs: auto-generate code documentation [skip ci]';
+
+            const tree = changes.map(({ indexStatus, path }) =>
+              indexStatus === 'D'
+                ? { path, mode: '100644', type: 'blob', sha: null }
+                : { path, mode: '100644', type: 'blob', content: fs.readFileSync(path, 'utf8') }
+            );
+
+            // One retry: main may have moved between checkout and here.
+            for (let attempt = 1; attempt <= 2; attempt++) {
+              const { data: ref } = await github.rest.git.getRef({ owner, repo, ref: `heads/${branch}` });
+              const parentSha = ref.object.sha;
+              const { data: parentCommit } = await github.rest.git.getCommit({ owner, repo, commit_sha: parentSha });
+
+              const { data: newTree } = await github.rest.git.createTree({
+                owner, repo, base_tree: parentCommit.tree.sha, tree,
+              });
+
+              const { data: newCommit } = await github.rest.git.createCommit({
+                owner, repo, message, tree: newTree.sha, parents: [parentSha],
+              });
+
+              try {
+                await github.rest.git.updateRef({ owner, repo, ref: `heads/${branch}`, sha: newCommit.sha });
+                core.info(`Committed ${changes.length} file(s) as ${newCommit.sha}`);
+                break;
+              } catch (err) {
+                if (attempt === 2) throw err;
+                core.warning(`updateRef failed (branch moved?), retrying once: ${err.message}`);
+              }
+            }
 
       - name: Upload docs artifact
         uses: actions/upload-artifact@v7
