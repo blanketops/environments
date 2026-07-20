@@ -122,6 +122,17 @@ func (s *K8SStrategy) executeRolling(
 	}, nil
 }
 
+// Teardown deletes the Kubernetes objects this strategy applied for the
+// given intent, delegating to api.K8SProvider.Teardown. Strategy (Rolling/
+// BlueGreen) doesn't change what gets torn down — both apply the same
+// Deployment/Service objects — so there's nothing to dispatch on here.
+func (s *K8SStrategy) Teardown(
+	ctx context.Context,
+	dIntent *intent.DeploymentIntent,
+) error {
+	return s.K8S.Teardown(ctx, dIntent)
+}
+
 // For now BlueGreen reuses rolling behavior.
 // Later you can split traffic or manage dual deployments.
 func (s *K8SStrategy) executeBlueGreen(

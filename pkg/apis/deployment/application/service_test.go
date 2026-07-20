@@ -22,6 +22,7 @@ import (
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -125,6 +126,59 @@ func TestDeploymentService_Reconcile(t *testing.T) {
 	}
 	if len(gotCR.Status.Conditions) == 0 {
 		t.Error("expected the Deployment CR to have at least one condition written")
+	}
+}
+
+func TestDeploymentService_Teardown(t *testing.T) {
+	scheme := newServiceTestScheme(t)
+	depl := &environmentv1alpha1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: "web", Namespace: "default", Generation: 1},
+	}
+	existingDeploy := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "api", Namespace: "default"}}
+	existingSvc := &corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: "api", Namespace: "default"}}
+	c := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(depl, existingDeploy, existingSvc).
+		WithStatusSubresource(&environmentv1alpha1.Deployment{}).
+		Build()
+
+	svc := newTestDeploymentService(t, c, scheme)
+
+	resolved := &deploymentResolution.ResolvedDeployment{
+		Deployment: depl,
+		Spec: &deploymentResolution.ResolvedDeploymentSpec{
+			ServiceUnits:           []string{"api"},
+			Runtime:                deploymentResolution.RuntimeKubernetes,
+			Strategy:               deploymentResolution.StrategyRolling,
+			ReconciliationStrategy: deploymentResolution.ReconciliationImperative,
+		},
+	}
+	serviceUnits := []serviceunitResolution.ResolvedServiceUnit{
+		{
+			ServiceUnit: &environmentv1alpha1.ServiceUnit{ObjectMeta: metav1.ObjectMeta{Name: "api", Namespace: "default"}},
+			Spec: &serviceunitResolution.ResolvedServiceUnitSpec{
+				Type:          commoncontractv1.ServiceUnitType_SERVICE_UNIT_TYPE_STATIC,
+				Image:         "docker.io/blanketops/api:v1",
+				ContainerPort: 8080,
+				Size:          2,
+			},
+		},
+	}
+
+	if err := svc.Teardown(context.Background(), resolved, serviceUnits, logr.Discard()); err != nil {
+		t.Fatalf("Teardown: unexpected error: %v", err)
+	}
+
+	var gotDeploy appsv1.Deployment
+	err := c.Get(context.Background(), client.ObjectKey{Name: "api", Namespace: "default"}, &gotDeploy)
+	if !apierrors.IsNotFound(err) {
+		t.Errorf("expected the Deployment to have been deleted, Get err = %v", err)
+	}
+
+	var gotSvc corev1.Service
+	err = c.Get(context.Background(), client.ObjectKey{Name: "api", Namespace: "default"}, &gotSvc)
+	if !apierrors.IsNotFound(err) {
+		t.Errorf("expected the Service to have been deleted, Get err = %v", err)
 	}
 }
 
