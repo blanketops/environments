@@ -330,3 +330,59 @@ contract-holder and the sole implementer are different repos at all*, given
 without a manager is a plausible reason; so is repo history predating the
 "migrating to `BlanketOps/environments`" rename noted in the controller's
 README. Neither is verified — flagged for the next pass, not answered here.
+
+## Is this over-engineered? A tradeoffs audit
+
+Command → Engine → Registry → Domain → Mediator → Service → Provider, on
+top of a Contract/CRD-envelope split, on top of a separate Observer class,
+is a lot of indirection for "watch a CR, do some work, write status." Worth
+asking directly whether it's earning that complexity. Verdict, piece by
+piece, not as a blanket judgment:
+
+**Earning its keep, verified in use today:**
+
+- **`Engine` as router.** The test isn't "does any one caller need dynamic
+  GVK resolution" — none does, every Reconciler knows its own kind
+  statically. The value is that one shared `Engine` instance is the single
+  place where dispatch, logging (`"executing command", "gvk", ...`), and
+  error propagation happen uniformly across all seven registered domains
+  (GitRepository, Environment, Build, Deployment, ServiceUnit, Package,
+  GitHubEvent). Same shape as `http.ServeMux` — no individual handler needs
+  the router either, but the router is still the one shared thing serving
+  all of them consistently. This is realized *today*, not speculative.
+- **`Registry`'s lock.** Real concurrent access to a real shared
+  `map[GVK]Domain`, read by many reconcilers' goroutines at once. Legitimate.
+- **Command side vs. Observer side.** Not speculative — solves a problem we
+  watched actually happen (Build's disabled filter → status writes
+  re-triggering reconciliation). Collapsing the two would reintroduce that
+  loop risk platform-wide.
+- **Backend strategy selection** (Buildah/Kaniko/Buildpacks via
+  `BackendSelector`) — real, currently-exercised polymorphism.
+
+**Verified idle — built, reached by nothing:**
+
+- **`Engine`'s async worker pool** — `Queue`, `SetWorkers`, `StartWorkers`,
+  `workerLoop`, the 1024-capacity channel. No caller anywhere invokes
+  `SetWorkers`. Real code, real tests-worth of surface area, zero use.
+- **`Domain.CanCreate`/`CanUpdate`/`CanDelete`** — required of every
+  implementation, called by nothing (see Known Issue above). The one
+  filtering mechanism that's actually wired in (`core/predicates`) does the
+  same job through a completely different path.
+
+**Undecided — real today, payoff unverified:**
+
+- **Contract (protobuf) as truth, CRD as opaque envelope.** Disciplined and
+  correctly implemented, per doc 01. Its stated justification — evolving
+  the contract independently across multiple transports/consumers — hasn't
+  been observed in use: no second consumer (gRPC server, SDK) has turned up
+  in anything reviewed so far. Correct in principle; whether the future it's
+  insurance against arrives is the open variable.
+
+**Overall:** not over-engineered as a blanket judgment — the parts doing
+real work (Engine-as-router, the Command/Observer split, strategy
+selection) are identifiable and currently load-bearing. The parts that
+are speculative or dead (async worker pool, the predicate methods on
+`Domain`) are also identifiable, and small relative to the whole. The
+honest read is a system with a couple of unused knobs and one dead
+interface obligation, not a system built on complexity that doesn't pay
+for itself.
