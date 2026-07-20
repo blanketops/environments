@@ -9,23 +9,40 @@
 Four small packages under `core/` form the routing spine every reconcile
 passes through:
 
+```mermaid
+sequenceDiagram
+    participant KR as Kubernetes<br/>(CR change)
+    participant CT as environments-controller<br/>(reconciler)
+    participant EN as core/engine<br/>Engine
+    participant RG as core/registry<br/>Registry
+    participant DM as pkg/apis/&lt;kind&gt;<br/>Domain impl
+
+    KR->>CT: reconcile request
+    CT->>CT: build command.Command{Type, GVK, Obj, Old, New}
+    CT->>EN: Execute(ctx, cmd)
+    EN->>RG: GetDomain(cmd.GVK)
+    RG-->>EN: Domain (or not-found)
+    alt no Domain registered
+        EN-->>CT: error "no domain registered for GVK"
+    else Domain found
+        EN->>DM: Handle(ctx, cmd)
+        Note over DM: CanCreate/CanUpdate/CanDelete<br/>already evaluated as predicates
+        DM-->>EN: error or nil
+        EN-->>CT: propagate (nil / requeue error)
+    end
 ```
-controller-runtime event
-        │
-        ▼
-   core/command   Command{Type, GVK, Obj, Old, New} — atomic unit of intent
-        │
-        ▼
-   core/engine    Engine.Execute(cmd) — looks up Domain by GVK, calls Handle
-        │              (registry lookup)
-        ▼
-   core/registry  Registry: map[GVK]Domain, map[string]any (strategies)
-        │              (populated once at manager startup)
-        ▼
-   core/domain    Domain interface — GVK(), Handle(), CanCreate/Update/Delete()
-        │
-        ▼
-   pkg/apis/<kind>/*   concrete Domain implementations (BuildDomain, RouteDomain, ...)
+
+Startup-time wiring (once, before any reconcile runs):
+
+```mermaid
+flowchart LR
+    M["manager startup"] --> NR["registry.NewRegistry()"]
+    NR --> REG["RegisterDomain(gvk, BuildDomain{})\nRegisterDomain(gvk, DeploymentDomain{})\n... one per live domain"]
+    REG --> NE["engine.NewEngine(registry, logger)"]
+    NE --> RUN["Engine ready — Execute()/Queue()\nread concurrently by all reconcilers"]
+
+    classDef step fill:#EEEDFE,stroke:#534AB7,color:#26215C,stroke-width:1px
+    class M,NR,REG,NE,RUN step
 ```
 
 - **`command.Command`** — `Type` (`create`/`update`/`delete`), `GVK`, `Obj`
@@ -76,6 +93,46 @@ controller-runtime reconcile request into a `Command` and calls
 `engine.Execute(ctx, cmd)` — it never imports a domain package. Everything
 that requires direct Go-level wiring — `core/*` and every `pkg/apis/*`
 Domain implementation — stays in `environments`.
+
+```mermaid
+flowchart TB
+    subgraph REPO1["environments-controller (repo)"]
+        RC["reconcilers"]
+    end
+    subgraph REPO2["environments (repo)"]
+        subgraph CORE["core/ — CQRS spine"]
+            CMD["command.Command"]
+            ENG["engine.Engine"]
+            REG["registry.Registry"]
+            IFACE["domain.Domain (interface)"]
+        end
+        subgraph IMPL["pkg/apis/* — concrete Domains"]
+            BD["BuildDomain"]
+            RD["RouteDomain"]
+            DD["... one per kind"]
+        end
+    end
+
+    RC -->|"only imports"| CMD
+    RC -->|"only imports"| ENG
+    ENG --> REG
+    REG -->|"registers concrete\nstruct values"| BD
+    REG -->|"registers concrete\nstruct values"| RD
+    REG -->|"registers concrete\nstruct values"| DD
+    BD -.->|"implements"| IFACE
+    RD -.->|"implements"| IFACE
+    DD -.->|"implements"| IFACE
+
+    classDef ctrl fill:#F1EFE8,stroke:#5F5E5A,color:#2C2C2A,stroke-width:1px
+    classDef core fill:#EEEDFE,stroke:#534AB7,color:#26215C,stroke-width:2px
+    classDef impl fill:#E1F5EE,stroke:#0F6E56,color:#04342C,stroke-width:1px
+    class RC ctrl
+    class CMD,ENG,REG,IFACE core
+    class BD,RD,DD impl
+```
+
+The arrow that matters: `environments-controller` never crosses into
+`pkg/apis/*`. Everything below the `core/` line is invisible to it.
 
 ## Open question
 

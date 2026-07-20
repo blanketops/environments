@@ -16,17 +16,30 @@ that contract somewhere and eventually act on it.
 
 Four layers, four repos:
 
-```
-environments-contract   canonical meaning        (protobuf, versioned v1alpha1 → v1beta1 → v1)
-        │
-        ▼
-environments-api        Kubernetes envelope       (CRD Go types, opaque to k8s)
-        │
-        ▼
-environments             resolution + providers    (domain logic, then infra adapters)
-        │
-        ▼
-environments-controller  orchestration only        (watches CRDs, calls engine, writes status)
+```mermaid
+flowchart TB
+    C["environments-contract\nprotobuf · v1alpha1 → v1beta1 → v1\ncanonical meaning"]
+    A["environments-api\nCRD Go types\nSpec.Contract = runtime.RawExtension\nopaque envelope to Kubernetes"]
+    E["environments\nresolution/* (contract-typed domain logic)\npkg/apis/*/api/* (k8s/Knative infra adapters)"]
+    K["Kubernetes cluster\nCRD instances stored, never parsed"]
+    R["environments-controller\nthin reconcilers\nno business logic"]
+
+    C -->|"defines the schema\ngo_package import"| A
+    A -->|"CR watched, Contract\nbytes deserialized"| E
+    E -->|"resolved domain intent\nmaterialized as real objects"| K
+    R -->|"watches CRDs, builds Command,\ncalls engine.Execute"| E
+    R -.->|"reads/writes"| A
+
+    classDef truth fill:#EEEDFE,stroke:#534AB7,color:#26215C,stroke-width:2px
+    classDef envelope fill:#FAEEDA,stroke:#854F0B,color:#412402,stroke-width:2px
+    classDef engine fill:#E1F5EE,stroke:#0F6E56,color:#04342C,stroke-width:2px
+    classDef k8s fill:#FAECE7,stroke:#993C1D,color:#4A1B0C,stroke-width:1px
+    classDef ctrl fill:#F1EFE8,stroke:#5F5E5A,color:#2C2C2A,stroke-width:1px
+    class C truth
+    class A envelope
+    class E engine
+    class K k8s
+    class R ctrl
 ```
 
 ## Layer 1 — `environments-contract`: the canonical truth
@@ -80,6 +93,34 @@ contract and in the engine, not in the CRD's OpenAPI schema.
 
 This repo has two internally distinct sub-layers that get conflated if you
 just grep for k8s imports across the whole module:
+
+```mermaid
+flowchart LR
+    subgraph IN["Input"]
+        CR["CR from cluster\nSpec.Contract (opaque bytes)"]
+    end
+    subgraph RES["3a. resolution/* — contract-typed"]
+        DEC["deserialize Contract"]
+        DOM["typed domain structs\n(pure Go, no k8s imports)"]
+        PROJ["one-way projection →\ncontract proto\n(hashing, audit, gRPC)"]
+        DEC --> DOM --> PROJ
+    end
+    subgraph PROV["3b. pkg/apis/*/api/* — k8s-typed"]
+        PV["Provider\n(KnativeProvider, IngressProvider, ...)"]
+    end
+    subgraph OUT["Output"]
+        OBJ["real cluster object\n(Knative DomainMapping, Ingress,\ncert-manager Certificate)"]
+    end
+
+    CR --> DEC
+    DOM -->|"resolved intent"| PV
+    PV --> OBJ
+
+    classDef res fill:#EEEDFE,stroke:#534AB7,color:#26215C,stroke-width:2px
+    classDef prov fill:#FAECE7,stroke:#993C1D,color:#4A1B0C,stroke-width:2px
+    class DEC,DOM,PROJ res
+    class PV prov
+```
 
 ### 3a. Resolution layer (`resolution/*`) — contract-typed, not k8s-typed
 
@@ -154,6 +195,31 @@ needs correcting once we're back on README work.
 
 ## Currently reconciled domains
 
-Per the live `Adapter` wiring above: `Build`, `Deployment`, `GitRepository`,
-`GitHubEvent`, `Package`, `ServiceUnit`. Route and Domain are not yet in
-the loop.
+Per the live `Adapter` wiring above:
+
+```mermaid
+flowchart TB
+    ADAPTER["resolution.Adapter\n(contract_resolution.go)"]
+    B["Build"]
+    D["Deployment"]
+    GR["GitRepository"]
+    GE["GitHubEvent"]
+    P["Package"]
+    SU["ServiceUnit"]
+    RT["Route"]
+    DM["Domain"]
+
+    ADAPTER --> B
+    ADAPTER --> D
+    ADAPTER --> GR
+    ADAPTER --> GE
+    ADAPTER --> P
+    ADAPTER --> SU
+    ADAPTER -.->|"commented out\nnot registered"| RT
+    ADAPTER -.->|"commented out\nnot registered"| DM
+
+    classDef live fill:#E1F5EE,stroke:#0F6E56,color:#04342C,stroke-width:2px
+    classDef dead stroke-dasharray: 5 5,fill:#F1EFE8,stroke:#993C1D,color:#4A1B0C,stroke-width:1px
+    class B,D,GR,GE,P,SU live
+    class RT,DM dead
+```
