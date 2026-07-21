@@ -72,9 +72,39 @@ type ResolvedEnvironmentSpec struct {
 }
 
 // ResolvedEnvironmentContract holds platform-level bindings declared on the
-// Environment — currently the ESO secret store provider.
+// Environment — the ESO secret store provider, plus provider-specific
+// connection config needed to provision the store itself (currently Vault
+// only; AWS/GCP/Azure still resolve to a pre-provisioned platform store).
 type ResolvedEnvironmentContract struct {
 	SecretStoreProvider string
+	// Vault is non-nil only when SecretStoreProvider is "vault" /
+	// "SECRET_STORE_PROVIDER_VAULT". Populated from
+	// contract.secretStore.vault — validated at resolution time so a
+	// malformed CR fails fast here rather than deep inside ESO reconciliation.
+	Vault *ResolvedVaultConfig
+}
+
+// ResolvedVaultConfig is the Environment-declared HashiCorp Vault connection
+// used to provision the ClusterSecretStore/SecretStore ESO reads from.
+// This is connection config only — secret values are populated into Vault
+// by a separate out-of-band process, never by this repo.
+type ResolvedVaultConfig struct {
+	// Address is the Vault server URL. Required.
+	Address string
+	// Path is the KV secrets engine mount path (e.g. "secret"). Required.
+	Path string
+	// Role is the Vault Kubernetes-auth role to assume. Required.
+	Role string
+	// MountPath is the Vault Kubernetes-auth mount path. Defaults to
+	// "kubernetes" when not declared.
+	MountPath string
+	// Version is the KV engine version ("v1" or "v2"). Defaults to "v2"
+	// when not declared.
+	Version string
+	// ServiceAccountName optionally names the ServiceAccount ESO uses to
+	// authenticate the Kubernetes-auth login. Empty means ESO falls back
+	// to its own pod identity.
+	ServiceAccountName string
 }
 
 // -----------------------------------------------------------------------------
@@ -238,6 +268,48 @@ func ResolveEnvironment(environment *environmentv1alpha1.Environment) (*Resolved
 		}
 		spec.Contract = &ResolvedEnvironmentContract{
 			SecretStoreProvider: provider,
+		}
+
+		// --------------------------------------------
+		// Vault connection config — required when provider is vault.
+		// Validated here so a malformed CR fails fast at resolution
+		// rather than deep inside ESO reconciliation.
+		// --------------------------------------------
+		if provider == "vault" || provider == "SECRET_STORE_PROVIDER_VAULT" {
+			vaultRaw, ok := ssRaw["vault"].(map[string]any)
+			if !ok {
+				return nil, fmt.Errorf("contract.secretStore.vault is required for provider %q", provider)
+			}
+			address, err := mustString(vaultRaw, "address")
+			if err != nil {
+				return nil, fmt.Errorf("contract.secretStore.vault.address: %w", err)
+			}
+			path, err := mustString(vaultRaw, "path")
+			if err != nil {
+				return nil, fmt.Errorf("contract.secretStore.vault.path: %w", err)
+			}
+			role, err := mustString(vaultRaw, "role")
+			if err != nil {
+				return nil, fmt.Errorf("contract.secretStore.vault.role: %w", err)
+			}
+
+			mountPath := optionalString(vaultRaw, "mountPath")
+			if mountPath == "" {
+				mountPath = "kubernetes"
+			}
+			version := optionalString(vaultRaw, "version")
+			if version == "" {
+				version = "v2"
+			}
+
+			spec.Contract.Vault = &ResolvedVaultConfig{
+				Address:            address,
+				Path:               path,
+				Role:               role,
+				MountPath:          mountPath,
+				Version:            version,
+				ServiceAccountName: optionalString(vaultRaw, "serviceAccountName"),
+			}
 		}
 	}
 
