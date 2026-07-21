@@ -19,6 +19,8 @@ orchestrates a Deployment's reconciliation: build a DeploymentIntent from
 resolved inputs (pkg/intent/deployment.IntentBuilder), execute it across the
 Imperative/GitOps axis (pkg/apis/deployment/reconcile.ReconciliationExecutor),
 then persist the outcome as CR status and conditions (StatusWriter).
+Teardown mirrors the same Build-then-dispatch shape for deletion, minus the
+status write.
 
 This mirrors every other CR's application layer. mapper.go's Mapper /
 MapResolvedToDomain is not part of that flow — DeploymentService goes
@@ -90,4 +92,28 @@ func (s *DeploymentService) Reconcile(
 		result,
 		execErr,
 	)
+}
+
+// Teardown deletes whatever Reconcile applied for this Deployment. It takes
+// the same resolved inputs as Reconcile so the intent it builds — and tears
+// down — matches exactly what was applied. No status write: the CR is being
+// deleted, so there is nothing left to persist status onto once this
+// returns.
+func (s *DeploymentService) Teardown(
+	ctx context.Context,
+	resolved *deploymentResolution.ResolvedDeployment,
+	serviceUnits []serviceunitResolution.ResolvedServiceUnit,
+	log logr.Logger,
+) error {
+
+	intent, err := s.intentBuilder.Build(ctx, resolved, serviceUnits)
+	if err != nil {
+		return err
+	}
+	log.Info("intent built for teardown",
+		"manifestsRepoNil", intent.ManifestsRepo == nil,
+		"reconciliationStrategy", intent.ReconciliationStrategy,
+	)
+
+	return s.reconciliationExecutor.Teardown(ctx, resolved.Deployment, intent)
 }
