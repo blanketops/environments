@@ -217,3 +217,18 @@ func TestOptionalBool_WrongType(t *testing.T) {
 		t.Fatalf("expected false for wrong type, got %v", got)
 	}
 }
+
+func FuzzResolveBuild(f *testing.F) {
+	f.Add(`{"image":"foo:latest","source":{"url":"git@github.com:x/y"}}`)
+	f.Add(`{not json`)
+	f.Add(`{"image":"foo","source":{}}`)
+	f.Add(`{"image":"foo","source":{"url":"git@x","cloneSecret":""}}`)
+	f.Add(`{"image":"foo","source":{"url":"x"},"policy":{"retry":{"onFailure":true,"maxAttempts":0}}}`)
+	f.Add(`{"image":"foo","source":{"url":"x"},"serviceAccount":{"name":"sa","secret":"sa-secret"}}`)
+	f.Add(`{"image":"foo","source":{"url":"x"},"strategy":{"kind":"BogusStrategy"}}`)
+
+	f.Fuzz(func(t *testing.T, raw string) {
+		b := buildWithContract(t, raw)
+		_, _ = ResolveBuild(b)
+	})
+}

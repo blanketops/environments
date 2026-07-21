@@ -171,3 +171,17 @@ func TestResolveGitHubEvent_RepositoryWrongType(t *testing.T) {
 		t.Fatalf("expected type error, got %v", err)
 	}
 }
+
+func FuzzResolveGitHubEvent(f *testing.F) {
+	f.Add(minimalValid)
+	f.Add(`{not json`)
+	f.Add(`{"repository":5,"eventType":"push"}`)
+	f.Add(`{"repository":"x/y","eventType":"push","webhook":"not-an-object"}`)
+	f.Add(`{"repository":"x/y","eventType":"push","webhook":{"secretRef":{"key":"hmac"}}}`)
+	f.Add(`{"repository":"x/y","eventType":"push","eventId":"evt-1","ref":"refs/heads/main","commitSHA":"abc123","actor":"neo"}`)
+
+	f.Fuzz(func(t *testing.T, raw string) {
+		ev := evWithContract(raw)
+		_, _ = ResolveGitHubEvent(ev)
+	})
+}

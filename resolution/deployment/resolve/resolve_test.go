@@ -318,3 +318,17 @@ func TestResolveDeployment_ReconciliationStrategyRawEnumOutOfRange(t *testing.T)
 		t.Fatalf("expected unsupported reconciliation strategy enum error, got %v", err)
 	}
 }
+
+func FuzzResolveDeployment(f *testing.F) {
+	f.Add(minimalValid)
+	f.Add(`{not json`)
+	f.Add(`{"serviceUnits":[1],"runtime":"kubernetes","strategy":"Rolling"}`)
+	f.Add(`{"serviceUnits":["su1"],"runtime":1,"strategy":"Rolling"}`)
+	f.Add(`{"serviceUnits":["su1"],"runtime":"bogus","strategy":"Rolling"}`)
+	f.Add(`{"serviceUnits":["su1"],"runtime":"knative","strategy":"Rolling"}`)
+
+	f.Fuzz(func(t *testing.T, raw string) {
+		d := deploymentWithContract(raw)
+		_, _ = ResolveDeployment(d)
+	})
+}
