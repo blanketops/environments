@@ -22,6 +22,8 @@
 *.cover
 coverage.out
 coverage.html
+beauty-report.html
+coverage-dashboard.html
 
 # Go workspace file
 go.work
@@ -29,6 +31,8 @@ go.work
 # Dependency directories
 vendor/
 docs/code/
+docs-code-preview/
+code-docs.html
 
 # IDEs
 .idea/
@@ -47,6 +51,11 @@ docs/code/
 .env
 .env.local
 .env.*.local
+
+# act (local GitHub Actions runner) — real secrets, never commit
+.secrets
+.vars
+.input
 
 # Kubebuilder artifacts
 config/crd/bases
