@@ -165,3 +165,17 @@ func TestResolveDomain_HostWrongType(t *testing.T) {
 		t.Fatalf("expected type error, got %v", err)
 	}
 }
+
+func FuzzResolveDomain(f *testing.F) {
+	f.Add(minimalValid)
+	f.Add(`{not json`)
+	f.Add(`{"host":5,"routeRef":{"name":"route1"},"tlsStrategy":"platform"}`)
+	f.Add(`{"host":"x","routeRef":"not-an-object","tlsStrategy":"platform"}`)
+	f.Add(`{"host":"x","routeRef":{"name":"route1"},"tlsStrategy":"custom","renewBefore":"720h"}`)
+	f.Add(`{"host":"x","routeRef":{"name":"route1"},"tlsStrategy":"platform","mtls":{"enforced":true}}`)
+
+	f.Fuzz(func(t *testing.T, raw string) {
+		d := domainWithContract(raw)
+		_, _ = ResolveDomain(d)
+	})
+}
