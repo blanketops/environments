@@ -6,6 +6,10 @@
 import "github.com/blanketops/environments/pkg/intent/deployment"
 ```
 
+Package deployment owns DeploymentIntent — the Kubernetes\-free, fully resolved plan for a Deployment, built once its ResolvedDeployment and ResolvedServiceUnits are known. It carries which runtime and strategy to use, the reconciliation mode, and each ServiceUnit's own pkg/intent/serviceunit.ServiceUnitIntent.
+
+IntentBuilder.Build \(intent\_builder.go\) is the canonical, complete constructor and the one pkg/apis/deployment/application.DeploymentService actually calls. ResolveDeploymentIntent \(resolve.go\) is an older, partial constructor that never learned Runtime/Strategy/ReconciliationStrategy/ ManifestsRepo — it has no callers in DeploymentService's path and should be treated as superseded rather than a second supported entry point.
+
 ## Index
 
 - [func ErrInvalidDeployment\(reason string\) error](<#ErrInvalidDeployment>)

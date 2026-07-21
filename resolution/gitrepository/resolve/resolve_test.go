@@ -151,3 +151,17 @@ func TestResolveGitRepository_ProviderWrongType(t *testing.T) {
 		t.Fatalf("expected type error, got %v", err)
 	}
 }
+
+func FuzzResolveGitRepository(f *testing.F) {
+	f.Add(minimalValid)
+	f.Add(`{not json`)
+	f.Add(`{"provider":5,"hookUrl":"x","repository":{"owner":"o","name":"n"}}`)
+	f.Add(`{"provider":"github","hookUrl":"x","repository":{"owner":"o","name":"n"},"webhooks":["not-an-object"]}`)
+	f.Add(`{"provider":"github","hookUrl":"x","repository":{"owner":"o","name":"n"},"webhooks":[{"events":["push","",123,"pull_request"]}]}`)
+	f.Add(`{"provider":"github","hookUrl":"x","repository":{"owner":"o"}}`)
+
+	f.Fuzz(func(t *testing.T, raw string) {
+		r := repoWithContract(raw)
+		_, _ = ResolveGitRepository(r)
+	})
+}

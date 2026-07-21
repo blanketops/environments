@@ -6,6 +6,14 @@
 import "github.com/blanketops/environments/pkg/apis/deployment/domain"
 ```
 
+Package domain holds the pure Deployment domain model: DeploymentSpec \(the desired state\), DeploymentResult/ServiceUnitResult \(the outcome of a reconciliation\), and the Runtime/Strategy/ReconciliationStrategy/Phase enums shared across pkg/apis/deployment's other layers.
+
+### DOMAIN PRINCIPLES
+
+\- No Kubernetes imports \- No controller\-runtime \- No side effects \- No persistence concerns
+
+This package represents the \*intent\* and \*result\* of a Deployment, not how it is reconciled — dispatch and execution live in pkg/apis/deployment/\{reconcile,strategy,api\}.
+
 ## Index
 
 - [type DeploymentPhase](<#DeploymentPhase>)
