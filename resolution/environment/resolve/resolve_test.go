@@ -240,13 +240,90 @@ func TestResolveEnvironment_PackageRefMissingName(t *testing.T) {
 
 func TestResolveEnvironment_ContractSecretStore(t *testing.T) {
 	e := envWithContract(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0",
-		"contract":{"secretStore":{"provider":"vault"}}}`)
+		"contract":{"secretStore":{"provider":"vault","vault":{"address":"https://vault:8200","path":"secret","role":"environments"}}}}`)
 	resolved, err := ResolveEnvironment(e)
 	if err != nil {
 		t.Fatalf("ResolveEnvironment: %v", err)
 	}
 	if resolved.Spec.Contract == nil || resolved.Spec.Contract.SecretStoreProvider != "vault" {
 		t.Fatalf("unexpected Contract: %+v", resolved.Spec.Contract)
+	}
+	vault := resolved.Spec.Contract.Vault
+	if vault == nil {
+		t.Fatal("expected non-nil Vault config")
+	}
+	if vault.Address != "https://vault:8200" || vault.Path != "secret" || vault.Role != "environments" {
+		t.Fatalf("unexpected Vault config: %+v", vault)
+	}
+	if vault.MountPath != "kubernetes" {
+		t.Fatalf("expected default mountPath %q, got %q", "kubernetes", vault.MountPath)
+	}
+	if vault.Version != "v2" {
+		t.Fatalf("expected default version %q, got %q", "v2", vault.Version)
+	}
+	if vault.ServiceAccountName != "" {
+		t.Fatalf("expected empty ServiceAccountName, got %q", vault.ServiceAccountName)
+	}
+}
+
+func TestResolveEnvironment_ContractSecretStoreVaultOverrides(t *testing.T) {
+	e := envWithContract(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0",
+		"contract":{"secretStore":{"provider":"vault","vault":{"address":"https://vault:8200","path":"secret","role":"environments","mountPath":"eso-kubernetes","version":"v1","serviceAccountName":"external-secrets"}}}}`)
+	resolved, err := ResolveEnvironment(e)
+	if err != nil {
+		t.Fatalf("ResolveEnvironment: %v", err)
+	}
+	vault := resolved.Spec.Contract.Vault
+	if vault.MountPath != "eso-kubernetes" || vault.Version != "v1" || vault.ServiceAccountName != "external-secrets" {
+		t.Fatalf("unexpected Vault config overrides: %+v", vault)
+	}
+}
+
+func TestResolveEnvironment_ContractSecretStoreVaultMissing(t *testing.T) {
+	e := envWithContract(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0",
+		"contract":{"secretStore":{"provider":"vault"}}}`)
+	_, err := ResolveEnvironment(e)
+	if err == nil || !strings.Contains(err.Error(), "contract.secretStore.vault is required") {
+		t.Fatalf("expected contract.secretStore.vault error, got %v", err)
+	}
+}
+
+func TestResolveEnvironment_ContractSecretStoreVaultMissingAddress(t *testing.T) {
+	e := envWithContract(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0",
+		"contract":{"secretStore":{"provider":"vault","vault":{"path":"secret","role":"environments"}}}}`)
+	_, err := ResolveEnvironment(e)
+	if err == nil || !strings.Contains(err.Error(), "contract.secretStore.vault.address") {
+		t.Fatalf("expected vault.address error, got %v", err)
+	}
+}
+
+func TestResolveEnvironment_ContractSecretStoreVaultMissingPath(t *testing.T) {
+	e := envWithContract(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0",
+		"contract":{"secretStore":{"provider":"vault","vault":{"address":"https://vault:8200","role":"environments"}}}}`)
+	_, err := ResolveEnvironment(e)
+	if err == nil || !strings.Contains(err.Error(), "contract.secretStore.vault.path") {
+		t.Fatalf("expected vault.path error, got %v", err)
+	}
+}
+
+func TestResolveEnvironment_ContractSecretStoreVaultMissingRole(t *testing.T) {
+	e := envWithContract(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0",
+		"contract":{"secretStore":{"provider":"vault","vault":{"address":"https://vault:8200","path":"secret"}}}}`)
+	_, err := ResolveEnvironment(e)
+	if err == nil || !strings.Contains(err.Error(), "contract.secretStore.vault.role") {
+		t.Fatalf("expected vault.role error, got %v", err)
+	}
+}
+
+func TestResolveEnvironment_ContractSecretStoreNonVaultProviderNoVaultRequired(t *testing.T) {
+	e := envWithContract(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0",
+		"contract":{"secretStore":{"provider":"aws"}}}`)
+	resolved, err := ResolveEnvironment(e)
+	if err != nil {
+		t.Fatalf("ResolveEnvironment: %v", err)
+	}
+	if resolved.Spec.Contract.Vault != nil {
+		t.Fatalf("expected nil Vault config for aws provider, got %+v", resolved.Spec.Contract.Vault)
 	}
 }
 
@@ -294,4 +371,21 @@ func TestResolveEnvironment_DescriptionWrongType(t *testing.T) {
 	if resolved.Spec.Description != "" {
 		t.Fatalf("expected empty Description for wrong type, got %q", resolved.Spec.Description)
 	}
+}
+
+func FuzzResolveEnvironment(f *testing.F) {
+	f.Add(minimalValid)
+	f.Add(`{not json`)
+	f.Add(`{"applicationName":5,"branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0"}`)
+	f.Add(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0","build":{}}`)
+	f.Add(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0","contract":{}}`)
+	f.Add(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0","contract":{"secretStore":{}}}`)
+	f.Add(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0","contract":{"secretStore":{"provider":"vault","vault":{"address":"https://vault:8200","path":"secret","role":"environments"}}}}`)
+	f.Add(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0","contract":{"secretStore":{"provider":"vault","vault":"not-an-object"}}}`)
+	f.Add(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0","serviceUnits":[{}]}`)
+
+	f.Fuzz(func(t *testing.T, raw string) {
+		e := envWithContract(raw)
+		_, _ = ResolveEnvironment(e)
+	})
 }

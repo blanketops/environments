@@ -1,3 +1,45 @@
+## [0.7.5] - 2026-07-19
+
+### 🚀 Features
+
+- *(serviceunit)* Give ServiceUnit its own resolution + domain floor (#265)
+
+### 💼 Other
+
+- V0.7.5 (#273)
+- Resolve release/v0.7.4 into develop
+- Bring main into release/v0.7.5 (resolves PR #286)
+- Merge release/v0.7.5 into main
+
+### 🚜 Refactor
+
+- *(deployment)* Split strategy/reconcile dispatch out of api (#283)
+
+### 🧪 Testing
+
+- Add full coverage for resolution/* packages (#262)
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.7.4
+- *(release)* Update changelog for v0.7.3 (#263)
+- *(release-assets)* Generate SLSA provenance for release assets (#268)
+- Sync develop with main after release/v0.7.4
+- Move SLSA provenance to its own standalone workflow (#272) (#274)
+- Move SLSA provenance to its own standalone workflow (#278)
+## [0.7.4] - 2026-07-17
+
+### 💼 Other
+
+- V0.7.4 (#261)
+- Resolve main into release/v0.7.4
+- Merge release/v0.7.4 into main
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.7.3
+- Prune old vendor-snapshot GHCR images on a schedule (#256)
+- Sync develop with main after release/v0.7.3
 ## [0.7.3] - 2026-07-17
 
 ### 🐛 Bug Fixes

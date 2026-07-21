@@ -9,7 +9,7 @@ import "github.com/blanketops/environments/cache/deployment"
 ## Index
 
 - [type DeploymentCache](<#DeploymentCache>)
-  - [func NewDeploymentCache\(c \*core.Cache\) \*DeploymentCache](<#NewDeploymentCache>)
+  - [func NewDeploymentCache\(c \*cache.Cache\) \*DeploymentCache](<#NewDeploymentCache>)
   - [func \(d \*DeploymentCache\) GetGitOwner\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#DeploymentCache.GetGitOwner>)
   - [func \(d \*DeploymentCache\) GetImageAutomation\(ctx context.Context, nn types.NamespacedName, gen int64\) \(bool, bool, error\)](<#DeploymentCache.GetImageAutomation>)
   - [func \(d \*DeploymentCache\) GetManifestsRepo\(ctx context.Context, nn types.NamespacedName, gen int64, into any\) \(bool, error\)](<#DeploymentCache.GetManifestsRepo>)
@@ -42,10 +42,10 @@ type DeploymentCache struct {
 ### func NewDeploymentCache
 
 ```go
-func NewDeploymentCache(c *core.Cache) *DeploymentCache
+func NewDeploymentCache(c *cache.Cache) *DeploymentCache
 ```
 
-NewDeploymentCache constructs a new DeploymentCache with the provided core.Cache.
+NewDeploymentCache constructs a new DeploymentCache with the provided cache.Cache.
 
 <a name="DeploymentCache.GetGitOwner"></a>
 ### func \(\*DeploymentCache\) GetGitOwner

@@ -147,3 +147,16 @@ func TestResolveRoute_HostWrongType(t *testing.T) {
 		t.Fatalf("expected type error, got %v", err)
 	}
 }
+
+func FuzzResolveRoute(f *testing.F) {
+	f.Add(minimalValid)
+	f.Add(`{not json`)
+	f.Add(`{"host":5,"runtime":"kubernetes-container","serviceUnitRef":{"name":"su1"}}`)
+	f.Add(`{"host":"x","runtime":"kubernetes-container","serviceUnitRef":"not-an-object"}`)
+	f.Add(`{"host":"x","runtime":"knative-service","serviceUnitRef":{"name":"su1"},"enabled":false,"path":"/api","tlsEnabled":false}`)
+
+	f.Fuzz(func(t *testing.T, raw string) {
+		r := routeWithContract(raw)
+		_, _ = ResolveRoute(r)
+	})
+}

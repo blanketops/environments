@@ -9,7 +9,7 @@ import "github.com/blanketops/environments/cache/domain"
 ## Index
 
 - [type DomainCache](<#DomainCache>)
-  - [func NewDomainCache\(c \*core.Cache\) \*DomainCache](<#NewDomainCache>)
+  - [func NewDomainCache\(c \*cache.Cache\) \*DomainCache](<#NewDomainCache>)
   - [func \(d \*DomainCache\) GetCertificateRefName\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#DomainCache.GetCertificateRefName>)
   - [func \(d \*DomainCache\) GetCertificateRefNamespace\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#DomainCache.GetCertificateRefNamespace>)
   - [func \(d \*DomainCache\) GetDomainMappingRefName\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#DomainCache.GetDomainMappingRefName>)
@@ -49,10 +49,10 @@ type DomainCache struct {
 ### func NewDomainCache
 
 ```go
-func NewDomainCache(c *core.Cache) *DomainCache
+func NewDomainCache(c *cache.Cache) *DomainCache
 ```
 
-NewDomainCache constructs a new DomainCache with the provided core.Cache.
+NewDomainCache constructs a new DomainCache with the provided cache.Cache.
 
 <a name="DomainCache.GetCertificateRefName"></a>
 ### func \(\*DomainCache\) GetCertificateRefName

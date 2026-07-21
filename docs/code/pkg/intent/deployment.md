@@ -6,34 +6,26 @@
 import "github.com/blanketops/environments/pkg/intent/deployment"
 ```
 
+Package deployment owns DeploymentIntent — the Kubernetes\-free, fully resolved plan for a Deployment, built once its ResolvedDeployment and ResolvedServiceUnits are known. It carries which runtime and strategy to use, the reconciliation mode, and each ServiceUnit's own pkg/intent/serviceunit.ServiceUnitIntent.
+
+IntentBuilder.Build \(intent\_builder.go\) is the canonical, complete constructor and the one pkg/apis/deployment/application.DeploymentService actually calls. ResolveDeploymentIntent \(resolve.go\) is an older, partial constructor that never learned Runtime/Strategy/ReconciliationStrategy/ ManifestsRepo — it has no callers in DeploymentService's path and should be treated as superseded rather than a second supported entry point.
+
 ## Index
 
-- [func ErrBuildNotReady\(name string\) error](<#ErrBuildNotReady>)
 - [func ErrInvalidDeployment\(reason string\) error](<#ErrInvalidDeployment>)
-- [func ErrInvalidServiceUnit\(name, reason string\) error](<#ErrInvalidServiceUnit>)
 - [func ErrServiceUnitNotFound\(name string\) error](<#ErrServiceUnitNotFound>)
 - [type DeploymentIntent](<#DeploymentIntent>)
   - [func ResolveDeploymentIntent\(deploy \*deploymentResolution.ResolvedDeployment, serviceUnits map\[string\]\*serviceunitResolution.ResolvedServiceUnit\) \(\*DeploymentIntent, error\)](<#ResolveDeploymentIntent>)
+- [type IntentBuilder](<#IntentBuilder>)
+  - [func NewIntentBuilder\(\) \*IntentBuilder](<#NewIntentBuilder>)
+  - [func \(b \*IntentBuilder\) Build\(ctx context.Context, depl \*deploymentResolution.ResolvedDeployment, serviceUnits \[\]serviceunitResolution.ResolvedServiceUnit\) \(\*DeploymentIntent, error\)](<#IntentBuilder.Build>)
 - [type ManifestsRepo](<#ManifestsRepo>)
 - [type ReconciliationStrategy](<#ReconciliationStrategy>)
 - [type Ref](<#Ref>)
-- [type RouteIntent](<#RouteIntent>)
 - [type Runtime](<#Runtime>)
-- [type ServiceUnitIntent](<#ServiceUnitIntent>)
-  - [func ResolveServiceUnitIntent\(su \*serviceunit.ResolvedServiceUnit\) \(\*ServiceUnitIntent, error\)](<#ResolveServiceUnitIntent>)
 - [type ServiceUnitPhase](<#ServiceUnitPhase>)
 - [type ServiceUnitResult](<#ServiceUnitResult>)
 - [type Strategy](<#Strategy>)
-- [type WorkloadIntent](<#WorkloadIntent>)
-
-
-<a name="ErrBuildNotReady"></a>
-## func ErrBuildNotReady
-
-```go
-func ErrBuildNotReady(name string) error
-```
-
 
 
 <a name="ErrInvalidDeployment"></a>
@@ -44,15 +36,6 @@ func ErrInvalidDeployment(reason string) error
 ```
 
 ErrInvalidDeployment indicates a semantic error in a resolved Deployment. This means the resolver violated an invariant or the contract is invalid.
-
-<a name="ErrInvalidServiceUnit"></a>
-## func ErrInvalidServiceUnit
-
-```go
-func ErrInvalidServiceUnit(name, reason string) error
-```
-
-ErrInvalidServiceUnit indicates a semantic error in a resolved ServiceUnit. This means the resolver violated an invariant or the contract is invalid.
 
 <a name="ErrServiceUnitNotFound"></a>
 ## func ErrServiceUnitNotFound
@@ -78,7 +61,7 @@ type DeploymentIntent struct {
     Runtime  Runtime
     Strategy Strategy
 
-    ServiceUnits []ServiceUnitIntent
+    ServiceUnits []serviceunitIntent.ServiceUnitIntent
 
     ReconciliationStrategy ReconciliationStrategy
     ImageAutomation        bool
@@ -97,6 +80,35 @@ func ResolveDeploymentIntent(deploy *deploymentResolution.ResolvedDeployment, se
 ```
 
 
+
+<a name="IntentBuilder"></a>
+## type IntentBuilder
+
+
+
+```go
+type IntentBuilder struct{}
+```
+
+<a name="NewIntentBuilder"></a>
+### func NewIntentBuilder
+
+```go
+func NewIntentBuilder() *IntentBuilder
+```
+
+
+
+<a name="IntentBuilder.Build"></a>
+### func \(\*IntentBuilder\) Build
+
+```go
+func (b *IntentBuilder) Build(ctx context.Context, depl *deploymentResolution.ResolvedDeployment, serviceUnits []serviceunitResolution.ResolvedServiceUnit) (*DeploymentIntent, error)
+```
+
+Build constructs a DeploymentIntent from fully RESOLVED inputs.
+
+CONTRACT: \- Inputs are already validated and normalized \- No Kubernetes types allowed \- No string\-to\-enum logic allowed \- Any invalid state is a resolver bug
 
 <a name="ManifestsRepo"></a>
 ## type ManifestsRepo
@@ -154,19 +166,6 @@ type Ref struct {
 }
 ```
 
-<a name="RouteIntent"></a>
-## type RouteIntent
-
-
-
-```go
-type RouteIntent struct {
-    Host       string
-    Path       string
-    TLSEnabled bool
-}
-```
-
 <a name="Runtime"></a>
 ## type Runtime
 
@@ -187,32 +186,6 @@ const (
     RuntimeAzure      Runtime = "blanketops.dev/azure-container"
 )
 ```
-
-<a name="ServiceUnitIntent"></a>
-## type ServiceUnitIntent
-
-
-
-```go
-type ServiceUnitIntent struct {
-    Name   string
-    Image  string
-    Port   int32
-    Size   int32
-    Routes []RouteIntent
-    // Filled after execution
-    Workload WorkloadIntent
-}
-```
-
-<a name="ResolveServiceUnitIntent"></a>
-### func ResolveServiceUnitIntent
-
-```go
-func ResolveServiceUnitIntent(su *serviceunit.ResolvedServiceUnit) (*ServiceUnitIntent, error)
-```
-
-
 
 <a name="ServiceUnitPhase"></a>
 ## type ServiceUnitPhase
@@ -272,20 +245,6 @@ const (
     StrategyBlueGreen Strategy = "BlueGreen"
     StrategyCanary    Strategy = "Canary"
 )
-```
-
-<a name="WorkloadIntent"></a>
-## type WorkloadIntent
-
-WorkloadIntent points to the concrete runtime object created \(Deployment, Knative Service, ECS Service, etc\)
-
-```go
-type WorkloadIntent struct {
-    APIVersion string
-    Kind       string
-    Name       string
-    Namespace  string
-}
 ```
 
 Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)

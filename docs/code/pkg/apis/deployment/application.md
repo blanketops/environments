@@ -6,22 +6,15 @@
 import "github.com/blanketops/environments/pkg/apis/deployment/application"
 ```
 
+Package application owns DeploymentService, the single entry point that orchestrates a Deployment's reconciliation: build a DeploymentIntent from resolved inputs \(pkg/intent/deployment.IntentBuilder\), execute it across the Imperative/GitOps axis \(pkg/apis/deployment/reconcile.ReconciliationExecutor\), then persist the outcome as CR status and conditions \(StatusWriter\).
+
+This mirrors every other CR's application layer. mapper.go's Mapper / MapResolvedToDomain is not part of that flow — DeploymentService goes straight from ResolvedDeployment through IntentBuilder, never through this Mapper's domain.DeploymentSpec — it predates the Intent layer and has no callers.
+
 ## Index
 
-- [func NewGitOpsDecorator\(inner api.Provider\) api.Provider](<#NewGitOpsDecorator>)
-- [type BackendSelector](<#BackendSelector>)
-  - [func NewBackendSelector\(registry \*api.ProviderRegistry\) \*BackendSelector](<#NewBackendSelector>)
-  - [func \(b \*BackendSelector\) Resolve\(deploymentIntent \*intent.DeploymentIntent\) \(api.Provider, error\)](<#BackendSelector.Resolve>)
 - [type DeploymentService](<#DeploymentService>)
-  - [func NewDeploymentService\(intentBuilder \*IntentBuilder, status \*StatusWriter, reconciliationExecutor \*api.ReconciliationExecutor, log logr.Logger\) \*DeploymentService](<#NewDeploymentService>)
+  - [func NewDeploymentService\(intentBuilder \*intent.IntentBuilder, status \*StatusWriter, reconciliationExecutor \*reconcile.ReconciliationExecutor, log logr.Logger\) \*DeploymentService](<#NewDeploymentService>)
   - [func \(s \*DeploymentService\) Reconcile\(ctx context.Context, resolved \*deploymentResolution.ResolvedDeployment, serviceUnits \[\]serviceunitResolution.ResolvedServiceUnit, log logr.Logger\) error](<#DeploymentService.Reconcile>)
-- [type GitOpsDecorator](<#GitOpsDecorator>)
-  - [func \(g \*GitOpsDecorator\) Execute\(ctx context.Context, i \*intent.DeploymentIntent\) \(\*domain.DeploymentResult, error\)](<#GitOpsDecorator.Execute>)
-  - [func \(g \*GitOpsDecorator\) Runtime\(\) intent.Runtime](<#GitOpsDecorator.Runtime>)
-  - [func \(g \*GitOpsDecorator\) Supports\(s intent.Strategy\) bool](<#GitOpsDecorator.Supports>)
-- [type IntentBuilder](<#IntentBuilder>)
-  - [func NewIntentBuilder\(\) \*IntentBuilder](<#NewIntentBuilder>)
-  - [func \(b \*IntentBuilder\) Build\(ctx context.Context, depl \*deploymentResolution.ResolvedDeployment, serviceUnits \[\]serviceunitResolution.ResolvedServiceUnit\) \(\*intent.DeploymentIntent, error\)](<#IntentBuilder.Build>)
 - [type Mapper](<#Mapper>)
   - [func NewMapper\(\) \*Mapper](<#NewMapper>)
   - [func \(Mapper\) MapResolvedToDomain\(rd \*deploymentResolution.ResolvedDeployment\) domain.DeploymentSpec](<#Mapper.MapResolvedToDomain>)
@@ -29,44 +22,6 @@ import "github.com/blanketops/environments/pkg/apis/deployment/application"
   - [func NewStatusWriter\(c client.Client, log logr.Logger\) \*StatusWriter](<#NewStatusWriter>)
   - [func \(w \*StatusWriter\) WriteDeploymentResult\(ctx context.Context, depl \*env1alpha1.Deployment, result \*domain.DeploymentResult, runErr error\) error](<#StatusWriter.WriteDeploymentResult>)
 
-
-<a name="NewGitOpsDecorator"></a>
-## func NewGitOpsDecorator
-
-```go
-func NewGitOpsDecorator(inner api.Provider) api.Provider
-```
-
-
-
-<a name="BackendSelector"></a>
-## type BackendSelector
-
-BackendSelector resolves and prepares a Provider for a given DeploymentIntent.
-
-```go
-type BackendSelector struct {
-    // contains filtered or unexported fields
-}
-```
-
-<a name="NewBackendSelector"></a>
-### func NewBackendSelector
-
-```go
-func NewBackendSelector(registry *api.ProviderRegistry) *BackendSelector
-```
-
-NewBackendSelector wires the selector with a ProviderRegistry.
-
-<a name="BackendSelector.Resolve"></a>
-### func \(\*BackendSelector\) Resolve
-
-```go
-func (b *BackendSelector) Resolve(deploymentIntent *intent.DeploymentIntent) (api.Provider, error)
-```
-
-Resolve returns a fully prepared Provider for the given intent. It validates runtime \+ strategy compatibility and applies optional delivery decorators \(e.g., GitOps\).
 
 <a name="DeploymentService"></a>
 ## type DeploymentService
@@ -83,7 +38,7 @@ type DeploymentService struct {
 ### func NewDeploymentService
 
 ```go
-func NewDeploymentService(intentBuilder *IntentBuilder, status *StatusWriter, reconciliationExecutor *api.ReconciliationExecutor, log logr.Logger) *DeploymentService
+func NewDeploymentService(intentBuilder *intent.IntentBuilder, status *StatusWriter, reconciliationExecutor *reconcile.ReconciliationExecutor, log logr.Logger) *DeploymentService
 ```
 
 
@@ -96,73 +51,6 @@ func (s *DeploymentService) Reconcile(ctx context.Context, resolved *deploymentR
 ```
 
 
-
-<a name="GitOpsDecorator"></a>
-## type GitOpsDecorator
-
-
-
-```go
-type GitOpsDecorator struct {
-    // contains filtered or unexported fields
-}
-```
-
-<a name="GitOpsDecorator.Execute"></a>
-### func \(\*GitOpsDecorator\) Execute
-
-```go
-func (g *GitOpsDecorator) Execute(ctx context.Context, i *intent.DeploymentIntent) (*domain.DeploymentResult, error)
-```
-
-
-
-<a name="GitOpsDecorator.Runtime"></a>
-### func \(\*GitOpsDecorator\) Runtime
-
-```go
-func (g *GitOpsDecorator) Runtime() intent.Runtime
-```
-
-
-
-<a name="GitOpsDecorator.Supports"></a>
-### func \(\*GitOpsDecorator\) Supports
-
-```go
-func (g *GitOpsDecorator) Supports(s intent.Strategy) bool
-```
-
-
-
-<a name="IntentBuilder"></a>
-## type IntentBuilder
-
-
-
-```go
-type IntentBuilder struct{}
-```
-
-<a name="NewIntentBuilder"></a>
-### func NewIntentBuilder
-
-```go
-func NewIntentBuilder() *IntentBuilder
-```
-
-
-
-<a name="IntentBuilder.Build"></a>
-### func \(\*IntentBuilder\) Build
-
-```go
-func (b *IntentBuilder) Build(ctx context.Context, depl *deploymentResolution.ResolvedDeployment, serviceUnits []serviceunitResolution.ResolvedServiceUnit) (*intent.DeploymentIntent, error)
-```
-
-Build constructs a DeploymentIntent from fully RESOLVED inputs.
-
-CONTRACT: \- Inputs are already validated and normalized \- No Kubernetes types allowed \- No string\-to\-enum logic allowed \- Any invalid state is a resolver bug
 
 <a name="Mapper"></a>
 ## type Mapper

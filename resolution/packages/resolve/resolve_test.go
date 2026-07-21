@@ -226,3 +226,17 @@ func TestResolvePackage_NameWrongType(t *testing.T) {
 		t.Fatalf("expected type error, got %v", err)
 	}
 }
+
+func FuzzResolvePackage(f *testing.F) {
+	f.Add(minimalValid)
+	f.Add(`{not json`)
+	f.Add(`{"packageName":5,"packageVersion":"1.0.0","packageRepository":{"url":"x"}}`)
+	f.Add(`{"packageName":"pkg1","packageVersion":"1.0.0","packageRepository":"not-an-object"}`)
+	f.Add(`{"packageName":"pkg1","packageVersion":"1.0.0","packageRepository":{"url":"x"},"packageMaintainers":[{"email":"a@b.com"}]}`)
+	f.Add(`{"enabled":false,"packageName":"pkg1","packageVersion":"1.0.0","packageRepository":{"url":"x"}}`)
+
+	f.Fuzz(func(t *testing.T, raw string) {
+		p := pkgWithContract(raw)
+		_, _ = ResolvePackage(p)
+	})
+}

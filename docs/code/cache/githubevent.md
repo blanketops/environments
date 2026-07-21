@@ -9,7 +9,7 @@ import "github.com/blanketops/environments/cache/githubevent"
 ## Index
 
 - [type GitHubEventCache](<#GitHubEventCache>)
-  - [func NewGitHubEventCache\(c \*core.Cache\) \*GitHubEventCache](<#NewGitHubEventCache>)
+  - [func NewGitHubEventCache\(c \*cache.Cache\) \*GitHubEventCache](<#NewGitHubEventCache>)
   - [func \(g \*GitHubEventCache\) GetEventType\(ctx context.Context, nn types.NamespacedName, gen int64, name string\) \(string, bool, error\)](<#GitHubEventCache.GetEventType>)
   - [func \(g \*GitHubEventCache\) GetRef\(ctx context.Context, nn types.NamespacedName, gen int64, name string\) \(string, bool, error\)](<#GitHubEventCache.GetRef>)
   - [func \(g \*GitHubEventCache\) GetRepository\(ctx context.Context, nn types.NamespacedName, gen int64, name string\) \(string, bool, error\)](<#GitHubEventCache.GetRepository>)
@@ -36,10 +36,10 @@ type GitHubEventCache struct {
 ### func NewGitHubEventCache
 
 ```go
-func NewGitHubEventCache(c *core.Cache) *GitHubEventCache
+func NewGitHubEventCache(c *cache.Cache) *GitHubEventCache
 ```
 
-NewGitHubEventCache constructs a new GitHubEventCache with the provided core.Cache.
+NewGitHubEventCache constructs a new GitHubEventCache with the provided cache.Cache.
 
 <a name="GitHubEventCache.GetEventType"></a>
 ### func \(\*GitHubEventCache\) GetEventType

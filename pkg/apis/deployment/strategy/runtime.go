@@ -86,26 +86,3 @@ func (p *RuntimeProvider) Execute(
 		return nil, fmt.Errorf("unsupported runtime: %s", dIntent.Runtime)
 	}
 }
-
-// Teardown mirrors Execute's Runtime dispatch, deleting whatever the
-// matching strategy applied for this intent.
-func (p *RuntimeProvider) Teardown(
-	ctx context.Context,
-	dIntent *intent.DeploymentIntent,
-) error {
-
-	switch dIntent.Runtime {
-
-	case intent.RuntimeKubernetes:
-		return p.K8S.Teardown(ctx, dIntent)
-
-	case intent.RuntimeKnative:
-		return fmt.Errorf("knative runtime not implemented")
-
-	case intent.RuntimeECS:
-		return fmt.Errorf("ecs runtime not implemented")
-
-	default:
-		return fmt.Errorf("unsupported runtime: %s", dIntent.Runtime)
-	}
-}
