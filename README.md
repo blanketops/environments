@@ -1,4 +1,4 @@
-# 🌍 BlanketOps Environments
+# BlanketOps Environments
 
 **A Deterministic Software Delivery Engine for Kubernetes.**
 
@@ -6,7 +6,7 @@ BlanketOps Environments is the core resolution engine behind the BlanketOps plat
 
 ---
 
-## ❓ Why BlanketOps Environments
+## Why BlanketOps Environments
 
 Modern Kubernetes delivery is fragile by default.
 
@@ -27,7 +27,7 @@ This is not a pipeline runner. It is a reconciliation engine. The difference mat
 
 ---
 
-## 🧭 About BlanketOps
+## About BlanketOps
 
 BlanketOps is a Kubernetes-native delivery framework designed to move code from IDE to production — with reduced entropy and governed reconciliation.
 
@@ -47,7 +47,7 @@ Instead of ad-hoc pipelines and implicit state, BlanketOps Environments models d
 
 ---
 
-## 🔁 Core Flow Principle
+## Core Flow Principle
 
 All inputs — whether from SDKs, YAML, or event systems — are normalized into a single source of truth:
 
@@ -69,9 +69,9 @@ This ensures:
 
 ---
 
-## 🏗 Networking Layer
+## Networking Layer
 
-`v0.6.0` ships the first-class networking domain — Route and Domain — completing the delivery chain from source commit to live, TLS-terminated endpoint.
+`v0.6.0` shipped the first-class networking domain — Route and Domain — completing the delivery chain from source commit to live, TLS-terminated endpoint.
 
 ```
 Deployment
@@ -92,9 +92,9 @@ Deployment
 
 | Runtime | Materialises As | Status |
 |---------|----------------|--------|
-| `knative-service` | Knative DomainMapping via Kourier | ✅ Implemented |
-| `kubernetes-container` | Kubernetes Ingress via nginx | ✅ Implemented |
-| `gateway-api` | Gateway API HTTPRoute | 🔜 Planned |
+| `knative-service` | Knative DomainMapping via Kourier | Implemented |
+| `kubernetes-container` | Kubernetes Ingress via nginx | Implemented |
+| `gateway-api` | Gateway API HTTPRoute | Planned |
 
 **TLS strategies:**
 
@@ -105,29 +105,41 @@ Deployment
 
 ---
 
-## 📚 Documentation
+## Since v0.6.0 → v0.7.4
 
-The full BlanketOps Environments documentation is available at:
-
-🔗 [blanketopsenvironments.netlify.app](https://blanketopsenvironments.netlify.app)
-
-| Reference | Link |
-|-----------|------|
-| 📘 CRD Definitions (Build API) | [docs](https://blanketopsenvironments.netlify.app/docs/Api/Environments/build) |
-| 📘 API Overview & State Transitions | [docs](https://blanketopsenvironments.netlify.app/docs/Api/overview) |
-| 🧠 Delivery Lifecycle (State Machine Model) | [docs](https://blanketopsenvironments.netlify.app/docs/Model/state-machine) |
+- **ServiceUnit** now has its own resolution and domain floor, rather than inheriting Deployment's.
+- **Deployment** strategy/reconcile dispatch split out of `api` into its own layer.
+- **`core/`** split into per-concern subpackages (cache, command, conditions, engine, events, predicates, registry).
+- **`pkg/secrets`** reconcilers brought up to convention and split per-reconciler, with full test coverage.
+- Build teardown now deletes the underlying `Secret`, not just the `ExternalSecret`.
+- CI: SLSA provenance generation for release assets, GitHub App auth (replacing an expiring PAT), advanced CodeQL scanning on every push.
+- Full test coverage added across `resolution/*` and `core/*`.
 
 ---
 
-## 📦 Installation
+## Documentation
+
+The full BlanketOps Environments documentation is available at:
+
+[blanketopsenvironments.netlify.app](https://blanketopsenvironments.netlify.app)
+
+| Reference | Link |
+|-----------|------|
+| CRD Definitions (Build API) | [docs](https://blanketopsenvironments.netlify.app/docs/Api/Environments/build) |
+| API Overview & State Transitions | [docs](https://blanketopsenvironments.netlify.app/docs/Api/overview) |
+| Delivery Lifecycle (State Machine Model) | [docs](https://blanketopsenvironments.netlify.app/docs/Model/state-machine) |
+
+---
+
+## Installation
 
 ```bash
-go get github.com/blanketops/blanketops-environments@v0.6.0
+go get github.com/blanketops/blanketops-environments@v0.7.4
 ```
 
 ---
 
-## 🏗 Project Structure
+## Project Structure
 
 ```
 cache/              → Generation-scoped field-level cache (ObjectCache, typed helpers)
@@ -153,7 +165,7 @@ logging/            → Structured logging abstractions
 
 ---
 
-## ✨ Design Principles
+## Design Principles
 
 BlanketOps Environments follows strict architectural boundaries:
 
@@ -169,18 +181,18 @@ The goal is to reduce delivery entropy through structured reconciliation.
 
 ---
 
-## 🚧 Stability
+## Stability
 
 | | |
 |---|---|
-| **Current Version** | `v0.6.0` |
+| **Current Version** | `v0.7.4` |
 | **API Status** | Evolving — breaking changes possible before `v1.0.0` |
 | **Intended Use** | Integration with BlanketOps Environments controllers |
 | **Versioning** | Semantic Versioning — `v1.0.0` will signal a stable public contract |
 
 ---
 
-## 🎯 Intended Consumers
+## Intended Consumers
 
 This module powers:
 
@@ -192,12 +204,12 @@ If you are looking for the controller runtime, see the [BlanketOps Environments 
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 This project is currently in active development. Contributions and architectural discussions are welcome.
 
 ---
 
-## 📜 License
+## License
 
 Apache License 2.0 — see [LICENSE](LICENSE) for details.
