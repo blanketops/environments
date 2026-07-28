@@ -200,7 +200,7 @@ This module powers:
 - Delivery orchestration layers.
 - Reconciliation engines.
 
-If you are looking for the controller runtime, see the [BlanketOps Environments Controller](https://github.com/blanketops/blanketops-environments-controller) repository.
+If you are looking for the controller runtime, see the [BlanketOps Environments Controller](https://github.com/blanketops/environments-controller) repository.
 
 ---
 
