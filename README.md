@@ -35,11 +35,11 @@ Instead of ad-hoc pipelines and implicit state, BlanketOps Environments models d
 
 | Primitive | Responsibility | Reference |
 |-----------|---------------|-----------|
-| Environment | Root of the delivery chain; ClusterSecretStore authority | [docs](https://blanketopsenvironments.netlify.app/docs/Concepts/environment) |
-| Build | Image build lifecycle; BuildRun orchestration | [docs](https://blanketopsenvironments.netlify.app/docs/Concepts/build) |
-| Deployment | Workload rollout; ServiceUnit lifecycle | [docs](https://blanketopsenvironments.netlify.app/docs/Concepts/deployment) |
-| Package | Artifact promotion and supply chain attestation | [docs](https://blanketopsenvironments.netlify.app/docs/Concepts/build) |
-| GitRepository | Source binding; commit SHA resolution | [docs](https://blanketopsenvironments.netlify.app/docs/Concepts/gitrepository) |
+| Environment | Root of the delivery chain; ClusterSecretStore authority | [docs](https://bopsenvironments.netlify.app/docs/Concepts/environment) |
+| Build | Image build lifecycle; BuildRun orchestration | [docs](https://bopsenvironments.netlify.app/docs/Concepts/build) |
+| Deployment | Workload rollout; ServiceUnit lifecycle | [docs](https://bopsenvironments.netlify.app/docs/Concepts/deployment) |
+| Package | Artifact promotion and supply chain attestation | [docs](https://bopsenvironments.netlify.app/docs/Concepts/build) |
+| GitRepository | Source binding; commit SHA resolution | [docs](https://bopsenvironments.netlify.app/docs/Concepts/gitrepository) |
 | GitHubEvent | Webhook-driven trigger pipeline | [docs](https://blanketopsenvironments.netlify.app/docs/Concepts/githubevent) |
 | ServiceUnit | Single workload declaration (image, port, size) | [docs](https://blanketopsenvironments.netlify.app/docs/Concepts/serviceunit) |
 | Route | Workload-to-host binding; runtime materialisation | [docs](https://blanketopsenvironments.netlify.app/docs/Concepts/route) |
