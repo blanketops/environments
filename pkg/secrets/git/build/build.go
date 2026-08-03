@@ -38,8 +38,8 @@ import (
 type BuildGitSSHSecretReconciler struct {
 	Client    client.Client
 	Log       logr.Logger
-	StoreName string // ClusterSecretStore name — resolved from environment contract
-	StoreKind string // ClusterSecretStore kind — resolved from environment contract
+	StoreName string
+	StoreKind string
 }
 
 func NewBuildGitSSHSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *BuildGitSSHSecretReconciler {
