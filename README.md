@@ -35,15 +35,15 @@ Instead of ad-hoc pipelines and implicit state, BlanketOps Environments models d
 
 | Primitive | Responsibility | Reference |
 |-----------|---------------|-----------|
-| Environment | Root of the delivery chain; ClusterSecretStore authority | [docs](https://bopsenvironments.netlify.app/docs/Concepts/environment) |
-| Build | Image build lifecycle; BuildRun orchestration | [docs](https://bopsenvironments.netlify.app/docs/Concepts/build) |
-| Deployment | Workload rollout; ServiceUnit lifecycle | [docs](https://bopsenvironments.netlify.app/docs/Concepts/deployment) |
-| Package | Artifact promotion and supply chain attestation | [docs](https://bopsenvironments.netlify.app/docs/Concepts/build) |
-| GitRepository | Source binding; commit SHA resolution | [docs](https://bopsenvironments.netlify.app/docs/Concepts/gitrepository) |
-| GitHubEvent | Webhook-driven trigger pipeline | [docs](https://blanketopsenvironments.netlify.app/docs/Concepts/githubevent) |
-| ServiceUnit | Single workload declaration (image, port, size) | [docs](https://blanketopsenvironments.netlify.app/docs/Concepts/serviceunit) |
-| Route | Workload-to-host binding; runtime materialisation | [docs](https://blanketopsenvironments.netlify.app/docs/Concepts/route) |
-| Domain | TLS chain ownership; cert-manager + Knative bridge | [docs](https://blanketopsenvironments.netlify.app/docs/Concepts/domain) |
+| Environment | Root of the delivery chain; ClusterSecretStore authority | [docs](https://blanketops-environments.netlify.app/.app/docs/Concepts/environment) |
+| Build | Image build lifecycle; BuildRun orchestration | [docs](https://blanketops-environments.netlify.app/.app/docs/Concepts/build) |
+| Deployment | Workload rollout; ServiceUnit lifecycle | [docs](https://blanketops-environments.netlify.app/.app/docs/Concepts/deployment) |
+| Package | Artifact promotion and supply chain attestation | [docs](https://blanketops-environments.netlify.app/.app/docs/Concepts/build) |
+| GitRepository | Source binding; commit SHA resolution | [docs](https://blanketops-environments.netlify.app/.app/docs/Concepts/gitrepository) |
+| GitHubEvent | Webhook-driven trigger pipeline | [docs](https://blanketops-environments.netlify.app/.app/docs/Concepts/githubevent) |
+| ServiceUnit | Single workload declaration (image, port, size) | [docs](https://blanketops-environments.netlify.app/.app/docs/Concepts/serviceunit) |
+| Route | Workload-to-host binding; runtime materialisation | [docs](https://blanketops-environments.netlify.app/.app/docs/Concepts/route) |
+| Domain | TLS chain ownership; cert-manager + Knative bridge | [docs](https://blanketops-environments.netlify.app/.app/docs/Concepts/domain) |
 
 ---
 
@@ -121,13 +121,13 @@ Deployment
 
 The full BlanketOps Environments documentation is available at:
 
-[blanketopsenvironments.netlify.app](https://blanketopsenvironments.netlify.app)
+[blanketopsenvironments.netlify.app](https://blanketops-environments.netlify.app/.app)
 
 | Reference | Link |
 |-----------|------|
-| CRD Definitions (Build API) | [docs](https://blanketopsenvironments.netlify.app/docs/Api/Environments/build) |
-| API Overview & State Transitions | [docs](https://blanketopsenvironments.netlify.app/docs/Api/overview) |
-| Delivery Lifecycle (State Machine Model) | [docs](https://blanketopsenvironments.netlify.app/docs/Model/state-machine) |
+| CRD Definitions (Build API) | [docs](https://blanketops-environments.netlify.app/.app/docs/Api/Environments/build) |
+| API Overview & State Transitions | [docs](https://blanketops-environments.netlify.app/.app/docs/Api/overview) |
+| Delivery Lifecycle (State Machine Model) | [docs](https://blanketops-environments.netlify.app/.app/docs/Model/state-machine) |
 
 ---
 
@@ -144,20 +144,24 @@ go get github.com/blanketops/blanketops-environments@v0.7.4
 ```
 cache/              → Generation-scoped field-level cache (ObjectCache, typed helpers)
 core/               → Engine, orchestration, and core.Cache factory
-pkg/
-  build/            → Build domain (application, api, domain layers)
-  deployment/       → Deployment domain
-  domain/           → Domain CR domain (TLS chain, cert-manager, Knative)
-  githubevent/      → GitHubEvent trigger domain
-  gitrepository/    → GitRepository source binding domain
-  package/          → Package and artifact promotion domain
-  route/            → Route domain (Knative DomainMapping, Kubernetes Ingress)
-  serviceunit/      → ServiceUnit workload domain
+pkg/apis
+    build/            → Build domain (application, api, domain layers)
+    deployment/       → Deployment domain
+    domain/           → Domain CR domain (TLS chain, cert-manager, Knative)
+    githubevent/      → GitHubEvent trigger domain
+    gitrepository/    → GitRepository source binding domain
+    package/          → Package and artifact promotion domain
+    route/            → Route domain (Knative DomainMapping, Kubernetes Ingress)
+    serviceunit/      → ServiceUnit workload domain
+   secrets/        → Platform secrets used by resources
+   intent/         → Resource dedicated declared intent
 resolution/
   build/            → Build resolution and contract adapter
+  deployment/       → Deployment resolution and contract adapter
   domain/           → Domain resolution and contract adapter
   githubevent/      → GitHubEvent resolution and contract adapter
   gitrepository/    → GitRepository resolution and contract adapter
+  serviceunit/      → ServiceUnit resolution and contract adapter
   route/            → Route resolution and contract adapter
 runtime/            → Event runtime components
 logging/            → Structured logging abstractions
