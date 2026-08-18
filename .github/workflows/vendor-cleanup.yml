@@ -22,7 +22,7 @@ permissions:
 jobs:
   cleanup:
     name: Prune old vendor snapshots
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Delete old vendor-snapshot versions
         uses: actions/delete-package-versions@v5
