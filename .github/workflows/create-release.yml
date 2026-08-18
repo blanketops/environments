@@ -27,7 +27,7 @@ permissions:
 
 jobs:
   create:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
       - name: Generate GitHub App token
