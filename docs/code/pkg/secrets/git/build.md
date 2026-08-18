@@ -25,8 +25,8 @@ Package build reconciles the Build git\-ssh clone secret — the ExternalSecret 
 type BuildGitSSHSecretReconciler struct {
     Client    client.Client
     Log       logr.Logger
-    StoreName string // ClusterSecretStore name — resolved from environment contract
-    StoreKind string // ClusterSecretStore kind — resolved from environment contract
+    StoreName string
+    StoreKind string
 }
 ```
 
