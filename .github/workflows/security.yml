@@ -64,7 +64,7 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   codeql:
     name: CodeQL (Go)
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: >
       github.event_name == 'push' || github.event_name == 'pull_request' ||
       github.event.schedule == '0 7 * * 3'
@@ -175,7 +175,7 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   scorecard:
     name: OpenSSF Scorecard
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: >
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       github.event_name == 'pull_request' ||
@@ -259,7 +259,7 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   govulncheck:
     name: govulncheck
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: >
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       github.event_name == 'pull_request' ||
