@@ -18,6 +18,7 @@ Resolution is nil\-tolerant for the CR itself but strict on the contract payload
   - [func ResolveEnvironment\(environment \*environmentv1alpha1.Environment\) \(\*ResolvedEnvironment, error\)](<#ResolveEnvironment>)
 - [type ResolvedEnvironmentContract](<#ResolvedEnvironmentContract>)
 - [type ResolvedEnvironmentSpec](<#ResolvedEnvironmentSpec>)
+- [type ResolvedVaultConfig](<#ResolvedVaultConfig>)
 
 
 <a name="ResolvedEnvironment"></a>
@@ -44,11 +45,16 @@ ResolveEnvironment decodes and validates the raw JSON contract from the Environm
 <a name="ResolvedEnvironmentContract"></a>
 ## type ResolvedEnvironmentContract
 
-ResolvedEnvironmentContract holds platform\-level bindings declared on the Environment — currently the ESO secret store provider.
+ResolvedEnvironmentContract holds platform\-level bindings declared on the Environment — the ESO secret store provider, plus provider\-specific connection config needed to provision the store itself \(currently Vault only; AWS/GCP/Azure still resolve to a pre\-provisioned platform store\).
 
 ```go
 type ResolvedEnvironmentContract struct {
     SecretStoreProvider string
+    // Vault is non-nil only when SecretStoreProvider is "vault" /
+    // "SECRET_STORE_PROVIDER_VAULT". Populated from
+    // contract.secretStore.vault — validated at resolution time so a
+    // malformed CR fails fast here rather than deep inside ESO reconciliation.
+    Vault *ResolvedVaultConfig
 }
 ```
 
@@ -79,6 +85,32 @@ type ResolvedEnvironmentSpec struct {
 
     // Platform-level bindings.
     Contract *ResolvedEnvironmentContract
+}
+```
+
+<a name="ResolvedVaultConfig"></a>
+## type ResolvedVaultConfig
+
+ResolvedVaultConfig is the Environment\-declared HashiCorp Vault connection used to provision the ClusterSecretStore/SecretStore ESO reads from. This is connection config only — secret values are populated into Vault by a separate out\-of\-band process, never by this repo.
+
+```go
+type ResolvedVaultConfig struct {
+    // Address is the Vault server URL. Required.
+    Address string
+    // Path is the KV secrets engine mount path (e.g. "secret"). Required.
+    Path string
+    // Role is the Vault Kubernetes-auth role to assume. Required.
+    Role string
+    // MountPath is the Vault Kubernetes-auth mount path. Defaults to
+    // "kubernetes" when not declared.
+    MountPath string
+    // Version is the KV engine version ("v1" or "v2"). Defaults to "v2"
+    // when not declared.
+    Version string
+    // ServiceAccountName optionally names the ServiceAccount ESO uses to
+    // authenticate the Kubernetes-auth login. Empty means ESO falls back
+    // to its own pod identity.
+    ServiceAccountName string
 }
 ```
 
