@@ -101,7 +101,7 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   build:
     name: Build
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: github.event_name == 'push'
     steps:
       - name: Generate GitHub App token
@@ -150,7 +150,7 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   vendor-snapshot:
     name: Vendor Snapshot
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     outputs:
       vendor-tag: ${{ steps.tag.outputs.tag }}
@@ -256,7 +256,7 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   validate:
     name: Lint, Vet, Test
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: vendor-snapshot
     steps:
       - name: Generate GitHub App token
@@ -404,7 +404,7 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   coverage:
     name: Test and Coverage
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: >
       (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')) ||
       (github.event_name == 'pull_request' && github.base_ref == 'main')
@@ -612,7 +612,7 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   code-docs:
     name: Generate Code Docs
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Generate GitHub App token
@@ -771,7 +771,7 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   fuzz:
     name: Fuzz (${{ matrix.target.name }})
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: >
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'schedule' && github.event.schedule == '0 9 * * 2') ||
@@ -931,7 +931,7 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   vendor-cleanup:
     name: Prune old vendor snapshots
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: (github.event_name == 'schedule' && github.event.schedule == '0 6 * * 1') || github.event_name == 'workflow_dispatch'
     steps:
       - name: Delete old vendor-snapshot versions
