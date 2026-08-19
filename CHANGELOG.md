@@ -1,3 +1,54 @@
+## [0.7.6] - 2026-08-19
+
+### 🚀 Features
+
+- *(environment)* Provision Vault ClusterSecretStore/SecretStore; expand fuzz coverage
+- *(deployment)* Wire Teardown through strategy/reconcile/application (#290)
+
+### 🐛 Bug Fixes
+
+- *(ci)* Match code-docs.yml GPG committer identity to the signing key (#275)
+- *(ci)* Heal stale vendor-snapshot cache and simplify coverage summary (#276)
+- *(deployment)* Untangle execution + domain layers, fix strategy bug (#281)
+- *(deployment)* Stub out DeploymentService.Teardown pending reconcile support
+
+### 💼 Other
+
+- Bring release/v0.7.5 into develop (resolves PR #282)
+- Bring main into develop (main wins on conflict)
+- Merge release/v0.7.6 into main
+
+### 🚜 Refactor
+
+- *(deployment)* Split strategy/reconcile dispatch out of api (#289)
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+- Auto-generate code documentation [skip ci]
+- Auto-generate code documentation [skip ci]
+- Regenerate code documentation (#284)
+- Auto-generate code documentation [skip ci]
+- Fix stale self-hosted comment in ci.yml's folded-in fuzz job
+
+### 🧪 Testing
+
+- *(resolution)* Add native Go fuzz tests for CR contract resolvers (#291)
+- Add coverage for pkg/apis/serviceunit and the cache/* layer (#280)
+- *(resolution)* Add native Go fuzz tests for CR contract resolvers
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.7.5
+- Switch all workflow jobs to self-hosted runners
+- Add act config for running GitHub Actions workflows locally (#292)
+- Run workflows on ubuntu-latest instead of self-hosted runners
+- Move SLSA provenance to its own standalone workflow (#272)
+- *(code-docs)* Commit generated docs via the Git Data API, drop GPG (#285)
+- Sync develop with main after release/v0.7.5
+- Consolidate 10 workflows to 7; close self-hosted-runner gap on develop
+- Run workflows on ubuntu-latest instead of self-hosted runners (redo)
+- Use GitHub App token for release.yml's changelog push
 ## [0.7.5] - 2026-07-19
 
 ### 🚀 Features
