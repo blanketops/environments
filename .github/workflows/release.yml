@@ -5,7 +5,11 @@
 # it to main, then publishes a GitHub Release with the latest release notes.
 #
 # Secrets required:
-#   GITHUB_TOKEN     — commit changelog + create release (default token)
+#   APP_ID, APP_PRIVATE_KEY — GitHub App credentials, exchanged for a
+#   short-lived installation token. The changelog commit pushes straight to
+#   main, which required-status-checks protects against direct pushes; the
+#   default GITHUB_TOKEN can't bypass that the way an App installation
+#   token can.
 #   GPG_PRIVATE_KEY  — signs the changelog commit
 #   GPG_PASSPHRASE   — passphrase for GPG_PRIVATE_KEY
 # =============================================================================
@@ -24,10 +28,20 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments
+
       - name: Checkout tag
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Install git-cliff
         run: |
@@ -75,7 +89,7 @@ jobs:
         with:
           body_path: RELEASE_NOTES.md
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
 
       - name: Release Summary
         run: |

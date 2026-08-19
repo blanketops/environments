@@ -6,7 +6,7 @@
 import "github.com/blanketops/environments/pkg/apis/deployment/application"
 ```
 
-Package application owns DeploymentService, the single entry point that orchestrates a Deployment's reconciliation: build a DeploymentIntent from resolved inputs \(pkg/intent/deployment.IntentBuilder\), execute it across the Imperative/GitOps axis \(pkg/apis/deployment/reconcile.ReconciliationExecutor\), then persist the outcome as CR status and conditions \(StatusWriter\).
+Package application owns DeploymentService, the single entry point that orchestrates a Deployment's reconciliation: build a DeploymentIntent from resolved inputs \(pkg/intent/deployment.IntentBuilder\), execute it across the Imperative/GitOps axis \(pkg/apis/deployment/reconcile.ReconciliationExecutor\), then persist the outcome as CR status and conditions \(StatusWriter\). Teardown mirrors the same Build\-then\-dispatch shape for deletion, minus the status write.
 
 This mirrors every other CR's application layer. mapper.go's Mapper / MapResolvedToDomain is not part of that flow — DeploymentService goes straight from ResolvedDeployment through IntentBuilder, never through this Mapper's domain.DeploymentSpec — it predates the Intent layer and has no callers.
 
@@ -15,6 +15,7 @@ This mirrors every other CR's application layer. mapper.go's Mapper / MapResolve
 - [type DeploymentService](<#DeploymentService>)
   - [func NewDeploymentService\(intentBuilder \*intent.IntentBuilder, status \*StatusWriter, reconciliationExecutor \*reconcile.ReconciliationExecutor, log logr.Logger\) \*DeploymentService](<#NewDeploymentService>)
   - [func \(s \*DeploymentService\) Reconcile\(ctx context.Context, resolved \*deploymentResolution.ResolvedDeployment, serviceUnits \[\]serviceunitResolution.ResolvedServiceUnit, log logr.Logger\) error](<#DeploymentService.Reconcile>)
+  - [func \(s \*DeploymentService\) Teardown\(ctx context.Context, resolved \*deploymentResolution.ResolvedDeployment, serviceUnits \[\]serviceunitResolution.ResolvedServiceUnit, log logr.Logger\) error](<#DeploymentService.Teardown>)
 - [type Mapper](<#Mapper>)
   - [func NewMapper\(\) \*Mapper](<#NewMapper>)
   - [func \(Mapper\) MapResolvedToDomain\(rd \*deploymentResolution.ResolvedDeployment\) domain.DeploymentSpec](<#Mapper.MapResolvedToDomain>)
@@ -51,6 +52,15 @@ func (s *DeploymentService) Reconcile(ctx context.Context, resolved *deploymentR
 ```
 
 
+
+<a name="DeploymentService.Teardown"></a>
+### func \(\*DeploymentService\) Teardown
+
+```go
+func (s *DeploymentService) Teardown(ctx context.Context, resolved *deploymentResolution.ResolvedDeployment, serviceUnits []serviceunitResolution.ResolvedServiceUnit, log logr.Logger) error
+```
+
+Teardown deletes whatever Reconcile applied for this Deployment. It takes the same resolved inputs as Reconcile so the intent it builds — and tears down — matches exactly what was applied. No status write: the CR is being deleted, so there is nothing left to persist status onto once this returns.
 
 <a name="Mapper"></a>
 ## type Mapper
