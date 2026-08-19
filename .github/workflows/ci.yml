@@ -762,8 +762,8 @@ jobs:
   #
   # One matrix leg per target so a crasher in one doesn't block the others
   # (fail-fast: false) and each gets its own job summary. 8 legs each spin up
-  # ~12 fuzz workers (confirmed locally) — if the self-hosted pool is small,
-  # add `max-parallel:` once contention actually shows up in a run.
+  # ~12 fuzz workers (confirmed locally) — add `max-parallel:` once
+  # contention actually shows up in a run.
   #
   # vendor restore: same three-tier fallback as the coverage job (tagged
   # snapshot → latest → inline `go mod vendor`) — this job runs standalone,
