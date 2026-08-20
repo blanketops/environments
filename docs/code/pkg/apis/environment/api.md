@@ -45,7 +45,7 @@ const (
 ```
 
 <a name="ResolveStoreName"></a>
-## func ResolveStoreName
+## func [ResolveStoreName](<https://github.com/blanketops/environments/blob/main/pkg/apis/environment/api/provider.go#L42>)
 
 ```go
 func ResolveStoreName(provider string) string
@@ -54,7 +54,7 @@ func ResolveStoreName(provider string) string
 ResolveStoreName maps the secretStore.provider string from the environment contract to the corresponding ClusterSecretStore name. Unknown or empty provider falls back to the fake store — safe for local kind cluster development. Must not be used in production without a valid provider declared on the Environment CR.
 
 <a name="SecretStoreReconciler"></a>
-## type SecretStoreReconciler
+## type [SecretStoreReconciler](<https://github.com/blanketops/environments/blob/main/pkg/apis/environment/api/secretstore.go#L46-L49>)
 
 SecretStoreReconciler converges the ESO ClusterSecretStore/SecretStore for an Environment's declared secretStore.provider to its current desired state.
 
@@ -66,7 +66,7 @@ type SecretStoreReconciler struct {
 ```
 
 <a name="NewSecretStoreReconciler"></a>
-### func NewSecretStoreReconciler
+### func [NewSecretStoreReconciler](<https://github.com/blanketops/environments/blob/main/pkg/apis/environment/api/secretstore.go#L51>)
 
 ```go
 func NewSecretStoreReconciler(c client.Client, log logr.Logger) *SecretStoreReconciler
@@ -75,7 +75,7 @@ func NewSecretStoreReconciler(c client.Client, log logr.Logger) *SecretStoreReco
 
 
 <a name="SecretStoreReconciler.Reconcile"></a>
-### func \(\*SecretStoreReconciler\) Reconcile
+### func \(\*SecretStoreReconciler\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/apis/environment/api/secretstore.go#L79>)
 
 ```go
 func (r *SecretStoreReconciler) Reconcile(ctx context.Context, resolved *environmentresolve.ResolvedEnvironment, storeKind string) error

@@ -17,7 +17,7 @@ Package packageregistry reconciles the Package registry credential secret — th
 
 
 <a name="PackageRegistrySecretReconciler"></a>
-## type PackageRegistrySecretReconciler
+## type [PackageRegistrySecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/registry/packageregistry/packageregistry.go#L38-L43>)
 
 
 
@@ -31,7 +31,7 @@ type PackageRegistrySecretReconciler struct {
 ```
 
 <a name="NewPackageRegistrySecretReconciler"></a>
-### func NewPackageRegistrySecretReconciler
+### func [NewPackageRegistrySecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/registry/packageregistry/packageregistry.go#L45>)
 
 ```go
 func NewPackageRegistrySecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *PackageRegistrySecretReconciler
@@ -40,7 +40,7 @@ func NewPackageRegistrySecretReconciler(c client.Client, log logr.Logger, storeN
 
 
 <a name="PackageRegistrySecretReconciler.Delete"></a>
-### func \(\*PackageRegistrySecretReconciler\) Delete
+### func \(\*PackageRegistrySecretReconciler\) [Delete](<https://github.com/blanketops/environments/blob/main/pkg/secrets/registry/packageregistry/packageregistry.go#L144>)
 
 ```go
 func (r *PackageRegistrySecretReconciler) Delete(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage) error
@@ -49,7 +49,7 @@ func (r *PackageRegistrySecretReconciler) Delete(ctx context.Context, resolvedPa
 Delete removes both the ExternalSecret and the Secret ESO materialized from it. See git.BuildGitSSHSecretReconciler.Delete for why the Secret must be deleted explicitly rather than left to the ExternalSecret's ownerReference GC cascade.
 
 <a name="PackageRegistrySecretReconciler.Reconcile"></a>
-### func \(\*PackageRegistrySecretReconciler\) Reconcile
+### func \(\*PackageRegistrySecretReconciler\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/secrets/registry/packageregistry/packageregistry.go#L54>)
 
 ```go
 func (r *PackageRegistrySecretReconciler) Reconcile(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage) error

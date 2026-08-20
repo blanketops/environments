@@ -17,7 +17,7 @@ Package build reconciles the Build registry credential secret — the ExternalSe
 
 
 <a name="BuildRegistryExternalSecretReconciler"></a>
-## type BuildRegistryExternalSecretReconciler
+## type [BuildRegistryExternalSecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/registry/build/build.go#L37-L42>)
 
 
 
@@ -31,7 +31,7 @@ type BuildRegistryExternalSecretReconciler struct {
 ```
 
 <a name="NewBuildRegistryExternalSecretReconciler"></a>
-### func NewBuildRegistryExternalSecretReconciler
+### func [NewBuildRegistryExternalSecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/registry/build/build.go#L44>)
 
 ```go
 func NewBuildRegistryExternalSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *BuildRegistryExternalSecretReconciler
@@ -40,7 +40,7 @@ func NewBuildRegistryExternalSecretReconciler(c client.Client, log logr.Logger, 
 
 
 <a name="BuildRegistryExternalSecretReconciler.Delete"></a>
-### func \(\*BuildRegistryExternalSecretReconciler\) Delete
+### func \(\*BuildRegistryExternalSecretReconciler\) [Delete](<https://github.com/blanketops/environments/blob/main/pkg/secrets/registry/build/build.go#L128>)
 
 ```go
 func (r *BuildRegistryExternalSecretReconciler) Delete(ctx context.Context, build *buildResolution.ResolvedBuild) error
@@ -49,7 +49,7 @@ func (r *BuildRegistryExternalSecretReconciler) Delete(ctx context.Context, buil
 Delete removes both the ExternalSecret and the Secret ESO materialized from it. See BuildGitSSHSecretReconciler.Delete for why the Secret must be deleted explicitly rather than left to the ExternalSecret's ownerReference GC cascade — the same delete\-then\-recreate race applies here to the registry credentials secret.
 
 <a name="BuildRegistryExternalSecretReconciler.Reconcile"></a>
-### func \(\*BuildRegistryExternalSecretReconciler\) Reconcile
+### func \(\*BuildRegistryExternalSecretReconciler\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/secrets/registry/build/build.go#L53>)
 
 ```go
 func (r *BuildRegistryExternalSecretReconciler) Reconcile(ctx context.Context, build *buildResolution.ResolvedBuild) error

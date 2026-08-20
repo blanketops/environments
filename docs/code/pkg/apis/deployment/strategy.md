@@ -30,7 +30,7 @@ This package only decides \*which\* strategy runs; the actual object apply/teard
 
 
 <a name="ECSReconciler"></a>
-## type ECSReconciler
+## type [ECSReconciler](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/strategy/ecs.go#L28-L32>)
 
 
 
@@ -42,7 +42,7 @@ type ECSReconciler struct {
 ```
 
 <a name="NewECSReconciler"></a>
-### func NewECSReconciler
+### func [NewECSReconciler](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/strategy/ecs.go#L34>)
 
 ```go
 func NewECSReconciler(scheme *runtime.Scheme, log logr.Logger) *ECSReconciler
@@ -51,7 +51,7 @@ func NewECSReconciler(scheme *runtime.Scheme, log logr.Logger) *ECSReconciler
 
 
 <a name="ECSReconciler.Reconcile"></a>
-### func \(\*ECSReconciler\) Reconcile
+### func \(\*ECSReconciler\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/strategy/ecs.go#L42-L45>)
 
 ```go
 func (r *ECSReconciler) Reconcile(ctx context.Context, su serviceunitIntent.ServiceUnitIntent) (intent.ServiceUnitResult, error)
@@ -60,7 +60,7 @@ func (r *ECSReconciler) Reconcile(ctx context.Context, su serviceunitIntent.Serv
 Reconcile executes a ServiceUnitIntent on ECS
 
 <a name="K8SStrategy"></a>
-## type K8SStrategy
+## type [K8SStrategy](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/strategy/kubernetes.go#L33-L36>)
 
 K8SStrategy dispatches a DeploymentIntent's Strategy \(Rolling, BlueGreen\) against the Kubernetes runtime, delegating the actual object apply/ teardown to api.K8SProvider.
 
@@ -72,7 +72,7 @@ type K8SStrategy struct {
 ```
 
 <a name="NewK8SStrategy"></a>
-### func NewK8SStrategy
+### func [NewK8SStrategy](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/strategy/kubernetes.go#L38>)
 
 ```go
 func NewK8SStrategy(k8s *api.K8SProvider, log logr.Logger) *K8SStrategy
@@ -81,7 +81,7 @@ func NewK8SStrategy(k8s *api.K8SProvider, log logr.Logger) *K8SStrategy
 
 
 <a name="K8SStrategy.Execute"></a>
-### func \(\*K8SStrategy\) Execute
+### func \(\*K8SStrategy\) [Execute](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/strategy/kubernetes.go#L62-L65>)
 
 ```go
 func (s *K8SStrategy) Execute(ctx context.Context, dIntent *intent.DeploymentIntent) (*domain.DeploymentResult, error)
@@ -90,7 +90,7 @@ func (s *K8SStrategy) Execute(ctx context.Context, dIntent *intent.DeploymentInt
 
 
 <a name="K8SStrategy.Runtime"></a>
-### func \(\*K8SStrategy\) Runtime
+### func \(\*K8SStrategy\) [Runtime](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/strategy/kubernetes.go#L45>)
 
 ```go
 func (s *K8SStrategy) Runtime() intent.Runtime
@@ -99,7 +99,7 @@ func (s *K8SStrategy) Runtime() intent.Runtime
 
 
 <a name="K8SStrategy.Supports"></a>
-### func \(\*K8SStrategy\) Supports
+### func \(\*K8SStrategy\) [Supports](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/strategy/kubernetes.go#L49-L51>)
 
 ```go
 func (s *K8SStrategy) Supports(strategy intent.Strategy) bool
@@ -108,7 +108,7 @@ func (s *K8SStrategy) Supports(strategy intent.Strategy) bool
 
 
 <a name="KnativeReconciler"></a>
-## type KnativeReconciler
+## type [KnativeReconciler](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/strategy/knative.go#L24-L28>)
 
 
 
@@ -121,7 +121,7 @@ type KnativeReconciler struct {
 ```
 
 <a name="NewKnativeReconciler"></a>
-### func NewKnativeReconciler
+### func [NewKnativeReconciler](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/strategy/knative.go#L30>)
 
 ```go
 func NewKnativeReconciler(c client.Client, scheme *runtime.Scheme, log logr.Logger) *KnativeReconciler
@@ -130,7 +130,7 @@ func NewKnativeReconciler(c client.Client, scheme *runtime.Scheme, log logr.Logg
 
 
 <a name="RuntimeProvider"></a>
-## type RuntimeProvider
+## type [RuntimeProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/strategy/runtime.go#L53-L58>)
 
 RuntimeProvider dispatches a DeploymentIntent's Runtime \(Kubernetes, Knative, ECS\) to the strategy that implements it. Runtime and Strategy are the same axis in this domain — which runtime to deploy to is itself a deployment strategy choice — so this and K8SStrategy live together in this package, not split across a separate "runtime" concept.
 
@@ -144,7 +144,7 @@ type RuntimeProvider struct {
 ```
 
 <a name="NewRuntimeProvider"></a>
-### func NewRuntimeProvider
+### func [NewRuntimeProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/strategy/runtime.go#L60>)
 
 ```go
 func NewRuntimeProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, Recorder events.EventRecorder) *RuntimeProvider
@@ -153,7 +153,7 @@ func NewRuntimeProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger
 
 
 <a name="RuntimeProvider.Execute"></a>
-### func \(\*RuntimeProvider\) Execute
+### func \(\*RuntimeProvider\) [Execute](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/strategy/runtime.go#L69-L72>)
 
 ```go
 func (p *RuntimeProvider) Execute(ctx context.Context, dIntent *intent.DeploymentIntent) (*domain.DeploymentResult, error)

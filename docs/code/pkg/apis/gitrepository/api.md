@@ -42,7 +42,7 @@ var (
 ```
 
 <a name="GitHubProvider"></a>
-## type GitHubProvider
+## type [GitHubProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/api/github.go#L38-L43>)
 
 
 
@@ -56,7 +56,7 @@ type GitHubProvider struct {
 ```
 
 <a name="NewGitHubProvider"></a>
-### func NewGitHubProvider
+### func [NewGitHubProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/api/github.go#L45-L50>)
 
 ```go
 func NewGitHubProvider(c ctrlclient.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *GitHubProvider
@@ -65,7 +65,7 @@ func NewGitHubProvider(c ctrlclient.Client, scheme *runtime.Scheme, log logr.Log
 
 
 <a name="GitHubProvider.Ensure"></a>
-### func \(\*GitHubProvider\) Ensure
+### func \(\*GitHubProvider\) [Ensure](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/api/github.go#L136-L140>)
 
 ```go
 func (p *GitHubProvider) Ensure(ctx context.Context, cr *sourcesv1alpha1.GitRepository, spec domain.GitRepository) (domain.Result, error)
@@ -74,7 +74,7 @@ func (p *GitHubProvider) Ensure(ctx context.Context, cr *sourcesv1alpha1.GitRepo
 
 
 <a name="GitHubProvider.Teardown"></a>
-### func \(\*GitHubProvider\) Teardown
+### func \(\*GitHubProvider\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/api/github.go#L206-L210>)
 
 ```go
 func (p *GitHubProvider) Teardown(ctx context.Context, cr *sourcesv1alpha1.GitRepository, spec domain.GitRepository) error
@@ -85,7 +85,7 @@ func (p *GitHubProvider) Teardown(ctx context.Context, cr *sourcesv1alpha1.GitRe
 Idempotent — a missing Repository or RepositoryWebhook is not an error.
 
 <a name="Provider"></a>
-## type Provider
+## type [Provider](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/api/provider.go#L33-L35>)
 
 Provider is the orchestration interface for GitRepository backend providers. Each implementation is responsible for ensuring the provider\-specific resources that back a GitRepository CR.
 
@@ -102,7 +102,7 @@ type Provider interface {
 ```
 
 <a name="ProviderConfigRef"></a>
-## type ProviderConfigRef
+## type [ProviderConfigRef](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/api/types.go#L115-L117>)
 
 ProviderConfigRef identifies the Crossplane ProviderConfig to use.
 
@@ -113,7 +113,7 @@ type ProviderConfigRef struct {
 ```
 
 <a name="Repository"></a>
-## type Repository
+## type [Repository](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/api/types.go#L47-L51>)
 
 
 
@@ -126,7 +126,7 @@ type Repository struct {
 ```
 
 <a name="Repository.DeepCopyObject"></a>
-### func \(\*Repository\) DeepCopyObject
+### func \(\*Repository\) [DeepCopyObject](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/api/types.go#L53>)
 
 ```go
 func (r *Repository) DeepCopyObject() runtime.Object
@@ -135,7 +135,7 @@ func (r *Repository) DeepCopyObject() runtime.Object
 
 
 <a name="RepositoryParameters"></a>
-## type RepositoryParameters
+## type [RepositoryParameters](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/api/types.go#L65-L68>)
 
 
 
@@ -147,7 +147,7 @@ type RepositoryParameters struct {
 ```
 
 <a name="RepositorySpec"></a>
-## type RepositorySpec
+## type [RepositorySpec](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/api/types.go#L60-L63>)
 
 
 
@@ -159,7 +159,7 @@ type RepositorySpec struct {
 ```
 
 <a name="RepositoryWebhook"></a>
-## type RepositoryWebhook
+## type [RepositoryWebhook](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/api/types.go#L72-L76>)
 
 
 
@@ -172,7 +172,7 @@ type RepositoryWebhook struct {
 ```
 
 <a name="RepositoryWebhook.DeepCopyObject"></a>
-### func \(\*RepositoryWebhook\) DeepCopyObject
+### func \(\*RepositoryWebhook\) [DeepCopyObject](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/api/types.go#L78>)
 
 ```go
 func (r *RepositoryWebhook) DeepCopyObject() runtime.Object
@@ -181,7 +181,7 @@ func (r *RepositoryWebhook) DeepCopyObject() runtime.Object
 
 
 <a name="RepositoryWebhookConfigurationParameters"></a>
-## type RepositoryWebhookConfigurationParameters
+## type [RepositoryWebhookConfigurationParameters](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/api/types.go#L108-L110>)
 
 RepositoryWebhookConfigurationParameters mirrors the Terraform configuration block. URLSecretRef sources the hook URL from a Secret — Crossplane's native pattern for sensitive fields.
 
@@ -192,7 +192,7 @@ type RepositoryWebhookConfigurationParameters struct {
 ```
 
 <a name="RepositoryWebhookParameters"></a>
-## type RepositoryWebhookParameters
+## type [RepositoryWebhookParameters](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/api/types.go#L91-L96>)
 
 
 
@@ -206,7 +206,7 @@ type RepositoryWebhookParameters struct {
 ```
 
 <a name="RepositoryWebhookSpec"></a>
-## type RepositoryWebhookSpec
+## type [RepositoryWebhookSpec](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/api/types.go#L86-L89>)
 
 
 
@@ -218,7 +218,7 @@ type RepositoryWebhookSpec struct {
 ```
 
 <a name="SecretKeyRef"></a>
-## type SecretKeyRef
+## type [SecretKeyRef](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/api/types.go#L120-L124>)
 
 SecretKeyRef is a reference to a key within a Kubernetes Secret.
 

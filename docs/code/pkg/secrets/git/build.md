@@ -17,7 +17,7 @@ Package build reconciles the Build git\-ssh clone secret — the ExternalSecret 
 
 
 <a name="BuildGitSSHSecretReconciler"></a>
-## type BuildGitSSHSecretReconciler
+## type [BuildGitSSHSecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/build/build.go#L38-L43>)
 
 
 
@@ -31,7 +31,7 @@ type BuildGitSSHSecretReconciler struct {
 ```
 
 <a name="NewBuildGitSSHSecretReconciler"></a>
-### func NewBuildGitSSHSecretReconciler
+### func [NewBuildGitSSHSecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/build/build.go#L45>)
 
 ```go
 func NewBuildGitSSHSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *BuildGitSSHSecretReconciler
@@ -40,7 +40,7 @@ func NewBuildGitSSHSecretReconciler(c client.Client, log logr.Logger, storeName 
 
 
 <a name="BuildGitSSHSecretReconciler.Delete"></a>
-### func \(\*BuildGitSSHSecretReconciler\) Delete
+### func \(\*BuildGitSSHSecretReconciler\) [Delete](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/build/build.go#L200>)
 
 ```go
 func (r *BuildGitSSHSecretReconciler) Delete(ctx context.Context, build *buildResolution.ResolvedBuild) error
@@ -49,7 +49,7 @@ func (r *BuildGitSSHSecretReconciler) Delete(ctx context.Context, build *buildRe
 Delete removes both the ExternalSecret and the Secret ESO materialized from it. The Secret carries an ownerReference back to the ExternalSecret, so it would eventually be removed by Kubernetes' garbage collector on its own — but that GC cascade runs on its own async reconcile loop and is not bounded by this call returning. A caller that deletes a Build and immediately recreates it \(same name, same derived secretName\) can lose the race: the new ExternalSecret's target Secret collides with the old Secret still awaiting GC, and ESO refuses to adopt a Secret it doesn't own, leaving the new Build without a working secret until GC catches up and ESO retries. Deleting the Secret directly here closes that window — plain Secrets carry no finalizers, so this delete is synchronous from the API server's perspective.
 
 <a name="BuildGitSSHSecretReconciler.Reconcile"></a>
-### func \(\*BuildGitSSHSecretReconciler\) Reconcile
+### func \(\*BuildGitSSHSecretReconciler\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/build/build.go#L54>)
 
 ```go
 func (r *BuildGitSSHSecretReconciler) Reconcile(ctx context.Context, build *buildResolution.ResolvedBuild) error

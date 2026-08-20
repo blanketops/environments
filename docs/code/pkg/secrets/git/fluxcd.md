@@ -18,7 +18,7 @@ Package fluxcd reconciles the Flux git\-ssh deploy keypair — a self\-generated
 
 
 <a name="DeploymentFluxGitSSHSecretReconciler"></a>
-## type DeploymentFluxGitSSHSecretReconciler
+## type [DeploymentFluxGitSSHSecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/fluxcd/fluxcd.go#L45-L48>)
 
 
 
@@ -30,7 +30,7 @@ type DeploymentFluxGitSSHSecretReconciler struct {
 ```
 
 <a name="NewDeploymentFluxGitSSHSecretReconciler"></a>
-### func NewDeploymentFluxGitSSHSecretReconciler
+### func [NewDeploymentFluxGitSSHSecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/fluxcd/fluxcd.go#L50-L53>)
 
 ```go
 func NewDeploymentFluxGitSSHSecretReconciler(c client.Client, log logr.Logger) *DeploymentFluxGitSSHSecretReconciler
@@ -39,7 +39,7 @@ func NewDeploymentFluxGitSSHSecretReconciler(c client.Client, log logr.Logger) *
 
 
 <a name="DeploymentFluxGitSSHSecretReconciler.Delete"></a>
-### func \(\*DeploymentFluxGitSSHSecretReconciler\) Delete
+### func \(\*DeploymentFluxGitSSHSecretReconciler\) [Delete](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/fluxcd/fluxcd.go#L191>)
 
 ```go
 func (r *DeploymentFluxGitSSHSecretReconciler) Delete(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) error
@@ -48,7 +48,7 @@ func (r *DeploymentFluxGitSSHSecretReconciler) Delete(ctx context.Context, deplo
 
 
 <a name="DeploymentFluxGitSSHSecretReconciler.PublicKey"></a>
-### func \(\*DeploymentFluxGitSSHSecretReconciler\) PublicKey
+### func \(\*DeploymentFluxGitSSHSecretReconciler\) [PublicKey](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/fluxcd/fluxcd.go#L143>)
 
 ```go
 func (r *DeploymentFluxGitSSHSecretReconciler) PublicKey(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) (string, error)
@@ -57,7 +57,7 @@ func (r *DeploymentFluxGitSSHSecretReconciler) PublicKey(ctx context.Context, de
 PublicKey returns the authorized\_keys format public key from an existing secret. Used by ensureDeployKey to register the key on GitHub.
 
 <a name="DeploymentFluxGitSSHSecretReconciler.Reconcile"></a>
-### func \(\*DeploymentFluxGitSSHSecretReconciler\) Reconcile
+### func \(\*DeploymentFluxGitSSHSecretReconciler\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/fluxcd/fluxcd.go#L60>)
 
 ```go
 func (r *DeploymentFluxGitSSHSecretReconciler) Reconcile(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) error

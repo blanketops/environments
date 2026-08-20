@@ -16,7 +16,7 @@ Registering a Domain with the Engine is the only wiring required — the Engine 
 
 
 <a name="Domain"></a>
-## type Domain
+## type [Domain](<https://github.com/blanketops/environments/blob/main/core/domain/domain.go#L53-L75>)
 
 Domain is the contract every resource domain must implement to participate in the BlanketOps CQRS engine.
 

@@ -17,7 +17,7 @@ Package deployment reconciles the Deployment git\-ssh clone secret — the same 
 
 
 <a name="DeploymentGitSSHSecretReconciler"></a>
-## type DeploymentGitSSHSecretReconciler
+## type [DeploymentGitSSHSecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/deployment/deployment.go#L37-L42>)
 
 
 
@@ -31,7 +31,7 @@ type DeploymentGitSSHSecretReconciler struct {
 ```
 
 <a name="NewDeploymentGitSSHSecretReconciler"></a>
-### func NewDeploymentGitSSHSecretReconciler
+### func [NewDeploymentGitSSHSecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/deployment/deployment.go#L44>)
 
 ```go
 func NewDeploymentGitSSHSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *DeploymentGitSSHSecretReconciler
@@ -40,7 +40,7 @@ func NewDeploymentGitSSHSecretReconciler(c client.Client, log logr.Logger, store
 
 
 <a name="DeploymentGitSSHSecretReconciler.Delete"></a>
-### func \(\*DeploymentGitSSHSecretReconciler\) Delete
+### func \(\*DeploymentGitSSHSecretReconciler\) [Delete](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/deployment/deployment.go#L153>)
 
 ```go
 func (r *DeploymentGitSSHSecretReconciler) Delete(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) error
@@ -49,7 +49,7 @@ func (r *DeploymentGitSSHSecretReconciler) Delete(ctx context.Context, deploymen
 Delete removes both the ExternalSecret and the Secret ESO materialized from it. See BuildGitSSHSecretReconciler.Delete for why the Secret must be deleted explicitly rather than left to the ExternalSecret's ownerReference GC cascade.
 
 <a name="DeploymentGitSSHSecretReconciler.Reconcile"></a>
-### func \(\*DeploymentGitSSHSecretReconciler\) Reconcile
+### func \(\*DeploymentGitSSHSecretReconciler\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/deployment/deployment.go#L53>)
 
 ```go
 func (r *DeploymentGitSSHSecretReconciler) Reconcile(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) error

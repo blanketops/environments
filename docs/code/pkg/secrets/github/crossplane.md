@@ -16,7 +16,7 @@ Package crossplane reconciles the Crossplane GitHub provider credential secret â
 
 
 <a name="GitHubProviderSecretReconciler"></a>
-## type GitHubProviderSecretReconciler
+## type [GitHubProviderSecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/github/crossplane/crossplane.go#L35-L40>)
 
 
 
@@ -30,7 +30,7 @@ type GitHubProviderSecretReconciler struct {
 ```
 
 <a name="NewGitHubProviderSecretReconciler"></a>
-### func NewGitHubProviderSecretReconciler
+### func [NewGitHubProviderSecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/github/crossplane/crossplane.go#L42>)
 
 ```go
 func NewGitHubProviderSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *GitHubProviderSecretReconciler
@@ -39,7 +39,7 @@ func NewGitHubProviderSecretReconciler(c client.Client, log logr.Logger, storeNa
 
 
 <a name="GitHubProviderSecretReconciler.Reconcile"></a>
-### func \(\*GitHubProviderSecretReconciler\) Reconcile
+### func \(\*GitHubProviderSecretReconciler\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/secrets/github/crossplane/crossplane.go#L51>)
 
 ```go
 func (r *GitHubProviderSecretReconciler) Reconcile(ctx context.Context) error

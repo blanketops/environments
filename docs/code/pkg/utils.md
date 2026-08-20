@@ -19,7 +19,7 @@ import "github.com/blanketops/environments/pkg/utils"
 
 
 <a name="ComputeExecutionHash"></a>
-## func ComputeExecutionHash
+## func [ComputeExecutionHash](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L42-L45>)
 
 ```go
 func ComputeExecutionHash(spec *contractv1.BuildSpec, trigger domain.TriggerContext) (string, error)
@@ -30,7 +30,7 @@ func ComputeExecutionHash(spec *contractv1.BuildSpec, trigger domain.TriggerCont
 The execution hash MUST reflect semantic intent only. It must NOT depend on Kubernetes storage format or metadata.
 
 <a name="CreateOrPatch"></a>
-## func CreateOrPatch
+## func [CreateOrPatch](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L76>)
 
 ```go
 func CreateOrPatch(ctx context.Context, c client.Client, obj client.Object) error
@@ -39,7 +39,7 @@ func CreateOrPatch(ctx context.Context, c client.Client, obj client.Object) erro
 
 
 <a name="ParseImage"></a>
-## func ParseImage
+## func [ParseImage](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L110>)
 
 ```go
 func ParseImage(image string) (string, string)
@@ -48,7 +48,7 @@ func ParseImage(image string) (string, string)
 
 
 <a name="PointerBool"></a>
-## func PointerBool
+## func [PointerBool](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L119>)
 
 ```go
 func PointerBool(b bool) *bool
@@ -57,7 +57,7 @@ func PointerBool(b bool) *bool
 
 
 <a name="PrintRepoTree"></a>
-## func PrintRepoTree
+## func [PrintRepoTree](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L129>)
 
 ```go
 func PrintRepoTree(basePath string) error
@@ -66,7 +66,7 @@ func PrintRepoTree(basePath string) error
 
 
 <a name="RunGit"></a>
-## func RunGit
+## func [RunGit](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L95>)
 
 ```go
 func RunGit(dir string, args ...string) (string, error)
@@ -75,7 +75,7 @@ func RunGit(dir string, args ...string) (string, error)
 
 
 <a name="RunGitWithEnv"></a>
-## func RunGitWithEnv
+## func [RunGitWithEnv](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L164>)
 
 ```go
 func RunGitWithEnv(dir string, env []string, args ...string) (string, error)
@@ -84,7 +84,7 @@ func RunGitWithEnv(dir string, env []string, args ...string) (string, error)
 RunGitWithEnv runs a git command with additional environment variables.
 
 <a name="ShortHash"></a>
-## func ShortHash
+## func [ShortHash](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L156>)
 
 ```go
 func ShortHash(hash string) string

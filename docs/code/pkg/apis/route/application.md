@@ -62,7 +62,7 @@ Condition derivation lives here: the service knows what Ready/Pending/Failed mea
 
 
 <a name="BackendSelector"></a>
-## type BackendSelector
+## type [BackendSelector](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/application/backend_selector.go#L44-L47>)
 
 BackendSelector routes a domain.Route to the correct Provider implementation based on the Runtime field. All registered providers must be non\-nil at construction time.
 
@@ -74,7 +74,7 @@ type BackendSelector struct {
 ```
 
 <a name="NewBackendSelector"></a>
-### func NewBackendSelector
+### func [NewBackendSelector](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/application/backend_selector.go#L52>)
 
 ```go
 func NewBackendSelector(knative api.Provider, ingress api.Provider) *BackendSelector
@@ -83,7 +83,7 @@ func NewBackendSelector(knative api.Provider, ingress api.Provider) *BackendSele
 NewBackendSelector constructs a BackendSelector with the registered route providers. Knative and KubernetesIngress are registered at v1. GatewayAPI is added here when it lands.
 
 <a name="BackendSelector.ForRoute"></a>
-### func \(\*BackendSelector\) ForRoute
+### func \(\*BackendSelector\) [ForRoute](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/application/backend_selector.go#L61>)
 
 ```go
 func (b *BackendSelector) ForRoute(route domain.Route) (api.Provider, error)
@@ -92,7 +92,7 @@ func (b *BackendSelector) ForRoute(route domain.Route) (api.Provider, error)
 ForRoute returns the Provider that should materialize the given Route. Returns ErrRuntimeUnknown for any runtime not registered at construction.
 
 <a name="Mapper"></a>
-## type Mapper
+## type [Mapper](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/application/mapper.go#L40>)
 
 Mapper translates a ResolvedRoute into a domain.Route.
 
@@ -101,7 +101,7 @@ type Mapper struct{}
 ```
 
 <a name="NewMapper"></a>
-### func NewMapper
+### func [NewMapper](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/application/mapper.go#L43>)
 
 ```go
 func NewMapper() *Mapper
@@ -110,7 +110,7 @@ func NewMapper() *Mapper
 NewMapper constructs a Mapper.
 
 <a name="Mapper.MapResolvedToDomain"></a>
-### func \(Mapper\) MapResolvedToDomain
+### func \(Mapper\) [MapResolvedToDomain](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/application/mapper.go#L60>)
 
 ```go
 func (Mapper) MapResolvedToDomain(rr *routeResolution.ResolvedRoute) domain.Route
@@ -129,7 +129,7 @@ ksvc name == ServiceUnit name
 The provider layer guards an empty ServiceRef with ErrServiceRefEmpty at Ensure time as a final safety net.
 
 <a name="RouteService"></a>
-## type RouteService
+## type [RouteService](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/application/service.go#L49-L53>)
 
 RouteService orchestrates the route reconciliation pipeline. It is stateless beyond its collaborators and safe for concurrent use.
 
@@ -140,7 +140,7 @@ type RouteService struct {
 ```
 
 <a name="NewRouteService"></a>
-### func NewRouteService
+### func [NewRouteService](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/application/service.go#L56>)
 
 ```go
 func NewRouteService(mapper *Mapper, status *StatusWriter, backend *BackendSelector) *RouteService
@@ -149,7 +149,7 @@ func NewRouteService(mapper *Mapper, status *StatusWriter, backend *BackendSelec
 NewRouteService constructs a RouteService with the required collaborators.
 
 <a name="RouteService.Reconcile"></a>
-### func \(\*RouteService\) Reconcile
+### func \(\*RouteService\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/application/service.go#L68>)
 
 ```go
 func (s *RouteService) Reconcile(ctx context.Context, resolved *routeResolution.ResolvedRoute) error
@@ -158,7 +158,7 @@ func (s *RouteService) Reconcile(ctx context.Context, resolved *routeResolution.
 Reconcile executes the full route pipeline for a resolved Route CR. It maps, selects, dispatches, and writes status in sequence. An error from any stage is converted to conditions and forwarded to StatusWriter so the Route CR always reflects the latest outcome, even on failure.
 
 <a name="StatusWriter"></a>
-## type StatusWriter
+## type [StatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/application/status.go#L30-L33>)
 
 StatusWriter persists Route conditions to the CR status. It does NOT derive conditions, manage contract state, or preserve domain flags. Callers pass the Route CR with conditions already set; this writer merges and persists.
 
@@ -170,7 +170,7 @@ type StatusWriter struct {
 ```
 
 <a name="NewStatusWriter"></a>
-### func NewStatusWriter
+### func [NewStatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/application/status.go#L35>)
 
 ```go
 func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter
@@ -179,7 +179,7 @@ func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter
 
 
 <a name="StatusWriter.Write"></a>
-### func \(\*StatusWriter\) Write
+### func \(\*StatusWriter\) [Write](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/application/status.go#L46>)
 
 ```go
 func (w *StatusWriter) Write(ctx context.Context, route *networksv1alpha1.Route, conditions ...metav1.Condition) error

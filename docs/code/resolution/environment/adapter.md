@@ -14,7 +14,7 @@ import "github.com/blanketops/environments/resolution/environment/adapter"
 
 
 <a name="Adapter"></a>
-## type Adapter
+## type [Adapter](<https://github.com/blanketops/environments/blob/main/resolution/environment/adapter/adapter.go#L39-L43>)
 
 
 
@@ -24,7 +24,7 @@ type Adapter struct {
 ```
 
 <a name="NewAdapter"></a>
-### func NewAdapter
+### func [NewAdapter](<https://github.com/blanketops/environments/blob/main/resolution/environment/adapter/adapter.go#L45>)
 
 ```go
 func NewAdapter() *Adapter
@@ -33,7 +33,7 @@ func NewAdapter() *Adapter
 
 
 <a name="Adapter.Resolve"></a>
-### func \(\*Adapter\) Resolve
+### func \(\*Adapter\) [Resolve](<https://github.com/blanketops/environments/blob/main/resolution/environment/adapter/adapter.go#L49>)
 
 ```go
 func (a *Adapter) Resolve(ctx context.Context, environment *environmentv1alpha1.Environment) (*resolve.ResolvedEnvironment, error)

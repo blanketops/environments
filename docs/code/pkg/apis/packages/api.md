@@ -24,7 +24,7 @@ import "github.com/blanketops/environments/pkg/apis/packages/api"
 
 
 <a name="ApplyApplication"></a>
-## func ApplyApplication
+## func [ApplyApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L127-L131>)
 
 ```go
 func ApplyApplication(ctx context.Context, c client.Client, app *kappctrlv1alpha1.App) error
@@ -33,7 +33,7 @@ func ApplyApplication(ctx context.Context, c client.Client, app *kappctrlv1alpha
 \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- Apply \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
 
 <a name="BuildKappApplication"></a>
-## func BuildKappApplication
+## func [BuildKappApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L144-L146>)
 
 ```go
 func BuildKappApplication(intent *intent.PackageIntent) (*kappctrlv1alpha1.App, error)
@@ -42,7 +42,7 @@ func BuildKappApplication(intent *intent.PackageIntent) (*kappctrlv1alpha1.App, 
 \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- Build \(pure function\) \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
 
 <a name="DeleteApplication"></a>
-## func DeleteApplication
+## func [DeleteApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L300-L304>)
 
 ```go
 func DeleteApplication(ctx context.Context, c client.Client, intent *intent.PackageIntent) error
@@ -53,7 +53,7 @@ DeleteApplication deletes the kapp App this provider created for the given packa
 Idempotent — a missing App is not an error.
 
 <a name="PackageResultFromApplicationState"></a>
-## func PackageResultFromApplicationState
+## func [PackageResultFromApplicationState](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L90-L92>)
 
 ```go
 func PackageResultFromApplicationState(state *domain.ApplicationState) *domain.PackageResult
@@ -62,7 +62,7 @@ func PackageResultFromApplicationState(state *domain.ApplicationState) *domain.P
 
 
 <a name="ApplicationProvider"></a>
-## type ApplicationProvider
+## type [ApplicationProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L38-L43>)
 
 
 
@@ -76,7 +76,7 @@ type ApplicationProvider struct {
 ```
 
 <a name="NewApplicationProvider"></a>
-### func NewApplicationProvider
+### func [NewApplicationProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L48-L53>)
 
 ```go
 func NewApplicationProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *ApplicationProvider
@@ -85,7 +85,7 @@ func NewApplicationProvider(c client.Client, scheme *runtime.Scheme, log logr.Lo
 
 
 <a name="ApplicationProvider.Execute"></a>
-### func \(\*ApplicationProvider\) Execute
+### func \(\*ApplicationProvider\) [Execute](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L65-L68>)
 
 ```go
 func (p *ApplicationProvider) Execute(ctx context.Context, intent *intent.PackageIntent) (*domain.PackageResult, error)
@@ -94,7 +94,7 @@ func (p *ApplicationProvider) Execute(ctx context.Context, intent *intent.Packag
 \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- Execute \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
 
 <a name="ApplicationProvider.ObserveApplication"></a>
-### func \(\*ApplicationProvider\) ObserveApplication
+### func \(\*ApplicationProvider\) [ObserveApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L182-L186>)
 
 ```go
 func (p *ApplicationProvider) ObserveApplication(ctx context.Context, namespace, name string) (*domain.ApplicationState, error)
@@ -103,7 +103,7 @@ func (p *ApplicationProvider) ObserveApplication(ctx context.Context, namespace,
 \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- Observe \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
 
 <a name="PackageProvider"></a>
-## type PackageProvider
+## type [PackageProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L32-L37>)
 
 
 
@@ -117,7 +117,7 @@ type PackageProvider struct {
 ```
 
 <a name="NewPackageProvider"></a>
-### func NewPackageProvider
+### func [NewPackageProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L39>)
 
 ```go
 func NewPackageProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *PackageProvider
@@ -126,7 +126,7 @@ func NewPackageProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger
 
 
 <a name="PackageProvider.Execute"></a>
-### func \(\*PackageProvider\) Execute
+### func \(\*PackageProvider\) [Execute](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L49-L52>)
 
 ```go
 func (p *PackageProvider) Execute(ctx context.Context, intent *intent.PackageIntent) (*domain.PackageResult, error)
@@ -135,7 +135,7 @@ func (p *PackageProvider) Execute(ctx context.Context, intent *intent.PackageInt
 
 
 <a name="PackageProvider.ObserveApplication"></a>
-### func \(\*PackageProvider\) ObserveApplication
+### func \(\*PackageProvider\) [ObserveApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L127-L131>)
 
 ```go
 func (p *PackageProvider) ObserveApplication(ctx context.Context, namespace, name string) (*domain.ApplicationState, error)
@@ -144,7 +144,7 @@ func (p *PackageProvider) ObserveApplication(ctx context.Context, namespace, nam
 
 
 <a name="Provider"></a>
-## type Provider
+## type [Provider](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/provider.go#L26-L28>)
 
 Provider executes a PackageIntent against a concrete backend \(e.g. kapp\).
 

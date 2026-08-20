@@ -13,7 +13,7 @@ import "github.com/blanketops/environments/pkg/runtime"
 
 
 <a name="Context"></a>
-## type Context
+## type [Context](<https://github.com/blanketops/environments/blob/main/pkg/runtime/runtime.go#L20-L34>)
 
 
 
@@ -36,7 +36,7 @@ type Context struct {
 ```
 
 <a name="FromEnv"></a>
-### func FromEnv
+### func [FromEnv](<https://github.com/blanketops/environments/blob/main/pkg/runtime/runtime.go#L36>)
 
 ```go
 func FromEnv() *Context

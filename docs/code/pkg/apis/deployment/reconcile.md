@@ -18,7 +18,7 @@ ReconciliationExecutor is the single entry point application.DeploymentService c
 
 
 <a name="ReconciliationExecutor"></a>
-## type ReconciliationExecutor
+## type [ReconciliationExecutor](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/reconcile/reconciliation.go#L46-L50>)
 
 ReconciliationExecutor dispatches on the DeploymentIntent's ReconciliationStrategy — imperative \(apply live via a strategy.RuntimeProvider\) vs GitOps \(commit manifests via api.KustomizeStrategyProvider\).
 
@@ -31,7 +31,7 @@ type ReconciliationExecutor struct {
 ```
 
 <a name="NewReconciliationExecutor"></a>
-### func NewReconciliationExecutor
+### func [NewReconciliationExecutor](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/reconcile/reconciliation.go#L52-L56>)
 
 ```go
 func NewReconciliationExecutor(runtime *strategy.RuntimeProvider, kust *api.KustomizeStrategyProvider, log logr.Logger) *ReconciliationExecutor
@@ -40,7 +40,7 @@ func NewReconciliationExecutor(runtime *strategy.RuntimeProvider, kust *api.Kust
 
 
 <a name="ReconciliationExecutor.Execute"></a>
-### func \(\*ReconciliationExecutor\) Execute
+### func \(\*ReconciliationExecutor\) [Execute](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/reconcile/reconciliation.go#L64-L68>)
 
 ```go
 func (r *ReconciliationExecutor) Execute(ctx context.Context, sourceCR *environmentv1alpha1.Deployment, rIntent *intent.DeploymentIntent) (*domain.DeploymentResult, error)

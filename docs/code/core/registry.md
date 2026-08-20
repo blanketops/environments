@@ -27,7 +27,7 @@ Two registries are maintained in a single struct:
 
 
 <a name="Registry"></a>
-## type Registry
+## type [Registry](<https://github.com/blanketops/environments/blob/main/core/registry/registry.go#L46-L57>)
 
 Registry is the runtime lookup table for Domains and strategies. Populated at manager startup; read concurrently by the Engine thereafter. All methods acquire the appropriate lock — callers need no external synchronisation.
 
@@ -38,7 +38,7 @@ type Registry struct {
 ```
 
 <a name="NewRegistry"></a>
-### func NewRegistry
+### func [NewRegistry](<https://github.com/blanketops/environments/blob/main/core/registry/registry.go#L61>)
 
 ```go
 func NewRegistry() *Registry
@@ -47,7 +47,7 @@ func NewRegistry() *Registry
 NewRegistry constructs an empty Registry ready for domain and strategy registration. Called once during manager setup before any controllers start.
 
 <a name="Registry.GetDomain"></a>
-### func \(\*Registry\) GetDomain
+### func \(\*Registry\) [GetDomain](<https://github.com/blanketops/environments/blob/main/core/registry/registry.go#L79>)
 
 ```go
 func (r *Registry) GetDomain(gvk schema.GroupVersionKind) (domain.Domain, bool)
@@ -56,7 +56,7 @@ func (r *Registry) GetDomain(gvk schema.GroupVersionKind) (domain.Domain, bool)
 GetDomain retrieves the Domain registered for gvk. Returns false if no Domain is registered — the Engine surfaces this as an error to the caller.
 
 <a name="Registry.GetStrategy"></a>
-### func \(\*Registry\) GetStrategy
+### func \(\*Registry\) [GetStrategy](<https://github.com/blanketops/environments/blob/main/core/registry/registry.go#L98>)
 
 ```go
 func (r *Registry) GetStrategy(name string) (any, bool)
@@ -65,7 +65,7 @@ func (r *Registry) GetStrategy(name string) (any, bool)
 GetStrategy retrieves a strategy by name. The caller is responsible for type\-asserting the returned value to the concrete strategy interface. Returns false if no strategy is registered under name.
 
 <a name="Registry.ListDomains"></a>
-### func \(\*Registry\) ListDomains
+### func \(\*Registry\) [ListDomains](<https://github.com/blanketops/environments/blob/main/core/registry/registry.go#L108>)
 
 ```go
 func (r *Registry) ListDomains() []schema.GroupVersionKind
@@ -74,7 +74,7 @@ func (r *Registry) ListDomains() []schema.GroupVersionKind
 ListDomains returns the GVKs of all registered Domains. Order is non\-deterministic \(map iteration\). Intended for startup logging and diagnostics only — not for routing decisions.
 
 <a name="Registry.ListStrategies"></a>
-### func \(\*Registry\) ListStrategies
+### func \(\*Registry\) [ListStrategies](<https://github.com/blanketops/environments/blob/main/core/registry/registry.go#L121>)
 
 ```go
 func (r *Registry) ListStrategies() []string
@@ -83,7 +83,7 @@ func (r *Registry) ListStrategies() []string
 ListStrategies returns the names of all registered strategies. Order is non\-deterministic \(map iteration\). Intended for startup logging and diagnostics only.
 
 <a name="Registry.RegisterDomain"></a>
-### func \(\*Registry\) RegisterDomain
+### func \(\*Registry\) [RegisterDomain](<https://github.com/blanketops/environments/blob/main/core/registry/registry.go#L71>)
 
 ```go
 func (r *Registry) RegisterDomain(gvk schema.GroupVersionKind, d domain.Domain)
@@ -92,7 +92,7 @@ func (r *Registry) RegisterDomain(gvk schema.GroupVersionKind, d domain.Domain)
 RegisterDomain registers a Domain for the given GVK. Called at startup for each CR kind the platform manages. Duplicate registration overwrites the previous entry — registration order is the caller's responsibility.
 
 <a name="Registry.RegisterStrategy"></a>
-### func \(\*Registry\) RegisterStrategy
+### func \(\*Registry\) [RegisterStrategy](<https://github.com/blanketops/environments/blob/main/core/registry/registry.go#L89>)
 
 ```go
 func (r *Registry) RegisterStrategy(name string, v any)

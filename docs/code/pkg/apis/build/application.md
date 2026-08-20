@@ -57,7 +57,7 @@ This file owns the StatusWriter — the persistence boundary between the Build d
 
 
 <a name="BackendSelector"></a>
-## type BackendSelector
+## type [BackendSelector](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/application/backend_selector.go#L39-L43>)
 
 BackendSelector routes a BuildSpec to the correct Provider implementation based on the strategy name. All three providers must be non\-nil at construction time.
 
@@ -70,7 +70,7 @@ type BackendSelector struct {
 ```
 
 <a name="NewBackendSelector"></a>
-### func NewBackendSelector
+### func [NewBackendSelector](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/application/backend_selector.go#L47>)
 
 ```go
 func NewBackendSelector(buildah api.Provider, kaniko api.Provider, buildpacks api.Provider) *BackendSelector
@@ -79,7 +79,7 @@ func NewBackendSelector(buildah api.Provider, kaniko api.Provider, buildpacks ap
 NewBackendSelector constructs a BackendSelector with the three registered build providers.
 
 <a name="BackendSelector.ForSpec"></a>
-### func \(\*BackendSelector\) ForSpec
+### func \(\*BackendSelector\) [ForSpec](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/application/backend_selector.go#L58>)
 
 ```go
 func (b *BackendSelector) ForSpec(spec domain.BuildSpec) api.Provider
@@ -88,7 +88,7 @@ func (b *BackendSelector) ForSpec(spec domain.BuildSpec) api.Provider
 ForSpec returns the Provider that should execute the given BuildSpec. The first substring match against StrategyName wins. Buildah is returned for any unrecognised strategy name.
 
 <a name="BuildService"></a>
-## type BuildService
+## type [BuildService](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/application/service.go#L45-L49>)
 
 BuildService orchestrates the build reconciliation pipeline. It is stateless beyond its collaborators and safe for concurrent use.
 
@@ -99,7 +99,7 @@ type BuildService struct {
 ```
 
 <a name="NewBuildService"></a>
-### func NewBuildService
+### func [NewBuildService](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/application/service.go#L52>)
 
 ```go
 func NewBuildService(mapper *Mapper, status *StatusWriter, backend *BackendSelector) *BuildService
@@ -108,7 +108,7 @@ func NewBuildService(mapper *Mapper, status *StatusWriter, backend *BackendSelec
 NewBuildService constructs a BuildService with the required collaborators.
 
 <a name="BuildService.Reconcile"></a>
-### func \(\*BuildService\) Reconcile
+### func \(\*BuildService\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/application/service.go#L64>)
 
 ```go
 func (s *BuildService) Reconcile(ctx context.Context, resolved *bldResolution.ResolvedBuild) error
@@ -117,7 +117,7 @@ func (s *BuildService) Reconcile(ctx context.Context, resolved *bldResolution.Re
 Reconcile executes the full build pipeline for a resolved Build CR. It maps, selects, executes, and writes status in sequence. An error from any stage is forwarded to StatusWriter so the Build CR always reflects the latest outcome, even on failure.
 
 <a name="BuildService.Teardown"></a>
-### func \(\*BuildService\) Teardown
+### func \(\*BuildService\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/application/service.go#L79>)
 
 ```go
 func (s *BuildService) Teardown(ctx context.Context, resolved *bldResolution.ResolvedBuild) error
@@ -126,7 +126,7 @@ func (s *BuildService) Teardown(ctx context.Context, resolved *bldResolution.Res
 Teardown reverses Reconcile — maps the resolved Build, selects the same backend provider strategy would have used, and dispatches Teardown to delete the owned BuildRun\(s\) and Build.
 
 <a name="Mapper"></a>
-## type Mapper
+## type [Mapper](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/application/mapper.go#L37>)
 
 Mapper translates a ResolvedBuild into a domain.BuildSpec.
 
@@ -135,7 +135,7 @@ type Mapper struct{}
 ```
 
 <a name="NewMapper"></a>
-### func NewMapper
+### func [NewMapper](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/application/mapper.go#L40>)
 
 ```go
 func NewMapper() *Mapper
@@ -144,7 +144,7 @@ func NewMapper() *Mapper
 NewMapper constructs a Mapper.
 
 <a name="Mapper.MapResolvedToDomain"></a>
-### func \(Mapper\) MapResolvedToDomain
+### func \(Mapper\) [MapResolvedToDomain](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/application/mapper.go#L54>)
 
 ```go
 func (Mapper) MapResolvedToDomain(rb *bldResolution.ResolvedBuild) domain.BuildSpec
@@ -157,7 +157,7 @@ Panics on resolver invariant violations \(empty SourceURL or StrategyName\) — 
 StrategyKind is hardcoded to "ClusterBuildStrategy" — BlanketOps platform strategies are always cluster\-scoped. Namespace\-scoped strategies are not currently supported.
 
 <a name="StatusWriter"></a>
-## type StatusWriter
+## type [StatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/application/status.go#L38-L43>)
 
 StatusWriter persists Build conditions to the CR status. It does NOT derive conditions, manage contract state, or preserve domain flags. Callers pass the Build CR with conditions already set; this writer merges and persists.
 
@@ -171,7 +171,7 @@ type StatusWriter struct {
 ```
 
 <a name="NewStatusWriter"></a>
-### func NewStatusWriter
+### func [NewStatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/application/status.go#L46>)
 
 ```go
 func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter
@@ -180,7 +180,7 @@ func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter
 NewStatusWriter constructs a StatusWriter.
 
 <a name="StatusWriter.Write"></a>
-### func \(\*StatusWriter\) Write
+### func \(\*StatusWriter\) [Write](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/application/status.go#L62>)
 
 ```go
 func (w *StatusWriter) Write(ctx context.Context, build *buildv1.Build, conditions ...metav1.Condition) error

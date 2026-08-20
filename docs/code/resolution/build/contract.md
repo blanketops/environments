@@ -22,7 +22,7 @@ Controllers and domain logic MUST NOT consume the returned contract value. The r
 
 
 <a name="ToBuildContract"></a>
-## func ToBuildContract
+## func [ToBuildContract](<https://github.com/blanketops/environments/blob/main/resolution/build/contract/contract_adapter.go#L47>)
 
 ```go
 func ToBuildContract(s *resolve.ResolvedBuildSpec) *contractv1.BuildSpec

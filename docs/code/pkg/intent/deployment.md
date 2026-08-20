@@ -29,7 +29,7 @@ IntentBuilder.Build \(intent\_builder.go\) is the canonical, complete constructo
 
 
 <a name="ErrInvalidDeployment"></a>
-## func ErrInvalidDeployment
+## func [ErrInvalidDeployment](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/errors.go#L26>)
 
 ```go
 func ErrInvalidDeployment(reason string) error
@@ -38,7 +38,7 @@ func ErrInvalidDeployment(reason string) error
 ErrInvalidDeployment indicates a semantic error in a resolved Deployment. This means the resolver violated an invariant or the contract is invalid.
 
 <a name="ErrServiceUnitNotFound"></a>
-## func ErrServiceUnitNotFound
+## func [ErrServiceUnitNotFound](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/errors.go#L20>)
 
 ```go
 func ErrServiceUnitNotFound(name string) error
@@ -47,7 +47,7 @@ func ErrServiceUnitNotFound(name string) error
 
 
 <a name="DeploymentIntent"></a>
-## type DeploymentIntent
+## type [DeploymentIntent](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/deployment.go#L39-L56>)
 
 
 
@@ -73,7 +73,7 @@ type DeploymentIntent struct {
 ```
 
 <a name="ResolveDeploymentIntent"></a>
-### func ResolveDeploymentIntent
+### func [ResolveDeploymentIntent](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/resolve.go#L27-L30>)
 
 ```go
 func ResolveDeploymentIntent(deploy *deploymentResolution.ResolvedDeployment, serviceUnits map[string]*serviceunitResolution.ResolvedServiceUnit) (*DeploymentIntent, error)
@@ -82,7 +82,7 @@ func ResolveDeploymentIntent(deploy *deploymentResolution.ResolvedDeployment, se
 
 
 <a name="IntentBuilder"></a>
-## type IntentBuilder
+## type [IntentBuilder](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/intent_builder.go#L28>)
 
 
 
@@ -91,7 +91,7 @@ type IntentBuilder struct{}
 ```
 
 <a name="NewIntentBuilder"></a>
-### func NewIntentBuilder
+### func [NewIntentBuilder](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/intent_builder.go#L30>)
 
 ```go
 func NewIntentBuilder() *IntentBuilder
@@ -100,7 +100,7 @@ func NewIntentBuilder() *IntentBuilder
 
 
 <a name="IntentBuilder.Build"></a>
-### func \(\*IntentBuilder\) Build
+### func \(\*IntentBuilder\) [Build](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/intent_builder.go#L41-L45>)
 
 ```go
 func (b *IntentBuilder) Build(ctx context.Context, depl *deploymentResolution.ResolvedDeployment, serviceUnits []serviceunitResolution.ResolvedServiceUnit) (*DeploymentIntent, error)
@@ -111,7 +111,7 @@ Build constructs a DeploymentIntent from fully RESOLVED inputs.
 CONTRACT: \- Inputs are already validated and normalized \- No Kubernetes types allowed \- No string\-to\-enum logic allowed \- Any invalid state is a resolver bug
 
 <a name="ManifestsRepo"></a>
-## type ManifestsRepo
+## type [ManifestsRepo](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/deployment.go#L58-L73>)
 
 
 
@@ -135,7 +135,7 @@ type ManifestsRepo struct {
 ```
 
 <a name="ReconciliationStrategy"></a>
-## type ReconciliationStrategy
+## type [ReconciliationStrategy](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/reconciliation.go#L18>)
 
 
 
@@ -154,7 +154,7 @@ const (
 ```
 
 <a name="Ref"></a>
-## type Ref
+## type [Ref](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/deployment.go#L75-L79>)
 
 
 
@@ -167,7 +167,7 @@ type Ref struct {
 ```
 
 <a name="Runtime"></a>
-## type Runtime
+## type [Runtime](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/runtime.go#L18>)
 
 
 
@@ -188,7 +188,7 @@ const (
 ```
 
 <a name="ServiceUnitPhase"></a>
-## type ServiceUnitPhase
+## type [ServiceUnitPhase](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/result.go#L33>)
 
 
 
@@ -209,7 +209,7 @@ const (
 ```
 
 <a name="ServiceUnitResult"></a>
-## type ServiceUnitResult
+## type [ServiceUnitResult](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/result.go#L20-L31>)
 
 
 
@@ -229,7 +229,7 @@ type ServiceUnitResult struct {
 ```
 
 <a name="Strategy"></a>
-## type Strategy
+## type [Strategy](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/runtime.go#L28>)
 
 
 

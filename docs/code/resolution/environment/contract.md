@@ -22,7 +22,7 @@ Key generated type facts:
 
 
 <a name="ToEnvironmentContract"></a>
-## func ToEnvironmentContract
+## func [ToEnvironmentContract](<https://github.com/blanketops/environments/blob/main/resolution/environment/contract/contract_adapter.go#L46>)
 
 ```go
 func ToEnvironmentContract(s *resolve.ResolvedEnvironmentSpec) *environmentscontractv1alpha1.EnvironmentSpec

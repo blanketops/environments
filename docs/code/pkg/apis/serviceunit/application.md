@@ -35,7 +35,7 @@ This write is the authoritative signal downstream consumers \(e.g. a Deployment 
 
 
 <a name="Mapper"></a>
-## type Mapper
+## type [Mapper](<https://github.com/blanketops/environments/blob/main/pkg/apis/serviceunit/application/mapper.go#L38>)
 
 Mapper translates a ResolvedServiceUnit into a domain.ServiceUnit.
 
@@ -44,7 +44,7 @@ type Mapper struct{}
 ```
 
 <a name="NewMapper"></a>
-### func NewMapper
+### func [NewMapper](<https://github.com/blanketops/environments/blob/main/pkg/apis/serviceunit/application/mapper.go#L41>)
 
 ```go
 func NewMapper() *Mapper
@@ -53,7 +53,7 @@ func NewMapper() *Mapper
 NewMapper constructs a Mapper.
 
 <a name="Mapper.MapResolvedToDomain"></a>
-### func \(Mapper\) MapResolvedToDomain
+### func \(Mapper\) [MapResolvedToDomain](<https://github.com/blanketops/environments/blob/main/pkg/apis/serviceunit/application/mapper.go#L51>)
 
 ```go
 func (Mapper) MapResolvedToDomain(rsu *serviceunitResolution.ResolvedServiceUnit) domain.ServiceUnit
@@ -64,7 +64,7 @@ MapResolvedToDomain converts a fully resolved ServiceUnit into a domain ServiceU
 Panics on resolver invariant violations \(unrecognised Type\) — these indicate a resolver bug, not a user error, and must not be silently swallowed. All other fields are mapped verbatim.
 
 <a name="ServiceUnitService"></a>
-## type ServiceUnitService
+## type [ServiceUnitService](<https://github.com/blanketops/environments/blob/main/pkg/apis/serviceunit/application/service.go#L55-L59>)
 
 ServiceUnitService orchestrates the ServiceUnit reconciliation pipeline. It is stateless beyond its collaborators and safe for concurrent use.
 
@@ -75,7 +75,7 @@ type ServiceUnitService struct {
 ```
 
 <a name="NewServiceUnitService"></a>
-### func NewServiceUnitService
+### func [NewServiceUnitService](<https://github.com/blanketops/environments/blob/main/pkg/apis/serviceunit/application/service.go#L62>)
 
 ```go
 func NewServiceUnitService(mapper *Mapper, status *StatusWriter, cache *serviceunitCache.ServiceUnitCache) *ServiceUnitService
@@ -84,7 +84,7 @@ func NewServiceUnitService(mapper *Mapper, status *StatusWriter, cache *serviceu
 NewServiceUnitService constructs a ServiceUnitService with the required collaborators.
 
 <a name="ServiceUnitService.Reconcile"></a>
-### func \(\*ServiceUnitService\) Reconcile
+### func \(\*ServiceUnitService\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/apis/serviceunit/application/service.go#L73>)
 
 ```go
 func (s *ServiceUnitService) Reconcile(ctx context.Context, resolved *serviceunitResolution.ResolvedServiceUnit) error
@@ -93,7 +93,7 @@ func (s *ServiceUnitService) Reconcile(ctx context.Context, resolved *serviceuni
 Reconcile executes the full ServiceUnit pipeline for a resolved ServiceUnit CR. It maps, derives, writes status, and publishes to the field\-level cache in sequence.
 
 <a name="StatusWriter"></a>
-## type StatusWriter
+## type [StatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/serviceunit/application/status.go#L32-L35>)
 
 StatusWriter persists ServiceUnit conditions to the CR status. It does NOT derive conditions or manage contract state. Callers pass the ServiceUnit CR with conditions already set; this writer merges and persists.
 
@@ -105,7 +105,7 @@ type StatusWriter struct {
 ```
 
 <a name="NewStatusWriter"></a>
-### func NewStatusWriter
+### func [NewStatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/serviceunit/application/status.go#L37>)
 
 ```go
 func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter
@@ -114,7 +114,7 @@ func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter
 
 
 <a name="StatusWriter.Write"></a>
-### func \(\*StatusWriter\) Write
+### func \(\*StatusWriter\) [Write](<https://github.com/blanketops/environments/blob/main/pkg/apis/serviceunit/application/status.go#L48>)
 
 ```go
 func (w *StatusWriter) Write(ctx context.Context, su *environmentv1alpha1.ServiceUnit, conditions ...metav1.Condition) error

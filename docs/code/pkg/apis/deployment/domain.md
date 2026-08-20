@@ -28,7 +28,7 @@ This package represents the \*intent\* and \*result\* of a Deployment, not how i
 
 
 <a name="DeploymentPhase"></a>
-## type DeploymentPhase
+## type [DeploymentPhase](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/domain/model.go#L92>)
 
 
 
@@ -37,7 +37,7 @@ type DeploymentPhase string
 ```
 
 <a name="DeploymentResult"></a>
-## type DeploymentResult
+## type [DeploymentResult](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/domain/model.go#L100-L111>)
 
 DeploymentResult represents the outcome of executing a DeploymentIntent
 
@@ -57,7 +57,7 @@ type DeploymentResult struct {
 ```
 
 <a name="DeploymentSpec"></a>
-## type DeploymentSpec
+## type [DeploymentSpec](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/domain/model.go#L39-L56>)
 
 DeploymentSpec represents the desired state of a Deployment. This is the canonical domain input used by application logic.
 
@@ -83,7 +83,7 @@ type DeploymentSpec struct {
 ```
 
 <a name="ManifestsRepo"></a>
-## type ManifestsRepo
+## type [ManifestsRepo](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/domain/model.go#L58-L64>)
 
 
 
@@ -98,7 +98,7 @@ type ManifestsRepo struct {
 ```
 
 <a name="ReconciliationStrategy"></a>
-## type ReconciliationStrategy
+## type [ReconciliationStrategy](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/domain/model.go#L66>)
 
 
 
@@ -117,7 +117,7 @@ const (
 ```
 
 <a name="Runtime"></a>
-## type Runtime
+## type [Runtime](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/domain/model.go#L74>)
 
 
 
@@ -138,7 +138,7 @@ const (
 ```
 
 <a name="ServiceUnitPhase"></a>
-## type ServiceUnitPhase
+## type [ServiceUnitPhase](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/domain/model.go#L93>)
 
 
 
@@ -147,7 +147,7 @@ type ServiceUnitPhase string
 ```
 
 <a name="ServiceUnitResult"></a>
-## type ServiceUnitResult
+## type [ServiceUnitResult](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/domain/model.go#L113-L126>)
 
 
 
@@ -169,7 +169,7 @@ type ServiceUnitResult struct {
 ```
 
 <a name="Strategy"></a>
-## type Strategy
+## type [Strategy](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/domain/model.go#L84>)
 
 
 

@@ -24,7 +24,7 @@ Resolution is strict: required fields that are missing or malformed return error
 
 
 <a name="ReconciliationStrategy"></a>
-## type ReconciliationStrategy
+## type [ReconciliationStrategy](<https://github.com/blanketops/environments/blob/main/resolution/deployment/resolve/resolve.go#L59>)
 
 
 
@@ -43,7 +43,7 @@ const (
 ```
 
 <a name="ResolvedDeployment"></a>
-## type ResolvedDeployment
+## type [ResolvedDeployment](<https://github.com/blanketops/environments/blob/main/resolution/deployment/resolve/resolve.go#L73-L76>)
 
 ResolvedDeployment pairs the original Kubernetes Deployment object with its fully decoded and validated spec.
 
@@ -55,7 +55,7 @@ type ResolvedDeployment struct {
 ```
 
 <a name="ResolveDeployment"></a>
-### func ResolveDeployment
+### func [ResolveDeployment](<https://github.com/blanketops/environments/blob/main/resolution/deployment/resolve/resolve.go#L105>)
 
 ```go
 func ResolveDeployment(depl *environmentv1alpha1.Deployment) (*ResolvedDeployment, error)
@@ -64,7 +64,7 @@ func ResolveDeployment(depl *environmentv1alpha1.Deployment) (*ResolvedDeploymen
 ResolveDeployment decodes and validates the raw JSON contract from the Deployment CR spec into a ResolvedDeployment. Returns an error if the CR is nil, the contract is absent, or any required field is missing or malformed.
 
 <a name="ResolvedDeploymentSpec"></a>
-## type ResolvedDeploymentSpec
+## type [ResolvedDeploymentSpec](<https://github.com/blanketops/environments/blob/main/resolution/deployment/resolve/resolve.go#L79-L87>)
 
 ResolvedDeploymentSpec is the decoded and validated Deployment spec.
 
@@ -81,7 +81,7 @@ type ResolvedDeploymentSpec struct {
 ```
 
 <a name="ResolvedManifestsRepo"></a>
-## type ResolvedManifestsRepo
+## type [ResolvedManifestsRepo](<https://github.com/blanketops/environments/blob/main/resolution/deployment/resolve/resolve.go#L90-L96>)
 
 ResolvedManifestsRepo is the resolved GitOps manifests repository.
 
@@ -96,7 +96,7 @@ type ResolvedManifestsRepo struct {
 ```
 
 <a name="Runtime"></a>
-## type Runtime
+## type [Runtime](<https://github.com/blanketops/environments/blob/main/resolution/deployment/resolve/resolve.go#L41>)
 
 
 
@@ -117,7 +117,7 @@ const (
 ```
 
 <a name="Strategy"></a>
-## type Strategy
+## type [Strategy](<https://github.com/blanketops/environments/blob/main/resolution/deployment/resolve/resolve.go#L51>)
 
 
 
