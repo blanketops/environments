@@ -1,3 +1,13 @@
+## [0.7.7] - 2026-08-20
+
+### 📚 Documentation
+
+- Fix stale README references
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.7.6
+- Sync develop with main (dependency bump)
 ## [0.7.6] - 2026-08-19
 
 ### 🚀 Features
@@ -30,6 +40,7 @@
 - Regenerate code documentation (#284)
 - Auto-generate code documentation [skip ci]
 - Fix stale self-hosted comment in ci.yml's folded-in fuzz job
+- Fix stale self-hosted comment in ci.yml's folded-in fuzz job
 
 ### 🧪 Testing
 
@@ -47,8 +58,11 @@
 - *(code-docs)* Commit generated docs via the Git Data API, drop GPG (#285)
 - Sync develop with main after release/v0.7.5
 - Consolidate 10 workflows to 7; close self-hosted-runner gap on develop
+- Sync develop with main after release/v0.7.6
+- Run workflows on ubuntu-latest instead of self-hosted runners (redo)
 - Run workflows on ubuntu-latest instead of self-hosted runners (redo)
 - Use GitHub App token for release.yml's changelog push
+- Sync develop with main (release.yml App token + Teardown stub)
 ## [0.7.5] - 2026-07-19
 
 ### 🚀 Features
