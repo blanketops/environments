@@ -15,28 +15,25 @@
 #
 # All three are report-only — none fail the build. Findings render into each
 # job's summary and are uploaded as build artifacts. SARIF upload to the
-# Security tab is attempted (codeql, govulncheck) but allowed to fail — this
-# repo has no GitHub Advanced Security license (private repo), so those
-# /code-scanning/* calls 403 without affecting the run's outcome.
+# Security tab is attempted (codeql, govulncheck) but allowed to fail, on the
+# off chance a run predates GitHub Advanced Security being available (it's
+# free on public repos, which this now is).
 #
-# codeql build-mode is manual, not autobuild — this repo has private Go
-# modules (environments-api, environments-contract) that need App-token git
-# config and GOPRIVATE/GONOSUMDB before `go build` will resolve; autobuild
-# doesn't reliably carry that through.
+# environments-api and environments-contract are public modules, so `go
+# build` resolves them via the public module proxy with no git auth needed —
+# none of these three jobs need secrets, which also means they run on
+# Dependabot PRs. codeql build-mode is manual rather than autobuild simply
+# because it was already set that way; no private-module reason to keep it.
 #
-# Auth:
-#   Private-module git config uses the BlanketOps-Environments GitHub App —
-#   see ci.yml's header for why (installation tokens vs. an expiring PAT).
-#   govulncheck's GHCR pull uses GITHUB_TOKEN, not the App token — same
-#   reasoning as ci.yml: the App token is denied package writes/some pulls
-#   against this org-scoped package regardless of permission granted;
-#   GITHUB_TOKEN is scoped to this repo, which is all a same-repo pull needs.
-#   scorecard's repo_token stays on the App token — Branch-Protection and
-#   Token-Permissions checks need read access GITHUB_TOKEN's default scoping
-#   can't grant on a private repo, App token or PAT is required either way.
+# scorecard's repo_token is GITHUB_TOKEN, not a GitHub App token — some
+# checks (e.g. Branch-Protection) are less complete this way, but running on
+# Dependabot PRs (which get no secrets) matters more here since Scorecard is
+# report-only, not a merge gate.
 #
-# Secrets required:
-#   APP_ID, APP_PRIVATE_KEY — GitHub App credentials
+# govulncheck's GHCR pull uses GITHUB_TOKEN too — an App token is denied
+# package writes/some pulls against this org-scoped package regardless of
+# permission granted; GITHUB_TOKEN is scoped to this repo, which is all a
+# same-repo pull needs.
 # =============================================================================
 
 name: Security
@@ -73,31 +70,14 @@ jobs:
       security-events: write
       actions: read
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: blanketops
-          repositories: environments,environments-api,environments-contract
-
       - name: Checkout
         uses: actions/checkout@v7
-        with:
-          token: ${{ steps.app-token.outputs.token }}
 
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: true
-
-      - name: Configure Git for private modules
-        run: |
-          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "https://github.com/"
-          go env -w GOPRIVATE=github.com/blanketops/*
-          go env -w GONOSUMDB=github.com/blanketops/*
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -184,15 +164,6 @@ jobs:
       contents: read
       actions: read
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: blanketops
-          repositories: environments
-
       - name: Checkout
         uses: actions/checkout@v7
         with:
@@ -200,12 +171,16 @@ jobs:
 
       # ossf/scorecard-action has no moving "v2" tag — only exact releases
       # (v2.4.3 etc). @v2 fails to resolve, so it's pinned explicitly.
+      # repo_token is GITHUB_TOKEN rather than a GitHub App token so this
+      # job still runs on Dependabot PRs, which get no repo secrets — some
+      # checks (e.g. Branch-Protection) are less complete this way, but
+      # Scorecard is report-only here, not a merge gate.
       - name: Run Scorecard analysis
         uses: ossf/scorecard-action@v2.4.3
         with:
           results_file: results.json
           results_format: json
-          repo_token: ${{ steps.app-token.outputs.token }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
           publish_results: false
 
       - name: Upload results artifact
@@ -268,15 +243,6 @@ jobs:
       contents: read
       packages: write # to push a corrected vendor snapshot when the restored one is stale
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: blanketops
-          repositories: environments,environments-api,environments-contract
-
       - name: Checkout
         uses: actions/checkout@v7
 
@@ -285,13 +251,6 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-
-      - name: Configure Git for private modules
-        run: |
-          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "https://github.com/"
-          go env -w GOPRIVATE=github.com/BlanketOps/*,github.com/blanketops/*
-          go env -w GONOSUMDB=github.com/BlanketOps/*,github.com/blanketops/*
-          go env -w GOPROXY=direct
 
       - name: Log in to GHCR
         uses: docker/login-action@v4

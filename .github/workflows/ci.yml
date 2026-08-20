@@ -46,28 +46,23 @@
 #   docker export | tar extracts vendor/ directly — no path nesting issues.
 #
 # Auth:
-#   Private-module git config (environments-api, environments-contract) uses
-#   the BlanketOps-Environments GitHub App (via actions/create-github-app-token)
-#   instead of a personal-account PAT — installation tokens are minted fresh
-#   per job and expire in an hour, instead of a PAT's expiry silently lapsing.
+#   environments-api and environments-contract are public modules, so `go
+#   build`/`go mod vendor` resolve them via the public module proxy with no
+#   git auth needed — most jobs here need no secrets at all, which also
+#   means they run on Dependabot PRs.
 #
-#   GHCR push/pull uses GITHUB_TOKEN, not the App token — the App installation
-#   token was denied "Write organization package" against this GHCR package
-#   regardless of what permission was granted (repository Packages,
-#   organization Packages, explicit per-package "Manage Actions access"
-#   linkage — same denial every time). GITHUB_TOKEN is scoped to this repo
-#   only, which is exactly what a same-repo package push/pull needs.
+#   GHCR push/pull uses GITHUB_TOKEN — an App installation token was denied
+#   "Write organization package" against this GHCR package regardless of
+#   what permission was granted. GITHUB_TOKEN is scoped to this repo only,
+#   which is exactly what a same-repo package push/pull needs.
 #
-#   code-docs's generated-docs commit is built directly through the Git Data
-#   API (blob/tree/commit/ref) using the App's installation token, not `git
-#   commit` — commits made this way show as "Verified" automatically, so
-#   there's no GPG key to hold, rotate, or lose.
-#
-# Secrets required:
-#   APP_ID, APP_PRIVATE_KEY — GitHub App credentials, exchanged for a
-#   short-lived installation token per job (private-module access only).
-#   The App's "Contents" repository permission must be Read & write for the
-#   code-docs job's Git Data API calls to succeed.
+#   code-docs is the one job that still needs the GitHub App token
+#   (secrets.APP_ID / APP_PRIVATE_KEY): its generated-docs commit is built
+#   directly through the Git Data API (blob/tree/commit/ref) using the App's
+#   installation token, not `git commit` — commits made this way show as
+#   "Verified" automatically, and only an App token (not the default
+#   GITHUB_TOKEN) can push straight to protected main. The App's "Contents"
+#   repository permission must be Read & write for those calls to succeed.
 # =============================================================================
 
 name: CI
@@ -104,15 +99,6 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: blanketops
-          repositories: environments,environments-api,environments-contract
-
       - name: Checkout
         uses: actions/checkout@v7
 
@@ -121,11 +107,6 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-
-      - name: Configure Git for private modules
-        run: |
-          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "https://github.com/"
-          go env -w GOPRIVATE=github.com/BlanketOps/*,github.com/blanketops/*
 
       - name: Build
         run: go build ./...
@@ -157,20 +138,10 @@ jobs:
       cache-hit: ${{ steps.check.outputs.hit }}
       go-minor: ${{ steps.goversion.outputs.minor }}
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: blanketops
-          repositories: environments,environments-api,environments-contract
-
       - name: Checkout
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
-          token: ${{ steps.app-token.outputs.token }}
 
       - name: Extract Go version from go.mod
         id: goversion
@@ -205,11 +176,6 @@ jobs:
             echo "hit=false" >> "$GITHUB_OUTPUT"
             echo "No snapshot found — will build"
           fi
-
-      - name: Configure Git for private modules
-        if: steps.check.outputs.hit == 'false'
-        run: |
-          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "https://github.com/"
 
       - name: Set up Go
         if: steps.check.outputs.hit == 'false'
@@ -259,19 +225,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: vendor-snapshot
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: blanketops
-          repositories: environments,environments-api,environments-contract
-
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
 
       - name: Set up Go
@@ -279,13 +235,6 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-
-      - name: Configure Git for private modules
-        run: |
-          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "https://github.com/"
-          go env -w GOPRIVATE=github.com/BlanketOps/*,github.com/blanketops/*
-          go env -w GONOSUMDB=github.com/BlanketOps/*,github.com/blanketops/*
-          go env -w GOPROXY=direct
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
@@ -409,19 +358,9 @@ jobs:
       (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')) ||
       (github.event_name == 'pull_request' && github.base_ref == 'main')
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: blanketops
-          repositories: environments,environments-api,environments-contract
-
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
 
       - name: Set up Go
@@ -429,13 +368,6 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-
-      - name: Configure Git for private modules
-        run: |
-          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "https://github.com/"
-          go env -w GOPRIVATE=github.com/BlanketOps/*,github.com/blanketops/*
-          go env -w GONOSUMDB=github.com/BlanketOps/*,github.com/blanketops/*
-          go env -w GOPROXY=direct
 
       - name: Compute vendor tag from go.sum
         id: vendor
@@ -797,15 +729,6 @@ jobs:
           - name: FuzzResolveRoute
             pkg: ./resolution/route/resolve/...
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: blanketops
-          repositories: environments,environments-api,environments-contract
-
       - name: Checkout
         uses: actions/checkout@v7
 
@@ -814,13 +737,6 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-
-      - name: Configure Git for private modules
-        run: |
-          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "https://github.com/"
-          go env -w GOPRIVATE=github.com/blanketops/*
-          go env -w GONOSUMDB=github.com/blanketops/*
-          go env -w GOPROXY=direct
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
