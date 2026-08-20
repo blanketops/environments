@@ -29,6 +29,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// PackageProvider executes a Package via a kapp-controller App, replacing
+// ApplicationProvider's older behavior with a corrected phase mapping.
 type PackageProvider struct {
 	Client   client.Client
 	Scheme   *runtime.Scheme
@@ -36,6 +38,7 @@ type PackageProvider struct {
 	Recorder events.EventRecorder // optional; may be nil
 }
 
+// NewPackageProvider constructs a PackageProvider.
 func NewPackageProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *PackageProvider {
 	// recorder may be nil in unit tests; keep it optional
 	return &PackageProvider{
@@ -46,6 +49,8 @@ func NewPackageProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger
 	}
 }
 
+// Execute builds a kapp App from intent, applies it, observes its
+// resulting state, and translates that into a domain.PackageResult.
 func (p *PackageProvider) Execute(
 	ctx context.Context,
 	intent *intent.PackageIntent,
@@ -87,6 +92,9 @@ func (p *PackageProvider) Execute(
 	return result, nil
 }
 
+// PackageResultFromApplicationState translates an observed kapp-controller
+// App state into a domain.PackageResult, explicitly mapping each
+// ApplicationPhase to its corresponding PackagePhase.
 func PackageResultFromApplicationState(
 	state *domain.ApplicationState,
 ) *domain.PackageResult {
@@ -124,6 +132,8 @@ func PackageResultFromApplicationState(
 	return result
 }
 
+// ObserveApplication reads the named kapp-controller App and derives its
+// ApplicationState from the App's ReconcileSucceeded condition.
 func (p *PackageProvider) ObserveApplication(
 	ctx context.Context,
 	namespace,

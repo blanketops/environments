@@ -38,6 +38,7 @@ import (
 // Domain types (AUTHORITATIVE)
 // -----------------------------------------------------------------------------
 
+// Runtime identifies which execution platform a ServiceUnit deploys to.
 type Runtime string
 
 const (
@@ -48,6 +49,7 @@ const (
 	RuntimeAzure      Runtime = "blanketops.dev/azure-container"
 )
 
+// Strategy selects the rollout strategy used when deploying a ServiceUnit.
 type Strategy string
 
 const (
@@ -56,6 +58,8 @@ const (
 	StrategyCanary    Strategy = "Canary"
 )
 
+// ReconciliationStrategy selects how a Deployment's manifests are applied
+// (imperative apply, Kustomize, or Helm).
 type ReconciliationStrategy string
 
 const (

@@ -48,6 +48,7 @@ type SecretStoreReconciler struct {
 	Log    logr.Logger
 }
 
+// NewSecretStoreReconciler constructs a SecretStoreReconciler.
 func NewSecretStoreReconciler(c client.Client, log logr.Logger) *SecretStoreReconciler {
 	return &SecretStoreReconciler{Client: c, Log: log}
 }

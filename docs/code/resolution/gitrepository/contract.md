@@ -31,7 +31,7 @@ Provider mapping is fatal on unknown values — providers are a platform\-contro
 
 
 <a name="ToGitRepositoryContract"></a>
-## func ToGitRepositoryContract
+## func [ToGitRepositoryContract](<https://github.com/blanketops/environments/blob/main/resolution/gitrepository/contract/contract_adapter.go#L61>)
 
 ```go
 func ToGitRepositoryContract(s *resolve.ResolvedGitRepositorySpec) (*sourcescontractv1alpha1.GitRepositorySpec, error)

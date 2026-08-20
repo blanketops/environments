@@ -26,11 +26,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// GitHubProviderConfigReconciler converges the Crossplane ProviderConfig
+// that points the upjet-github provider at its credentials Secret.
 type GitHubProviderConfigReconciler struct {
 	Client client.Client
 	Log    logr.Logger
 }
 
+// NewGitHubProviderConfigReconciler constructs a
+// GitHubProviderConfigReconciler.
 func NewGitHubProviderConfigReconciler(
 	c client.Client,
 	log logr.Logger,
@@ -41,6 +45,9 @@ func NewGitHubProviderConfigReconciler(
 	}
 }
 
+// Reconcile ensures the singleton upjet-github ProviderConfig exists,
+// pointing at the credentials Secret produced by the ExternalSecret
+// reconciler.
 func (r *GitHubProviderConfigReconciler) Reconcile(ctx context.Context) error {
 	const (
 		name      = "github-upjet"

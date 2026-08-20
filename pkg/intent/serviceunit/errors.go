@@ -17,6 +17,8 @@ package serviceunit
 
 import "fmt"
 
+// ErrBuildNotReady indicates the named ServiceUnit's image-providing Build
+// has not yet produced a usable image.
 func ErrBuildNotReady(name string) error {
 	return fmt.Errorf("build for serviceunit %q not ready", name)
 }

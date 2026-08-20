@@ -85,7 +85,7 @@ var (
 ```
 
 <a name="Phase"></a>
-## type Phase
+## type [Phase](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/domain/state.go#L29>)
 
 Phase represents the current lifecycle phase of a Route CR. Set by the status writer after each provider Ensure call.
 
@@ -117,7 +117,7 @@ const (
 ```
 
 <a name="Route"></a>
-## type Route
+## type [Route](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/domain/model.go#L37-L67>)
 
 Route is the authoritative domain aggregate for the Route CR. Constructed once by the Mapper; consumed by the application service and provider implementations. Never mutated after construction.
 
@@ -156,7 +156,7 @@ type Route struct {
 ```
 
 <a name="RouteResult"></a>
-## type RouteResult
+## type [RouteResult](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/domain/result.go#L32-L43>)
 
 RouteResult is the outcome of a single Provider.Ensure call. Returned by every backend implementation \(Knative, Kubernetes, Gateway API\).
 
@@ -176,7 +176,7 @@ type RouteResult struct {
 ```
 
 <a name="RouteResult.Materialized"></a>
-### func \(RouteResult\) Materialized
+### func \(RouteResult\) [Materialized](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/domain/result.go#L48>)
 
 ```go
 func (r RouteResult) Materialized() bool
@@ -185,7 +185,7 @@ func (r RouteResult) Materialized() bool
 Materialized returns true when the provider successfully provisioned the route \(Phase == PhaseReady\). Callers use this as the success predicate before reading ResolvedAddress.
 
 <a name="Runtime"></a>
-## type Runtime
+## type [Runtime](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/domain/model.go#L71>)
 
 Runtime identifies the serving backend that materializes a Route. Mirrors blanketops.common.v1.RouteRuntime in the proto contract.
 

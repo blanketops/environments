@@ -36,6 +36,9 @@ import (
 	packageResolution "github.com/blanketops/environments/resolution/packages/resolve"
 )
 
+// PackageStateRepositorySecretReconciler converges the ExternalSecret used
+// to clone a Package's declared state repository — the same lifecycle as
+// BuildGitSSHSecretReconciler, scoped to Package.
 type PackageStateRepositorySecretReconciler struct {
 	Client    client.Client
 	Log       logr.Logger
@@ -43,6 +46,8 @@ type PackageStateRepositorySecretReconciler struct {
 	StoreKind string
 }
 
+// NewPackageStateRepositorySecretReconciler constructs a
+// PackageStateRepositorySecretReconciler targeting the given ESO store.
 func NewPackageStateRepositorySecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *PackageStateRepositorySecretReconciler {
 	return &PackageStateRepositorySecretReconciler{
 		Client:    c,
@@ -52,6 +57,8 @@ func NewPackageStateRepositorySecretReconciler(c client.Client, log logr.Logger,
 	}
 }
 
+// Reconcile creates or updates the git-ssh clone ExternalSecret for
+// resolvedPackage's state repository.
 func (r *PackageStateRepositorySecretReconciler) Reconcile(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage) error {
 	if resolvedPackage == nil || resolvedPackage.Package == nil {
 		return nil

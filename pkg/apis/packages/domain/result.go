@@ -55,6 +55,8 @@ type PackageResult struct {
 // kapp execution result
 // -----------------------------------------------------------------------------
 
+// KappResult captures the outcome of a single kapp invocation during
+// package reconciliation.
 type KappResult struct {
 	// Executed indicates whether kapp was invoked at all.
 	Name      string
@@ -87,6 +89,7 @@ type KappResult struct {
 // kapp actions
 // -----------------------------------------------------------------------------
 
+// KappAction identifies which operation kapp performed (or would perform).
 type KappAction string
 
 const (

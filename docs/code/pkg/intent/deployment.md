@@ -29,7 +29,7 @@ IntentBuilder.Build \(intent\_builder.go\) is the canonical, complete constructo
 
 
 <a name="ErrInvalidDeployment"></a>
-## func ErrInvalidDeployment
+## func [ErrInvalidDeployment](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/errors.go#L28>)
 
 ```go
 func ErrInvalidDeployment(reason string) error
@@ -38,18 +38,18 @@ func ErrInvalidDeployment(reason string) error
 ErrInvalidDeployment indicates a semantic error in a resolved Deployment. This means the resolver violated an invariant or the contract is invalid.
 
 <a name="ErrServiceUnitNotFound"></a>
-## func ErrServiceUnitNotFound
+## func [ErrServiceUnitNotFound](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/errors.go#L22>)
 
 ```go
 func ErrServiceUnitNotFound(name string) error
 ```
 
-
+ErrServiceUnitNotFound indicates a Deployment references a ServiceUnit name that has no corresponding resolved ServiceUnit.
 
 <a name="DeploymentIntent"></a>
-## type DeploymentIntent
+## type [DeploymentIntent](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/deployment.go#L42-L59>)
 
-
+DeploymentIntent is the Kubernetes\-free, fully resolved plan for a Deployment: which runtime and strategy to use, the reconciliation mode, and each ServiceUnit's own intent. Built by IntentBuilder.Build.
 
 ```go
 type DeploymentIntent struct {
@@ -73,34 +73,34 @@ type DeploymentIntent struct {
 ```
 
 <a name="ResolveDeploymentIntent"></a>
-### func ResolveDeploymentIntent
+### func [ResolveDeploymentIntent](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/resolve.go#L31-L34>)
 
 ```go
 func ResolveDeploymentIntent(deploy *deploymentResolution.ResolvedDeployment, serviceUnits map[string]*serviceunitResolution.ResolvedServiceUnit) (*DeploymentIntent, error)
 ```
 
-
+ResolveDeploymentIntent is an older, partial DeploymentIntent constructor that never learned Runtime/Strategy/ReconciliationStrategy/ManifestsRepo. It has no callers in DeploymentService's path — superseded by IntentBuilder.Build, not a second supported entry point.
 
 <a name="IntentBuilder"></a>
-## type IntentBuilder
+## type [IntentBuilder](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/intent_builder.go#L30>)
 
-
+IntentBuilder builds a DeploymentIntent from fully resolved inputs. It is the canonical, complete constructor that DeploymentService calls.
 
 ```go
 type IntentBuilder struct{}
 ```
 
 <a name="NewIntentBuilder"></a>
-### func NewIntentBuilder
+### func [NewIntentBuilder](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/intent_builder.go#L33>)
 
 ```go
 func NewIntentBuilder() *IntentBuilder
 ```
 
-
+NewIntentBuilder constructs an IntentBuilder.
 
 <a name="IntentBuilder.Build"></a>
-### func \(\*IntentBuilder\) Build
+### func \(\*IntentBuilder\) [Build](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/intent_builder.go#L44-L48>)
 
 ```go
 func (b *IntentBuilder) Build(ctx context.Context, depl *deploymentResolution.ResolvedDeployment, serviceUnits []serviceunitResolution.ResolvedServiceUnit) (*DeploymentIntent, error)
@@ -111,9 +111,9 @@ Build constructs a DeploymentIntent from fully RESOLVED inputs.
 CONTRACT: \- Inputs are already validated and normalized \- No Kubernetes types allowed \- No string\-to\-enum logic allowed \- Any invalid state is a resolver bug
 
 <a name="ManifestsRepo"></a>
-## type ManifestsRepo
+## type [ManifestsRepo](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/deployment.go#L63-L78>)
 
-
+ManifestsRepo is the Git repository a Deployment's manifests are rendered from or applied against.
 
 ```go
 type ManifestsRepo struct {
@@ -135,9 +135,9 @@ type ManifestsRepo struct {
 ```
 
 <a name="ReconciliationStrategy"></a>
-## type ReconciliationStrategy
+## type [ReconciliationStrategy](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/reconciliation.go#L20>)
 
-
+ReconciliationStrategy selects how a Deployment's manifests are applied \(imperative apply, Kustomize, or Helm\).
 
 ```go
 type ReconciliationStrategy string
@@ -154,9 +154,9 @@ const (
 ```
 
 <a name="Ref"></a>
-## type Ref
+## type [Ref](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/deployment.go#L81-L85>)
 
-
+Ref pins ManifestsRepo to a specific branch, tag, or commit.
 
 ```go
 type Ref struct {
@@ -167,9 +167,9 @@ type Ref struct {
 ```
 
 <a name="Runtime"></a>
-## type Runtime
+## type [Runtime](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/runtime.go#L19>)
 
-
+Runtime identifies which execution platform a ServiceUnit deploys to.
 
 ```go
 type Runtime string
@@ -188,9 +188,9 @@ const (
 ```
 
 <a name="ServiceUnitPhase"></a>
-## type ServiceUnitPhase
+## type [ServiceUnitPhase](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/result.go#L37>)
 
-
+ServiceUnitPhase is the reconciliation phase of a single ServiceUnit within a Deployment.
 
 ```go
 type ServiceUnitPhase string
@@ -209,9 +209,9 @@ const (
 ```
 
 <a name="ServiceUnitResult"></a>
-## type ServiceUnitResult
+## type [ServiceUnitResult](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/result.go#L22-L33>)
 
-
+ServiceUnitResult is the observed outcome of reconciling a single ServiceUnit within a Deployment.
 
 ```go
 type ServiceUnitResult struct {
@@ -229,9 +229,9 @@ type ServiceUnitResult struct {
 ```
 
 <a name="Strategy"></a>
-## type Strategy
+## type [Strategy](<https://github.com/blanketops/environments/blob/main/pkg/intent/deployment/runtime.go#L30>)
 
-
+Strategy selects the rollout strategy used when deploying a ServiceUnit.
 
 ```go
 type Strategy string

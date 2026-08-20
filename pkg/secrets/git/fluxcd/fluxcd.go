@@ -42,11 +42,16 @@ import (
 
 const githubKnownHosts = "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl"
 
+// DeploymentFluxGitSSHSecretReconciler self-generates and persists the Flux
+// git-ssh deploy keypair for a Deployment's manifests repository. The
+// keypair is stable for the CR's lifetime and never rotated automatically.
 type DeploymentFluxGitSSHSecretReconciler struct {
 	Client client.Client
 	Log    logr.Logger
 }
 
+// NewDeploymentFluxGitSSHSecretReconciler constructs a
+// DeploymentFluxGitSSHSecretReconciler.
 func NewDeploymentFluxGitSSHSecretReconciler(
 	c client.Client,
 	log logr.Logger,
@@ -57,6 +62,9 @@ func NewDeploymentFluxGitSSHSecretReconciler(
 	}
 }
 
+// Reconcile ensures deployment's Flux deploy-key Secret exists, generating
+// a new ed25519 keypair only if none is already present — existing keys are
+// never rotated.
 func (r *DeploymentFluxGitSSHSecretReconciler) Reconcile(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) error {
 	secretName := fmt.Sprintf("%s-flux-ssh", deployment.Deployment.Name)
 	namespace := deployment.Deployment.Namespace
@@ -188,6 +196,7 @@ func generateSSHKeypair(comment string) ([]byte, []byte, error) {
 	return privateKeyPEM, publicKeyAuthorized, nil
 }
 
+// Delete removes deployment's Flux deploy-key Secret, if it exists.
 func (r *DeploymentFluxGitSSHSecretReconciler) Delete(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) error {
 	secretName := fmt.Sprintf("%s-flux-ssh", deployment.Deployment.Name)
 	secret := &corev1.Secret{

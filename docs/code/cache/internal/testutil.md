@@ -21,7 +21,7 @@ Package testutil provides a shared in\-memory core/cache.ExternalCache fake for 
 
 
 <a name="FakeExternalCache"></a>
-## type FakeExternalCache
+## type [FakeExternalCache](<https://github.com/blanketops/environments/blob/main/cache/internal/testutil/fake_external_cache.go#L35-L39>)
 
 FakeExternalCache is an in\-memory, JSON\-serializing implementation of core/cache.ExternalCache. Values are marshaled on Set and unmarshaled on Get, matching how the real Redis/Memcached backends behave — a naive map\[string\]any passthrough would hide \(de\)serialization bugs.
 
@@ -32,16 +32,16 @@ type FakeExternalCache struct {
 ```
 
 <a name="NewFakeExternalCache"></a>
-### func NewFakeExternalCache
+### func [NewFakeExternalCache](<https://github.com/blanketops/environments/blob/main/cache/internal/testutil/fake_external_cache.go#L42>)
 
 ```go
 func NewFakeExternalCache() *FakeExternalCache
 ```
 
-
+NewFakeExternalCache constructs an empty FakeExternalCache.
 
 <a name="FakeExternalCache.Del"></a>
-### func \(\*FakeExternalCache\) Del
+### func \(\*FakeExternalCache\) [Del](<https://github.com/blanketops/environments/blob/main/cache/internal/testutil/fake_external_cache.go#L74>)
 
 ```go
 func (f *FakeExternalCache) Del(_ context.Context, key string) error
@@ -50,7 +50,7 @@ func (f *FakeExternalCache) Del(_ context.Context, key string) error
 
 
 <a name="FakeExternalCache.DelPrefix"></a>
-### func \(\*FakeExternalCache\) DelPrefix
+### func \(\*FakeExternalCache\) [DelPrefix](<https://github.com/blanketops/environments/blob/main/cache/internal/testutil/fake_external_cache.go#L82>)
 
 ```go
 func (f *FakeExternalCache) DelPrefix(_ context.Context, prefix string) error
@@ -59,7 +59,7 @@ func (f *FakeExternalCache) DelPrefix(_ context.Context, prefix string) error
 
 
 <a name="FakeExternalCache.Get"></a>
-### func \(\*FakeExternalCache\) Get
+### func \(\*FakeExternalCache\) [Get](<https://github.com/blanketops/environments/blob/main/cache/internal/testutil/fake_external_cache.go#L61>)
 
 ```go
 func (f *FakeExternalCache) Get(_ context.Context, key string, into any) (bool, error)
@@ -68,7 +68,7 @@ func (f *FakeExternalCache) Get(_ context.Context, key string, into any) (bool, 
 
 
 <a name="FakeExternalCache.Keys"></a>
-### func \(\*FakeExternalCache\) Keys
+### func \(\*FakeExternalCache\) [Keys](<https://github.com/blanketops/environments/blob/main/cache/internal/testutil/fake_external_cache.go#L96>)
 
 ```go
 func (f *FakeExternalCache) Keys() []string
@@ -77,7 +77,7 @@ func (f *FakeExternalCache) Keys() []string
 Keys returns a snapshot of every key currently stored, for assertions on exact key formatting.
 
 <a name="FakeExternalCache.Set"></a>
-### func \(\*FakeExternalCache\) Set
+### func \(\*FakeExternalCache\) [Set](<https://github.com/blanketops/environments/blob/main/cache/internal/testutil/fake_external_cache.go#L49>)
 
 ```go
 func (f *FakeExternalCache) Set(_ context.Context, key string, val any, ttl time.Duration) error
@@ -86,7 +86,7 @@ func (f *FakeExternalCache) Set(_ context.Context, key string, val any, ttl time
 
 
 <a name="FakeExternalCache.TTL"></a>
-### func \(\*FakeExternalCache\) TTL
+### func \(\*FakeExternalCache\) [TTL](<https://github.com/blanketops/environments/blob/main/cache/internal/testutil/fake_external_cache.go#L108>)
 
 ```go
 func (f *FakeExternalCache) TTL(key string) (time.Duration, bool)

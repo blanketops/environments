@@ -17,6 +17,8 @@ package deployment
 
 import "fmt"
 
+// ErrServiceUnitNotFound indicates a Deployment references a ServiceUnit
+// name that has no corresponding resolved ServiceUnit.
 func ErrServiceUnitNotFound(name string) error {
 	return fmt.Errorf("serviceunit %q not found", name)
 }

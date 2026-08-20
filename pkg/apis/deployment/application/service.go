@@ -41,6 +41,9 @@ import (
 	serviceunitResolution "github.com/blanketops/environments/resolution/serviceunit/resolve"
 )
 
+// DeploymentService is the single entry point that orchestrates a
+// Deployment's reconciliation: build a DeploymentIntent, execute it, then
+// persist the outcome as CR status and conditions.
 type DeploymentService struct {
 	intentBuilder          *intent.IntentBuilder
 	status                 *StatusWriter
@@ -48,6 +51,8 @@ type DeploymentService struct {
 	log                    logr.Logger
 }
 
+// NewDeploymentService constructs a DeploymentService from its
+// collaborators.
 func NewDeploymentService(
 	intentBuilder *intent.IntentBuilder,
 	status *StatusWriter,
@@ -61,6 +66,8 @@ func NewDeploymentService(
 	}
 }
 
+// Reconcile builds a DeploymentIntent from resolved, executes it via the
+// reconciliation executor, and writes the resulting status onto the CR.
 func (s *DeploymentService) Reconcile(
 	ctx context.Context,
 	resolved *deploymentResolution.ResolvedDeployment,

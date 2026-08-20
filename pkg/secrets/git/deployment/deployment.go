@@ -34,6 +34,9 @@ import (
 	deploymentResolution "github.com/blanketops/environments/resolution/deployment/resolve"
 )
 
+// DeploymentGitSSHSecretReconciler converges the ExternalSecret used to
+// clone a Deployment's manifests repository over SSH — the same lifecycle
+// as BuildGitSSHSecretReconciler, scoped to Deployment.
 type DeploymentGitSSHSecretReconciler struct {
 	Client    client.Client
 	Log       logr.Logger
@@ -41,6 +44,8 @@ type DeploymentGitSSHSecretReconciler struct {
 	StoreKind string
 }
 
+// NewDeploymentGitSSHSecretReconciler constructs a
+// DeploymentGitSSHSecretReconciler targeting the given ESO store.
 func NewDeploymentGitSSHSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *DeploymentGitSSHSecretReconciler {
 	return &DeploymentGitSSHSecretReconciler{
 		Client:    c,
@@ -50,6 +55,8 @@ func NewDeploymentGitSSHSecretReconciler(c client.Client, log logr.Logger, store
 	}
 }
 
+// Reconcile creates or updates the git-ssh clone ExternalSecret for
+// deployment's manifests repository.
 func (r *DeploymentGitSSHSecretReconciler) Reconcile(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) error {
 	source := deployment.Spec.ManifestsRepo
 	secretName := source.CloneSecret

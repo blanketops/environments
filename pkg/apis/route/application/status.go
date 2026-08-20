@@ -32,6 +32,7 @@ type StatusWriter struct {
 	Log    logr.Logger
 }
 
+// NewStatusWriter constructs a StatusWriter.
 func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter {
 	return &StatusWriter{
 		Client: c,

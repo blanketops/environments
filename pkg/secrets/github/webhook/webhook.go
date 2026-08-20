@@ -35,6 +35,9 @@ import (
 	githubeventResolution "github.com/blanketops/environments/resolution/githubevent/resolve"
 )
 
+// GitHubWebhookSecretReconciler converges the ExternalSecret backing the
+// shared secret GitHub signs webhook deliveries with, scoped to a
+// GitHubEvent, and tears it down on GitHubEvent deletion.
 type GitHubWebhookSecretReconciler struct {
 	Client    client.Client
 	Log       logr.Logger
@@ -42,6 +45,8 @@ type GitHubWebhookSecretReconciler struct {
 	StoreKind string
 }
 
+// NewGitHubWebhookSecretReconciler constructs a
+// GitHubWebhookSecretReconciler targeting the given ESO store.
 func NewGitHubWebhookSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *GitHubWebhookSecretReconciler {
 	return &GitHubWebhookSecretReconciler{
 		Client:    c,
@@ -51,6 +56,8 @@ func NewGitHubWebhookSecretReconciler(c client.Client, log logr.Logger, storeNam
 	}
 }
 
+// Reconcile creates or updates the webhook-secret ExternalSecret for
+// resolved's GitHubEvent.
 func (r *GitHubWebhookSecretReconciler) Reconcile(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent) error {
 	if resolved == nil || resolved.Event == nil || resolved.Spec == nil {
 		return fmt.Errorf("nil ResolvedGitHubEvent (resolver bug)")

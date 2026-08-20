@@ -51,7 +51,7 @@ var ErrBuildFailed = errors.New("build failed")
 ```
 
 <a name="BuildPolicy"></a>
-## type BuildPolicy
+## type [BuildPolicy](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/domain/model.go#L66-L68>)
 
 BuildPolicy is the domain\-level execution policy. Fully resolved and immutable at runtime — constructed from the resolved Build contract by the Mapper.
 
@@ -62,7 +62,7 @@ type BuildPolicy struct {
 ```
 
 <a name="BuildResult"></a>
-## type BuildResult
+## type [BuildResult](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/domain/result.go#L37-L77>)
 
 BuildResult is the unified return value from every build provider. All fields are optional — providers populate only what is relevant to their execution model.
 
@@ -111,7 +111,7 @@ type BuildResult struct {
 ```
 
 <a name="BuildSpec"></a>
-## type BuildSpec
+## type [BuildSpec](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/domain/model.go#L34-L61>)
 
 BuildSpec is the canonical semantic input to build execution. It is produced by the Mapper from a resolved Build contract and consumed by the provider layer.
 
@@ -147,7 +147,7 @@ type BuildSpec struct {
 ```
 
 <a name="BuildStatus"></a>
-## type BuildStatus
+## type [BuildStatus](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/domain/model.go#L82-L102>)
 
 BuildStatus is the internal domain status for a build execution. It is serialised into the Build CR's status.contract field by the StatusWriter and read by downstream automation \(BuildTrigger, SupplyChain observers\).
 
@@ -176,7 +176,7 @@ type BuildStatus struct {
 ```
 
 <a name="BuildStatus.IsTerminal"></a>
-### func \(BuildStatus\) IsTerminal
+### func \(BuildStatus\) [IsTerminal](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/domain/state.go#L34>)
 
 ```go
 func (s BuildStatus) IsTerminal() bool
@@ -189,7 +189,7 @@ A build is terminal once an execution has been triggered and the controller has 
 Intermediate progress \(running, queued\) is tracked by the buildrun observer, not by the domain model.
 
 <a name="RetryPolicy"></a>
-## type RetryPolicy
+## type [RetryPolicy](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/domain/model.go#L71-L77>)
 
 RetryPolicy defines retry semantics for failed build executions.
 
@@ -204,7 +204,7 @@ type RetryPolicy struct {
 ```
 
 <a name="TriggerContext"></a>
-## type TriggerContext
+## type [TriggerContext](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/domain/trigger.go#L31-L43>)
 
 TriggerContext carries the trigger metadata written to Build annotations by the BuildTrigger domain when it patches the Build CR before dispatching. Absent annotations default to manual trigger with no retry context.
 

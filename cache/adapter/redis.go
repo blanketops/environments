@@ -40,6 +40,7 @@ type RedisCache struct {
 
 var _ cache.ExternalCache = (*RedisCache)(nil)
 
+// NewRedis constructs a RedisCache connected per cfg.
 func NewRedis(cfg RedisConfig) *RedisCache {
 	return &RedisCache{client: goredis.NewClient(&goredis.Options{
 		Addr:     cfg.Addr,

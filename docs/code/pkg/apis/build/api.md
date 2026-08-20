@@ -68,7 +68,7 @@ Concrete implementations live alongside this file \(buildah.go, kaniko.go, build
 
 
 <a name="ExtractTriggerContext"></a>
-## func ExtractTriggerContext
+## func [ExtractTriggerContext](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/trigger_context.go#L33>)
 
 ```go
 func ExtractTriggerContext(build *buildv1.Build) domain.TriggerContext
@@ -81,7 +81,7 @@ Annotations are written by the BuildTrigger domain when it patches the Build CR 
 The returned TriggerContext is fed into utils.ComputeExecutionHash to produce the execution identity used for BuildRun deduplication.
 
 <a name="PatchBuildTriggerFromGitHubEvent"></a>
-## func PatchBuildTriggerFromGitHubEvent
+## func [PatchBuildTriggerFromGitHubEvent](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/kaniko.go#L308>)
 
 ```go
 func PatchBuildTriggerFromGitHubEvent(ctx context.Context, c client.Client, build *buildv1.Build) error
@@ -92,7 +92,7 @@ PatchBuildTriggerFromGitHubEvent looks up the latest push GitHubEvent for the gi
 This is called by the provider before creating the BuildRun so the execution hash includes the correct commit SHA.
 
 <a name="BuildahProvider"></a>
-## type BuildahProvider
+## type [BuildahProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/buildah.go#L63-L69>)
 
 BuildahProvider orchestrates Shipwright Build and BuildRun resources on behalf of the BlanketOps build domain. It is the only component in the platform that writes Shipwright API objects directly.
 
@@ -107,7 +107,7 @@ type BuildahProvider struct {
 ```
 
 <a name="NewBuildahProvider"></a>
-### func NewBuildahProvider
+### func [NewBuildahProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/buildah.go#L73>)
 
 ```go
 func NewBuildahProvider(client client.Client, scheme *runtime.Scheme, log logr.Logger, recorder events.EventRecorder) *BuildahProvider
@@ -116,7 +116,7 @@ func NewBuildahProvider(client client.Client, scheme *runtime.Scheme, log logr.L
 NewBuildahProvider constructs a BuildahProvider with the given dependencies. rec may be nil — the provider does not emit events directly.
 
 <a name="BuildahProvider.CreateBuildRunSpec"></a>
-### func \(\*BuildahProvider\) CreateBuildRunSpec
+### func \(\*BuildahProvider\) [CreateBuildRunSpec](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/buildah.go#L147>)
 
 ```go
 func (p *BuildahProvider) CreateBuildRunSpec(build *buildResolution.ResolvedBuild, shipwrightBuild *shipwrightv1alpha1.Build, fullHash string) *shipwrightv1alpha1.BuildRun
@@ -127,7 +127,7 @@ CreateBuildRunSpec constructs a Shipwright BuildRun for the given resolved Build
 Labels carry the execution identity for the buildrun observer to resolve the owning Build CR and for retry counting \(list by build name \+ hash\). The full hash is preserved in an annotation for audit purposes.
 
 <a name="BuildahProvider.CreateBuildSpec"></a>
-### func \(\*BuildahProvider\) CreateBuildSpec
+### func \(\*BuildahProvider\) [CreateBuildSpec](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/buildah.go#L91>)
 
 ```go
 func (p *BuildahProvider) CreateBuildSpec(spec domain.BuildSpec, build *buildResolution.ResolvedBuild) (*shipwrightv1alpha1.Build, error)
@@ -140,7 +140,7 @@ The returned Build has labels for domain ownership tracking \("build.blanketops.
 Timeout is intentionally omitted from the Shipwright BuildSpec — timeout policy is enforced at the BuildRun level by Shipwright's own machinery.
 
 <a name="BuildahProvider.Run"></a>
-### func \(\*BuildahProvider\) Run
+### func \(\*BuildahProvider\) [Run](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/buildah.go#L190>)
 
 ```go
 func (p *BuildahProvider) Run(ctx context.Context, build *buildResolution.ResolvedBuild, spec domain.BuildSpec) (domain.BuildResult, error)
@@ -153,7 +153,7 @@ Run does NOT block on BuildRun completion. The buildrun observer \(internal/cont
 Idempotency: the Shipwright Build is always upserted. The BuildRun is only created if no run for the current execution hash exists — a hash collision \(same spec \+ same trigger context\) is treated as "already triggered" and the existing run is reused.
 
 <a name="BuildahProvider.Teardown"></a>
-### func \(\*BuildahProvider\) Teardown
+### func \(\*BuildahProvider\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/buildah.go#L298>)
 
 ```go
 func (p *BuildahProvider) Teardown(ctx context.Context, build *buildResolution.ResolvedBuild) error
@@ -164,7 +164,7 @@ Teardown deletes the Shipwright Build and all BuildRuns this provider created fo
 Idempotent — a missing Build or empty BuildRun list is not an error. Ownership is via controllerutil.SetControllerReference, so Kubernetes GC would eventually reclaim these once the parent Build CR is deleted, but teardown deletes explicitly and synchronously rather than depending on GC timing to complete before the finalizer is removed.
 
 <a name="BuildpacksProvider"></a>
-## type BuildpacksProvider
+## type [BuildpacksProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/buildpacks.go#L50-L55>)
 
 BuildpacksProvider orchestrates Shipwright Build and BuildRun resources using the buildpacks\-v3 ClusterBuildStrategy.
 
@@ -178,7 +178,7 @@ type BuildpacksProvider struct {
 ```
 
 <a name="NewBuildpacksProvider"></a>
-### func NewBuildpacksProvider
+### func [NewBuildpacksProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/buildpacks.go#L58-L63>)
 
 ```go
 func NewBuildpacksProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *BuildpacksProvider
@@ -187,7 +187,7 @@ func NewBuildpacksProvider(c client.Client, scheme *runtime.Scheme, log logr.Log
 NewBuildpacksProvider constructs a BuildpacksProvider with the given dependencies.
 
 <a name="BuildpacksProvider.CreateBuildRunSpec"></a>
-### func \(\*BuildpacksProvider\) CreateBuildRunSpec
+### func \(\*BuildpacksProvider\) [CreateBuildRunSpec](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/buildpacks.go#L119-L123>)
 
 ```go
 func (p *BuildpacksProvider) CreateBuildRunSpec(build *buildResolution.ResolvedBuild, shipwrightBuild *shipwrightv1alpha1.Build, fullHash string) *shipwrightv1alpha1.BuildRun
@@ -196,7 +196,7 @@ func (p *BuildpacksProvider) CreateBuildRunSpec(build *buildResolution.ResolvedB
 CreateBuildRunSpec constructs a Shipwright BuildRun for the given resolved Build and execution hash. Run name is derived from the Build name and a short hash suffix. Full hash is preserved in an annotation for audit.
 
 <a name="BuildpacksProvider.CreateBuildSpec"></a>
-### func \(\*BuildpacksProvider\) CreateBuildSpec
+### func \(\*BuildpacksProvider\) [CreateBuildSpec](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/buildpacks.go#L70-L73>)
 
 ```go
 func (p *BuildpacksProvider) CreateBuildSpec(spec domain.BuildSpec, build *buildResolution.ResolvedBuild) (*shipwrightv1alpha1.Build, error)
@@ -205,7 +205,7 @@ func (p *BuildpacksProvider) CreateBuildSpec(spec domain.BuildSpec, build *build
 CreateBuildSpec translates a domain.BuildSpec into a Shipwright Build object. Validates SourceURL and Image — both are required by Shipwright. Owner reference is applied by the caller before creation.
 
 <a name="BuildpacksProvider.Run"></a>
-### func \(\*BuildpacksProvider\) Run
+### func \(\*BuildpacksProvider\) [Run](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/buildpacks.go#L147-L151>)
 
 ```go
 func (p *BuildpacksProvider) Run(ctx context.Context, build *buildResolution.ResolvedBuild, spec domain.BuildSpec) (domain.BuildResult, error)
@@ -214,7 +214,7 @@ func (p *BuildpacksProvider) Run(ctx context.Context, build *buildResolution.Res
 Run upserts the Shipwright Build and creates the BuildRun, then returns immediately with Triggered=true, Success=false. Completion is observed asynchronously by the buildrun observer.
 
 <a name="BuildpacksProvider.Teardown"></a>
-### func \(\*BuildpacksProvider\) Teardown
+### func \(\*BuildpacksProvider\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/buildpacks.go#L240>)
 
 ```go
 func (p *BuildpacksProvider) Teardown(ctx context.Context, build *buildResolution.ResolvedBuild) error
@@ -225,7 +225,7 @@ Teardown deletes the Shipwright Build and all BuildRuns this provider created fo
 Idempotent — a missing Build or empty BuildRun list is not an error. Ownership is via controllerutil.SetControllerReference, so Kubernetes GC would eventually reclaim these once the parent Build CR is deleted, but teardown deletes explicitly and synchronously rather than depending on GC timing to complete before the finalizer is removed.
 
 <a name="KanikoProvider"></a>
-## type KanikoProvider
+## type [KanikoProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/kaniko.go#L76-L81>)
 
 KanikoProvider orchestrates Shipwright Build and BuildRun resources on behalf of the BlanketOps build domain. It is the only component in the platform that writes Shipwright API objects directly.
 
@@ -239,7 +239,7 @@ type KanikoProvider struct {
 ```
 
 <a name="NewKanikoProvider"></a>
-### func NewKanikoProvider
+### func [NewKanikoProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/kaniko.go#L85>)
 
 ```go
 func NewKanikoProvider(client client.Client, scheme *runtime.Scheme, log logr.Logger, recorder events.EventRecorder) *KanikoProvider
@@ -248,7 +248,7 @@ func NewKanikoProvider(client client.Client, scheme *runtime.Scheme, log logr.Lo
 NewKanikoProvider constructs a KanikoProvider with the given dependencies. rec may be nil — the provider does not emit events directly.
 
 <a name="KanikoProvider.CreateBuildRunSpec"></a>
-### func \(\*KanikoProvider\) CreateBuildRunSpec
+### func \(\*KanikoProvider\) [CreateBuildRunSpec](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/kaniko.go#L177>)
 
 ```go
 func (p *KanikoProvider) CreateBuildRunSpec(build *buildResolution.ResolvedBuild, shipwrightBuild *shipwrightv1alpha1.Build, fullHash string) *shipwrightv1alpha1.BuildRun
@@ -259,7 +259,7 @@ CreateBuildRunSpec constructs a Shipwright BuildRun for the given resolved Build
 Labels carry the execution identity for the buildrun observer to resolve the owning Build CR and for retry counting \(list by build name \+ hash\). The full hash is preserved in an annotation for audit purposes.
 
 <a name="KanikoProvider.CreateBuildSpec"></a>
-### func \(\*KanikoProvider\) CreateBuildSpec
+### func \(\*KanikoProvider\) [CreateBuildSpec](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/kaniko.go#L103>)
 
 ```go
 func (p *KanikoProvider) CreateBuildSpec(spec domain.BuildSpec, build *buildResolution.ResolvedBuild) (*shipwrightv1alpha1.Build, error)
@@ -272,7 +272,7 @@ The returned Build has labels for domain ownership tracking \("build.blanketops.
 Timeout is intentionally omitted from the Shipwright BuildSpec — timeout policy is enforced at the BuildRun level by Shipwright's own machinery.
 
 <a name="KanikoProvider.Run"></a>
-### func \(\*KanikoProvider\) Run
+### func \(\*KanikoProvider\) [Run](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/kaniko.go#L214>)
 
 ```go
 func (p *KanikoProvider) Run(ctx context.Context, build *buildResolution.ResolvedBuild, spec domain.BuildSpec) (domain.BuildResult, error)
@@ -285,7 +285,7 @@ Run does NOT block on BuildRun completion. The buildrun observer \(internal/cont
 Idempotency: the Shipwright Build is always upserted. The BuildRun is only created if no run for the current execution hash exists — a hash collision \(same spec \+ same trigger context\) is treated as "already triggered" and the existing run is reused.
 
 <a name="KanikoProvider.Teardown"></a>
-### func \(\*KanikoProvider\) Teardown
+### func \(\*KanikoProvider\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/kaniko.go#L379>)
 
 ```go
 func (p *KanikoProvider) Teardown(ctx context.Context, build *buildResolution.ResolvedBuild) error
@@ -296,7 +296,7 @@ Teardown deletes the Shipwright Build and all BuildRuns this provider created fo
 Idempotent — a missing Build or empty BuildRun list is not an error. Ownership is via controllerutil.SetControllerReference, so Kubernetes GC would eventually reclaim these once the parent Build CR is deleted, but teardown deletes explicitly and synchronously rather than depending on GC timing to complete before the finalizer is removed.
 
 <a name="Provider"></a>
-## type Provider
+## type [Provider](<https://github.com/blanketops/environments/blob/main/pkg/apis/build/api/provider.go#L40-L49>)
 
 Provider is the build execution contract implemented by all build backends.
 

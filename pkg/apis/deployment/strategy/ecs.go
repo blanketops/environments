@@ -25,12 +25,15 @@ import (
 	serviceunitIntent "github.com/blanketops/environments/pkg/intent/serviceunit"
 )
 
+// ECSReconciler is a placeholder for the ECS runtime backend — not yet
+// implemented (see RuntimeProvider.Execute).
 type ECSReconciler struct {
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 	// TODO: add AWS SDK clients here
 }
 
+// NewECSReconciler constructs an ECSReconciler.
 func NewECSReconciler(scheme *runtime.Scheme, log logr.Logger) *ECSReconciler {
 	return &ECSReconciler{
 		Log:    log,

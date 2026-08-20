@@ -38,7 +38,7 @@ var (
 ```
 
 <a name="EventType"></a>
-## type EventType
+## type [EventType](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/domain/model.go#L29>)
 
 EventType represents a VCS event the system can subscribe to.
 
@@ -56,7 +56,7 @@ const (
 ```
 
 <a name="GitRepository"></a>
-## type GitRepository
+## type [GitRepository](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/domain/model.go#L58-L62>)
 
 GitRepository is the domain model representing a registered source repository.
 
@@ -69,7 +69,7 @@ type GitRepository struct {
 ```
 
 <a name="GitRepository.Validate"></a>
-### func \(GitRepository\) Validate
+### func \(GitRepository\) [Validate](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/domain/model.go#L65>)
 
 ```go
 func (g GitRepository) Validate() error
@@ -78,7 +78,7 @@ func (g GitRepository) Validate() error
 Validate enforces domain invariants.
 
 <a name="Provider"></a>
-## type Provider
+## type [Provider](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/domain/model.go#L19>)
 
 Provider identifies a supported VCS provider.
 
@@ -95,7 +95,7 @@ const (
 ```
 
 <a name="RepositoryID"></a>
-## type RepositoryID
+## type [RepositoryID](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/domain/model.go#L37-L40>)
 
 RepositoryID is the external identity of a repository.
 
@@ -107,7 +107,7 @@ type RepositoryID struct {
 ```
 
 <a name="RepositoryID.IsValid"></a>
-### func \(RepositoryID\) IsValid
+### func \(RepositoryID\) [IsValid](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/domain/model.go#L43>)
 
 ```go
 func (r RepositoryID) IsValid() bool
@@ -116,7 +116,7 @@ func (r RepositoryID) IsValid() bool
 IsValid validates the repository identity.
 
 <a name="Result"></a>
-## type Result
+## type [Result](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/domain/result.go#L20-L23>)
 
 Result represents the outcome of attempting to realize a GitRepository registration.
 
@@ -128,7 +128,7 @@ type Result struct {
 ```
 
 <a name="Failure"></a>
-### func Failure
+### func [Failure](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/domain/result.go#L42>)
 
 ```go
 func Failure(reason string) Result
@@ -137,7 +137,7 @@ func Failure(reason string) Result
 Failure returns a failed realization result.
 
 <a name="Pending"></a>
-### func Pending
+### func [Pending](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/domain/result.go#L34>)
 
 ```go
 func Pending(reason string) Result
@@ -146,7 +146,7 @@ func Pending(reason string) Result
 Pending returns a pending realization result.
 
 <a name="Success"></a>
-### func Success
+### func [Success](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/domain/result.go#L26>)
 
 ```go
 func Success() Result
@@ -155,7 +155,7 @@ func Success() Result
 Success returns a successful realization result.
 
 <a name="State"></a>
-## type State
+## type [State](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/domain/state.go#L19>)
 
 State represents the lifecycle state of a GitRepository registration.
 
@@ -181,7 +181,7 @@ const (
 ```
 
 <a name="State.IsTerminal"></a>
-### func \(State\) IsTerminal
+### func \(State\) [IsTerminal](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/domain/state.go#L35>)
 
 ```go
 func (s State) IsTerminal() bool
@@ -190,7 +190,7 @@ func (s State) IsTerminal() bool
 IsTerminal indicates whether the state is terminal.
 
 <a name="WebhookSpec"></a>
-## type WebhookSpec
+## type [WebhookSpec](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/domain/model.go#L48-L50>)
 
 WebhookSpec declares which events the repository should emit.
 
@@ -201,7 +201,7 @@ type WebhookSpec struct {
 ```
 
 <a name="WebhookSpec.IsValid"></a>
-### func \(WebhookSpec\) IsValid
+### func \(WebhookSpec\) [IsValid](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/domain/model.go#L53>)
 
 ```go
 func (w WebhookSpec) IsValid() bool

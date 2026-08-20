@@ -21,6 +21,9 @@ import "fmt"
 // Base domain error
 // -----------------------------------------------------------------------------
 
+// PackageError is the common interface implemented by all domain-level
+// Package errors, carrying a stable machine-readable Reason and whether
+// the failure is worth retrying.
 type PackageError interface {
 	error
 	Reason() string
@@ -31,6 +34,8 @@ type PackageError interface {
 // Invalid specification
 // -----------------------------------------------------------------------------
 
+// InvalidSpecError indicates a Package's spec failed validation before
+// reconciliation could proceed.
 type InvalidSpecError struct {
 	Msg string
 }
@@ -51,6 +56,8 @@ func (e InvalidSpecError) Retryable() bool {
 // Repository resolution errors
 // -----------------------------------------------------------------------------
 
+// RepositoryError wraps a failure resolving or accessing the package's
+// manifest repository.
 type RepositoryError struct {
 	RepoURL string
 	Msg     string
@@ -72,6 +79,7 @@ func (e RepositoryError) Retryable() bool {
 // kapp execution errors
 // -----------------------------------------------------------------------------
 
+// KappExecutionError wraps a failure invoking kapp during reconciliation.
 type KappExecutionError struct {
 	Action KappAction
 	Output string
@@ -95,6 +103,8 @@ func (e KappExecutionError) Retryable() bool {
 // Diff required but not allowed
 // -----------------------------------------------------------------------------
 
+// DiffRequiredError indicates a kapp diff was required before applying but
+// could not be obtained.
 type DiffRequiredError struct {
 	Msg string
 }
@@ -115,6 +125,8 @@ func (e DiffRequiredError) Retryable() bool {
 // State mismatch (drift detected)
 // -----------------------------------------------------------------------------
 
+// DriftDetectedError indicates the cluster's applied state has drifted from
+// the package's desired manifests.
 type DriftDetectedError struct {
 	Msg string
 }

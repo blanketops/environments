@@ -17,6 +17,8 @@ package deployment
 
 import "time"
 
+// ServiceUnitResult is the observed outcome of reconciling a single
+// ServiceUnit within a Deployment.
 type ServiceUnitResult struct {
 	Name string
 
@@ -30,6 +32,8 @@ type ServiceUnitResult struct {
 	LastTransitionTime time.Time
 }
 
+// ServiceUnitPhase is the reconciliation phase of a single ServiceUnit
+// within a Deployment.
 type ServiceUnitPhase string
 
 const (

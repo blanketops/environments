@@ -30,7 +30,7 @@ The two layers are composed in Cache and never cross\-wired: the informer cache 
 
 
 <a name="ListByField"></a>
-## func ListByField
+## func [ListByField](<https://github.com/blanketops/environments/blob/main/core/cache/cache.go#L141>)
 
 ```go
 func ListByField[T client.ObjectList](ctx context.Context, rdr client.Reader, list T, field, value string) error
@@ -46,7 +46,7 @@ err := core.ListByField(ctx, cache.Reader, &builds, ".spec.repo", "github.com/fo
 ```
 
 <a name="WaitForSync"></a>
-## func WaitForSync
+## func [WaitForSync](<https://github.com/blanketops/environments/blob/main/core/cache/cache.go#L148>)
 
 ```go
 func WaitForSync(ctx context.Context, c cache.Cache) bool
@@ -55,7 +55,7 @@ func WaitForSync(ctx context.Context, c cache.Cache) bool
 WaitForSync blocks until the informer cache has completed its initial sync against the API server. Called during manager startup to ensure reconcilers do not operate against a partially populated cache.
 
 <a name="Cache"></a>
-## type Cache
+## type [Cache](<https://github.com/blanketops/environments/blob/main/core/cache/cache.go#L91-L103>)
 
 Cache composes the controller\-runtime shared informer cache \(source of truth\) with an optional external cache \(opportunistic projection layer\).
 
@@ -81,7 +81,7 @@ type Cache struct {
 ```
 
 <a name="NewCache"></a>
-### func NewCache
+### func [NewCache](<https://github.com/blanketops/environments/blob/main/core/cache/cache.go#L109>)
 
 ```go
 func NewCache(mgr ctrl.Manager, external ExternalCache) *Cache
@@ -90,7 +90,7 @@ func NewCache(mgr ctrl.Manager, external ExternalCache) *Cache
 NewCache constructs a Cache from the controller\-runtime manager and an optional external backend. A nil external is silently replaced with NoopExternalCache and logged so a misconfigured backend is never an invisible failure.
 
 <a name="Cache.IndexField"></a>
-### func \(\*Cache\) IndexField
+### func \(\*Cache\) [IndexField](<https://github.com/blanketops/environments/blob/main/core/cache/cache.go#L129>)
 
 ```go
 func (c *Cache) IndexField(ctx context.Context, obj client.Object, field string, extract func(client.Object) []string) error
@@ -99,7 +99,7 @@ func (c *Cache) IndexField(ctx context.Context, obj client.Object, field string,
 IndexField registers a field extractor on the informer cache, enabling efficient MatchingFields queries via ListByField. Must be called during manager setup before the cache starts.
 
 <a name="ExternalCache"></a>
-## type ExternalCache
+## type [ExternalCache](<https://github.com/blanketops/environments/blob/main/core/cache/cache.go#L59-L70>)
 
 ExternalCache defines the distributed cache contract for resolved contract projections. Implementations \(Redis, Memcached\) live under cache/adapter/ — core never imports backend libraries directly. Serialization is the implementation's responsibility.
 
@@ -125,7 +125,7 @@ type ExternalCache interface {
 ```
 
 <a name="NoopExternalCache"></a>
-## type NoopExternalCache
+## type [NoopExternalCache](<https://github.com/blanketops/environments/blob/main/core/cache/cache.go#L76>)
 
 NoopExternalCache is the zero\-value external cache. It satisfies the ExternalCache interface and safely ignores all calls. Every Get is a miss. Used when no external backend is configured so the rest of the platform needs no nil checks.
 
@@ -134,7 +134,7 @@ type NoopExternalCache struct{}
 ```
 
 <a name="NoopExternalCache.Del"></a>
-### func \(NoopExternalCache\) Del
+### func \(NoopExternalCache\) [Del](<https://github.com/blanketops/environments/blob/main/core/cache/cache.go#L80>)
 
 ```go
 func (NoopExternalCache) Del(context.Context, string) error
@@ -143,7 +143,7 @@ func (NoopExternalCache) Del(context.Context, string) error
 
 
 <a name="NoopExternalCache.DelPrefix"></a>
-### func \(NoopExternalCache\) DelPrefix
+### func \(NoopExternalCache\) [DelPrefix](<https://github.com/blanketops/environments/blob/main/core/cache/cache.go#L81>)
 
 ```go
 func (NoopExternalCache) DelPrefix(context.Context, string) error
@@ -152,7 +152,7 @@ func (NoopExternalCache) DelPrefix(context.Context, string) error
 
 
 <a name="NoopExternalCache.Get"></a>
-### func \(NoopExternalCache\) Get
+### func \(NoopExternalCache\) [Get](<https://github.com/blanketops/environments/blob/main/core/cache/cache.go#L79>)
 
 ```go
 func (NoopExternalCache) Get(context.Context, string, any) (bool, error)
@@ -161,7 +161,7 @@ func (NoopExternalCache) Get(context.Context, string, any) (bool, error)
 
 
 <a name="NoopExternalCache.Set"></a>
-### func \(NoopExternalCache\) Set
+### func \(NoopExternalCache\) [Set](<https://github.com/blanketops/environments/blob/main/core/cache/cache.go#L78>)
 
 ```go
 func (NoopExternalCache) Set(context.Context, string, any, time.Duration) error

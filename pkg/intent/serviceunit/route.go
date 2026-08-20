@@ -15,6 +15,8 @@ limitations under the License.
 
 package serviceunit
 
+// RouteIntent is a ServiceUnit's resolved routing configuration, carried on
+// ServiceUnitIntent.
 type RouteIntent struct {
 	Host       string
 	Path       string

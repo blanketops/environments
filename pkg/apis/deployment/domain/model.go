@@ -55,6 +55,8 @@ type DeploymentSpec struct {
 	ReconciliationStrategy ReconciliationStrategy
 }
 
+// ManifestsRepo is the Git repository a Deployment's manifests are rendered
+// from or applied against.
 type ManifestsRepo struct {
 	URL         string
 	Ref         string
@@ -63,6 +65,8 @@ type ManifestsRepo struct {
 	Path        string
 }
 
+// ReconciliationStrategy selects how a Deployment's manifests are applied
+// (imperative apply, Kustomize, or Helm).
 type ReconciliationStrategy string
 
 const (
@@ -71,6 +75,7 @@ const (
 	ReconciliationHelm       ReconciliationStrategy = "Helm"
 )
 
+// Runtime identifies which execution platform a ServiceUnit deploys to.
 type Runtime string
 
 const (
@@ -81,6 +86,7 @@ const (
 	RuntimeAzure      Runtime = "blanketops.dev/azure-container"
 )
 
+// Strategy selects the rollout strategy used when deploying a ServiceUnit.
 type Strategy string
 
 const (
@@ -89,7 +95,11 @@ const (
 	StrategyCanary    Strategy = "Canary"
 )
 
+// DeploymentPhase is the high-level reconciliation phase of a Deployment.
 type DeploymentPhase string
+
+// ServiceUnitPhase is the reconciliation phase of a single ServiceUnit
+// within a Deployment.
 type ServiceUnitPhase string
 
 //
@@ -110,6 +120,8 @@ type DeploymentResult struct {
 	LastUpdateTime time.Time
 }
 
+// ServiceUnitResult is the observed outcome of reconciling a single
+// ServiceUnit within a Deployment.
 type ServiceUnitResult struct {
 	Name string
 

@@ -59,6 +59,7 @@ type GitHubProvider struct {
 	Recorder events.EventRecorder
 }
 
+// NewGitHubProvider constructs a GitHubProvider.
 func NewGitHubProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *GitHubProvider {
 	return &GitHubProvider{Client: c, Scheme: scheme, Log: log, Recorder: rec}
 }

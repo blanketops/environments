@@ -22,12 +22,15 @@ import (
 	pkgResolution "github.com/blanketops/environments/resolution/packages/resolve"
 )
 
+// PackageService orchestrates a Package's reconciliation: select a backend,
+// execute the intent, and write the resulting status.
 type PackageService struct {
 	mapper  *Mapper
 	backend *BackendSelector
 	status  *StatusWriter
 }
 
+// NewPackageService constructs a PackageService from its collaborators.
 func NewPackageService(
 	mapper *Mapper,
 	backend *BackendSelector,

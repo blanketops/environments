@@ -36,6 +36,8 @@ import (
 	gitrepoResolution "github.com/blanketops/environments/resolution/gitrepository/resolve"
 )
 
+// HookURLSecretKey is the key under which the webhook URL is stored in the
+// reconciled Secret's data.
 const HookURLSecretKey = "url"
 
 // HookURLSecretName returns the per-repository hookurl Secret name.
@@ -57,10 +59,13 @@ type HookURLSecretReconciler struct {
 	Log    logr.Logger
 }
 
+// NewHookURLSecretReconciler constructs a HookURLSecretReconciler.
 func NewHookURLSecretReconciler(c client.Client, scheme *runtime.Scheme, log logr.Logger) *HookURLSecretReconciler {
 	return &HookURLSecretReconciler{Client: c, Scheme: scheme, Log: log}
 }
 
+// Reconcile creates or updates the hookurl Secret for resolved's repository
+// from its contract-declared hookUrl.
 func (r *HookURLSecretReconciler) Reconcile(ctx context.Context, resolved *gitrepoResolution.ResolvedGitRepository) error {
 	if resolved == nil || resolved.Repository == nil || resolved.Spec == nil {
 		return fmt.Errorf("resolved gitrepository is incomplete")
@@ -107,6 +112,7 @@ func (r *HookURLSecretReconciler) Reconcile(ctx context.Context, resolved *gitre
 	return nil
 }
 
+// Delete removes repo's hookurl Secret, if it exists.
 func (r *HookURLSecretReconciler) Delete(ctx context.Context, repo *gitrepoResolution.ResolvedGitRepository) error {
 	if repo == nil {
 		return nil

@@ -22,8 +22,10 @@ import (
 	pkgResolution "github.com/blanketops/environments/resolution/packages/resolve"
 )
 
+// Mapper converts a fully resolved Package into a pure domain PackageSpec.
 type Mapper struct{}
 
+// NewMapper constructs a Mapper.
 func NewMapper() *Mapper {
 	return &Mapper{}
 }

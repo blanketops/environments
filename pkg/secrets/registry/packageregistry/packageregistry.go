@@ -35,6 +35,9 @@ import (
 	packageResolution "github.com/blanketops/environments/resolution/packages/resolve"
 )
 
+// PackageRegistrySecretReconciler converges the ExternalSecret backing a
+// Package's declared package repository credentials — the same lifecycle
+// as BuildRegistryExternalSecretReconciler, scoped to Package.
 type PackageRegistrySecretReconciler struct {
 	Client    client.Client
 	Log       logr.Logger
@@ -42,6 +45,8 @@ type PackageRegistrySecretReconciler struct {
 	StoreKind string
 }
 
+// NewPackageRegistrySecretReconciler constructs a
+// PackageRegistrySecretReconciler targeting the given ESO store.
 func NewPackageRegistrySecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *PackageRegistrySecretReconciler {
 	return &PackageRegistrySecretReconciler{
 		Client:    c,
@@ -51,6 +56,8 @@ func NewPackageRegistrySecretReconciler(c client.Client, log logr.Logger, storeN
 	}
 }
 
+// Reconcile creates or updates the registry-credential ExternalSecret for
+// resolvedPackage's package repository.
 func (r *PackageRegistrySecretReconciler) Reconcile(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage) error {
 	if resolvedPackage == nil || resolvedPackage.Package == nil {
 		return nil

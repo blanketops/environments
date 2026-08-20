@@ -33,6 +33,8 @@ import (
 	serviceunitResolution "github.com/blanketops/environments/resolution/serviceunit/resolve"
 )
 
+// ServiceUnitIntent is a ServiceUnit's fully resolved deployment intent
+// (image, port, size, routes), plus its Workload once resolution runs.
 type ServiceUnitIntent struct {
 	Name   string
 	Image  string
@@ -43,6 +45,9 @@ type ServiceUnitIntent struct {
 	Workload WorkloadIntent
 }
 
+// ResolveServiceUnitIntent builds a ServiceUnitIntent from a fully resolved
+// ServiceUnit — the ServiceUnit resolves its own deployment intent rather
+// than Deployment reaching into it.
 func ResolveServiceUnitIntent(
 	su *serviceunitResolution.ResolvedServiceUnit,
 ) (*ServiceUnitIntent, error) {

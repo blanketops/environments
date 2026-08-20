@@ -15,9 +15,9 @@ import "github.com/blanketops/environments/pkg/serviceaccounts"
 
 
 <a name="ServiceAccountReconciler"></a>
-## type ServiceAccountReconciler
+## type [ServiceAccountReconciler](<https://github.com/blanketops/environments/blob/main/pkg/serviceaccounts/buildbot.go#L34-L38>)
 
-
+ServiceAccountReconciler converges the ServiceAccount a Build's execution runs as.
 
 ```go
 type ServiceAccountReconciler struct {
@@ -28,16 +28,16 @@ type ServiceAccountReconciler struct {
 ```
 
 <a name="NewServiceAccountReconciler"></a>
-### func NewServiceAccountReconciler
+### func [NewServiceAccountReconciler](<https://github.com/blanketops/environments/blob/main/pkg/serviceaccounts/buildbot.go#L41-L45>)
 
 ```go
 func NewServiceAccountReconciler(c client.Client, scheme *runtime.Scheme, log logr.Logger) *ServiceAccountReconciler
 ```
 
-
+NewServiceAccountReconciler constructs a ServiceAccountReconciler.
 
 <a name="ServiceAccountReconciler.Delete"></a>
-### func \(\*ServiceAccountReconciler\) Delete
+### func \(\*ServiceAccountReconciler\) [Delete](<https://github.com/blanketops/environments/blob/main/pkg/serviceaccounts/buildbot.go#L161-L164>)
 
 ```go
 func (r *ServiceAccountReconciler) Delete(ctx context.Context, build *buildResolution.ResolvedBuild) error
@@ -46,7 +46,7 @@ func (r *ServiceAccountReconciler) Delete(ctx context.Context, build *buildResol
 Delete removes the ServiceAccount created for the Build execution. Mirrors the name\-resolution logic in Reconcile so it targets the same object. Idempotent — a missing ServiceAccount is not an error.
 
 <a name="ServiceAccountReconciler.Reconcile"></a>
-### func \(\*ServiceAccountReconciler\) Reconcile
+### func \(\*ServiceAccountReconciler\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/serviceaccounts/buildbot.go#L59-L62>)
 
 ```go
 func (r *ServiceAccountReconciler) Reconcile(ctx context.Context, build *buildResolution.ResolvedBuild) error
