@@ -22,6 +22,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// KustomizationProvider holds the shared clients used to construct a
+// KustomizeStrategyProvider.
 type KustomizationProvider struct {
 	Client                       client.Client
 	Scheme                       *runtime.Scheme
@@ -29,6 +31,8 @@ type KustomizationProvider struct {
 	NewKustomizeStrategyProvider *KustomizeStrategyProvider
 }
 
+// NewKustomizationProvider constructs a KustomizeStrategyProvider from the
+// given clients.
 func NewKustomizationProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, Recorder record.EventRecorder) *KustomizeStrategyProvider {
 	return &KustomizeStrategyProvider{
 		Client: c,

@@ -28,11 +28,14 @@ import (
 	"github.com/blanketops/environments/pkg/apis/deployment/domain"
 )
 
+// StatusWriter merges a Deployment's reconciliation outcome onto the CR's
+// status subresource as contract status and conditions.
 type StatusWriter struct {
 	Client client.Client
 	Log    logr.Logger
 }
 
+// NewStatusWriter constructs a StatusWriter.
 func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter {
 	return &StatusWriter{
 		Client: c,

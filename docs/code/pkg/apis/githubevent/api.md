@@ -36,16 +36,16 @@ type GitHubProvider struct {
 ```
 
 <a name="NewGitHubProvider"></a>
-### func [NewGitHubProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/api/github.go#L62>)
+### func [NewGitHubProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/api/github.go#L63>)
 
 ```go
 func NewGitHubProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *GitHubProvider
 ```
 
-
+NewGitHubProvider constructs a GitHubProvider.
 
 <a name="GitHubProvider.Ensure"></a>
-### func \(\*GitHubProvider\) [Ensure](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/api/github.go#L240>)
+### func \(\*GitHubProvider\) [Ensure](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/api/github.go#L241>)
 
 ```go
 func (p *GitHubProvider) Ensure(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent, spec domain.GitHubEvent) (domain.GitHubEventResult, error)
@@ -56,7 +56,7 @@ Ensure provisions or reconciles the Argo Events stack — plus the RBAC the Sens
 Ensure does NOT wait for a webhook delivery. Infrastructure provisioning completing successfully is signaled via Triggered=true — the actual payload\-received outcome is written later by the observer/reconcile path that detects the Sensor's patch on this CR's own spec.contract.
 
 <a name="GitHubProvider.Teardown"></a>
-### func \(\*GitHubProvider\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/api/github.go#L340>)
+### func \(\*GitHubProvider\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/api/github.go#L341>)
 
 ```go
 func (p *GitHubProvider) Teardown(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent) error

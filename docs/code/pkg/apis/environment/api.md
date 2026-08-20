@@ -66,16 +66,16 @@ type SecretStoreReconciler struct {
 ```
 
 <a name="NewSecretStoreReconciler"></a>
-### func [NewSecretStoreReconciler](<https://github.com/blanketops/environments/blob/main/pkg/apis/environment/api/secretstore.go#L51>)
+### func [NewSecretStoreReconciler](<https://github.com/blanketops/environments/blob/main/pkg/apis/environment/api/secretstore.go#L52>)
 
 ```go
 func NewSecretStoreReconciler(c client.Client, log logr.Logger) *SecretStoreReconciler
 ```
 
-
+NewSecretStoreReconciler constructs a SecretStoreReconciler.
 
 <a name="SecretStoreReconciler.Reconcile"></a>
-### func \(\*SecretStoreReconciler\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/apis/environment/api/secretstore.go#L79>)
+### func \(\*SecretStoreReconciler\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/apis/environment/api/secretstore.go#L80>)
 
 ```go
 func (r *SecretStoreReconciler) Reconcile(ctx context.Context, resolved *environmentresolve.ResolvedEnvironment, storeKind string) error

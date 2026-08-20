@@ -22,8 +22,11 @@ import (
 	gitrepoResolution "github.com/blanketops/environments/resolution/gitrepository/resolve"
 )
 
+// Mapper converts a fully resolved GitRepository into a pure domain
+// GitRepository.
 type Mapper struct{}
 
+// NewMapper constructs a Mapper.
 func NewMapper() *Mapper {
 	return &Mapper{}
 }

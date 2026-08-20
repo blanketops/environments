@@ -35,6 +35,9 @@ import (
 	buildResolution "github.com/blanketops/environments/resolution/build/resolve"
 )
 
+// BuildGitSSHSecretReconciler converges the ExternalSecret used to clone a
+// Build's source repository over SSH, and tears it down (plus its
+// ESO-materialized Secret) on Build deletion.
 type BuildGitSSHSecretReconciler struct {
 	Client    client.Client
 	Log       logr.Logger
@@ -42,6 +45,8 @@ type BuildGitSSHSecretReconciler struct {
 	StoreKind string
 }
 
+// NewBuildGitSSHSecretReconciler constructs a BuildGitSSHSecretReconciler
+// targeting the given ESO store.
 func NewBuildGitSSHSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *BuildGitSSHSecretReconciler {
 	return &BuildGitSSHSecretReconciler{
 		Client:    c,
@@ -51,6 +56,8 @@ func NewBuildGitSSHSecretReconciler(c client.Client, log logr.Logger, storeName 
 	}
 }
 
+// Reconcile creates or updates the git-ssh clone ExternalSecret for build's
+// source repository.
 func (r *BuildGitSSHSecretReconciler) Reconcile(ctx context.Context, build *buildResolution.ResolvedBuild) error {
 
 	source := build.Spec.Source

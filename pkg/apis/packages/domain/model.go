@@ -78,6 +78,7 @@ type PackageSpec struct {
 // Identity
 // -----------------------------------------------------------------------------
 
+// PackageID uniquely identifies a Package within a namespace.
 type PackageID struct {
 	Namespace string
 	Name      string
@@ -87,6 +88,7 @@ type PackageID struct {
 // Ownership
 // -----------------------------------------------------------------------------
 
+// Maintainer identifies a person or team accountable for a package.
 type Maintainer struct {
 	Name  string
 	Email string
@@ -96,6 +98,7 @@ type Maintainer struct {
 // Source of manifests
 // -----------------------------------------------------------------------------
 
+// PackageSource defines where a package's manifests come from.
 type PackageSource struct {
 	// Repository URL containing the package manifests.
 	RepositoryURL string
@@ -108,6 +111,8 @@ type PackageSource struct {
 // State tracking (GitOps anchor)
 // -----------------------------------------------------------------------------
 
+// StateRepository defines the Git repository used as the GitOps anchor for
+// a package's rendered/applied state.
 type StateRepository struct {
 	// URL of the state/manifests repository.
 	URL string
@@ -125,6 +130,7 @@ type StateRepository struct {
 	Path string
 }
 
+// Ref pins the state/manifests repository to a specific branch, tag, or commit.
 type Ref struct {
 
 	// Branch is the Git branch to use for the manifests repository.
@@ -181,6 +187,7 @@ type PackageStatus struct {
 // Application strategy
 // -----------------------------------------------------------------------------
 
+// ApplyStrategy selects how a package's manifests are applied to the cluster.
 type ApplyStrategy string
 
 const (

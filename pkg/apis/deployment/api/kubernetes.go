@@ -37,6 +37,8 @@ import (
 	serviceunitIntent "github.com/blanketops/environments/pkg/intent/serviceunit"
 )
 
+// K8SProvider applies and tears down the Kubernetes Deployment and Service
+// objects for a single ServiceUnit via server-side apply.
 type K8SProvider struct {
 	Client   client.Client
 	Scheme   *runtime.Scheme
@@ -44,6 +46,7 @@ type K8SProvider struct {
 	Recorder events.EventRecorder
 }
 
+// NewK8SProvider constructs a K8SProvider.
 func NewK8SProvider(
 	c client.Client,
 	scheme *runtime.Scheme,
@@ -66,6 +69,8 @@ func NewK8SProvider(
 // tear down the Kubernetes objects for a single ServiceUnit.
 //
 
+// ApplyServiceUnit applies the Deployment and Service objects for a single
+// ServiceUnit and reports the resulting observed state.
 func (p *K8SProvider) ApplyServiceUnit(
 	ctx context.Context,
 	intent *intent.DeploymentIntent,

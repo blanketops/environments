@@ -9,6 +9,8 @@ import (
 	corecache "github.com/blanketops/environments/core/cache"
 )
 
+// Backend selects which external cache implementation NewExternal
+// constructs.
 type Backend string
 
 const (
@@ -17,6 +19,8 @@ const (
 	BackendMemcached Backend = "memcached"
 )
 
+// Options configures NewExternal's choice of external cache backend and its
+// connection settings.
 type Options struct {
 	Backend   Backend
 	Redis     adapter.RedisConfig

@@ -35,6 +35,8 @@ import (
 	serviceunitIntent "github.com/blanketops/environments/pkg/intent/serviceunit"
 )
 
+// BuildDeployment renders su's Kubernetes Deployment object literal within
+// intent. Pure — no client, no side effects.
 func BuildDeployment(
 	intent *intent.DeploymentIntent,
 	su *serviceunitIntent.ServiceUnitIntent,
@@ -81,6 +83,8 @@ func BuildDeployment(
 	}
 }
 
+// BuildService renders su's Kubernetes Service object literal within
+// intent. Pure — no client, no side effects.
 func BuildService(
 	intent *intent.DeploymentIntent,
 	su *serviceunitIntent.ServiceUnitIntent,

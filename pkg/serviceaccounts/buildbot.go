@@ -29,12 +29,15 @@ import (
 	buildResolution "github.com/blanketops/environments/resolution/build/resolve"
 )
 
+// ServiceAccountReconciler converges the ServiceAccount a Build's execution
+// runs as.
 type ServiceAccountReconciler struct {
 	Client client.Client
 	Scheme *runtime.Scheme
 	Log    logr.Logger
 }
 
+// NewServiceAccountReconciler constructs a ServiceAccountReconciler.
 func NewServiceAccountReconciler(
 	c client.Client,
 	scheme *runtime.Scheme,

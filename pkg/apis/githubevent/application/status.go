@@ -40,11 +40,14 @@ import (
 	eventsv1alpha1 "github.com/blanketops/environments-api/api/events/v1alpha1"
 )
 
+// StatusWriter persists a provider's result onto a GitHubEvent CR's status
+// as contract status and conditions, regardless of provider error.
 type StatusWriter struct {
 	Client client.Client
 	Log    logr.Logger
 }
 
+// NewStatusWriter constructs a StatusWriter.
 func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter {
 	return &StatusWriter{Client: c, Log: log.WithName("githubevent-status-writer")}
 }

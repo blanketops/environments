@@ -140,9 +140,9 @@ func (Mapper) MapResolvedToDomain(r *githubeventResolution.ResolvedGitHubEvent) 
 MapResolvedToDomain translates a ResolvedGitHubEvent into a domain.GitHubEvent. Panics if resolved or resolved.Spec is nil — these indicate a resolver bug.
 
 <a name="StatusWriter"></a>
-## type [StatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/application/status.go#L43-L46>)
+## type [StatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/application/status.go#L45-L48>)
 
-
+StatusWriter persists a provider's result onto a GitHubEvent CR's status as contract status and conditions, regardless of provider error.
 
 ```go
 type StatusWriter struct {
@@ -152,16 +152,16 @@ type StatusWriter struct {
 ```
 
 <a name="NewStatusWriter"></a>
-### func [NewStatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/application/status.go#L48>)
+### func [NewStatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/application/status.go#L51>)
 
 ```go
 func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter
 ```
 
-
+NewStatusWriter constructs a StatusWriter.
 
 <a name="StatusWriter.Write"></a>
-### func \(\*StatusWriter\) [Write](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/application/status.go#L53>)
+### func \(\*StatusWriter\) [Write](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/application/status.go#L56>)
 
 ```go
 func (w *StatusWriter) Write(ctx context.Context, gh *eventsv1alpha1.GitHubEvent, conditions ...metav1.Condition) error

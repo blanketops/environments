@@ -49,6 +49,7 @@ type ReconciliationExecutor struct {
 	Log             logr.Logger
 }
 
+// NewReconciliationExecutor constructs a ReconciliationExecutor.
 func NewReconciliationExecutor(
 	runtime *strategy.RuntimeProvider,
 	kust *api.KustomizeStrategyProvider,
@@ -61,6 +62,8 @@ func NewReconciliationExecutor(
 	}
 }
 
+// Execute dispatches rIntent to the imperative or GitOps path based on
+// rIntent.ManifestsRepo/ReconciliationStrategy.
 func (r *ReconciliationExecutor) Execute(
 	ctx context.Context,
 	sourceCR *environmentv1alpha1.Deployment,

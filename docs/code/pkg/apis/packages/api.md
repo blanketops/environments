@@ -24,7 +24,7 @@ import "github.com/blanketops/environments/pkg/apis/packages/api"
 
 
 <a name="ApplyApplication"></a>
-## func [ApplyApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L127-L131>)
+## func [ApplyApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L131-L135>)
 
 ```go
 func ApplyApplication(ctx context.Context, c client.Client, app *kappctrlv1alpha1.App) error
@@ -33,7 +33,7 @@ func ApplyApplication(ctx context.Context, c client.Client, app *kappctrlv1alpha
 \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- Apply \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
 
 <a name="BuildKappApplication"></a>
-## func [BuildKappApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L144-L146>)
+## func [BuildKappApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L148-L150>)
 
 ```go
 func BuildKappApplication(intent *intent.PackageIntent) (*kappctrlv1alpha1.App, error)
@@ -42,7 +42,7 @@ func BuildKappApplication(intent *intent.PackageIntent) (*kappctrlv1alpha1.App, 
 \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- Build \(pure function\) \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
 
 <a name="DeleteApplication"></a>
-## func [DeleteApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L300-L304>)
+## func [DeleteApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L304-L308>)
 
 ```go
 func DeleteApplication(ctx context.Context, c client.Client, intent *intent.PackageIntent) error
@@ -53,18 +53,18 @@ DeleteApplication deletes the kapp App this provider created for the given packa
 Idempotent — a missing App is not an error.
 
 <a name="PackageResultFromApplicationState"></a>
-## func [PackageResultFromApplicationState](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L90-L92>)
+## func [PackageResultFromApplicationState](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L98-L100>)
 
 ```go
 func PackageResultFromApplicationState(state *domain.ApplicationState) *domain.PackageResult
 ```
 
-
+PackageResultFromApplicationState translates an observed kapp\-controller App state into a domain.PackageResult, explicitly mapping each ApplicationPhase to its corresponding PackagePhase.
 
 <a name="ApplicationProvider"></a>
-## type [ApplicationProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L38-L43>)
+## type [ApplicationProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L41-L46>)
 
-
+ApplicationProvider executes a Package via a kapp\-controller App. See PackageProvider for the newer implementation with corrected phase mapping.
 
 ```go
 type ApplicationProvider struct {
@@ -76,16 +76,16 @@ type ApplicationProvider struct {
 ```
 
 <a name="NewApplicationProvider"></a>
-### func [NewApplicationProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L48-L53>)
+### func [NewApplicationProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L52-L57>)
 
 ```go
 func NewApplicationProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *ApplicationProvider
 ```
 
-
+NewApplicationProvider constructs an ApplicationProvider.
 
 <a name="ApplicationProvider.Execute"></a>
-### func \(\*ApplicationProvider\) [Execute](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L65-L68>)
+### func \(\*ApplicationProvider\) [Execute](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L69-L72>)
 
 ```go
 func (p *ApplicationProvider) Execute(ctx context.Context, intent *intent.PackageIntent) (*domain.PackageResult, error)
@@ -94,7 +94,7 @@ func (p *ApplicationProvider) Execute(ctx context.Context, intent *intent.Packag
 \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- Execute \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
 
 <a name="ApplicationProvider.ObserveApplication"></a>
-### func \(\*ApplicationProvider\) [ObserveApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L182-L186>)
+### func \(\*ApplicationProvider\) [ObserveApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L186-L190>)
 
 ```go
 func (p *ApplicationProvider) ObserveApplication(ctx context.Context, namespace, name string) (*domain.ApplicationState, error)
@@ -103,9 +103,9 @@ func (p *ApplicationProvider) ObserveApplication(ctx context.Context, namespace,
 \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- Observe \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
 
 <a name="PackageProvider"></a>
-## type [PackageProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L32-L37>)
+## type [PackageProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L34-L39>)
 
-
+PackageProvider executes a Package via a kapp\-controller App, replacing ApplicationProvider's older behavior with a corrected phase mapping.
 
 ```go
 type PackageProvider struct {
@@ -117,31 +117,31 @@ type PackageProvider struct {
 ```
 
 <a name="NewPackageProvider"></a>
-### func [NewPackageProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L39>)
+### func [NewPackageProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L42>)
 
 ```go
 func NewPackageProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *PackageProvider
 ```
 
-
+NewPackageProvider constructs a PackageProvider.
 
 <a name="PackageProvider.Execute"></a>
-### func \(\*PackageProvider\) [Execute](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L49-L52>)
+### func \(\*PackageProvider\) [Execute](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L54-L57>)
 
 ```go
 func (p *PackageProvider) Execute(ctx context.Context, intent *intent.PackageIntent) (*domain.PackageResult, error)
 ```
 
-
+Execute builds a kapp App from intent, applies it, observes its resulting state, and translates that into a domain.PackageResult.
 
 <a name="PackageProvider.ObserveApplication"></a>
-### func \(\*PackageProvider\) [ObserveApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L127-L131>)
+### func \(\*PackageProvider\) [ObserveApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L137-L141>)
 
 ```go
 func (p *PackageProvider) ObserveApplication(ctx context.Context, namespace, name string) (*domain.ApplicationState, error)
 ```
 
-
+ObserveApplication reads the named kapp\-controller App and derives its ApplicationState from the App's ReconcileSucceeded condition.
 
 <a name="Provider"></a>
 ## type [Provider](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/provider.go#L26-L28>)

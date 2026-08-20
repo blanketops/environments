@@ -35,6 +35,8 @@ import (
 	// domain "github.com/blanketops/environments/resolution/domain/adapter"
 )
 
+// Adapter dispatches resolution for any supported CR type to that type's
+// own resolution adapter, based on the object's concrete Go type.
 type Adapter struct {
 	build         *build.Adapter
 	deployment    *deployment.Adapter
@@ -46,6 +48,8 @@ type Adapter struct {
 	// route         *route.Adapter
 }
 
+// NewAdapter constructs an Adapter wired up with every supported CR type's
+// own resolution adapter.
 func NewAdapter() *Adapter {
 	return &Adapter{
 		build:         build.NewAdapter(),
@@ -59,6 +63,8 @@ func NewAdapter() *Adapter {
 	}
 }
 
+// Resolve dispatches obj to the resolution adapter matching its concrete
+// type. Route and Domain are not yet wired up.
 func (a *Adapter) Resolve(ctx context.Context, obj client.Object) error {
 	switch o := obj.(type) {
 

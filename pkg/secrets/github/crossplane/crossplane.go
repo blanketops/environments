@@ -32,6 +32,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// GitHubProviderSecretReconciler converges the cluster-scoped ExternalSecret
+// backing the Crossplane GitHub (Upjet) provider's credentials in
+// crossplane-system. Not owned by any CR — the provider is a platform
+// singleton with no teardown.
 type GitHubProviderSecretReconciler struct {
 	Client    client.Client
 	Log       logr.Logger
@@ -39,6 +43,8 @@ type GitHubProviderSecretReconciler struct {
 	StoreKind string
 }
 
+// NewGitHubProviderSecretReconciler constructs a
+// GitHubProviderSecretReconciler targeting the given ESO store.
 func NewGitHubProviderSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *GitHubProviderSecretReconciler {
 	return &GitHubProviderSecretReconciler{
 		Client:    c,
@@ -48,6 +54,8 @@ func NewGitHubProviderSecretReconciler(c client.Client, log logr.Logger, storeNa
 	}
 }
 
+// Reconcile ensures the singleton github-upjet-creds ExternalSecret exists
+// in crossplane-system.
 func (r *GitHubProviderSecretReconciler) Reconcile(ctx context.Context) error {
 	const (
 		externalSecretName = "github-upjet-creds"

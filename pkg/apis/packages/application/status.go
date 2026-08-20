@@ -29,11 +29,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// StatusWriter writes a PackageResult back onto a Package CR's status as
+// the authoritative, user-facing PackageStatus.
 type StatusWriter struct {
 	Client client.Client
 	Log    logr.Logger
 }
 
+// NewStatusWriter constructs a StatusWriter.
 func NewStatusWriter(
 	c client.Client,
 	log logr.Logger,
@@ -44,6 +47,8 @@ func NewStatusWriter(
 	}
 }
 
+// Write derives PackageStatus from result/runErr and patches it onto pkg's
+// status subresource.
 func (w *StatusWriter) Write(
 	ctx context.Context,
 	pkg *env1alpha1.Package,

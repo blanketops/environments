@@ -47,12 +47,16 @@ import (
 const fieldManager = "blanketops-kustomize-provider"
 const defaultGitBranch = "master"
 
+// KustomizeStrategyProvider implements the GitOps deployment path: it
+// renders manifests, commits them to a repo, and ensures the Flux
+// GitRepository/Kustomization CRs that make the cluster reconcile them.
 type KustomizeStrategyProvider struct {
 	Client client.Client
 	Scheme *runtime.Scheme
 	Log    logr.Logger
 }
 
+// NewKustomizeStrategyProvider constructs a KustomizeStrategyProvider.
 func NewKustomizeStrategyProvider(
 	c client.Client,
 	scheme *runtime.Scheme,
@@ -65,6 +69,8 @@ func NewKustomizeStrategyProvider(
 	}
 }
 
+// BuildKustomize renders the Deployment and Service objects for every
+// ServiceUnit in intent, without writing them anywhere.
 func (m *KustomizeStrategyProvider) BuildKustomize(
 	intent *intent.DeploymentIntent,
 ) ([]runtime.Object, error) {
@@ -86,6 +92,9 @@ func (m *KustomizeStrategyProvider) BuildKustomize(
 // PUBLIC ENTRYPOINT
 //
 
+// ReconcileKustomization is the GitOps path's public entrypoint: it renders
+// and commits manifests to repoURL, then ensures the Flux GitRepository and
+// Kustomization CRs that make the cluster apply them from ref/path.
 func (m *KustomizeStrategyProvider) ReconcileKustomization(
 	ctx context.Context,
 	cr *environmentv1alpha1.Deployment,
@@ -146,6 +155,9 @@ func (m *KustomizeStrategyProvider) ReconcileKustomization(
 // INTERNALS
 //
 
+// CommitAndPush renders each ServiceUnit's Deployment/Service manifests
+// into the env overlay under repoPath, removing previously generated
+// workload files first, then commits and pushes the result.
 func (m *KustomizeStrategyProvider) CommitAndPush(
 	repoPath string,
 	intent *intent.DeploymentIntent,

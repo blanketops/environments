@@ -34,10 +34,13 @@ const (
 // Persistence is owned exclusively by the controller layer.
 type StatusWriter struct{}
 
+// NewStatusWriter constructs a StatusWriter.
 func NewStatusWriter() *StatusWriter {
 	return &StatusWriter{}
 }
 
+// Write derives a Ready condition from result/err and sets it on cr's
+// status in memory; the caller is responsible for persisting it.
 func (w *StatusWriter) Write(
 	_ context.Context, // intentionally unused: no API calls here
 	cr *sourcesv1alpha1.GitRepository,

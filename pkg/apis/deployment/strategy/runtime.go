@@ -57,6 +57,8 @@ type RuntimeProvider struct {
 	K8S    *K8SStrategy
 }
 
+// NewRuntimeProvider constructs a RuntimeProvider, wiring up its K8S
+// strategy from the given clients.
 func NewRuntimeProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, Recorder events.EventRecorder) *RuntimeProvider {
 	return &RuntimeProvider{
 		Client: c,
@@ -66,6 +68,8 @@ func NewRuntimeProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger
 	}
 }
 
+// Execute dispatches dIntent to the strategy implementing its Runtime.
+// Knative and ECS are recognized but not yet implemented.
 func (p *RuntimeProvider) Execute(
 	ctx context.Context,
 	dIntent *intent.DeploymentIntent,

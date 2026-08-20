@@ -21,12 +21,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// KnativeReconciler is a placeholder for the Knative runtime backend — not
+// yet implemented (see RuntimeProvider.Execute).
 type KnativeReconciler struct {
 	Client client.Client
 	Scheme *runtime.Scheme
 	Log    logr.Logger
 }
 
+// NewKnativeReconciler constructs a KnativeReconciler.
 func NewKnativeReconciler(c client.Client, scheme *runtime.Scheme, log logr.Logger) *KnativeReconciler {
 	return &KnativeReconciler{Client: c, Scheme: scheme, Log: log}
 }

@@ -105,16 +105,16 @@ type StatusWriter struct {
 ```
 
 <a name="NewStatusWriter"></a>
-### func [NewStatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/serviceunit/application/status.go#L37>)
+### func [NewStatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/serviceunit/application/status.go#L38>)
 
 ```go
 func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter
 ```
 
-
+NewStatusWriter constructs a StatusWriter.
 
 <a name="StatusWriter.Write"></a>
-### func \(\*StatusWriter\) [Write](<https://github.com/blanketops/environments/blob/main/pkg/apis/serviceunit/application/status.go#L48>)
+### func \(\*StatusWriter\) [Write](<https://github.com/blanketops/environments/blob/main/pkg/apis/serviceunit/application/status.go#L49>)
 
 ```go
 func (w *StatusWriter) Write(ctx context.Context, su *environmentv1alpha1.ServiceUnit, conditions ...metav1.Condition) error

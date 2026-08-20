@@ -73,6 +73,9 @@ func ComputeExecutionHash(
 // -----------------------------------------------------------------------------
 //
 
+// CreateOrPatch creates obj if it doesn't exist, or leaves it unchanged if
+// it does — a thin wrapper around controllerutil.CreateOrUpdate with a
+// no-op mutate func.
 func CreateOrPatch(ctx context.Context, c client.Client, obj client.Object) error {
 	_, err := controllerutil.CreateOrUpdate(ctx, c, obj, func() error { return nil })
 	if err != nil {
@@ -92,6 +95,8 @@ func CreateOrPatch(ctx context.Context, c client.Client, obj client.Object) erro
 // -----------------------------------------------------------------------------
 //
 
+// RunGit runs a git command in dir (or the current directory if dir is
+// empty) and returns its combined stdout/stderr output, trimmed.
 func RunGit(dir string, args ...string) (string, error) {
 	cmd := exec.Command("git", args...)
 	if dir != "" {
@@ -107,6 +112,8 @@ func RunGit(dir string, args ...string) (string, error) {
 // -----------------------------------------------------------------------------
 //
 
+// ParseImage splits an image reference on its last colon into repository
+// and tag, defaulting to tag "latest" when no colon is present.
 func ParseImage(image string) (string, string) {
 	for i := len(image) - 1; i >= 0; i-- {
 		if image[i] == ':' {
@@ -116,6 +123,7 @@ func ParseImage(image string) (string, string) {
 	return image, "latest"
 }
 
+// PointerBool returns a pointer to b.
 func PointerBool(b bool) *bool {
 	return &b
 }
@@ -126,6 +134,8 @@ func PointerBool(b bool) *bool {
 // -----------------------------------------------------------------------------
 //
 
+// PrintRepoTree prints an indented directory tree of basePath to stdout,
+// for debugging what a cloned repository actually contains.
 func PrintRepoTree(basePath string) error {
 	fmt.Printf("\n[bootstrap] Repository tree: %s\n", basePath)
 	return filepath.Walk(basePath, func(path string, info os.FileInfo, err error) error {
@@ -153,6 +163,8 @@ func PrintRepoTree(basePath string) error {
 	})
 }
 
+// ShortHash truncates hash to its first 12 characters, or returns it
+// unchanged if it's already shorter.
 func ShortHash(hash string) string {
 	if len(hash) > 12 {
 		return hash[:12]

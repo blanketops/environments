@@ -56,6 +56,8 @@ type ProviderRegistry struct {
 	providers map[intent.Runtime]Provider
 }
 
+// NewProviderRegistry constructs a ProviderRegistry pre-populated with the
+// given providers, indexed by their own Runtime().
 func NewProviderRegistry(providers ...Provider) *ProviderRegistry {
 	m := make(map[intent.Runtime]Provider)
 
