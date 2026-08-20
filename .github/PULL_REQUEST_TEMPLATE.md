@@ -1,4 +1,3 @@
-
 ## What
 
 <!-- One or two sentences. What does this PR change? -->
@@ -30,13 +29,15 @@
 
 ## Checklist
 
-* [ ] `mage verify` passes locally
-* [ ] `buf breaking` reviewed (failures justified above if pre-v1)
+* [ ] `go build ./...` and `go vet ./...` pass locally
+* [ ] `gofmt -l` clean
+* [ ] `golangci-lint run` clean
+* [ ] `go test ./...` passes
 * [ ] Panic-free resolution — no `panic()` calls in resolution or domain layers
-* [ ] Import paths use `gen/go/blanketops/...` for contract types
+* [ ] Import paths use `github.com/blanketops/environments-contract/blanketops/...` for contract types
 * [ ] BlanketOps labels present where required (`environments.blanketops.dev/*`)
-* [ ] Conditions written via `core.SetCondition` at each domain pipeline stage
-* [ ] Events emitted via `core.EventRecorder` for terminal outcomes
+* [ ] Conditions written via `core/conditions.SetCondition` at each domain pipeline stage
+* [ ] Events emitted via `core/events.EventRecorder` for terminal outcomes
 * [ ] ESP-0001 updated if contract semantics changed
 * [ ] Commit messages follow Conventional Commits
 
