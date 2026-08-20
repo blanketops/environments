@@ -60,6 +60,7 @@ type ResolvedBuildSpec struct {
 	Policy         *ResolvedBuildPolicy
 }
 
+// ResolvedSource is the decoded source-repository configuration for a Build.
 type ResolvedSource struct {
 	URL         string
 	Revision    string
@@ -67,25 +68,33 @@ type ResolvedSource struct {
 	CloneSecret string
 }
 
+// ResolvedStrategy is the decoded build strategy (e.g. Buildah, Kaniko,
+// Buildpacks) selected for a Build.
 type ResolvedStrategy struct {
 	Name         string
 	StrategyKind string
 }
 
+// ResolvedServiceAccount is the decoded service account a Build's execution
+// runs as.
 type ResolvedServiceAccount struct {
 	Name   string
 	Secret string
 }
 
+// ResolvedBuildPolicy is the decoded trigger and retry policy for a Build.
 type ResolvedBuildPolicy struct {
 	Triggers []ResolvedTrigger
 	Retry    *ResolvedRetryPolicy
 }
 
+// ResolvedTrigger is a single decoded trigger condition that can initiate a
+// Build run.
 type ResolvedTrigger struct {
 	Type string
 }
 
+// ResolvedRetryPolicy is the decoded retry behavior for a failed Build run.
 type ResolvedRetryPolicy struct {
 	OnFailure   bool
 	MaxAttempts uint32

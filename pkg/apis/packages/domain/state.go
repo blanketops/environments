@@ -60,6 +60,7 @@ type PackageState struct {
 // Phase
 // -----------------------------------------------------------------------------
 
+// PackagePhase is the high-level reconciliation phase of a Package.
 type PackagePhase string
 
 const (
@@ -78,6 +79,7 @@ const (
 // Diff state
 // -----------------------------------------------------------------------------
 
+// DiffState is the outcome of the most recent kapp diff check.
 type DiffState string
 
 const (
@@ -87,6 +89,8 @@ const (
 	DiffApplied  DiffState = "Applied"
 )
 
+// ApplicationPhase is the observed lifecycle phase of the kapp-controller
+// App CR backing a Package.
 type ApplicationPhase string
 
 const (
@@ -95,6 +99,8 @@ const (
 	ApplicationPhaseFailed  ApplicationPhase = "Failed"
 )
 
+// ApplicationState is the state observed from the kapp-controller App CR
+// backing a Package, before it is mapped onto PackageResult/PackageStatus.
 type ApplicationState struct {
 	Name      string
 	Namespace string

@@ -28,6 +28,8 @@ type GitRepositoryService struct {
 	backend *BackendSelector
 }
 
+// NewGitRepositoryService constructs a GitRepositoryService from its
+// collaborators.
 func NewGitRepositoryService(mapper *Mapper, status *StatusWriter, backend *BackendSelector) *GitRepositoryService {
 	return &GitRepositoryService{
 		mapper:  mapper,

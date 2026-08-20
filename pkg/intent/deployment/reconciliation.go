@@ -15,6 +15,8 @@ limitations under the License.
 
 package deployment
 
+// ReconciliationStrategy selects how a Deployment's manifests are applied
+// (imperative apply, Kustomize, or Helm).
 type ReconciliationStrategy string
 
 const (

@@ -35,6 +35,9 @@ var _ Provider = (*GitHubProvider)(nil)
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 
+// GitHubProvider implements Provider against the upjet-github Crossplane
+// provider, ensuring the Repository and RepositoryWebhook resources that
+// back a GitRepository CR.
 type GitHubProvider struct {
 	Client   ctrlclient.Client
 	Scheme   *runtime.Scheme
@@ -42,6 +45,7 @@ type GitHubProvider struct {
 	Recorder events.EventRecorder
 }
 
+// NewGitHubProvider constructs a GitHubProvider.
 func NewGitHubProvider(
 	c ctrlclient.Client,
 	scheme *runtime.Scheme,
@@ -133,6 +137,8 @@ func buildRepositoryWebhook(
 
 // ── Ensure ────────────────────────────────────────────────────────────────────
 
+// Ensure reconciles the upjet-github Repository (and, if webhooks are
+// declared, RepositoryWebhook) resources backing cr against spec.
 func (p *GitHubProvider) Ensure(
 	ctx context.Context,
 	cr *sourcesv1alpha1.GitRepository,

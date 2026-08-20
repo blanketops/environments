@@ -22,7 +22,7 @@ Controllers and domain logic MUST NOT consume the returned contract value.
 
 
 <a name="ToPackageContract"></a>
-## func ToPackageContract
+## func [ToPackageContract](<https://github.com/blanketops/environments/blob/main/resolution/packages/contract/contract_adapter.go#L46>)
 
 ```go
 func ToPackageContract(s *resolve.ResolvedPackageSpec) *contractv1.PackageSpec

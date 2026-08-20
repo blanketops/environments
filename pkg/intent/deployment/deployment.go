@@ -36,6 +36,9 @@ import (
 	serviceunitIntent "github.com/blanketops/environments/pkg/intent/serviceunit"
 )
 
+// DeploymentIntent is the Kubernetes-free, fully resolved plan for a
+// Deployment: which runtime and strategy to use, the reconciliation mode,
+// and each ServiceUnit's own intent. Built by IntentBuilder.Build.
 type DeploymentIntent struct {
 	Source *environmentv1alpha1.Deployment // ← IMPORTANT
 
@@ -55,6 +58,8 @@ type DeploymentIntent struct {
 	GeneratedAt time.Time
 }
 
+// ManifestsRepo is the Git repository a Deployment's manifests are rendered
+// from or applied against.
 type ManifestsRepo struct {
 	// URL to the manifests repository
 	URL string
@@ -72,6 +77,7 @@ type ManifestsRepo struct {
 	Path string
 }
 
+// Ref pins ManifestsRepo to a specific branch, tag, or commit.
 type Ref struct {
 	Branch string
 	Tag    string

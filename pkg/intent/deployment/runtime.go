@@ -15,6 +15,7 @@ limitations under the License.
 
 package deployment
 
+// Runtime identifies which execution platform a ServiceUnit deploys to.
 type Runtime string
 
 const (
@@ -25,6 +26,7 @@ const (
 	RuntimeAzure      Runtime = "blanketops.dev/azure-container"
 )
 
+// Strategy selects the rollout strategy used when deploying a ServiceUnit.
 type Strategy string
 
 const (

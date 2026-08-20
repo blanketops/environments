@@ -38,6 +38,7 @@ type MemcachedCache struct {
 
 var _ cache.ExternalCache = (*MemcachedCache)(nil)
 
+// NewMemcached constructs a MemcachedCache connected to cfg's servers.
 func NewMemcached(cfg MemcachedConfig) *MemcachedCache {
 	return &MemcachedCache{client: memcache.New(cfg.Servers...)}
 }

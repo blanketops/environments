@@ -34,6 +34,9 @@ import (
 	buildResolution "github.com/blanketops/environments/resolution/build/resolve"
 )
 
+// BuildRegistryExternalSecretReconciler converges the ExternalSecret
+// backing a Build's image-pull ServiceAccount, and tears it down (plus its
+// ESO-materialized Secret) on Build deletion.
 type BuildRegistryExternalSecretReconciler struct {
 	Client    client.Client
 	Log       logr.Logger
@@ -41,6 +44,8 @@ type BuildRegistryExternalSecretReconciler struct {
 	StoreKind string
 }
 
+// NewBuildRegistryExternalSecretReconciler constructs a
+// BuildRegistryExternalSecretReconciler targeting the given ESO store.
 func NewBuildRegistryExternalSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *BuildRegistryExternalSecretReconciler {
 	return &BuildRegistryExternalSecretReconciler{
 		Client:    c,
@@ -50,6 +55,8 @@ func NewBuildRegistryExternalSecretReconciler(c client.Client, log logr.Logger, 
 	}
 }
 
+// Reconcile creates or updates the registry-credential ExternalSecret for
+// build's image-pull ServiceAccount.
 func (r *BuildRegistryExternalSecretReconciler) Reconcile(ctx context.Context, build *buildResolution.ResolvedBuild) error {
 	if build == nil || build.Build == nil || build.Spec == nil {
 		return nil

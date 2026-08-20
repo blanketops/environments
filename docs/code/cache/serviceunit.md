@@ -28,7 +28,7 @@ import "github.com/blanketops/environments/cache/serviceunit"
 
 
 <a name="ServiceUnitCache"></a>
-## type ServiceUnitCache
+## type [ServiceUnitCache](<https://github.com/blanketops/environments/blob/main/cache/serviceunit/serviceunit.go#L30-L32>)
 
 ServiceUnitCache provides domain\-specific, field\-level caching for ServiceUnit resources.
 
@@ -39,7 +39,7 @@ type ServiceUnitCache struct {
 ```
 
 <a name="NewServiceUnitCache"></a>
-### func NewServiceUnitCache
+### func [NewServiceUnitCache](<https://github.com/blanketops/environments/blob/main/cache/serviceunit/serviceunit.go#L35>)
 
 ```go
 func NewServiceUnitCache(c *cache.Cache) *ServiceUnitCache
@@ -48,7 +48,7 @@ func NewServiceUnitCache(c *cache.Cache) *ServiceUnitCache
 NewServiceUnitCache constructs a new ServiceUnitCache with the provided cache.Cache.
 
 <a name="ServiceUnitCache.GetAppType"></a>
-### func \(\*ServiceUnitCache\) GetAppType
+### func \(\*ServiceUnitCache\) [GetAppType](<https://github.com/blanketops/environments/blob/main/cache/serviceunit/serviceunit.go#L115>)
 
 ```go
 func (s *ServiceUnitCache) GetAppType(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -57,7 +57,7 @@ func (s *ServiceUnitCache) GetAppType(ctx context.Context, nn types.NamespacedNa
 
 
 <a name="ServiceUnitCache.GetBuildRef"></a>
-### func \(\*ServiceUnitCache\) GetBuildRef
+### func \(\*ServiceUnitCache\) [GetBuildRef](<https://github.com/blanketops/environments/blob/main/cache/serviceunit/serviceunit.go#L75>)
 
 ```go
 func (s *ServiceUnitCache) GetBuildRef(ctx context.Context, nn types.NamespacedName, gen int64, into any) (bool, error)
@@ -66,7 +66,7 @@ func (s *ServiceUnitCache) GetBuildRef(ctx context.Context, nn types.NamespacedN
 
 
 <a name="ServiceUnitCache.GetContainerPort"></a>
-### func \(\*ServiceUnitCache\) GetContainerPort
+### func \(\*ServiceUnitCache\) [GetContainerPort](<https://github.com/blanketops/environments/blob/main/cache/serviceunit/serviceunit.go#L87>)
 
 ```go
 func (s *ServiceUnitCache) GetContainerPort(ctx context.Context, nn types.NamespacedName, gen int64) (int, bool, error)
@@ -75,7 +75,7 @@ func (s *ServiceUnitCache) GetContainerPort(ctx context.Context, nn types.Namesp
 
 
 <a name="ServiceUnitCache.GetImage"></a>
-### func \(\*ServiceUnitCache\) GetImage
+### func \(\*ServiceUnitCache\) [GetImage](<https://github.com/blanketops/environments/blob/main/cache/serviceunit/serviceunit.go#L61>)
 
 ```go
 func (s *ServiceUnitCache) GetImage(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -84,7 +84,7 @@ func (s *ServiceUnitCache) GetImage(ctx context.Context, nn types.NamespacedName
 
 
 <a name="ServiceUnitCache.GetSize"></a>
-### func \(\*ServiceUnitCache\) GetSize
+### func \(\*ServiceUnitCache\) [GetSize](<https://github.com/blanketops/environments/blob/main/cache/serviceunit/serviceunit.go#L101>)
 
 ```go
 func (s *ServiceUnitCache) GetSize(ctx context.Context, nn types.NamespacedName, gen int64) (int, bool, error)
@@ -93,7 +93,7 @@ func (s *ServiceUnitCache) GetSize(ctx context.Context, nn types.NamespacedName,
 
 
 <a name="ServiceUnitCache.GetStackType"></a>
-### func \(\*ServiceUnitCache\) GetStackType
+### func \(\*ServiceUnitCache\) [GetStackType](<https://github.com/blanketops/environments/blob/main/cache/serviceunit/serviceunit.go#L129>)
 
 ```go
 func (s *ServiceUnitCache) GetStackType(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -102,7 +102,7 @@ func (s *ServiceUnitCache) GetStackType(ctx context.Context, nn types.Namespaced
 
 
 <a name="ServiceUnitCache.GetType"></a>
-### func \(\*ServiceUnitCache\) GetType
+### func \(\*ServiceUnitCache\) [GetType](<https://github.com/blanketops/environments/blob/main/cache/serviceunit/serviceunit.go#L47>)
 
 ```go
 func (s *ServiceUnitCache) GetType(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -111,7 +111,7 @@ func (s *ServiceUnitCache) GetType(ctx context.Context, nn types.NamespacedName,
 
 
 <a name="ServiceUnitCache.PublishResolved"></a>
-### func \(\*ServiceUnitCache\) PublishResolved
+### func \(\*ServiceUnitCache\) [PublishResolved](<https://github.com/blanketops/environments/blob/main/cache/serviceunit/serviceunit.go#L141>)
 
 ```go
 func (s *ServiceUnitCache) PublishResolved(ctx context.Context, nn types.NamespacedName, gen int64, r *serviceunitResolution.ResolvedServiceUnit) error
@@ -120,7 +120,7 @@ func (s *ServiceUnitCache) PublishResolved(ctx context.Context, nn types.Namespa
 PublishResolved writes the resolved service unit contract as a generation\-scoped, field\-level projection. The image/buildRef pair is type\-discriminated: exactly one is published per the unit's type. All writes are best\-effort: failures cost queryability, never correctness. Returns the first error encountered for optional logging; callers should not fail reconciliation on it.
 
 <a name="ServiceUnitCache.SetAppType"></a>
-### func \(\*ServiceUnitCache\) SetAppType
+### func \(\*ServiceUnitCache\) [SetAppType](<https://github.com/blanketops/environments/blob/main/cache/serviceunit/serviceunit.go#L111>)
 
 ```go
 func (s *ServiceUnitCache) SetAppType(ctx context.Context, nn types.NamespacedName, gen int64, appType string) error
@@ -129,7 +129,7 @@ func (s *ServiceUnitCache) SetAppType(ctx context.Context, nn types.NamespacedNa
 
 
 <a name="ServiceUnitCache.SetBuildRef"></a>
-### func \(\*ServiceUnitCache\) SetBuildRef
+### func \(\*ServiceUnitCache\) [SetBuildRef](<https://github.com/blanketops/environments/blob/main/cache/serviceunit/serviceunit.go#L71>)
 
 ```go
 func (s *ServiceUnitCache) SetBuildRef(ctx context.Context, nn types.NamespacedName, gen int64, buildRef any) error
@@ -138,7 +138,7 @@ func (s *ServiceUnitCache) SetBuildRef(ctx context.Context, nn types.NamespacedN
 
 
 <a name="ServiceUnitCache.SetContainerPort"></a>
-### func \(\*ServiceUnitCache\) SetContainerPort
+### func \(\*ServiceUnitCache\) [SetContainerPort](<https://github.com/blanketops/environments/blob/main/cache/serviceunit/serviceunit.go#L83>)
 
 ```go
 func (s *ServiceUnitCache) SetContainerPort(ctx context.Context, nn types.NamespacedName, gen int64, port int) error
@@ -147,7 +147,7 @@ func (s *ServiceUnitCache) SetContainerPort(ctx context.Context, nn types.Namesp
 
 
 <a name="ServiceUnitCache.SetImage"></a>
-### func \(\*ServiceUnitCache\) SetImage
+### func \(\*ServiceUnitCache\) [SetImage](<https://github.com/blanketops/environments/blob/main/cache/serviceunit/serviceunit.go#L57>)
 
 ```go
 func (s *ServiceUnitCache) SetImage(ctx context.Context, nn types.NamespacedName, gen int64, image string) error
@@ -156,7 +156,7 @@ func (s *ServiceUnitCache) SetImage(ctx context.Context, nn types.NamespacedName
 
 
 <a name="ServiceUnitCache.SetSize"></a>
-### func \(\*ServiceUnitCache\) SetSize
+### func \(\*ServiceUnitCache\) [SetSize](<https://github.com/blanketops/environments/blob/main/cache/serviceunit/serviceunit.go#L97>)
 
 ```go
 func (s *ServiceUnitCache) SetSize(ctx context.Context, nn types.NamespacedName, gen int64, size int) error
@@ -165,7 +165,7 @@ func (s *ServiceUnitCache) SetSize(ctx context.Context, nn types.NamespacedName,
 
 
 <a name="ServiceUnitCache.SetStackType"></a>
-### func \(\*ServiceUnitCache\) SetStackType
+### func \(\*ServiceUnitCache\) [SetStackType](<https://github.com/blanketops/environments/blob/main/cache/serviceunit/serviceunit.go#L125>)
 
 ```go
 func (s *ServiceUnitCache) SetStackType(ctx context.Context, nn types.NamespacedName, gen int64, stackType string) error
@@ -174,7 +174,7 @@ func (s *ServiceUnitCache) SetStackType(ctx context.Context, nn types.Namespaced
 
 
 <a name="ServiceUnitCache.SetType"></a>
-### func \(\*ServiceUnitCache\) SetType
+### func \(\*ServiceUnitCache\) [SetType](<https://github.com/blanketops/environments/blob/main/cache/serviceunit/serviceunit.go#L43>)
 
 ```go
 func (s *ServiceUnitCache) SetType(ctx context.Context, nn types.NamespacedName, gen int64, typ string) error

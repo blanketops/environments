@@ -44,6 +44,9 @@ func addKnownTypes(s *runtime.Scheme) error {
 
 // ── Repository ────────────────────────────────────────────────────────────────
 
+// Repository mirrors the upjet-github provider's Repository CRD.
+// upbound/provider-github does not ship importable Go types, so this
+// struct owns the schema locally.
 type Repository struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -57,11 +60,14 @@ func (r *Repository) DeepCopyObject() runtime.Object {
 	return out
 }
 
+// RepositorySpec is the spec of a Repository resource.
 type RepositorySpec struct {
 	ProviderConfigRef ProviderConfigRef    `json:"providerConfigRef"`
 	ForProvider       RepositoryParameters `json:"forProvider"`
 }
 
+// RepositoryParameters are the upjet-github Terraform parameters for a
+// Repository.
 type RepositoryParameters struct {
 	Name       *string `json:"name"`
 	Visibility *string `json:"visibility"`
@@ -69,6 +75,8 @@ type RepositoryParameters struct {
 
 // ── RepositoryWebhook ─────────────────────────────────────────────────────────
 
+// RepositoryWebhook mirrors the upjet-github provider's RepositoryWebhook
+// CRD. See Repository for why this is defined locally.
 type RepositoryWebhook struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -83,11 +91,14 @@ func (r *RepositoryWebhook) DeepCopyObject() runtime.Object {
 	return out
 }
 
+// RepositoryWebhookSpec is the spec of a RepositoryWebhook resource.
 type RepositoryWebhookSpec struct {
 	ProviderConfigRef ProviderConfigRef           `json:"providerConfigRef"`
 	ForProvider       RepositoryWebhookParameters `json:"forProvider"`
 }
 
+// RepositoryWebhookParameters are the upjet-github Terraform parameters for
+// a RepositoryWebhook.
 type RepositoryWebhookParameters struct {
 	Active        *bool                                      `json:"active"`
 	Events        []*string                                  `json:"events"`

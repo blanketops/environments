@@ -35,6 +35,9 @@ import (
 	"github.com/blanketops/environments/pkg/intent/package"
 )
 
+// ApplicationProvider executes a Package via a kapp-controller App. See
+// PackageProvider for the newer implementation with corrected phase
+// mapping.
 type ApplicationProvider struct {
 	Client   client.Client
 	Scheme   *runtime.Scheme
@@ -45,6 +48,7 @@ type ApplicationProvider struct {
 // Compile-time contract check
 var _ Provider = (*ApplicationProvider)(nil)
 
+// NewApplicationProvider constructs an ApplicationProvider.
 func NewApplicationProvider(
 	c client.Client,
 	scheme *runtime.Scheme,

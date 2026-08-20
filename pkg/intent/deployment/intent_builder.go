@@ -25,8 +25,11 @@ import (
 	serviceunitResolution "github.com/blanketops/environments/resolution/serviceunit/resolve"
 )
 
+// IntentBuilder builds a DeploymentIntent from fully resolved inputs. It is
+// the canonical, complete constructor that DeploymentService calls.
 type IntentBuilder struct{}
 
+// NewIntentBuilder constructs an IntentBuilder.
 func NewIntentBuilder() *IntentBuilder {
 	return &IntentBuilder{}
 }

@@ -48,7 +48,7 @@ All failures surface as errors. Resolution never panics.
 
 
 <a name="ResolvedDomain"></a>
-## type ResolvedDomain
+## type [ResolvedDomain](<https://github.com/blanketops/environments/blob/main/resolution/domain/resolve/resolve.go#L79-L82>)
 
 ResolvedDomain pairs the original Kubernetes Domain object with its fully decoded and validated spec.
 
@@ -60,7 +60,7 @@ type ResolvedDomain struct {
 ```
 
 <a name="ResolveDomain"></a>
-### func ResolveDomain
+### func [ResolveDomain](<https://github.com/blanketops/environments/blob/main/resolution/domain/resolve/resolve.go#L125>)
 
 ```go
 func ResolveDomain(domain *networksv1alpha1.Domain) (*ResolvedDomain, error)
@@ -69,7 +69,7 @@ func ResolveDomain(domain *networksv1alpha1.Domain) (*ResolvedDomain, error)
 ResolveDomain decodes and validates the raw JSON contract from the Domain CR spec into a ResolvedDomain. Returns an error if the CR is nil, the contract is absent, or any required field is missing or malformed.
 
 <a name="ResolvedDomainMTLS"></a>
-## type ResolvedDomainMTLS
+## type [ResolvedDomainMTLS](<https://github.com/blanketops/environments/blob/main/resolution/domain/resolve/resolve.go#L113-L116>)
 
 ResolvedDomainMTLS carries the resolved mTLS configuration.
 
@@ -81,7 +81,7 @@ type ResolvedDomainMTLS struct {
 ```
 
 <a name="ResolvedDomainRouteRef"></a>
-## type ResolvedDomainRouteRef
+## type [ResolvedDomainRouteRef](<https://github.com/blanketops/environments/blob/main/resolution/domain/resolve/resolve.go#L107-L110>)
 
 ResolvedDomainRouteRef is the resolved Route reference.
 
@@ -93,7 +93,7 @@ type ResolvedDomainRouteRef struct {
 ```
 
 <a name="ResolvedDomainSpec"></a>
-## type ResolvedDomainSpec
+## type [ResolvedDomainSpec](<https://github.com/blanketops/environments/blob/main/resolution/domain/resolve/resolve.go#L86-L104>)
 
 ResolvedDomainSpec is the decoded and validated Domain spec. Fields mirror the proto DomainSpec — consumers must not re\-read from the raw CR.
 
@@ -120,7 +120,7 @@ type ResolvedDomainSpec struct {
 ```
 
 <a name="TLSStrategy"></a>
-## type TLSStrategy
+## type [TLSStrategy](<https://github.com/blanketops/environments/blob/main/resolution/domain/resolve/resolve.go#L61>)
 
 TLSStrategy identifies the cert provisioning path for a Domain. Corresponds to blanketops.common.v1.DomainTLSStrategy in the proto contract.
 

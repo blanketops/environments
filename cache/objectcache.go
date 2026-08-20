@@ -38,6 +38,8 @@ type ObjectCache struct {
 	ttl   time.Duration
 }
 
+// NewObjectCache constructs an ObjectCache scoped to the given CR kind,
+// with fields expiring after ttl (0 disables expiry).
 func NewObjectCache(c *corecache.Cache, kind string, ttl time.Duration) *ObjectCache {
 	if ttl <= 0 {
 		ttl = 1 * time.Hour

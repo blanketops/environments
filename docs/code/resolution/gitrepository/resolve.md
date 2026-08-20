@@ -24,7 +24,7 @@ All failures surface as errors. Resolution never panics.
 
 
 <a name="GitRepositoryRef"></a>
-## type GitRepositoryRef
+## type [GitRepositoryRef](<https://github.com/blanketops/environments/blob/main/resolution/gitrepository/resolve/resolve.go#L63-L66>)
 
 GitRepositoryRef identifies the repository on the provider.
 
@@ -36,7 +36,7 @@ type GitRepositoryRef struct {
 ```
 
 <a name="GitRepositoryWebhook"></a>
-## type GitRepositoryWebhook
+## type [GitRepositoryWebhook](<https://github.com/blanketops/environments/blob/main/resolution/gitrepository/resolve/resolve.go#L70-L72>)
 
 GitRepositoryWebhook is a single webhook subscription. Events contains the normalised provider event strings \("push", "pull\_request" etc.\).
 
@@ -47,7 +47,7 @@ type GitRepositoryWebhook struct {
 ```
 
 <a name="ResolvedGitRepository"></a>
-## type ResolvedGitRepository
+## type [ResolvedGitRepository](<https://github.com/blanketops/environments/blob/main/resolution/gitrepository/resolve/resolve.go#L45-L48>)
 
 ResolvedGitRepository pairs the original Kubernetes GitRepository object with its fully decoded and validated spec.
 
@@ -59,7 +59,7 @@ type ResolvedGitRepository struct {
 ```
 
 <a name="ResolveGitRepository"></a>
-### func ResolveGitRepository
+### func [ResolveGitRepository](<https://github.com/blanketops/environments/blob/main/resolution/gitrepository/resolve/resolve.go#L82>)
 
 ```go
 func ResolveGitRepository(repo *sourcesv1alpha1.GitRepository) (*ResolvedGitRepository, error)
@@ -68,7 +68,7 @@ func ResolveGitRepository(repo *sourcesv1alpha1.GitRepository) (*ResolvedGitRepo
 ResolveGitRepository decodes and validates the raw JSON contract from the GitRepository CR spec into a ResolvedGitRepository. Returns an error if the CR is nil, the contract is absent, or any required field is missing or malformed.
 
 <a name="ResolvedGitRepositorySpec"></a>
-## type ResolvedGitRepositorySpec
+## type [ResolvedGitRepositorySpec](<https://github.com/blanketops/environments/blob/main/resolution/gitrepository/resolve/resolve.go#L51-L60>)
 
 ResolvedGitRepositorySpec is the decoded GitRepository spec.
 

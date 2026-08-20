@@ -38,6 +38,7 @@ type FakeExternalCache struct {
 	ttl  map[string]time.Duration
 }
 
+// NewFakeExternalCache constructs an empty FakeExternalCache.
 func NewFakeExternalCache() *FakeExternalCache {
 	return &FakeExternalCache{
 		data: make(map[string][]byte),

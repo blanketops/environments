@@ -24,6 +24,10 @@ import (
 	serviceunitIntent "github.com/blanketops/environments/pkg/intent/serviceunit"
 )
 
+// ResolveDeploymentIntent is an older, partial DeploymentIntent constructor
+// that never learned Runtime/Strategy/ReconciliationStrategy/ManifestsRepo.
+// It has no callers in DeploymentService's path — superseded by
+// IntentBuilder.Build, not a second supported entry point.
 func ResolveDeploymentIntent(
 	deploy *deploymentResolution.ResolvedDeployment,
 	serviceUnits map[string]*serviceunitResolution.ResolvedServiceUnit,

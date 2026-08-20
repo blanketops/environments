@@ -17,6 +17,8 @@ package runtime
 
 import "os"
 
+// Context holds platform runtime configuration (secret names, cluster
+// identity, webhook URLs) sourced from the process environment.
 type Context struct {
 	Environment string
 	ClusterName string
@@ -33,6 +35,8 @@ type Context struct {
 	Extra map[string]string
 }
 
+// FromEnv builds a Context from BLANKETOPS_* environment variables,
+// falling back to platform defaults for anything unset.
 func FromEnv() *Context {
 	return &Context{
 		Environment: getEnv("BLANKETOPS_ENV", "dev"),

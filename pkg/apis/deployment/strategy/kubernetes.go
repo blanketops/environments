@@ -35,6 +35,7 @@ type K8SStrategy struct {
 	Log logr.Logger
 }
 
+// NewK8SStrategy constructs a K8SStrategy wrapping the given K8SProvider.
 func NewK8SStrategy(k8s *api.K8SProvider, log logr.Logger) *K8SStrategy {
 	return &K8SStrategy{
 		K8S: k8s,
@@ -42,10 +43,13 @@ func NewK8SStrategy(k8s *api.K8SProvider, log logr.Logger) *K8SStrategy {
 	}
 }
 
+// Runtime reports that K8SStrategy handles intent.RuntimeKubernetes.
 func (s *K8SStrategy) Runtime() intent.Runtime {
 	return intent.RuntimeKubernetes
 }
 
+// Supports reports whether K8SStrategy can run the given rollout strategy
+// (only Rolling and BlueGreen).
 func (s *K8SStrategy) Supports(
 	strategy intent.Strategy,
 ) bool {
@@ -59,6 +63,8 @@ func (s *K8SStrategy) Supports(
 	}
 }
 
+// Execute dispatches dIntent's rollout strategy (Rolling, BlueGreen) to the
+// matching apply path, delegating the actual object apply to K8S.
 func (s *K8SStrategy) Execute(
 	ctx context.Context,
 	dIntent *intent.DeploymentIntent,

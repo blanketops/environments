@@ -73,7 +73,7 @@ See also:
 
 
 <a name="BackendSelector"></a>
-## type BackendSelector
+## type [BackendSelector](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/application/backend_selector.go#L42-L44>)
 
 BackendSelector maps a domain.Domain to the correct Provider based on TLSStrategy. KnativeProvider handles both platform and custom strategies internally via its own strategy switch — the BackendSelector is the first line of defence.
 
@@ -84,7 +84,7 @@ type BackendSelector struct {
 ```
 
 <a name="NewBackendSelector"></a>
-### func NewBackendSelector
+### func [NewBackendSelector](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/application/backend_selector.go#L47>)
 
 ```go
 func NewBackendSelector(knative api.Provider) *BackendSelector
@@ -93,7 +93,7 @@ func NewBackendSelector(knative api.Provider) *BackendSelector
 NewBackendSelector constructs a BackendSelector with the registered domain provider.
 
 <a name="BackendSelector.ForDomain"></a>
-### func \(\*BackendSelector\) ForDomain
+### func \(\*BackendSelector\) [ForDomain](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/application/backend_selector.go#L54>)
 
 ```go
 func (b *BackendSelector) ForDomain(d domain.Domain) (api.Provider, error)
@@ -102,7 +102,7 @@ func (b *BackendSelector) ForDomain(d domain.Domain) (api.Provider, error)
 ForDomain returns the Provider for the given Domain. Both TLSStrategyPlatform and TLSStrategyCustom map to KnativeProvider. Unknown strategies return ErrStrategyUnknown.
 
 <a name="DomainService"></a>
-## type DomainService
+## type [DomainService](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/application/service.go#L56-L60>)
 
 DomainService orchestrates the domain reconciliation pipeline. It is stateless beyond its collaborators and safe for concurrent use.
 
@@ -113,7 +113,7 @@ type DomainService struct {
 ```
 
 <a name="NewDomainService"></a>
-### func NewDomainService
+### func [NewDomainService](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/application/service.go#L63>)
 
 ```go
 func NewDomainService(mapper *Mapper, status *StatusWriter, backend *BackendSelector) *DomainService
@@ -122,7 +122,7 @@ func NewDomainService(mapper *Mapper, status *StatusWriter, backend *BackendSele
 NewDomainService constructs a DomainService with the required collaborators.
 
 <a name="DomainService.Reconcile"></a>
-### func \(\*DomainService\) Reconcile
+### func \(\*DomainService\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/application/service.go#L75>)
 
 ```go
 func (s *DomainService) Reconcile(ctx context.Context, resolved *domainResolution.ResolvedDomain) error
@@ -131,7 +131,7 @@ func (s *DomainService) Reconcile(ctx context.Context, resolved *domainResolutio
 Reconcile executes the full domain pipeline for a resolved Domain CR. It maps, selects, dispatches, and writes conditions in sequence. Scalar status fields are published to the cache by the controller — not written here, because DomainStatus.Contract is opaque.
 
 <a name="Mapper"></a>
-## type Mapper
+## type [Mapper](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/application/mapper.go#L37>)
 
 Mapper translates a ResolvedDomain into a domain.Domain aggregate.
 
@@ -140,7 +140,7 @@ type Mapper struct{}
 ```
 
 <a name="NewMapper"></a>
-### func NewMapper
+### func [NewMapper](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/application/mapper.go#L40>)
 
 ```go
 func NewMapper() *Mapper
@@ -149,7 +149,7 @@ func NewMapper() *Mapper
 NewMapper constructs a Mapper.
 
 <a name="Mapper.MapResolvedToDomain"></a>
-### func \(Mapper\) MapResolvedToDomain
+### func \(Mapper\) [MapResolvedToDomain](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/application/mapper.go#L50>)
 
 ```go
 func (Mapper) MapResolvedToDomain(rd *domainResolution.ResolvedDomain) domain.Domain
@@ -160,7 +160,7 @@ MapResolvedToDomain converts a fully resolved Domain into a domain.Domain for co
 Panics on resolver invariant violations \(empty Host, nil TLSStrategy, empty RouteRef.Name\) — these indicate a resolver bug, not a user error, and must not be silently swallowed. All other fields are mapped verbatim.
 
 <a name="StatusWriter"></a>
-## type StatusWriter
+## type [StatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/application/status.go#L49-L52>)
 
 StatusWriter persists Domain conditions to the CR status. It does NOT derive conditions, manage phase transitions, or set scalar fields. Callers set scalar fields on the CR directly; this writer merges conditions and persists via Status\(\).Update\(\).
 
@@ -172,7 +172,7 @@ type StatusWriter struct {
 ```
 
 <a name="NewStatusWriter"></a>
-### func NewStatusWriter
+### func [NewStatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/application/status.go#L55>)
 
 ```go
 func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter
@@ -181,7 +181,7 @@ func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter
 NewStatusWriter constructs a StatusWriter with the given client and logger.
 
 <a name="StatusWriter.Write"></a>
-### func \(\*StatusWriter\) Write
+### func \(\*StatusWriter\) [Write](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/application/status.go#L69>)
 
 ```go
 func (w *StatusWriter) Write(ctx context.Context, cr *networksv1alpha1.Domain, conditions ...metav1.Condition) error

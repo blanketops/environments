@@ -36,16 +36,21 @@ import (
 	"github.com/blanketops/environments/resolution/environment/resolve"
 )
 
+// Adapter is a thin struct wrapper around resolve.ResolveEnvironment,
+// satisfying interface-based injection points that need a concrete
+// resolution dependency rather than a free function.
 type Adapter struct {
 	// future deps:
 	// client client.Client
 	// log    logr.Logger
 }
 
+// NewAdapter constructs an Adapter.
 func NewAdapter() *Adapter {
 	return &Adapter{}
 }
 
+// Resolve decodes and validates environment into a ResolvedEnvironment.
 func (a *Adapter) Resolve(ctx context.Context, environment *environmentv1alpha1.Environment) (*resolve.ResolvedEnvironment, error) {
 	return resolve.ResolveEnvironment(environment)
 }

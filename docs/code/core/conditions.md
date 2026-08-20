@@ -35,7 +35,7 @@ const (
 ```
 
 <a name="GetCondition"></a>
-## func GetCondition
+## func [GetCondition](<https://github.com/blanketops/environments/blob/main/core/conditions/conditions.go#L89>)
 
 ```go
 func GetCondition(conditions []metav1.Condition, conditionType string) *metav1.Condition
@@ -44,7 +44,7 @@ func GetCondition(conditions []metav1.Condition, conditionType string) *metav1.C
 GetCondition returns a pointer to the condition matching conditionType, or nil if no such condition exists. The pointer is into the slice — callers must not retain it across mutations of the conditions slice.
 
 <a name="HasCondition"></a>
-## func HasCondition
+## func [HasCondition](<https://github.com/blanketops/environments/blob/main/core/conditions/conditions.go#L103>)
 
 ```go
 func HasCondition(conditions []metav1.Condition, conditionType string, status metav1.ConditionStatus) bool
@@ -57,7 +57,7 @@ if conditions.HasCondition(build.Status.Conditions, "BuildResolved", conditions.
 ```
 
 <a name="SetCondition"></a>
-## func SetCondition
+## func [SetCondition](<https://github.com/blanketops/environments/blob/main/core/conditions/conditions.go#L60>)
 
 ```go
 func SetCondition(conditions *[]metav1.Condition, conditionType string, status metav1.ConditionStatus, reason, message string)

@@ -24,7 +24,7 @@ Resolution is strict: required fields that are missing or malformed return error
 
 
 <a name="Ref"></a>
-## type Ref
+## type [Ref](<https://github.com/blanketops/environments/blob/main/resolution/packages/resolve/resolve.go#L89-L93>)
 
 Ref is a Git reference — exactly one of Branch, Tag, or Commit should be set. Resolution does not enforce mutual exclusivity; consumers should prefer Commit \> Tag \> Branch when multiple are set.
 
@@ -37,7 +37,7 @@ type Ref struct {
 ```
 
 <a name="ResolvedMaintainer"></a>
-## type ResolvedMaintainer
+## type [ResolvedMaintainer](<https://github.com/blanketops/environments/blob/main/resolution/packages/resolve/resolve.go#L96-L99>)
 
 ResolvedMaintainer is a package maintainer contact.
 
@@ -49,7 +49,7 @@ type ResolvedMaintainer struct {
 ```
 
 <a name="ResolvedPackage"></a>
-## type ResolvedPackage
+## type [ResolvedPackage](<https://github.com/blanketops/environments/blob/main/resolution/packages/resolve/resolve.go#L48-L51>)
 
 ResolvedPackage is the fully resolved Package CR, pairing the original Kubernetes object with its decoded and validated spec.
 
@@ -61,7 +61,7 @@ type ResolvedPackage struct {
 ```
 
 <a name="ResolvePackage"></a>
-### func ResolvePackage
+### func [ResolvePackage](<https://github.com/blanketops/environments/blob/main/resolution/packages/resolve/resolve.go#L108>)
 
 ```go
 func ResolvePackage(pkg *environmentv1alpha1.Package) (*ResolvedPackage, error)
@@ -70,7 +70,7 @@ func ResolvePackage(pkg *environmentv1alpha1.Package) (*ResolvedPackage, error)
 ResolvePackage decodes and validates the raw JSON contract from the Package CR spec into a ResolvedPackage. Returns an error if the CR is nil, the contract is absent, or any required field is missing or malformed.
 
 <a name="ResolvedPackageRepository"></a>
-## type ResolvedPackageRepository
+## type [ResolvedPackageRepository](<https://github.com/blanketops/environments/blob/main/resolution/packages/resolve/resolve.go#L71-L74>)
 
 ResolvedPackageRepository is the resolved OCI or Carvel package repository from which the package is sourced.
 
@@ -82,7 +82,7 @@ type ResolvedPackageRepository struct {
 ```
 
 <a name="ResolvedPackageSpec"></a>
-## type ResolvedPackageSpec
+## type [ResolvedPackageSpec](<https://github.com/blanketops/environments/blob/main/resolution/packages/resolve/resolve.go#L55-L67>)
 
 ResolvedPackageSpec is the decoded and validated Package spec, ready for domain and application layer consumption.
 
@@ -103,7 +103,7 @@ type ResolvedPackageSpec struct {
 ```
 
 <a name="ResolvedStateRepository"></a>
-## type ResolvedStateRepository
+## type [ResolvedStateRepository](<https://github.com/blanketops/environments/blob/main/resolution/packages/resolve/resolve.go#L78-L84>)
 
 ResolvedStateRepository is the optional GitOps state repository where package deployment state is tracked by Carvel kapp.
 

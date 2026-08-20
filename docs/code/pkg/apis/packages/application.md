@@ -23,7 +23,7 @@ import "github.com/blanketops/environments/pkg/apis/packages/application"
 
 
 <a name="BackendSelector"></a>
-## type BackendSelector
+## type [BackendSelector](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/application/backend_selector.go#L26-L28>)
 
 BackendSelector is intentionally boring. Packages are ALWAYS executed via kapp. No strategy selection is allowed.
 
@@ -34,7 +34,7 @@ type BackendSelector struct {
 ```
 
 <a name="NewBackendSelector"></a>
-### func NewBackendSelector
+### func [NewBackendSelector](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/application/backend_selector.go#L31-L33>)
 
 ```go
 func NewBackendSelector(kapp packageapi.Provider) *BackendSelector
@@ -43,7 +43,7 @@ func NewBackendSelector(kapp packageapi.Provider) *BackendSelector
 NewBackendSelector constructs a fixed kapp executor.
 
 <a name="BackendSelector.ForIntent"></a>
-### func \(\*BackendSelector\) ForIntent
+### func \(\*BackendSelector\) [ForIntent](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/application/backend_selector.go#L41-L43>)
 
 ```go
 func (b *BackendSelector) ForIntent(_ *intent.PackageIntent) packageapi.Provider
@@ -52,25 +52,25 @@ func (b *BackendSelector) ForIntent(_ *intent.PackageIntent) packageapi.Provider
 ForIntent always returns kapp. Intent does NOT influence execution backend.
 
 <a name="Mapper"></a>
-## type Mapper
+## type [Mapper](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/application/mapper.go#L26>)
 
-
+Mapper converts a fully resolved Package into a pure domain PackageSpec.
 
 ```go
 type Mapper struct{}
 ```
 
 <a name="NewMapper"></a>
-### func NewMapper
+### func [NewMapper](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/application/mapper.go#L29>)
 
 ```go
 func NewMapper() *Mapper
 ```
 
-
+NewMapper constructs a Mapper.
 
 <a name="Mapper.MapResolvedToDomain"></a>
-### func \(Mapper\) MapResolvedToDomain
+### func \(Mapper\) [MapResolvedToDomain](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/application/mapper.go#L40>)
 
 ```go
 func (Mapper) MapResolvedToDomain(rp *pkgResolution.ResolvedPackage) *domain.PackageSpec
@@ -81,9 +81,9 @@ MapResolvedToDomain converts a fully resolved Package into a pure domain Package
 CONTRACT: \- Resolver guarantees presence of mandatory fields \- Nil values indicate a resolver bug and MUST crash loudly \- Optional fields must be preserved verbatim \- Mapper must not invent defaults or hide intent
 
 <a name="PackageService"></a>
-## type PackageService
+## type [PackageService](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/application/service.go#L27-L31>)
 
-
+PackageService orchestrates a Package's reconciliation: select a backend, execute the intent, and write the resulting status.
 
 ```go
 type PackageService struct {
@@ -92,16 +92,16 @@ type PackageService struct {
 ```
 
 <a name="NewPackageService"></a>
-### func NewPackageService
+### func [NewPackageService](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/application/service.go#L34-L38>)
 
 ```go
 func NewPackageService(mapper *Mapper, backend *BackendSelector, status *StatusWriter) *PackageService
 ```
 
-
+NewPackageService constructs a PackageService from its collaborators.
 
 <a name="PackageService.Reconcile"></a>
-### func \(\*PackageService\) Reconcile
+### func \(\*PackageService\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/application/service.go#L47-L51>)
 
 ```go
 func (s *PackageService) Reconcile(ctx context.Context, resolved *pkgResolution.ResolvedPackage, intent *pkgintent.PackageIntent) error
@@ -110,9 +110,9 @@ func (s *PackageService) Reconcile(ctx context.Context, resolved *pkgResolution.
 Reconcile executes a PackageIntent and writes authoritative status.
 
 <a name="StatusWriter"></a>
-## type StatusWriter
+## type [StatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/application/status.go#L34-L37>)
 
-
+StatusWriter writes a PackageResult back onto a Package CR's status as the authoritative, user\-facing PackageStatus.
 
 ```go
 type StatusWriter struct {
@@ -122,21 +122,21 @@ type StatusWriter struct {
 ```
 
 <a name="NewStatusWriter"></a>
-### func NewStatusWriter
+### func [NewStatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/application/status.go#L40-L43>)
 
 ```go
 func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter
 ```
 
-
+NewStatusWriter constructs a StatusWriter.
 
 <a name="StatusWriter.Write"></a>
-### func \(\*StatusWriter\) Write
+### func \(\*StatusWriter\) [Write](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/application/status.go#L52-L57>)
 
 ```go
 func (w *StatusWriter) Write(ctx context.Context, pkg *env1alpha1.Package, result *domain.PackageResult, runErr error) error
 ```
 
-
+Write derives PackageStatus from result/runErr and patches it onto pkg's status subresource.
 
 Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)

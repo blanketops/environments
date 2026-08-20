@@ -22,8 +22,13 @@ import (
 	deploymentResolution "github.com/blanketops/environments/resolution/deployment/resolve"
 )
 
+// Mapper converts a fully resolved Deployment into a pure domain
+// DeploymentSpec. Predates the Intent layer and has no callers —
+// DeploymentService goes straight from ResolvedDeployment through
+// IntentBuilder instead.
 type Mapper struct{}
 
+// NewMapper constructs a Mapper.
 func NewMapper() *Mapper {
 	return &Mapper{}
 }

@@ -23,7 +23,7 @@ See also:
 
 
 <a name="ToServiceUnitContract"></a>
-## func ToServiceUnitContract
+## func [ToServiceUnitContract](<https://github.com/blanketops/environments/blob/main/resolution/serviceunit/contract/contract_adapter.go#L47>)
 
 ```go
 func ToServiceUnitContract(s *resolve.ResolvedServiceUnitSpec) *environmentscontractv1alpha1.ServiceUnitSpec
