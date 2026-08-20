@@ -28,7 +28,7 @@ Both are supported transparently — the caller uses the same Normal/Warn/Info s
 
 
 <a name="EventRecorder"></a>
-## type [EventRecorder](<https://github.com/blanketops/environments/blob/main/core/events/events.go#L49-L56>)
+## type EventRecorder
 
 EventRecorder wraps both client\-go recorder APIs behind a unified interface. Domains call Normal, Warn, Info, FromError — never the underlying recorders directly. This keeps domain code decoupled from the recorder implementation and safe against nil recorders at setup time.
 
@@ -39,7 +39,7 @@ type EventRecorder struct {
 ```
 
 <a name="NewEventRecorder"></a>
-### func [NewEventRecorder](<https://github.com/blanketops/environments/blob/main/core/events/events.go#L62>)
+### func NewEventRecorder
 
 ```go
 func NewEventRecorder(rec interface{}) *EventRecorder
@@ -48,7 +48,7 @@ func NewEventRecorder(rec interface{}) *EventRecorder
 NewEventRecorder constructs an EventRecorder from either recorder type. Accepts recordv1.EventRecorder or eventsv1.EventRecorder — the concrete type is detected at construction time and stored in the appropriate field. An unrecognised input returns a no\-op recorder so callers are always safe.
 
 <a name="EventRecorder.Event"></a>
-### func \(\*EventRecorder\) [Event](<https://github.com/blanketops/environments/blob/main/core/events/events.go#L78-L84>)
+### func \(\*EventRecorder\) Event
 
 ```go
 func (er *EventRecorder) Event(obj client.Object, eventType string, reason string, msg string, args ...interface{})
@@ -59,7 +59,7 @@ Event emits a Kubernetes event on obj with the given eventType, reason, and form
 Safe to call with a nil receiver or nil obj — both are no\-ops. Domains should prefer Normal, Warn, Info, and FromError over calling Event directly.
 
 <a name="EventRecorder.FromError"></a>
-### func \(\*EventRecorder\) [FromError](<https://github.com/blanketops/environments/blob/main/core/events/events.go#L170-L174>)
+### func \(\*EventRecorder\) FromError
 
 ```go
 func (er *EventRecorder) FromError(obj client.Object, reason string, err error)
@@ -72,7 +72,7 @@ d.events.FromError(buildCR, "BuildResolveFailed", err)
 ```
 
 <a name="EventRecorder.FromErrorf"></a>
-### func \(\*EventRecorder\) [FromErrorf](<https://github.com/blanketops/environments/blob/main/core/events/events.go#L186-L192>)
+### func \(\*EventRecorder\) FromErrorf
 
 ```go
 func (er *EventRecorder) FromErrorf(obj client.Object, reason string, err error, msg string, args ...interface{})
@@ -85,7 +85,7 @@ d.events.FromErrorf(buildCR, "BuildPrerequisitesFailed", err, "namespace %s", ns
 ```
 
 <a name="EventRecorder.Info"></a>
-### func \(\*EventRecorder\) [Info](<https://github.com/blanketops/environments/blob/main/core/events/events.go#L146-L151>)
+### func \(\*EventRecorder\) Info
 
 ```go
 func (er *EventRecorder) Info(obj client.Object, reason string, msg string, args ...interface{})
@@ -94,7 +94,7 @@ func (er *EventRecorder) Info(obj client.Object, reason string, msg string, args
 Info is an alias for Normal. Used at call sites where "informational" reads more naturally than "normal" \(e.g. deletion acknowledgements\).
 
 <a name="EventRecorder.Normal"></a>
-### func \(\*EventRecorder\) [Normal](<https://github.com/blanketops/environments/blob/main/core/events/events.go#L135-L140>)
+### func \(\*EventRecorder\) Normal
 
 ```go
 func (er *EventRecorder) Normal(obj client.Object, reason string, msg string, args ...interface{})
@@ -103,7 +103,7 @@ func (er *EventRecorder) Normal(obj client.Object, reason string, msg string, ar
 Normal emits a Normal\-type event on obj. Used for successful stage transitions in the reconciliation pipeline.
 
 <a name="EventRecorder.Warn"></a>
-### func \(\*EventRecorder\) [Warn](<https://github.com/blanketops/environments/blob/main/core/events/events.go#L157-L162>)
+### func \(\*EventRecorder\) Warn
 
 ```go
 func (er *EventRecorder) Warn(obj client.Object, reason string, msg string, args ...interface{})

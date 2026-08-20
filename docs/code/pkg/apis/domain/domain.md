@@ -90,7 +90,7 @@ var (
 ```
 
 <a name="Domain"></a>
-## type [Domain](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/domain/model.go#L40-L65>)
+## type Domain
 
 Domain is the authoritative domain aggregate for the Domain CR. Constructed once by the mapper; consumed by the application service and Knative provider. Never mutated after construction.
 
@@ -124,7 +124,7 @@ type Domain struct {
 ```
 
 <a name="DomainResult"></a>
-## type [DomainResult](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/domain/result.go#L32-L44>)
+## type DomainResult
 
 DomainResult is the outcome of a single Provider.Ensure call. Returned by every backend implementation.
 
@@ -145,7 +145,7 @@ type DomainResult struct {
 ```
 
 <a name="DomainResult.Provisioned"></a>
-### func \(DomainResult\) [Provisioned](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/domain/result.go#L49>)
+### func \(DomainResult\) Provisioned
 
 ```go
 func (r DomainResult) Provisioned() bool
@@ -154,7 +154,7 @@ func (r DomainResult) Provisioned() bool
 Provisioned returns true when the provider successfully completed the cert/mapping chain \(Phase == PhaseReady\). Callers use this as the success predicate before reading CertIssued.
 
 <a name="MTLS"></a>
-## type [MTLS](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/domain/model.go#L84-L88>)
+## type MTLS
 
 MTLS carries the inter\-service mTLS configuration for a Domain.
 
@@ -167,7 +167,7 @@ type MTLS struct {
 ```
 
 <a name="Phase"></a>
-## type [Phase](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/domain/state.go#L29>)
+## type Phase
 
 Phase represents the current lifecycle phase of a Domain CR. Set by the status writer after each provider Ensure call.
 
@@ -199,7 +199,7 @@ const (
 ```
 
 <a name="TLSStrategy"></a>
-## type [TLSStrategy](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/domain/model.go#L69>)
+## type TLSStrategy
 
 TLSStrategy identifies the cert provisioning path for a Domain. Mirrors blanketops.common.v1.DomainTLSStrategy in the proto contract.
 

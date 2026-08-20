@@ -17,7 +17,7 @@ Package packageregistry reconciles the Package registry credential secret — th
 
 
 <a name="PackageRegistrySecretReconciler"></a>
-## type [PackageRegistrySecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/registry/packageregistry/packageregistry.go#L41-L46>)
+## type PackageRegistrySecretReconciler
 
 PackageRegistrySecretReconciler converges the ExternalSecret backing a Package's declared package repository credentials — the same lifecycle as BuildRegistryExternalSecretReconciler, scoped to Package.
 
@@ -31,7 +31,7 @@ type PackageRegistrySecretReconciler struct {
 ```
 
 <a name="NewPackageRegistrySecretReconciler"></a>
-### func [NewPackageRegistrySecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/registry/packageregistry/packageregistry.go#L50>)
+### func NewPackageRegistrySecretReconciler
 
 ```go
 func NewPackageRegistrySecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *PackageRegistrySecretReconciler
@@ -40,7 +40,7 @@ func NewPackageRegistrySecretReconciler(c client.Client, log logr.Logger, storeN
 NewPackageRegistrySecretReconciler constructs a PackageRegistrySecretReconciler targeting the given ESO store.
 
 <a name="PackageRegistrySecretReconciler.Delete"></a>
-### func \(\*PackageRegistrySecretReconciler\) [Delete](<https://github.com/blanketops/environments/blob/main/pkg/secrets/registry/packageregistry/packageregistry.go#L151>)
+### func \(\*PackageRegistrySecretReconciler\) Delete
 
 ```go
 func (r *PackageRegistrySecretReconciler) Delete(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage) error
@@ -49,7 +49,7 @@ func (r *PackageRegistrySecretReconciler) Delete(ctx context.Context, resolvedPa
 Delete removes both the ExternalSecret and the Secret ESO materialized from it. See git.BuildGitSSHSecretReconciler.Delete for why the Secret must be deleted explicitly rather than left to the ExternalSecret's ownerReference GC cascade.
 
 <a name="PackageRegistrySecretReconciler.Reconcile"></a>
-### func \(\*PackageRegistrySecretReconciler\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/secrets/registry/packageregistry/packageregistry.go#L61>)
+### func \(\*PackageRegistrySecretReconciler\) Reconcile
 
 ```go
 func (r *PackageRegistrySecretReconciler) Reconcile(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage) error

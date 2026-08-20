@@ -21,7 +21,7 @@ RouteIntent \(route.go\) and WorkloadIntent \(workload.go\) are populated as par
 
 
 <a name="ErrBuildNotReady"></a>
-## func [ErrBuildNotReady](<https://github.com/blanketops/environments/blob/main/pkg/intent/serviceunit/errors.go#L22>)
+## func ErrBuildNotReady
 
 ```go
 func ErrBuildNotReady(name string) error
@@ -30,7 +30,7 @@ func ErrBuildNotReady(name string) error
 ErrBuildNotReady indicates the named ServiceUnit's image\-providing Build has not yet produced a usable image.
 
 <a name="ErrInvalidServiceUnit"></a>
-## func [ErrInvalidServiceUnit](<https://github.com/blanketops/environments/blob/main/pkg/intent/serviceunit/errors.go#L28>)
+## func ErrInvalidServiceUnit
 
 ```go
 func ErrInvalidServiceUnit(name, reason string) error
@@ -39,7 +39,7 @@ func ErrInvalidServiceUnit(name, reason string) error
 ErrInvalidServiceUnit indicates a semantic error in a resolved ServiceUnit. This means the resolver violated an invariant or the contract is invalid.
 
 <a name="RouteIntent"></a>
-## type [RouteIntent](<https://github.com/blanketops/environments/blob/main/pkg/intent/serviceunit/route.go#L20-L25>)
+## type RouteIntent
 
 RouteIntent is a ServiceUnit's resolved routing configuration, carried on ServiceUnitIntent.
 
@@ -52,7 +52,7 @@ type RouteIntent struct {
 ```
 
 <a name="ServiceUnitIntent"></a>
-## type [ServiceUnitIntent](<https://github.com/blanketops/environments/blob/main/pkg/intent/serviceunit/serviceunit.go#L38-L46>)
+## type ServiceUnitIntent
 
 ServiceUnitIntent is a ServiceUnit's fully resolved deployment intent \(image, port, size, routes\), plus its Workload once resolution runs.
 
@@ -69,7 +69,7 @@ type ServiceUnitIntent struct {
 ```
 
 <a name="ResolveServiceUnitIntent"></a>
-### func [ResolveServiceUnitIntent](<https://github.com/blanketops/environments/blob/main/pkg/intent/serviceunit/serviceunit.go#L51-L53>)
+### func ResolveServiceUnitIntent
 
 ```go
 func ResolveServiceUnitIntent(su *serviceunitResolution.ResolvedServiceUnit) (*ServiceUnitIntent, error)
@@ -78,7 +78,7 @@ func ResolveServiceUnitIntent(su *serviceunitResolution.ResolvedServiceUnit) (*S
 ResolveServiceUnitIntent builds a ServiceUnitIntent from a fully resolved ServiceUnit — the ServiceUnit resolves its own deployment intent rather than Deployment reaching into it.
 
 <a name="WorkloadIntent"></a>
-## type [WorkloadIntent](<https://github.com/blanketops/environments/blob/main/pkg/intent/serviceunit/workload.go#L20-L25>)
+## type WorkloadIntent
 
 WorkloadIntent points to the concrete runtime object created \(Deployment, Knative Service, ECS Service, etc\)
 

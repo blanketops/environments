@@ -22,7 +22,7 @@ import "github.com/blanketops/environments/cache/gitrepository"
 
 
 <a name="GitRepositoryCache"></a>
-## type [GitRepositoryCache](<https://github.com/blanketops/environments/blob/main/cache/gitrepository/gitrepository.go#L29-L31>)
+## type GitRepositoryCache
 
 GitRepositoryCache provides domain\-specific, field\-level caching for GitRepository resources.
 
@@ -33,7 +33,7 @@ type GitRepositoryCache struct {
 ```
 
 <a name="NewGitRepositoryCache"></a>
-### func [NewGitRepositoryCache](<https://github.com/blanketops/environments/blob/main/cache/gitrepository/gitrepository.go#L34>)
+### func NewGitRepositoryCache
 
 ```go
 func NewGitRepositoryCache(c *cache.Cache) *GitRepositoryCache
@@ -42,7 +42,7 @@ func NewGitRepositoryCache(c *cache.Cache) *GitRepositoryCache
 NewGitRepositoryCache constructs a new GitRepositoryCache with the provided cache.Cache.
 
 <a name="GitRepositoryCache.GetHookURL"></a>
-### func \(\*GitRepositoryCache\) [GetHookURL](<https://github.com/blanketops/environments/blob/main/cache/gitrepository/gitrepository.go#L61>)
+### func \(\*GitRepositoryCache\) GetHookURL
 
 ```go
 func (g *GitRepositoryCache) GetHookURL(ctx context.Context, nn types.NamespacedName, gen int64, name string) (string, bool, error)
@@ -51,7 +51,7 @@ func (g *GitRepositoryCache) GetHookURL(ctx context.Context, nn types.Namespaced
 
 
 <a name="GitRepositoryCache.GetProvider"></a>
-### func \(\*GitRepositoryCache\) [GetProvider](<https://github.com/blanketops/environments/blob/main/cache/gitrepository/gitrepository.go#L47>)
+### func \(\*GitRepositoryCache\) GetProvider
 
 ```go
 func (g *GitRepositoryCache) GetProvider(ctx context.Context, nn types.NamespacedName, gen int64, name string) (string, bool, error)
@@ -60,7 +60,7 @@ func (g *GitRepositoryCache) GetProvider(ctx context.Context, nn types.Namespace
 
 
 <a name="GitRepositoryCache.GetRepository"></a>
-### func \(\*GitRepositoryCache\) [GetRepository](<https://github.com/blanketops/environments/blob/main/cache/gitrepository/gitrepository.go#L75>)
+### func \(\*GitRepositoryCache\) GetRepository
 
 ```go
 func (g *GitRepositoryCache) GetRepository(ctx context.Context, nn types.NamespacedName, gen int64, name string, into any) (bool, error)
@@ -69,7 +69,7 @@ func (g *GitRepositoryCache) GetRepository(ctx context.Context, nn types.Namespa
 
 
 <a name="GitRepositoryCache.GetWebhooks"></a>
-### func \(\*GitRepositoryCache\) [GetWebhooks](<https://github.com/blanketops/environments/blob/main/cache/gitrepository/gitrepository.go#L87>)
+### func \(\*GitRepositoryCache\) GetWebhooks
 
 ```go
 func (g *GitRepositoryCache) GetWebhooks(ctx context.Context, nn types.NamespacedName, gen int64, name string, into any) (bool, error)
@@ -78,7 +78,7 @@ func (g *GitRepositoryCache) GetWebhooks(ctx context.Context, nn types.Namespace
 
 
 <a name="GitRepositoryCache.PublishResolved"></a>
-### func \(\*GitRepositoryCache\) [PublishResolved](<https://github.com/blanketops/environments/blob/main/cache/gitrepository/gitrepository.go#L96>)
+### func \(\*GitRepositoryCache\) PublishResolved
 
 ```go
 func (g *GitRepositoryCache) PublishResolved(ctx context.Context, nn types.NamespacedName, gen int64, r *gitrepositoryResolution.ResolvedGitRepository) error
@@ -87,7 +87,7 @@ func (g *GitRepositoryCache) PublishResolved(ctx context.Context, nn types.Names
 PublishResolved writes the resolved repository contract as a generation\-scoped, field\-level projection. All writes are best\-effort: failures cost queryability, never correctness. Returns the first error encountered for optional logging; callers should not fail reconciliation on it.
 
 <a name="GitRepositoryCache.SetHookURL"></a>
-### func \(\*GitRepositoryCache\) [SetHookURL](<https://github.com/blanketops/environments/blob/main/cache/gitrepository/gitrepository.go#L57>)
+### func \(\*GitRepositoryCache\) SetHookURL
 
 ```go
 func (g *GitRepositoryCache) SetHookURL(ctx context.Context, nn types.NamespacedName, gen int64, name string, url string) error
@@ -96,7 +96,7 @@ func (g *GitRepositoryCache) SetHookURL(ctx context.Context, nn types.Namespaced
 
 
 <a name="GitRepositoryCache.SetProvider"></a>
-### func \(\*GitRepositoryCache\) [SetProvider](<https://github.com/blanketops/environments/blob/main/cache/gitrepository/gitrepository.go#L43>)
+### func \(\*GitRepositoryCache\) SetProvider
 
 ```go
 func (g *GitRepositoryCache) SetProvider(ctx context.Context, nn types.NamespacedName, gen int64, name string, provider string) error
@@ -105,7 +105,7 @@ func (g *GitRepositoryCache) SetProvider(ctx context.Context, nn types.Namespace
 
 
 <a name="GitRepositoryCache.SetRepository"></a>
-### func \(\*GitRepositoryCache\) [SetRepository](<https://github.com/blanketops/environments/blob/main/cache/gitrepository/gitrepository.go#L71>)
+### func \(\*GitRepositoryCache\) SetRepository
 
 ```go
 func (g *GitRepositoryCache) SetRepository(ctx context.Context, nn types.NamespacedName, gen int64, name string, repo any) error
@@ -114,7 +114,7 @@ func (g *GitRepositoryCache) SetRepository(ctx context.Context, nn types.Namespa
 
 
 <a name="GitRepositoryCache.SetWebhooks"></a>
-### func \(\*GitRepositoryCache\) [SetWebhooks](<https://github.com/blanketops/environments/blob/main/cache/gitrepository/gitrepository.go#L83>)
+### func \(\*GitRepositoryCache\) SetWebhooks
 
 ```go
 func (g *GitRepositoryCache) SetWebhooks(ctx context.Context, nn types.NamespacedName, gen int64, name string, webhooks any) error

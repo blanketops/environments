@@ -28,7 +28,7 @@ When no workers are configured \(workers == 0\), Queue\(\) falls through to Exec
 
 
 <a name="Engine"></a>
-## type [Engine](<https://github.com/blanketops/environments/blob/main/core/engine/engine.go#L54-L75>)
+## type Engine
 
 Engine routes Commands to the correct Domain and supports both synchronous and async execution modes. A single Engine instance is shared across all controllers registered with the manager.
 
@@ -39,7 +39,7 @@ type Engine struct {
 ```
 
 <a name="NewEngine"></a>
-### func [NewEngine](<https://github.com/blanketops/environments/blob/main/core/engine/engine.go#L80>)
+### func NewEngine
 
 ```go
 func NewEngine(registry *registry.Registry, logger logr.Logger) *Engine
@@ -48,7 +48,7 @@ func NewEngine(registry *registry.Registry, logger logr.Logger) *Engine
 NewEngine constructs an Engine bound to the given Registry and logger. The engine starts in synchronous mode \(workers == 0\). Call SetWorkers and StartWorkers to enable async execution.
 
 <a name="Engine.Execute"></a>
-### func \(\*Engine\) [Execute](<https://github.com/blanketops/environments/blob/main/core/engine/engine.go#L101>)
+### func \(\*Engine\) Execute
 
 ```go
 func (e *Engine) Execute(ctx context.Context, cmd command.Command) error
@@ -57,7 +57,7 @@ func (e *Engine) Execute(ctx context.Context, cmd command.Command) error
 Execute dispatches a Command synchronously to the Domain registered for cmd.GVK. Returns an error if no Domain is registered or if Handle fails. The error propagates back to controller\-runtime as a requeue signal.
 
 <a name="Engine.Queue"></a>
-### func \(\*Engine\) [Queue](<https://github.com/blanketops/environments/blob/main/core/engine/engine.go#L113>)
+### func \(\*Engine\) Queue
 
 ```go
 func (e *Engine) Queue(ctx context.Context, cmd command.Command) error
@@ -66,7 +66,7 @@ func (e *Engine) Queue(ctx context.Context, cmd command.Command) error
 Queue enqueues a Command for async processing when workers \> 0, or falls through to Execute when in synchronous mode. Blocks if the queue is full and returns ctx.Err\(\) if the context is cancelled while waiting.
 
 <a name="Engine.SetWorkers"></a>
-### func \(\*Engine\) [SetWorkers](<https://github.com/blanketops/environments/blob/main/core/engine/engine.go#L92>)
+### func \(\*Engine\) SetWorkers
 
 ```go
 func (e *Engine) SetWorkers(n int)
@@ -75,7 +75,7 @@ func (e *Engine) SetWorkers(n int)
 SetWorkers configures the async worker pool size. Must be called before StartWorkers. Zero \(default\) keeps the Engine in synchronous mode.
 
 <a name="Engine.StartWorkers"></a>
-### func \(\*Engine\) [StartWorkers](<https://github.com/blanketops/environments/blob/main/core/engine/engine.go#L128>)
+### func \(\*Engine\) StartWorkers
 
 ```go
 func (e *Engine) StartWorkers()
@@ -84,7 +84,7 @@ func (e *Engine) StartWorkers()
 StartWorkers spawns the configured number of async worker goroutines. No\-op when workers == 0. Safe to call once at manager startup after SetWorkers.
 
 <a name="Engine.StopWorkers"></a>
-### func \(\*Engine\) [StopWorkers](<https://github.com/blanketops/environments/blob/main/core/engine/engine.go#L150>)
+### func \(\*Engine\) StopWorkers
 
 ```go
 func (e *Engine) StopWorkers(timeout time.Duration)

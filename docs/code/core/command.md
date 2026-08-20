@@ -25,7 +25,7 @@ controller-runtime event → Command → Engine → Domain → reconciliation
 
 
 <a name="Command"></a>
-## type [Command](<https://github.com/blanketops/environments/blob/main/core/command/command.go#L63-L79>)
+## type Command
 
 Command is the atomic unit of intent in the BlanketOps CQRS engine. It is constructed by a controller from a controller\-runtime reconcile request and routed by the Engine to the Domain whose GVK matches.
 
@@ -52,7 +52,7 @@ type Command struct {
 ```
 
 <a name="Command.Clone"></a>
-### func \(Command\) [Clone](<https://github.com/blanketops/environments/blob/main/core/command/command.go#L107>)
+### func \(Command\) Clone
 
 ```go
 func (c Command) Clone() Command
@@ -61,7 +61,7 @@ func (c Command) Clone() Command
 Clone returns a shallow copy of the Command with Obj deep\-copied. Old and New are not deep\-copied — they are reference\-copied. Use Clone when dispatching a Command to an async worker or retry queue where the caller may mutate Obj after dispatch.
 
 <a name="Command.Name"></a>
-### func \(Command\) [Name](<https://github.com/blanketops/environments/blob/main/core/command/command.go#L82>)
+### func \(Command\) Name
 
 ```go
 func (c Command) Name() string
@@ -70,7 +70,7 @@ func (c Command) Name() string
 Name returns the object's name, or empty string if Obj is nil.
 
 <a name="Command.Namespace"></a>
-### func \(Command\) [Namespace](<https://github.com/blanketops/environments/blob/main/core/command/command.go#L90>)
+### func \(Command\) Namespace
 
 ```go
 func (c Command) Namespace() string
@@ -79,7 +79,7 @@ func (c Command) Namespace() string
 Namespace returns the object's namespace, or empty string if Obj is nil.
 
 <a name="Command.String"></a>
-### func \(Command\) [String](<https://github.com/blanketops/environments/blob/main/core/command/command.go#L99>)
+### func \(Command\) String
 
 ```go
 func (c Command) String() string
@@ -88,7 +88,7 @@ func (c Command) String() string
 String returns a concise log\-friendly representation of the command, suitable for structured log values and error messages.
 
 <a name="CommandType"></a>
-## type [CommandType](<https://github.com/blanketops/environments/blob/main/core/command/command.go#L39>)
+## type CommandType
 
 CommandType identifies the lifecycle operation being requested. Values align with the three controller\-runtime event types and map directly to the CQRS create/update/delete intent model.
 

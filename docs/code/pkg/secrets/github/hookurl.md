@@ -27,7 +27,7 @@ const HookURLSecretKey = "url"
 ```
 
 <a name="HookURLSecretName"></a>
-## func [HookURLSecretName](<https://github.com/blanketops/environments/blob/main/pkg/secrets/github/hookurl/hookurl.go#L44>)
+## func HookURLSecretName
 
 ```go
 func HookURLSecretName(repoName string) string
@@ -36,7 +36,7 @@ func HookURLSecretName(repoName string) string
 HookURLSecretName returns the per\-repository hookurl Secret name.
 
 <a name="HookURLSecretReconciler"></a>
-## type [HookURLSecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/github/hookurl/hookurl.go#L56-L60>)
+## type HookURLSecretReconciler
 
 HookURLSecretReconciler materializes the webhook delivery URL as a plain Secret. The URL's source of truth is spec.contract.hookUrl on the GitRepository CR — user\-declared, not store\-managed. No ESO involvement: there is no external producer for this value, so an ExternalSecret would reference a key nothing populates. The Secret exists only because Upjet's RepositoryWebhook consumes the URL via urlSecretRef \(the Terraform provider marks webhook URLs sensitive; Upjet mechanically converts sensitive fields to secret references\).
 
@@ -49,7 +49,7 @@ type HookURLSecretReconciler struct {
 ```
 
 <a name="NewHookURLSecretReconciler"></a>
-### func [NewHookURLSecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/github/hookurl/hookurl.go#L63>)
+### func NewHookURLSecretReconciler
 
 ```go
 func NewHookURLSecretReconciler(c client.Client, scheme *runtime.Scheme, log logr.Logger) *HookURLSecretReconciler
@@ -58,7 +58,7 @@ func NewHookURLSecretReconciler(c client.Client, scheme *runtime.Scheme, log log
 NewHookURLSecretReconciler constructs a HookURLSecretReconciler.
 
 <a name="HookURLSecretReconciler.Delete"></a>
-### func \(\*HookURLSecretReconciler\) [Delete](<https://github.com/blanketops/environments/blob/main/pkg/secrets/github/hookurl/hookurl.go#L116>)
+### func \(\*HookURLSecretReconciler\) Delete
 
 ```go
 func (r *HookURLSecretReconciler) Delete(ctx context.Context, repo *gitrepoResolution.ResolvedGitRepository) error
@@ -67,7 +67,7 @@ func (r *HookURLSecretReconciler) Delete(ctx context.Context, repo *gitrepoResol
 Delete removes repo's hookurl Secret, if it exists.
 
 <a name="HookURLSecretReconciler.Reconcile"></a>
-### func \(\*HookURLSecretReconciler\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/secrets/github/hookurl/hookurl.go#L69>)
+### func \(\*HookURLSecretReconciler\) Reconcile
 
 ```go
 func (r *HookURLSecretReconciler) Reconcile(ctx context.Context, resolved *gitrepoResolution.ResolvedGitRepository) error

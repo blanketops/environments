@@ -26,7 +26,7 @@ See also:
 
 
 <a name="Adapter"></a>
-## type [Adapter](<https://github.com/blanketops/environments/blob/main/resolution/domain/adapter/adapter.go#L48-L52>)
+## type Adapter
 
 Adapter wraps the Domain resolution function for interface\-based injection. Stateless — all resolution logic lives in resolve.ResolveDomain.
 
@@ -41,7 +41,7 @@ type Adapter struct {
 ```
 
 <a name="NewAdapter"></a>
-### func [NewAdapter](<https://github.com/blanketops/environments/blob/main/resolution/domain/adapter/adapter.go#L55>)
+### func NewAdapter
 
 ```go
 func NewAdapter() *Adapter
@@ -50,7 +50,7 @@ func NewAdapter() *Adapter
 NewAdapter constructs a stateless Domain resolution Adapter.
 
 <a name="Adapter.Resolve"></a>
-### func \(\*Adapter\) [Resolve](<https://github.com/blanketops/environments/blob/main/resolution/domain/adapter/adapter.go#L61>)
+### func \(\*Adapter\) Resolve
 
 ```go
 func (a *Adapter) Resolve(ctx context.Context, domain *networksv1alpha1.Domain) (*resolve.ResolvedDomain, error)

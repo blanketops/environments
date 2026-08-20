@@ -28,7 +28,7 @@ import "github.com/blanketops/environments/cache/deployment"
 
 
 <a name="DeploymentCache"></a>
-## type [DeploymentCache](<https://github.com/blanketops/environments/blob/main/cache/deployment/deployment.go#L29-L31>)
+## type DeploymentCache
 
 DeploymentCache provides domain\-specific, field\-level caching for Deployment resources.
 
@@ -39,7 +39,7 @@ type DeploymentCache struct {
 ```
 
 <a name="NewDeploymentCache"></a>
-### func [NewDeploymentCache](<https://github.com/blanketops/environments/blob/main/cache/deployment/deployment.go#L34>)
+### func NewDeploymentCache
 
 ```go
 func NewDeploymentCache(c *cache.Cache) *DeploymentCache
@@ -48,7 +48,7 @@ func NewDeploymentCache(c *cache.Cache) *DeploymentCache
 NewDeploymentCache constructs a new DeploymentCache with the provided cache.Cache.
 
 <a name="DeploymentCache.GetGitOwner"></a>
-### func \(\*DeploymentCache\) [GetGitOwner](<https://github.com/blanketops/environments/blob/main/cache/deployment/deployment.go#L117>)
+### func \(\*DeploymentCache\) GetGitOwner
 
 ```go
 func (d *DeploymentCache) GetGitOwner(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -57,7 +57,7 @@ func (d *DeploymentCache) GetGitOwner(ctx context.Context, nn types.NamespacedNa
 
 
 <a name="DeploymentCache.GetImageAutomation"></a>
-### func \(\*DeploymentCache\) [GetImageAutomation](<https://github.com/blanketops/environments/blob/main/cache/deployment/deployment.go#L89>)
+### func \(\*DeploymentCache\) GetImageAutomation
 
 ```go
 func (d *DeploymentCache) GetImageAutomation(ctx context.Context, nn types.NamespacedName, gen int64) (bool, bool, error)
@@ -66,7 +66,7 @@ func (d *DeploymentCache) GetImageAutomation(ctx context.Context, nn types.Names
 
 
 <a name="DeploymentCache.GetManifestsRepo"></a>
-### func \(\*DeploymentCache\) [GetManifestsRepo](<https://github.com/blanketops/environments/blob/main/cache/deployment/deployment.go#L131>)
+### func \(\*DeploymentCache\) GetManifestsRepo
 
 ```go
 func (d *DeploymentCache) GetManifestsRepo(ctx context.Context, nn types.NamespacedName, gen int64, into any) (bool, error)
@@ -75,7 +75,7 @@ func (d *DeploymentCache) GetManifestsRepo(ctx context.Context, nn types.Namespa
 
 
 <a name="DeploymentCache.GetReconciliationStrategy"></a>
-### func \(\*DeploymentCache\) [GetReconciliationStrategy](<https://github.com/blanketops/environments/blob/main/cache/deployment/deployment.go#L103>)
+### func \(\*DeploymentCache\) GetReconciliationStrategy
 
 ```go
 func (d *DeploymentCache) GetReconciliationStrategy(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -84,7 +84,7 @@ func (d *DeploymentCache) GetReconciliationStrategy(ctx context.Context, nn type
 
 
 <a name="DeploymentCache.GetRuntime"></a>
-### func \(\*DeploymentCache\) [GetRuntime](<https://github.com/blanketops/environments/blob/main/cache/deployment/deployment.go#L61>)
+### func \(\*DeploymentCache\) GetRuntime
 
 ```go
 func (d *DeploymentCache) GetRuntime(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -93,7 +93,7 @@ func (d *DeploymentCache) GetRuntime(ctx context.Context, nn types.NamespacedNam
 
 
 <a name="DeploymentCache.GetServiceUnits"></a>
-### func \(\*DeploymentCache\) [GetServiceUnits](<https://github.com/blanketops/environments/blob/main/cache/deployment/deployment.go#L47>)
+### func \(\*DeploymentCache\) GetServiceUnits
 
 ```go
 func (d *DeploymentCache) GetServiceUnits(ctx context.Context, nn types.NamespacedName, gen int64) ([]string, bool, error)
@@ -102,7 +102,7 @@ func (d *DeploymentCache) GetServiceUnits(ctx context.Context, nn types.Namespac
 
 
 <a name="DeploymentCache.GetStrategy"></a>
-### func \(\*DeploymentCache\) [GetStrategy](<https://github.com/blanketops/environments/blob/main/cache/deployment/deployment.go#L75>)
+### func \(\*DeploymentCache\) GetStrategy
 
 ```go
 func (d *DeploymentCache) GetStrategy(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -111,7 +111,7 @@ func (d *DeploymentCache) GetStrategy(ctx context.Context, nn types.NamespacedNa
 
 
 <a name="DeploymentCache.PublishResolved"></a>
-### func \(\*DeploymentCache\) [PublishResolved](<https://github.com/blanketops/environments/blob/main/cache/deployment/deployment.go#L140>)
+### func \(\*DeploymentCache\) PublishResolved
 
 ```go
 func (d *DeploymentCache) PublishResolved(ctx context.Context, nn types.NamespacedName, gen int64, r *deploymentResolution.ResolvedDeployment) error
@@ -120,7 +120,7 @@ func (d *DeploymentCache) PublishResolved(ctx context.Context, nn types.Namespac
 PublishResolved writes the resolved deployment contract as a generation\-scoped, field\-level projection. All writes are best\-effort: failures cost queryability, never correctness. Returns the first error encountered for optional logging; callers should not fail reconciliation on it.
 
 <a name="DeploymentCache.SetGitOwner"></a>
-### func \(\*DeploymentCache\) [SetGitOwner](<https://github.com/blanketops/environments/blob/main/cache/deployment/deployment.go#L113>)
+### func \(\*DeploymentCache\) SetGitOwner
 
 ```go
 func (d *DeploymentCache) SetGitOwner(ctx context.Context, nn types.NamespacedName, gen int64, owner string) error
@@ -129,7 +129,7 @@ func (d *DeploymentCache) SetGitOwner(ctx context.Context, nn types.NamespacedNa
 
 
 <a name="DeploymentCache.SetImageAutomation"></a>
-### func \(\*DeploymentCache\) [SetImageAutomation](<https://github.com/blanketops/environments/blob/main/cache/deployment/deployment.go#L85>)
+### func \(\*DeploymentCache\) SetImageAutomation
 
 ```go
 func (d *DeploymentCache) SetImageAutomation(ctx context.Context, nn types.NamespacedName, gen int64, enabled bool) error
@@ -138,7 +138,7 @@ func (d *DeploymentCache) SetImageAutomation(ctx context.Context, nn types.Names
 
 
 <a name="DeploymentCache.SetManifestsRepo"></a>
-### func \(\*DeploymentCache\) [SetManifestsRepo](<https://github.com/blanketops/environments/blob/main/cache/deployment/deployment.go#L127>)
+### func \(\*DeploymentCache\) SetManifestsRepo
 
 ```go
 func (d *DeploymentCache) SetManifestsRepo(ctx context.Context, nn types.NamespacedName, gen int64, repo any) error
@@ -147,7 +147,7 @@ func (d *DeploymentCache) SetManifestsRepo(ctx context.Context, nn types.Namespa
 
 
 <a name="DeploymentCache.SetReconciliationStrategy"></a>
-### func \(\*DeploymentCache\) [SetReconciliationStrategy](<https://github.com/blanketops/environments/blob/main/cache/deployment/deployment.go#L99>)
+### func \(\*DeploymentCache\) SetReconciliationStrategy
 
 ```go
 func (d *DeploymentCache) SetReconciliationStrategy(ctx context.Context, nn types.NamespacedName, gen int64, strategy string) error
@@ -156,7 +156,7 @@ func (d *DeploymentCache) SetReconciliationStrategy(ctx context.Context, nn type
 
 
 <a name="DeploymentCache.SetRuntime"></a>
-### func \(\*DeploymentCache\) [SetRuntime](<https://github.com/blanketops/environments/blob/main/cache/deployment/deployment.go#L57>)
+### func \(\*DeploymentCache\) SetRuntime
 
 ```go
 func (d *DeploymentCache) SetRuntime(ctx context.Context, nn types.NamespacedName, gen int64, runtime string) error
@@ -165,7 +165,7 @@ func (d *DeploymentCache) SetRuntime(ctx context.Context, nn types.NamespacedNam
 
 
 <a name="DeploymentCache.SetServiceUnits"></a>
-### func \(\*DeploymentCache\) [SetServiceUnits](<https://github.com/blanketops/environments/blob/main/cache/deployment/deployment.go#L42>)
+### func \(\*DeploymentCache\) SetServiceUnits
 
 ```go
 func (d *DeploymentCache) SetServiceUnits(ctx context.Context, nn types.NamespacedName, gen int64, units []string) error
@@ -174,7 +174,7 @@ func (d *DeploymentCache) SetServiceUnits(ctx context.Context, nn types.Namespac
 
 
 <a name="DeploymentCache.SetStrategy"></a>
-### func \(\*DeploymentCache\) [SetStrategy](<https://github.com/blanketops/environments/blob/main/cache/deployment/deployment.go#L71>)
+### func \(\*DeploymentCache\) SetStrategy
 
 ```go
 func (d *DeploymentCache) SetStrategy(ctx context.Context, nn types.NamespacedName, gen int64, strategy string) error

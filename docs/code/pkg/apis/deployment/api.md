@@ -32,7 +32,7 @@ K8SProvider applies/tears down Kubernetes Deployment and Service objects via ser
 
 
 <a name="K8SProvider"></a>
-## type [K8SProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kubernetes.go#L42-L47>)
+## type K8SProvider
 
 K8SProvider applies and tears down the Kubernetes Deployment and Service objects for a single ServiceUnit via server\-side apply.
 
@@ -46,7 +46,7 @@ type K8SProvider struct {
 ```
 
 <a name="NewK8SProvider"></a>
-### func [NewK8SProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kubernetes.go#L50-L55>)
+### func NewK8SProvider
 
 ```go
 func NewK8SProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *K8SProvider
@@ -55,7 +55,7 @@ func NewK8SProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, re
 NewK8SProvider constructs a K8SProvider.
 
 <a name="K8SProvider.ApplyServiceUnit"></a>
-### func \(\*K8SProvider\) [ApplyServiceUnit](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kubernetes.go#L74-L78>)
+### func \(\*K8SProvider\) ApplyServiceUnit
 
 ```go
 func (p *K8SProvider) ApplyServiceUnit(ctx context.Context, intent *intent.DeploymentIntent, su *serviceunitIntent.ServiceUnitIntent) (*domain.ServiceUnitResult, error)
@@ -64,7 +64,7 @@ func (p *K8SProvider) ApplyServiceUnit(ctx context.Context, intent *intent.Deplo
 ApplyServiceUnit applies the Deployment and Service objects for a single ServiceUnit and reports the resulting observed state.
 
 <a name="K8SProvider.Teardown"></a>
-### func \(\*K8SProvider\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kubernetes.go#L236-L239>)
+### func \(\*K8SProvider\) Teardown
 
 ```go
 func (p *K8SProvider) Teardown(ctx context.Context, deploymentIntent *intent.DeploymentIntent) error
@@ -75,7 +75,7 @@ Teardown deletes the Kubernetes Deployment and Service this provider created for
 Idempotent — a missing Deployment or Service is not an error. Attempts both objects for every ServiceUnit regardless of individual failures and aggregates errors, so one stuck object doesn't block cleanup of the rest.
 
 <a name="KustomizationProvider"></a>
-## type [KustomizationProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomize.go#L27-L32>)
+## type KustomizationProvider
 
 KustomizationProvider holds the shared clients used to construct a KustomizeStrategyProvider.
 
@@ -89,7 +89,7 @@ type KustomizationProvider struct {
 ```
 
 <a name="KustomizeStrategyProvider"></a>
-## type [KustomizeStrategyProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomization.go#L53-L57>)
+## type KustomizeStrategyProvider
 
 KustomizeStrategyProvider implements the GitOps deployment path: it renders manifests, commits them to a repo, and ensures the Flux GitRepository/Kustomization CRs that make the cluster reconcile them.
 
@@ -102,7 +102,7 @@ type KustomizeStrategyProvider struct {
 ```
 
 <a name="NewKustomizationProvider"></a>
-### func [NewKustomizationProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomize.go#L36>)
+### func NewKustomizationProvider
 
 ```go
 func NewKustomizationProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, Recorder record.EventRecorder) *KustomizeStrategyProvider
@@ -111,7 +111,7 @@ func NewKustomizationProvider(c client.Client, scheme *runtime.Scheme, log logr.
 NewKustomizationProvider constructs a KustomizeStrategyProvider from the given clients.
 
 <a name="NewKustomizeStrategyProvider"></a>
-### func [NewKustomizeStrategyProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomization.go#L60-L64>)
+### func NewKustomizeStrategyProvider
 
 ```go
 func NewKustomizeStrategyProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger) *KustomizeStrategyProvider
@@ -120,7 +120,7 @@ func NewKustomizeStrategyProvider(c client.Client, scheme *runtime.Scheme, log l
 NewKustomizeStrategyProvider constructs a KustomizeStrategyProvider.
 
 <a name="KustomizeStrategyProvider.BuildKustomize"></a>
-### func \(\*KustomizeStrategyProvider\) [BuildKustomize](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomization.go#L74-L76>)
+### func \(\*KustomizeStrategyProvider\) BuildKustomize
 
 ```go
 func (m *KustomizeStrategyProvider) BuildKustomize(intent *intent.DeploymentIntent) ([]runtime.Object, error)
@@ -129,7 +129,7 @@ func (m *KustomizeStrategyProvider) BuildKustomize(intent *intent.DeploymentInte
 BuildKustomize renders the Deployment and Service objects for every ServiceUnit in intent, without writing them anywhere.
 
 <a name="KustomizeStrategyProvider.CommitAndPush"></a>
-### func \(\*KustomizeStrategyProvider\) [CommitAndPush](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomization.go#L161-L165>)
+### func \(\*KustomizeStrategyProvider\) CommitAndPush
 
 ```go
 func (m *KustomizeStrategyProvider) CommitAndPush(repoPath string, intent *intent.DeploymentIntent, env string) error
@@ -138,7 +138,7 @@ func (m *KustomizeStrategyProvider) CommitAndPush(repoPath string, intent *inten
 CommitAndPush renders each ServiceUnit's Deployment/Service manifests into the env overlay under repoPath, removing previously generated workload files first, then commits and pushes the result.
 
 <a name="KustomizeStrategyProvider.ReconcileKustomization"></a>
-### func \(\*KustomizeStrategyProvider\) [ReconcileKustomization](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomization.go#L98-L105>)
+### func \(\*KustomizeStrategyProvider\) ReconcileKustomization
 
 ```go
 func (m *KustomizeStrategyProvider) ReconcileKustomization(ctx context.Context, cr *environmentv1alpha1.Deployment, intent *intent.DeploymentIntent, repoURL string, ref string, path string) error
@@ -147,7 +147,7 @@ func (m *KustomizeStrategyProvider) ReconcileKustomization(ctx context.Context, 
 ReconcileKustomization is the GitOps path's public entrypoint: it renders and commits manifests to repoURL, then ensures the Flux GitRepository and Kustomization CRs that make the cluster apply them from ref/path.
 
 <a name="KustomizeStrategyProvider.Teardown"></a>
-### func \(\*KustomizeStrategyProvider\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomization.go#L452-L457>)
+### func \(\*KustomizeStrategyProvider\) Teardown
 
 ```go
 func (m *KustomizeStrategyProvider) Teardown(ctx context.Context, cr *environmentv1alpha1.Deployment, intent *intent.DeploymentIntent, env string) error
@@ -160,7 +160,7 @@ Order matters: the Kustomization must be deleted \(or its manifests must already
 GitRepository and Kustomization are ownerRef'd \(SetControllerReference\), so GC would eventually reclaim them — deleted explicitly here anyway for determinism, matching the rest of the chain.
 
 <a name="Provider"></a>
-## type [Provider](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/provider.go#L40-L52>)
+## type Provider
 
 Provider executes a DeploymentIntent against a specific runtime backend.
 
@@ -181,7 +181,7 @@ type Provider interface {
 ```
 
 <a name="ProviderRegistry"></a>
-## type [ProviderRegistry](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/provider.go#L55-L57>)
+## type ProviderRegistry
 
 ProviderRegistry resolves Providers by runtime.
 
@@ -192,7 +192,7 @@ type ProviderRegistry struct {
 ```
 
 <a name="NewProviderRegistry"></a>
-### func [NewProviderRegistry](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/provider.go#L61>)
+### func NewProviderRegistry
 
 ```go
 func NewProviderRegistry(providers ...Provider) *ProviderRegistry
@@ -201,7 +201,7 @@ func NewProviderRegistry(providers ...Provider) *ProviderRegistry
 NewProviderRegistry constructs a ProviderRegistry pre\-populated with the given providers, indexed by their own Runtime\(\).
 
 <a name="ProviderRegistry.Register"></a>
-### func \(\*ProviderRegistry\) [Register](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/provider.go#L74>)
+### func \(\*ProviderRegistry\) Register
 
 ```go
 func (r *ProviderRegistry) Register(provider Provider)
@@ -210,7 +210,7 @@ func (r *ProviderRegistry) Register(provider Provider)
 Register allows late registration \(optional\).
 
 <a name="ProviderRegistry.Resolve"></a>
-### func \(\*ProviderRegistry\) [Resolve](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/provider.go#L79-L81>)
+### func \(\*ProviderRegistry\) Resolve
 
 ```go
 func (r *ProviderRegistry) Resolve(runtime intent.Runtime) (Provider, error)

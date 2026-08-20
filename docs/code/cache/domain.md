@@ -35,7 +35,7 @@ import "github.com/blanketops/environments/cache/domain"
 
 
 <a name="DomainCache"></a>
-## type [DomainCache](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L27-L29>)
+## type DomainCache
 
 DomainCache provides domain\-specific, field\-level caching for Domain resources.
 
@@ -46,7 +46,7 @@ type DomainCache struct {
 ```
 
 <a name="NewDomainCache"></a>
-### func [NewDomainCache](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L32>)
+### func NewDomainCache
 
 ```go
 func NewDomainCache(c *cache.Cache) *DomainCache
@@ -55,7 +55,7 @@ func NewDomainCache(c *cache.Cache) *DomainCache
 NewDomainCache constructs a new DomainCache with the provided cache.Cache.
 
 <a name="DomainCache.GetCertificateRefName"></a>
-### func \(\*DomainCache\) [GetCertificateRefName](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L118>)
+### func \(\*DomainCache\) GetCertificateRefName
 
 ```go
 func (d *DomainCache) GetCertificateRefName(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -64,7 +64,7 @@ func (d *DomainCache) GetCertificateRefName(ctx context.Context, nn types.Namesp
 
 
 <a name="DomainCache.GetCertificateRefNamespace"></a>
-### func \(\*DomainCache\) [GetCertificateRefNamespace](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L130>)
+### func \(\*DomainCache\) GetCertificateRefNamespace
 
 ```go
 func (d *DomainCache) GetCertificateRefNamespace(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -73,7 +73,7 @@ func (d *DomainCache) GetCertificateRefNamespace(ctx context.Context, nn types.N
 
 
 <a name="DomainCache.GetDomainMappingRefName"></a>
-### func \(\*DomainCache\) [GetDomainMappingRefName](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L142>)
+### func \(\*DomainCache\) GetDomainMappingRefName
 
 ```go
 func (d *DomainCache) GetDomainMappingRefName(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -82,7 +82,7 @@ func (d *DomainCache) GetDomainMappingRefName(ctx context.Context, nn types.Name
 
 
 <a name="DomainCache.GetDomainMappingRefNamespace"></a>
-### func \(\*DomainCache\) [GetDomainMappingRefNamespace](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L154>)
+### func \(\*DomainCache\) GetDomainMappingRefNamespace
 
 ```go
 func (d *DomainCache) GetDomainMappingRefNamespace(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -91,7 +91,7 @@ func (d *DomainCache) GetDomainMappingRefNamespace(ctx context.Context, nn types
 
 
 <a name="DomainCache.GetDomainReady"></a>
-### func \(\*DomainCache\) [GetDomainReady](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L106>)
+### func \(\*DomainCache\) GetDomainReady
 
 ```go
 func (d *DomainCache) GetDomainReady(ctx context.Context, nn types.NamespacedName, gen int64) (bool, bool, error)
@@ -100,7 +100,7 @@ func (d *DomainCache) GetDomainReady(ctx context.Context, nn types.NamespacedNam
 
 
 <a name="DomainCache.GetHost"></a>
-### func \(\*DomainCache\) [GetHost](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L44>)
+### func \(\*DomainCache\) GetHost
 
 ```go
 func (d *DomainCache) GetHost(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -109,7 +109,7 @@ func (d *DomainCache) GetHost(ctx context.Context, nn types.NamespacedName, gen 
 
 
 <a name="DomainCache.GetMTLSEnforced"></a>
-### func \(\*DomainCache\) [GetMTLSEnforced](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L76>)
+### func \(\*DomainCache\) GetMTLSEnforced
 
 ```go
 func (d *DomainCache) GetMTLSEnforced(ctx context.Context, nn types.NamespacedName, gen int64) (bool, bool, error)
@@ -118,7 +118,7 @@ func (d *DomainCache) GetMTLSEnforced(ctx context.Context, nn types.NamespacedNa
 
 
 <a name="DomainCache.GetRenewBefore"></a>
-### func \(\*DomainCache\) [GetRenewBefore](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L86>)
+### func \(\*DomainCache\) GetRenewBefore
 
 ```go
 func (d *DomainCache) GetRenewBefore(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -127,7 +127,7 @@ func (d *DomainCache) GetRenewBefore(ctx context.Context, nn types.NamespacedNam
 
 
 <a name="DomainCache.GetRouteRef"></a>
-### func \(\*DomainCache\) [GetRouteRef](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L55>)
+### func \(\*DomainCache\) GetRouteRef
 
 ```go
 func (d *DomainCache) GetRouteRef(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -136,7 +136,7 @@ func (d *DomainCache) GetRouteRef(ctx context.Context, nn types.NamespacedName, 
 
 
 <a name="DomainCache.GetTLSStrategy"></a>
-### func \(\*DomainCache\) [GetTLSStrategy](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L65>)
+### func \(\*DomainCache\) GetTLSStrategy
 
 ```go
 func (d *DomainCache) GetTLSStrategy(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -145,7 +145,7 @@ func (d *DomainCache) GetTLSStrategy(ctx context.Context, nn types.NamespacedNam
 
 
 <a name="DomainCache.PublishResolved"></a>
-### func \(\*DomainCache\) [PublishResolved](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L168>)
+### func \(\*DomainCache\) PublishResolved
 
 ```go
 func (d *DomainCache) PublishResolved(ctx context.Context, nn types.NamespacedName, gen int64, res *domainResolution.ResolvedDomain) error
@@ -154,7 +154,7 @@ func (d *DomainCache) PublishResolved(ctx context.Context, nn types.NamespacedNa
 PublishResolved writes the resolved spec contract as a generation\-scoped, field\-level projection. All writes are best\-effort: failures cost queryability, never correctness. Returns the first error encountered for optional logging; callers should not fail reconciliation on it.
 
 <a name="DomainCache.PublishStatus"></a>
-### func \(\*DomainCache\) [PublishStatus](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L202-L209>)
+### func \(\*DomainCache\) PublishStatus
 
 ```go
 func (d *DomainCache) PublishStatus(ctx context.Context, nn types.NamespacedName, gen int64, domainReady bool, certRefName, certRefNamespace string, mappingRefName, mappingRefNamespace string) error
@@ -163,7 +163,7 @@ func (d *DomainCache) PublishStatus(ctx context.Context, nn types.NamespacedName
 PublishStatus writes controller\-observed status fields after resource materialisation. Separate from PublishResolved — these are never derived from spec; they reflect what the controller actually created. The Route mediator reads certificateRef from here to gate DomainMapping dispatch without an additional API server lookup. All writes are best\-effort — callers must not fail reconciliation on errors.
 
 <a name="DomainCache.SetCertificateRefName"></a>
-### func \(\*DomainCache\) [SetCertificateRefName](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L114>)
+### func \(\*DomainCache\) SetCertificateRefName
 
 ```go
 func (d *DomainCache) SetCertificateRefName(ctx context.Context, nn types.NamespacedName, gen int64, name string) error
@@ -172,7 +172,7 @@ func (d *DomainCache) SetCertificateRefName(ctx context.Context, nn types.Namesp
 SetCertificateRefName caches the Certificate resource name emitted by the controller. Set only for custom TLS strategy — empty for platform strategy.
 
 <a name="DomainCache.SetCertificateRefNamespace"></a>
-### func \(\*DomainCache\) [SetCertificateRefNamespace](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L126>)
+### func \(\*DomainCache\) SetCertificateRefNamespace
 
 ```go
 func (d *DomainCache) SetCertificateRefNamespace(ctx context.Context, nn types.NamespacedName, gen int64, namespace string) error
@@ -181,7 +181,7 @@ func (d *DomainCache) SetCertificateRefNamespace(ctx context.Context, nn types.N
 SetCertificateRefNamespace caches the Certificate resource namespace. For custom strategy this is always the Domain's own namespace.
 
 <a name="DomainCache.SetDomainMappingRefName"></a>
-### func \(\*DomainCache\) [SetDomainMappingRefName](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L138>)
+### func \(\*DomainCache\) SetDomainMappingRefName
 
 ```go
 func (d *DomainCache) SetDomainMappingRefName(ctx context.Context, nn types.NamespacedName, gen int64, name string) error
@@ -190,7 +190,7 @@ func (d *DomainCache) SetDomainMappingRefName(ctx context.Context, nn types.Name
 SetDomainMappingRefName caches the Knative DomainMapping resource name emitted by the controller. Set once materialised, cleared on deletion.
 
 <a name="DomainCache.SetDomainMappingRefNamespace"></a>
-### func \(\*DomainCache\) [SetDomainMappingRefNamespace](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L150>)
+### func \(\*DomainCache\) SetDomainMappingRefNamespace
 
 ```go
 func (d *DomainCache) SetDomainMappingRefNamespace(ctx context.Context, nn types.NamespacedName, gen int64, namespace string) error
@@ -199,7 +199,7 @@ func (d *DomainCache) SetDomainMappingRefNamespace(ctx context.Context, nn types
 SetDomainMappingRefNamespace caches the Knative DomainMapping namespace. Always the Domain's own namespace — cached for mediator fast\-path reads.
 
 <a name="DomainCache.SetDomainReady"></a>
-### func \(\*DomainCache\) [SetDomainReady](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L102>)
+### func \(\*DomainCache\) SetDomainReady
 
 ```go
 func (d *DomainCache) SetDomainReady(ctx context.Context, nn types.NamespacedName, gen int64, ready bool) error
@@ -208,7 +208,7 @@ func (d *DomainCache) SetDomainReady(ctx context.Context, nn types.NamespacedNam
 SetDomainReady caches the scalar domainReady bool from DomainStatus. True once both DomainClaim and DomainMapping are reconciled and active.
 
 <a name="DomainCache.SetHost"></a>
-### func \(\*DomainCache\) [SetHost](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L40>)
+### func \(\*DomainCache\) SetHost
 
 ```go
 func (d *DomainCache) SetHost(ctx context.Context, nn types.NamespacedName, gen int64, host string) error
@@ -217,7 +217,7 @@ func (d *DomainCache) SetHost(ctx context.Context, nn types.NamespacedName, gen 
 
 
 <a name="DomainCache.SetMTLSEnforced"></a>
-### func \(\*DomainCache\) [SetMTLSEnforced](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L72>)
+### func \(\*DomainCache\) SetMTLSEnforced
 
 ```go
 func (d *DomainCache) SetMTLSEnforced(ctx context.Context, nn types.NamespacedName, gen int64, enforced bool) error
@@ -226,7 +226,7 @@ func (d *DomainCache) SetMTLSEnforced(ctx context.Context, nn types.NamespacedNa
 SetMTLSEnforced caches the enforced flag from ResolvedDomainMTLS.Enforced.
 
 <a name="DomainCache.SetRenewBefore"></a>
-### func \(\*DomainCache\) [SetRenewBefore](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L82>)
+### func \(\*DomainCache\) SetRenewBefore
 
 ```go
 func (d *DomainCache) SetRenewBefore(ctx context.Context, nn types.NamespacedName, gen int64, renewBefore string) error
@@ -235,7 +235,7 @@ func (d *DomainCache) SetRenewBefore(ctx context.Context, nn types.NamespacedNam
 
 
 <a name="DomainCache.SetRouteRef"></a>
-### func \(\*DomainCache\) [SetRouteRef](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L51>)
+### func \(\*DomainCache\) SetRouteRef
 
 ```go
 func (d *DomainCache) SetRouteRef(ctx context.Context, nn types.NamespacedName, gen int64, routeRefName string) error
@@ -244,7 +244,7 @@ func (d *DomainCache) SetRouteRef(ctx context.Context, nn types.NamespacedName, 
 SetRouteRef caches the owning Route name from ResolvedDomainRouteRef.Name.
 
 <a name="DomainCache.SetTLSStrategy"></a>
-### func \(\*DomainCache\) [SetTLSStrategy](<https://github.com/blanketops/environments/blob/main/cache/domain/domain.go#L61>)
+### func \(\*DomainCache\) SetTLSStrategy
 
 ```go
 func (d *DomainCache) SetTLSStrategy(ctx context.Context, nn types.NamespacedName, gen int64, strategy string) error

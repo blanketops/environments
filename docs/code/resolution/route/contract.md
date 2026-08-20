@@ -52,7 +52,7 @@ See also:
 
 
 <a name="ToRouteContract"></a>
-## func [ToRouteContract](<https://github.com/blanketops/environments/blob/main/resolution/route/contract/contract_adapter.go#L66>)
+## func ToRouteContract
 
 ```go
 func ToRouteContract(r *resolve.ResolvedRoute) (*networkscontractv1alpha1.RouteSpec, error)

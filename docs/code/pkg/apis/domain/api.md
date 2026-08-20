@@ -77,7 +77,7 @@ See also:
 
 
 <a name="ACMEConfig"></a>
-## type [ACMEConfig](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/api/knative.go#L73-L81>)
+## type ACMEConfig
 
 ACMEConfig carries the HTTP01 ACME issuer configuration injected at construction time. Keeps provider logic free of hardcoded platform values.
 
@@ -94,7 +94,7 @@ type ACMEConfig struct {
 ```
 
 <a name="KnativeProvider"></a>
-## type [KnativeProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/api/knative.go#L84-L88>)
+## type KnativeProvider
 
 KnativeProvider implements Provider for the Knative \+ cert\-manager stack.
 
@@ -105,7 +105,7 @@ type KnativeProvider struct {
 ```
 
 <a name="NewKnativeProvider"></a>
-### func [NewKnativeProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/api/knative.go#L91>)
+### func NewKnativeProvider
 
 ```go
 func NewKnativeProvider(c client.Client, log logr.Logger, acme ACMEConfig) *KnativeProvider
@@ -114,7 +114,7 @@ func NewKnativeProvider(c client.Client, log logr.Logger, acme ACMEConfig) *Knat
 NewKnativeProvider constructs a KnativeProvider with the given dependencies.
 
 <a name="KnativeProvider.Ensure"></a>
-### func \(\*KnativeProvider\) [Ensure](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/api/knative.go#L97-L101>)
+### func \(\*KnativeProvider\) Ensure
 
 ```go
 func (p *KnativeProvider) Ensure(ctx context.Context, resolved *domainResolution.ResolvedDomain, d domain.Domain) (domain.DomainResult, error)
@@ -123,7 +123,7 @@ func (p *KnativeProvider) Ensure(ctx context.Context, resolved *domainResolution
 Ensure provisions the cert/mapping chain for the given Domain. Dispatches to ensurePlatform or ensureCustom based on TLSStrategy.
 
 <a name="KnativeProvider.Teardown"></a>
-### func \(\*KnativeProvider\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/api/knative.go#L321>)
+### func \(\*KnativeProvider\) Teardown
 
 ```go
 func (p *KnativeProvider) Teardown(ctx context.Context, d domain.Domain) error
@@ -132,7 +132,7 @@ func (p *KnativeProvider) Teardown(ctx context.Context, d domain.Domain) error
 domain/api/knative.go
 
 <a name="Provider"></a>
-## type [Provider](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/api/provider.go#L48-L55>)
+## type Provider
 
 Provider materializes and maintains the cert/mapping chain for a Domain CR. Implementations must be idempotent and must not mutate the Domain CR directly.
 
