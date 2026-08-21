@@ -131,8 +131,22 @@ func (m *KustomizeStrategyProvider) ReconcileKustomization(
 		return fmt.Errorf("deployment CR must define label environments.blanketops.dev/type")
 	}
 
+	// 0️⃣ Ensure repoPath is a local clone of repoURL at ref, authenticated
+	// with the same deploy key Flux uses. Nothing else in this method's
+	// call chain ever creates repoPath — every git operation below depends
+	// on it already existing as a working clone.
+	sshEnv, cleanup, err := m.resolveGitSSHEnv(ctx, cr)
+	if err != nil {
+		return fmt.Errorf("resolve git ssh credentials: %w", err)
+	}
+	defer cleanup()
+
+	if err := ensureLocalClone(repoPath, repoURL, ref, sshEnv); err != nil {
+		return fmt.Errorf("ensure local clone: %w", err)
+	}
+
 	// 1️⃣ Render + Commit
-	if err := m.CommitAndPush(repoPath, intent, env); err != nil {
+	if err := m.CommitAndPush(repoPath, intent, env, sshEnv); err != nil {
 		return fmt.Errorf("commit and push failed: %w", err)
 	}
 
@@ -157,11 +171,14 @@ func (m *KustomizeStrategyProvider) ReconcileKustomization(
 
 // CommitAndPush renders each ServiceUnit's Deployment/Service manifests
 // into the env overlay under repoPath, removing previously generated
-// workload files first, then commits and pushes the result.
+// workload files first, then commits and pushes the result. repoPath must
+// already be a local clone (see ensureLocalClone); sshEnv authenticates
+// the push.
 func (m *KustomizeStrategyProvider) CommitAndPush(
 	repoPath string,
 	intent *intent.DeploymentIntent,
 	env string,
+	sshEnv []string,
 ) error {
 
 	if env == "" {
@@ -300,8 +317,8 @@ resources:
 			return err
 		}
 
-		if _, err := utils.RunGit(repoPath, "push"); err != nil {
-			return err
+		if out, err := utils.RunGitWithEnv(repoPath, sshEnv, "push"); err != nil {
+			return fmt.Errorf("push: %w: %s", err, out)
 		}
 
 		m.Log.Info("Changes committed and pushed", "env", env)
@@ -328,6 +345,86 @@ func (m *KustomizeStrategyProvider) renderObject(
 	}
 
 	return buffer.Bytes(), nil
+}
+
+// resolveGitSSHEnv fetches cr's Flux deploy-key Secret (the same one
+// ensureGitRepository validates and points Flux at) and materializes its
+// private key and known_hosts as temp files, so this process can perform
+// the same authenticated git operations Flux will later perform in-cluster.
+// The caller must invoke the returned cleanup func to remove the temp files.
+func (m *KustomizeStrategyProvider) resolveGitSSHEnv(
+	ctx context.Context,
+	cr *environmentv1alpha1.Deployment,
+) (env []string, cleanup func(), err error) {
+
+	fluxSecret := fmt.Sprintf("%s-flux-ssh", cr.Name)
+
+	var secret corev1.Secret
+	if err := m.Client.Get(
+		ctx,
+		client.ObjectKey{Name: fluxSecret, Namespace: cr.Namespace},
+		&secret,
+	); err != nil {
+		return nil, nil, fmt.Errorf(
+			"flux git secret %q not found in namespace %q: %w",
+			fluxSecret, cr.Namespace, err,
+		)
+	}
+
+	dir, err := os.MkdirTemp("", fmt.Sprintf("%s-git-ssh-", cr.Name))
+	if err != nil {
+		return nil, nil, fmt.Errorf("create ssh material dir: %w", err)
+	}
+	cleanup = func() { _ = os.RemoveAll(dir) }
+
+	keyPath := filepath.Join(dir, "identity")
+	if err := os.WriteFile(keyPath, secret.Data["identity"], 0600); err != nil {
+		cleanup()
+		return nil, nil, fmt.Errorf("write ssh key: %w", err)
+	}
+
+	knownHostsPath := filepath.Join(dir, "known_hosts")
+	if err := os.WriteFile(knownHostsPath, secret.Data["known_hosts"], 0600); err != nil {
+		cleanup()
+		return nil, nil, fmt.Errorf("write known_hosts: %w", err)
+	}
+
+	sshCmd := fmt.Sprintf(
+		"ssh -i %s -o UserKnownHostsFile=%s -o IdentitiesOnly=yes",
+		keyPath, knownHostsPath,
+	)
+	return []string{"GIT_SSH_COMMAND=" + sshCmd}, cleanup, nil
+}
+
+// ensureLocalClone makes repoPath a local clone of repoURL checked out at
+// ref (a commit SHA — see reconciliation.go's caller). Clones fresh if
+// repoPath isn't a git repo yet, otherwise fetches and checks out in
+// place. Using fetch+FETCH_HEAD rather than a branch/tag-specific command
+// works uniformly whether ref is a branch, tag, or commit SHA. All network
+// operations authenticate via env (see resolveGitSSHEnv).
+func ensureLocalClone(repoPath, repoURL, ref string, env []string) error {
+	if _, statErr := os.Stat(filepath.Join(repoPath, ".git")); os.IsNotExist(statErr) {
+		if err := os.MkdirAll(filepath.Dir(repoPath), 0755); err != nil {
+			return fmt.Errorf("create parent dir: %w", err)
+		}
+		if out, err := utils.RunGitWithEnv("", env, "clone", repoURL, repoPath); err != nil {
+			return fmt.Errorf("clone %s: %w: %s", repoURL, err, out)
+		}
+	} else if statErr != nil {
+		return fmt.Errorf("stat repo path: %w", statErr)
+	}
+
+	checkoutRef := ref
+	if checkoutRef == "" {
+		checkoutRef = defaultGitBranch
+	}
+	if out, err := utils.RunGitWithEnv(repoPath, env, "fetch", "origin", checkoutRef); err != nil {
+		return fmt.Errorf("fetch %s: %w: %s", checkoutRef, err, out)
+	}
+	if out, err := utils.RunGitWithEnv(repoPath, env, "checkout", "FETCH_HEAD"); err != nil {
+		return fmt.Errorf("checkout %s: %w: %s", checkoutRef, err, out)
+	}
+	return nil
 }
 
 func (m *KustomizeStrategyProvider) ensureGitRepository(
@@ -357,9 +454,13 @@ func (m *KustomizeStrategyProvider) ensureGitRepository(
 		},
 	}
 
-	// Optional branch
-	repo.Spec.Reference = &sourcev1.GitRepositoryRef{
-		Branch: defaultGitBranch,
+	// ref is a commit SHA (see reconciliation.go's caller) — Commit takes
+	// precedence over every other GitRepositoryRef field, so this pins Flux
+	// to exactly the commit this reconcile resolved, not just a branch tip.
+	if ref != "" {
+		repo.Spec.Reference = &sourcev1.GitRepositoryRef{Commit: ref}
+	} else {
+		repo.Spec.Reference = &sourcev1.GitRepositoryRef{Branch: defaultGitBranch}
 	}
 
 	// Validate Flux secret exists (fail fast if infra broken)
@@ -489,6 +590,13 @@ func (m *KustomizeStrategyProvider) Teardown(
 	return nil
 }
 
+// removeAndPush shares ReconcileKustomization/CommitAndPush's assumption
+// that repoPath is already a local clone, but — unlike that path — has no
+// repoURL/ref to call ensureLocalClone with, and Teardown is not yet called
+// from anywhere (see pkg/apis/deployment/application/service.go's TODO on
+// ReconciliationExecutor having no Teardown method). Needs the same
+// clone/SSH-env treatment as ReconcileKustomization once Teardown is wired
+// up to a real caller.
 func (m *KustomizeStrategyProvider) removeAndPush(
 	cr *environmentv1alpha1.Deployment,
 	intent *intent.DeploymentIntent,
