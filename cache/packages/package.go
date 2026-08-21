@@ -13,6 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package packages provides domain-specific, field-level caching for Package
+resources. PackageCache embeds cache.ObjectCache and adds typed Set* / Get*
+helpers for each resolved spec field (version, packageRepository,
+stateRepo, kappDiff, enabled), plus a checksum field that the service
+layer writes separately after package content is fetched and verified —
+not part of PublishResolved, which only projects the resolved spec
+(version, enabled, packageRepository) right after resolution succeeds.
+*/
 package packages
 
 import (
