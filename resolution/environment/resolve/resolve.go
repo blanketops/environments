@@ -62,7 +62,11 @@ type ResolvedEnvironmentSpec struct {
 	GitHubEvent   string
 	Deployment    string
 	Route         string
-	Package       string
+	// Domain is resolved and validated here but not yet projected to the
+	// contract or cached — Domain CR support is still a stub elsewhere in
+	// the platform. Kept as its own field so it no longer clobbers Route.
+	Domain  string
+	Package string
 
 	// Slices are nil when not declared; empty slice is never returned.
 	ServiceUnits []string
@@ -240,7 +244,7 @@ func ResolveEnvironment(environment *environmentv1alpha1.Environment) (*Resolved
 		if err != nil {
 			return nil, fmt.Errorf("domain.name: %w", err)
 		}
-		spec.Route = n
+		spec.Domain = n
 	}
 
 	if v, ok := raw["package"].(map[string]any); ok {

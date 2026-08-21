@@ -169,6 +169,16 @@ func TestEngine_StartStopWorkers_ProcessesQueuedCommands(t *testing.T) {
 	}
 }
 
+func TestEngine_StopWorkers_SafeToCallTwice(t *testing.T) {
+	reg := registry.NewRegistry()
+	e := NewEngine(reg, logr.Discard())
+	e.SetWorkers(1)
+	e.StartWorkers()
+
+	e.StopWorkers(time.Second)
+	e.StopWorkers(time.Second) // must not panic with "close of closed channel"
+}
+
 func TestEngine_StartWorkers_NoopWhenZeroWorkers(t *testing.T) {
 	reg := registry.NewRegistry()
 	e := NewEngine(reg, logr.Discard())

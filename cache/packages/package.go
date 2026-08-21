@@ -133,9 +133,13 @@ func (p *PackageCache) PublishResolved(ctx context.Context, nn types.NamespacedN
 	}
 	record(p.SetVersion(ctx, nn, gen, r.Spec.Version))
 	record(p.SetEnabled(ctx, nn, gen, r.Spec.Enabled))
+	record(p.SetKappDiff(ctx, nn, gen, r.Spec.DiffEnabled))
 	var zeroRepo packagesResolution.ResolvedPackageRepository
 	if r.Spec.PackageRepository != zeroRepo {
 		record(p.SetPackageRepository(ctx, nn, gen, r.Spec.PackageRepository))
+	}
+	if r.Spec.StateRepository != nil {
+		record(p.SetStateRepo(ctx, nn, gen, r.Spec.StateRepository))
 	}
 	return firstErr
 }

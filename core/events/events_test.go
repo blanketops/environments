@@ -17,6 +17,7 @@ package events
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -171,11 +172,52 @@ func TestEventRecorder_Event_EventsRecorder(t *testing.T) {
 	if got.action != got.reason {
 		t.Fatalf("expected action to mirror reason, got action=%q reason=%q", got.action, got.reason)
 	}
-	if got.note != "resolved ok" {
-		t.Fatalf("expected note %q, got %q", "resolved ok", got.note)
+	// note is "%s" with message passed as the sole arg, not the literal
+	// message itself — this is what prevents a '%' in the message from
+	// being reinterpreted as a format verb by the real recorder's Sprintf.
+	if got.note != "%s" {
+		t.Fatalf("expected note %q, got %q", "%s", got.note)
+	}
+	if len(got.args) != 1 || got.args[0] != "resolved ok" {
+		t.Fatalf("expected args to be [%q], got %v", "resolved ok", got.args)
 	}
 	if got.related != nil {
 		t.Fatalf("expected related to be nil, got %v", got.related)
+	}
+}
+
+func TestEventRecorder_Event_EventsRecorder_NoArgs_SurvivesPercentInMessage(t *testing.T) {
+	rec := &fakeEventsRecorder{}
+	er := NewEventRecorder(rec)
+
+	er.FromError(testPod(), "BuildResolveFailed", fmt.Errorf("rate limit: 42%% of quota used"))
+
+	if len(rec.calls) != 1 {
+		t.Fatalf("expected exactly one Eventf call, got %d", len(rec.calls))
+	}
+	got := rec.calls[0]
+	// Simulate what the real recorder does internally: fmt.Sprintf(note, args...).
+	formatted := fmt.Sprintf(got.note, got.args...)
+	if formatted != "rate limit: 42% of quota used" {
+		t.Fatalf("message corrupted by double-formatting: got %q", formatted)
+	}
+}
+
+func TestEventRecorder_Event_EventsRecorder_WithArgs(t *testing.T) {
+	rec := &fakeEventsRecorder{}
+	er := NewEventRecorder(rec)
+
+	er.Event(testPod(), corev1.EventTypeWarning, "Reason", "failed: %s", "boom")
+
+	if len(rec.calls) != 1 {
+		t.Fatalf("expected exactly one Eventf call, got %d", len(rec.calls))
+	}
+	got := rec.calls[0]
+	if got.note != "failed: %s" {
+		t.Fatalf("expected note %q, got %q", "failed: %s", got.note)
+	}
+	if len(got.args) != 1 || got.args[0] != "boom" {
+		t.Fatalf("unexpected args: %v", got.args)
 	}
 }
 

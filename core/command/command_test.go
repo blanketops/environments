@@ -100,3 +100,13 @@ func TestCommand_Clone_PreservesOldAndNewByReference(t *testing.T) {
 		t.Fatal("expected New to be reference-copied, not deep-copied")
 	}
 }
+
+func TestCommand_Clone_NilObjDoesNotPanic(t *testing.T) {
+	c := Command{Type: CmdCreate}
+
+	clone := c.Clone()
+
+	if clone.Obj != nil {
+		t.Fatalf("expected clone.Obj to stay nil, got %v", clone.Obj)
+	}
+}

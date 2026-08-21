@@ -80,6 +80,10 @@ func (a *Adapter) Resolve(ctx context.Context, obj client.Object) error {
 		_, err := a.serviceunit.Resolve(ctx, o)
 		return err
 
+	case *environments1alpha1.Package:
+		_, err := a.packages.Resolve(ctx, o)
+		return err
+
 	case *eventsv1alpha1.GitHubEvent:
 		_, err := a.githubevent.Resolve(ctx, o)
 		return err
