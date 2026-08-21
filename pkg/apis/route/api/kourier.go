@@ -169,7 +169,7 @@ func (p *KourierProvider) ensureDisabled(ctx context.Context, route domain.Route
 	}, nil
 }
 
-// route/api/knative.go
+// Teardown deletes the DomainMapping for the route's host, if one exists.
 func (p *KourierProvider) Teardown(ctx context.Context, route domain.Route) error {
 	dm := &knservingv1beta1.DomainMapping{}
 	err := p.client.Get(ctx, client.ObjectKey{Name: route.Host, Namespace: route.Namespace}, dm)

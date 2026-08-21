@@ -123,13 +123,13 @@ func (p *KnativeProvider) Ensure(ctx context.Context, resolved *domainResolution
 Ensure provisions the cert/mapping chain for the given Domain. Dispatches to ensurePlatform or ensureCustom based on TLSStrategy.
 
 <a name="KnativeProvider.Teardown"></a>
-### func \(\*KnativeProvider\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/api/knative.go#L321>)
+### func \(\*KnativeProvider\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/api/knative.go#L323>)
 
 ```go
 func (p *KnativeProvider) Teardown(ctx context.Context, d domain.Domain) error
 ```
 
-domain/api/knative.go
+Teardown releases the ClusterDomainClaim for the domain's host, and for custom\-strategy domains also deletes the per\-host Certificate \(the shared Issuer is left alone; see the comment below\).
 
 <a name="Provider"></a>
 ## type [Provider](<https://github.com/blanketops/environments/blob/main/pkg/apis/domain/api/provider.go#L48-L55>)

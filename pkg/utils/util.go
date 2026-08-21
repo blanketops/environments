@@ -33,12 +33,8 @@ import (
 	"github.com/blanketops/environments/pkg/apis/build/domain"
 )
 
-// -----------------------------------------------------------------------------
-// Build Execution Hashing
-// -----------------------------------------------------------------------------
-//
-// The execution hash MUST reflect semantic intent only.
-// It must NOT depend on Kubernetes storage format or metadata.
+// ComputeExecutionHash hashes a build's semantic intent so equivalent builds
+// hash identically regardless of Kubernetes storage format or metadata.
 func ComputeExecutionHash(
 	spec *contractv1.BuildSpec,
 	trigger domain.TriggerContext,

@@ -17,7 +17,7 @@ package domain
 
 import "time"
 
-// Package represents the domain-level truth of a Package.
+// PackageSpec represents the domain-level truth of a Package.
 // It is independent of Kubernetes API machinery.
 type PackageSpec struct {
 	// ---------------------------------------------------------------------
