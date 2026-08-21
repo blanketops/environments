@@ -6,6 +6,10 @@
 import "github.com/blanketops/environments/cache/adapter"
 ```
 
+Package adapter provides concrete core/cache.ExternalCache implementations for the external cache's supported backends: Redis \(RedisCache\) and Memcached \(MemcachedCache\). cache.NewExternal selects and constructs one of these from Options; nothing downstream of that composition point imports this package directly — everything else depends only on the core/cache.ExternalCache interface.
+
+The two backends differ in one structurally important way: Redis supports key enumeration \(DelPrefix scans and deletes matching keys\), while Memcached does not \(DelPrefix is a no\-op there\). This is safe because ObjectCache's generation\-scoped keys are the real correctness guarantee — a stale entry simply expires via TTL rather than being explicitly invalidated.
+
 ## Index
 
 - [type MemcachedCache](<#MemcachedCache>)
@@ -26,7 +30,7 @@ import "github.com/blanketops/environments/cache/adapter"
 
 
 <a name="MemcachedCache"></a>
-## type [MemcachedCache](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L35-L37>)
+## type [MemcachedCache](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L49-L51>)
 
 MemcachedCache implements core.ExternalCache backed by Memcached.
 
@@ -37,7 +41,7 @@ type MemcachedCache struct {
 ```
 
 <a name="NewMemcached"></a>
-### func [NewMemcached](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L42>)
+### func [NewMemcached](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L56>)
 
 ```go
 func NewMemcached(cfg MemcachedConfig) *MemcachedCache
@@ -46,7 +50,7 @@ func NewMemcached(cfg MemcachedConfig) *MemcachedCache
 NewMemcached constructs a MemcachedCache connected to cfg's servers.
 
 <a name="MemcachedCache.Del"></a>
-### func \(\*MemcachedCache\) [Del](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L69>)
+### func \(\*MemcachedCache\) [Del](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L83>)
 
 ```go
 func (c *MemcachedCache) Del(ctx context.Context, key string) error
@@ -55,7 +59,7 @@ func (c *MemcachedCache) Del(ctx context.Context, key string) error
 
 
 <a name="MemcachedCache.DelPrefix"></a>
-### func \(\*MemcachedCache\) [DelPrefix](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L80>)
+### func \(\*MemcachedCache\) [DelPrefix](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L94>)
 
 ```go
 func (c *MemcachedCache) DelPrefix(ctx context.Context, prefix string) error
@@ -64,7 +68,7 @@ func (c *MemcachedCache) DelPrefix(ctx context.Context, prefix string) error
 DelPrefix: Memcached cannot enumerate keys, so prefix invalidation is a no\-op here. Generation\-scoped keys \(see cache.ObjectCache\) are the correctness guarantee on this backend — stale entries expire via TTL.
 
 <a name="MemcachedCache.Get"></a>
-### func \(\*MemcachedCache\) [Get](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L58>)
+### func \(\*MemcachedCache\) [Get](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L72>)
 
 ```go
 func (c *MemcachedCache) Get(ctx context.Context, key string, into any) (bool, error)
@@ -73,7 +77,7 @@ func (c *MemcachedCache) Get(ctx context.Context, key string, into any) (bool, e
 
 
 <a name="MemcachedCache.Set"></a>
-### func \(\*MemcachedCache\) [Set](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L46>)
+### func \(\*MemcachedCache\) [Set](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L60>)
 
 ```go
 func (c *MemcachedCache) Set(ctx context.Context, key string, val any, ttl time.Duration) error
@@ -82,7 +86,7 @@ func (c *MemcachedCache) Set(ctx context.Context, key string, val any, ttl time.
 
 
 <a name="MemcachedConfig"></a>
-## type [MemcachedConfig](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L30-L32>)
+## type [MemcachedConfig](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L44-L46>)
 
 MemcachedConfig holds connection settings for the Memcached backend.
 
