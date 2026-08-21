@@ -19,18 +19,16 @@ import "github.com/blanketops/environments/pkg/utils"
 
 
 <a name="ComputeExecutionHash"></a>
-## func [ComputeExecutionHash](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L42-L45>)
+## func [ComputeExecutionHash](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L38-L41>)
 
 ```go
 func ComputeExecutionHash(spec *contractv1.BuildSpec, trigger domain.TriggerContext) (string, error)
 ```
 
-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- Build Execution Hashing \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
-
-The execution hash MUST reflect semantic intent only. It must NOT depend on Kubernetes storage format or metadata.
+ComputeExecutionHash hashes a build's semantic intent so equivalent builds hash identically regardless of Kubernetes storage format or metadata.
 
 <a name="CreateOrPatch"></a>
-## func [CreateOrPatch](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L79>)
+## func [CreateOrPatch](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L75>)
 
 ```go
 func CreateOrPatch(ctx context.Context, c client.Client, obj client.Object) error
@@ -39,7 +37,7 @@ func CreateOrPatch(ctx context.Context, c client.Client, obj client.Object) erro
 CreateOrPatch creates obj if it doesn't exist, or leaves it unchanged if it does — a thin wrapper around controllerutil.CreateOrUpdate with a no\-op mutate func.
 
 <a name="ParseImage"></a>
-## func [ParseImage](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L117>)
+## func [ParseImage](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L113>)
 
 ```go
 func ParseImage(image string) (string, string)
@@ -48,7 +46,7 @@ func ParseImage(image string) (string, string)
 ParseImage splits an image reference on its last colon into repository and tag, defaulting to tag "latest" when no colon is present.
 
 <a name="PointerBool"></a>
-## func [PointerBool](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L127>)
+## func [PointerBool](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L123>)
 
 ```go
 func PointerBool(b bool) *bool
@@ -57,7 +55,7 @@ func PointerBool(b bool) *bool
 PointerBool returns a pointer to b.
 
 <a name="PrintRepoTree"></a>
-## func [PrintRepoTree](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L139>)
+## func [PrintRepoTree](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L135>)
 
 ```go
 func PrintRepoTree(basePath string) error
@@ -66,7 +64,7 @@ func PrintRepoTree(basePath string) error
 PrintRepoTree prints an indented directory tree of basePath to stdout, for debugging what a cloned repository actually contains.
 
 <a name="RunGit"></a>
-## func [RunGit](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L100>)
+## func [RunGit](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L96>)
 
 ```go
 func RunGit(dir string, args ...string) (string, error)
@@ -75,7 +73,7 @@ func RunGit(dir string, args ...string) (string, error)
 RunGit runs a git command in dir \(or the current directory if dir is empty\) and returns its combined stdout/stderr output, trimmed.
 
 <a name="RunGitWithEnv"></a>
-## func [RunGitWithEnv](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L176>)
+## func [RunGitWithEnv](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L172>)
 
 ```go
 func RunGitWithEnv(dir string, env []string, args ...string) (string, error)
@@ -84,7 +82,7 @@ func RunGitWithEnv(dir string, env []string, args ...string) (string, error)
 RunGitWithEnv runs a git command with additional environment variables.
 
 <a name="ShortHash"></a>
-## func [ShortHash](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L168>)
+## func [ShortHash](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L164>)
 
 ```go
 func ShortHash(hash string) string

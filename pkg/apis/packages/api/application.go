@@ -276,9 +276,7 @@ func packagePhaseFromApplicationPhase(
 	}
 }
 
-// ------------------------------------------------------------
-// Helpers
-// ------------------------------------------------------------
+// failedResult builds a failed PackageResult stamped with start and err's message.
 func failedResult(start time.Time, err error) *domain.PackageResult {
 	return &domain.PackageResult{
 		Success:    false,

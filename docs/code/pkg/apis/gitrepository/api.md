@@ -74,13 +74,13 @@ func (p *GitHubProvider) Ensure(ctx context.Context, cr *sourcesv1alpha1.GitRepo
 Ensure reconciles the upjet\-github Repository \(and, if webhooks are declared, RepositoryWebhook\) resources backing cr against spec.
 
 <a name="GitHubProvider.Teardown"></a>
-### func \(\*GitHubProvider\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/api/github.go#L212-L216>)
+### func \(\*GitHubProvider\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/api/github.go#L211-L215>)
 
 ```go
 func (p *GitHubProvider) Teardown(ctx context.Context, cr *sourcesv1alpha1.GitRepository, spec domain.GitRepository) error
 ```
 
-── Teardown ────────────────────────────────────────────────────────────────── Teardown deletes the Crossplane Repository and RepositoryWebhook this provider created. Mandatory, not optional — Ensure links these objects to the GitRepository CR by label only \(sources.blanketops.dev/gitrepository\), never by ownerReference, and both are cluster\-scoped. Kubernetes GC has no mechanism to reclaim them; without this, deleting the GitRepository CR leaves Crossplane managing a live GitHub repository and webhook forever.
+Teardown deletes the Crossplane Repository and RepositoryWebhook this provider created. Mandatory, not optional — Ensure links these objects to the GitRepository CR by label only \(sources.blanketops.dev/gitrepository\), never by ownerReference, and both are cluster\-scoped. Kubernetes GC has no mechanism to reclaim them; without this, deleting the GitRepository CR leaves Crossplane managing a live GitHub repository and webhook forever.
 
 Idempotent — a missing Repository or RepositoryWebhook is not an error.
 

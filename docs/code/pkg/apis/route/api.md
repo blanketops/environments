@@ -213,7 +213,7 @@ Ensure creates or reconciles the Kubernetes Ingress for the given Route. When Ro
 func (p *IngressProvider) Teardown(ctx context.Context, route domain.Route) error
 ```
 
-ingress.go
+Teardown deletes the Ingress for the route's host, if one exists.
 
 <a name="KnativeProvider"></a>
 ## type [KnativeProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/api/knative.go#L71-L74>)
@@ -251,7 +251,7 @@ Ensure creates or reconciles the Knative DomainMapping for the given Route. When
 func (p *KnativeProvider) Teardown(ctx context.Context, route domain.Route) error
 ```
 
-route/api/knative.go
+Teardown deletes the DomainMapping for the route's host, if one exists.
 
 <a name="KourierProvider"></a>
 ## type [KourierProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/api/kourier.go#L71-L74>)
@@ -289,7 +289,7 @@ Ensure creates or reconciles the Knative DomainMapping for the given Route. When
 func (p *KourierProvider) Teardown(ctx context.Context, route domain.Route) error
 ```
 
-route/api/knative.go
+Teardown deletes the DomainMapping for the route's host, if one exists.
 
 <a name="Provider"></a>
 ## type [Provider](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/api/provider.go#L46-L52>)
