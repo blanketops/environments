@@ -11,6 +11,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package route provides domain-specific, field-level caching for Route
+resources. RouteCache embeds cache.ObjectCache and adds typed Set* / Get*
+helpers for each resolved spec field (host, enabled, path, tlsEnabled,
+runtime, serviceUnitRefName), plus PublishResolved, which projects a
+*routeResolution.ResolvedRoute into those fields. Only the ServiceUnit
+reference's name is cached — the controller derives the ksvc name by
+convention (ksvc name == ServiceUnit name), so no status lookup is needed.
+*/
 package route
 
 import (

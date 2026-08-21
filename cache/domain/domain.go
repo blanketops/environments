@@ -11,6 +11,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package domain provides domain-specific, field-level caching for Domain
+resources. DomainCache embeds cache.ObjectCache and splits its typed
+helpers into two groups: spec fields (host, routeRef, tlsStrategy,
+mtlsEnforced, renewBefore), published via PublishResolved right after
+resolution, and status fields (domainReady, certificateRef,
+domainMappingRef), published via PublishStatus only after the controller
+has actually materialised the corresponding resources.
+
+The status half exists specifically so the Route mediator can read
+certificateRef to gate DomainMapping dispatch on TLS secret existence
+without an extra API server lookup.
+*/
 package domain
 
 import (

@@ -6,6 +6,8 @@
 import "github.com/blanketops/environments/cache/build"
 ```
 
+Package build provides domain\-specific, field\-level caching for Build resources. BuildCache embeds cache.ObjectCache and adds typed Set\* / Get\* helpers for each resolved spec field \(image, source, strategy, serviceAccount, policy\), plus PublishResolved, which projects a \*buildResolution.ResolvedBuild into those fields in one best\-effort call after resolution succeeds.
+
 ## Index
 
 - [type BuildCache](<#BuildCache>)
@@ -24,7 +26,7 @@ import "github.com/blanketops/environments/cache/build"
 
 
 <a name="BuildCache"></a>
-## type [BuildCache](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L29-L31>)
+## type [BuildCache](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L37-L39>)
 
 BuildCache provides domain\-specific, field\-level caching for Build resources.
 
@@ -35,7 +37,7 @@ type BuildCache struct {
 ```
 
 <a name="NewBuildCache"></a>
-### func [NewBuildCache](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L34>)
+### func [NewBuildCache](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L42>)
 
 ```go
 func NewBuildCache(c *cache.Cache) *BuildCache
@@ -44,7 +46,7 @@ func NewBuildCache(c *cache.Cache) *BuildCache
 NewBuildCache constructs a new BuildCache with the provided cache.Cache.
 
 <a name="BuildCache.GetImage"></a>
-### func \(\*BuildCache\) [GetImage](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L46>)
+### func \(\*BuildCache\) [GetImage](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L54>)
 
 ```go
 func (b *BuildCache) GetImage(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -53,7 +55,7 @@ func (b *BuildCache) GetImage(ctx context.Context, nn types.NamespacedName, gen 
 
 
 <a name="BuildCache.GetPolicy"></a>
-### func \(\*BuildCache\) [GetPolicy](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L80>)
+### func \(\*BuildCache\) [GetPolicy](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L88>)
 
 ```go
 func (b *BuildCache) GetPolicy(ctx context.Context, nn types.NamespacedName, gen int64, into any) (bool, error)
@@ -62,7 +64,7 @@ func (b *BuildCache) GetPolicy(ctx context.Context, nn types.NamespacedName, gen
 
 
 <a name="BuildCache.GetServiceAccount"></a>
-### func \(\*BuildCache\) [GetServiceAccount](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L72>)
+### func \(\*BuildCache\) [GetServiceAccount](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L80>)
 
 ```go
 func (b *BuildCache) GetServiceAccount(ctx context.Context, nn types.NamespacedName, gen int64, into any) (bool, error)
@@ -71,7 +73,7 @@ func (b *BuildCache) GetServiceAccount(ctx context.Context, nn types.NamespacedN
 
 
 <a name="BuildCache.GetSource"></a>
-### func \(\*BuildCache\) [GetSource](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L64>)
+### func \(\*BuildCache\) [GetSource](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L72>)
 
 ```go
 func (b *BuildCache) GetSource(ctx context.Context, nn types.NamespacedName, gen int64, into any) (bool, error)
@@ -80,7 +82,7 @@ func (b *BuildCache) GetSource(ctx context.Context, nn types.NamespacedName, gen
 
 
 <a name="BuildCache.GetStrategy"></a>
-### func \(\*BuildCache\) [GetStrategy](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L56>)
+### func \(\*BuildCache\) [GetStrategy](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L64>)
 
 ```go
 func (b *BuildCache) GetStrategy(ctx context.Context, nn types.NamespacedName, gen int64, into any) (bool, error)
@@ -89,7 +91,7 @@ func (b *BuildCache) GetStrategy(ctx context.Context, nn types.NamespacedName, g
 
 
 <a name="BuildCache.PublishResolved"></a>
-### func \(\*BuildCache\) [PublishResolved](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L88>)
+### func \(\*BuildCache\) [PublishResolved](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L96>)
 
 ```go
 func (b *BuildCache) PublishResolved(ctx context.Context, nn types.NamespacedName, gen int64, r *buildResolution.ResolvedBuild) error
@@ -98,7 +100,7 @@ func (b *BuildCache) PublishResolved(ctx context.Context, nn types.NamespacedNam
 PublishResolved writes the resolved contract as a generation\-scoped, field\-level projection. All writes are best\-effort: failures cost queryability, never correctness. Returns the first error encountered for optional logging; callers should not fail reconciliation on it.
 
 <a name="BuildCache.SetImage"></a>
-### func \(\*BuildCache\) [SetImage](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L42>)
+### func \(\*BuildCache\) [SetImage](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L50>)
 
 ```go
 func (b *BuildCache) SetImage(ctx context.Context, nn types.NamespacedName, gen int64, image string) error
@@ -107,7 +109,7 @@ func (b *BuildCache) SetImage(ctx context.Context, nn types.NamespacedName, gen 
 
 
 <a name="BuildCache.SetPolicy"></a>
-### func \(\*BuildCache\) [SetPolicy](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L76>)
+### func \(\*BuildCache\) [SetPolicy](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L84>)
 
 ```go
 func (b *BuildCache) SetPolicy(ctx context.Context, nn types.NamespacedName, gen int64, policy any) error
@@ -116,7 +118,7 @@ func (b *BuildCache) SetPolicy(ctx context.Context, nn types.NamespacedName, gen
 
 
 <a name="BuildCache.SetServiceAccount"></a>
-### func \(\*BuildCache\) [SetServiceAccount](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L68>)
+### func \(\*BuildCache\) [SetServiceAccount](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L76>)
 
 ```go
 func (b *BuildCache) SetServiceAccount(ctx context.Context, nn types.NamespacedName, gen int64, sa any) error
@@ -125,7 +127,7 @@ func (b *BuildCache) SetServiceAccount(ctx context.Context, nn types.NamespacedN
 
 
 <a name="BuildCache.SetSource"></a>
-### func \(\*BuildCache\) [SetSource](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L60>)
+### func \(\*BuildCache\) [SetSource](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L68>)
 
 ```go
 func (b *BuildCache) SetSource(ctx context.Context, nn types.NamespacedName, gen int64, source any) error
@@ -134,7 +136,7 @@ func (b *BuildCache) SetSource(ctx context.Context, nn types.NamespacedName, gen
 
 
 <a name="BuildCache.SetStrategy"></a>
-### func \(\*BuildCache\) [SetStrategy](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L52>)
+### func \(\*BuildCache\) [SetStrategy](<https://github.com/blanketops/environments/blob/main/cache/build/build.go#L60>)
 
 ```go
 func (b *BuildCache) SetStrategy(ctx context.Context, nn types.NamespacedName, gen int64, strategy any) error

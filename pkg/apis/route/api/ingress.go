@@ -227,7 +227,7 @@ func ingressResourceName(host string) string {
 	return fmt.Sprintf("blanketops--environment-route-%s", sanitizeHost(host))
 }
 
-// ingress.go
+// Teardown deletes the Ingress for the route's host, if one exists.
 func (p *IngressProvider) Teardown(ctx context.Context, route domain.Route) error {
 	ing := &networkingv1.Ingress{}
 	err := p.client.Get(ctx, client.ObjectKey{

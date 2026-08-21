@@ -24,25 +24,25 @@ import "github.com/blanketops/environments/pkg/apis/packages/api"
 
 
 <a name="ApplyApplication"></a>
-## func [ApplyApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L131-L135>)
+## func [ApplyApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L128-L132>)
 
 ```go
 func ApplyApplication(ctx context.Context, c client.Client, app *kappctrlv1alpha1.App) error
 ```
 
-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- Apply \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+ApplyApplication server\-side applies the App with the blanketops\-packages field manager, forcing ownership of any conflicting fields.
 
 <a name="BuildKappApplication"></a>
-## func [BuildKappApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L148-L150>)
+## func [BuildKappApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L144-L146>)
 
 ```go
 func BuildKappApplication(intent *intent.PackageIntent) (*kappctrlv1alpha1.App, error)
 ```
 
-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- Build \(pure function\) \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+BuildKappApplication constructs the kapp\-controller App object for a package intent. Pure function: no side effects, no cluster access.
 
 <a name="DeleteApplication"></a>
-## func [DeleteApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L304-L308>)
+## func [DeleteApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L296-L300>)
 
 ```go
 func DeleteApplication(ctx context.Context, c client.Client, intent *intent.PackageIntent) error
@@ -85,22 +85,22 @@ func NewApplicationProvider(c client.Client, scheme *runtime.Scheme, log logr.Lo
 NewApplicationProvider constructs an ApplicationProvider.
 
 <a name="ApplicationProvider.Execute"></a>
-### func \(\*ApplicationProvider\) [Execute](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L69-L72>)
+### func \(\*ApplicationProvider\) [Execute](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L67-L70>)
 
 ```go
 func (p *ApplicationProvider) Execute(ctx context.Context, intent *intent.PackageIntent) (*domain.PackageResult, error)
 ```
 
-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- Execute \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+Execute builds the kapp\-controller App for the intent and applies it.
 
 <a name="ApplicationProvider.ObserveApplication"></a>
-### func \(\*ApplicationProvider\) [ObserveApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L186-L190>)
+### func \(\*ApplicationProvider\) [ObserveApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L180-L184>)
 
 ```go
 func (p *ApplicationProvider) ObserveApplication(ctx context.Context, namespace, name string) (*domain.ApplicationState, error)
 ```
 
-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- Observe \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+ObserveApplication fetches the current state of the named App.
 
 <a name="PackageProvider"></a>
 ## type [PackageProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L34-L39>)

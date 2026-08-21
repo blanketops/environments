@@ -200,7 +200,6 @@ func (p *GitHubProvider) apply(ctx context.Context, obj ctrlclient.Object) error
 
 func ptr[T any](v T) *T { return &v }
 
-// ── Teardown ──────────────────────────────────────────────────────────────────
 // Teardown deletes the Crossplane Repository and RepositoryWebhook this
 // provider created. Mandatory, not optional — Ensure links these objects to
 // the GitRepository CR by label only (sources.blanketops.dev/gitrepository),
