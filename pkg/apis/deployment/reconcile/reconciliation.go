@@ -161,13 +161,18 @@ func (r *ReconciliationExecutor) Teardown(
 			"deployment", rIntent.Name,
 		)
 
-		env, ok := sourceCR.Labels["environments.blanketops.dev/type"]
-		if !ok || env == "" {
-			return fmt.Errorf("deployment CR must define label environments.blanketops.dev/type")
-		}
-
-		repo := rIntent.ManifestsRepo
-		return r.Kustomizer.Teardown(ctx, sourceCR, rIntent, repo.URL, repo.Ref.Commit, env)
+		// Only the Flux GitRepository/Kustomization CRs, not the manifests
+		// repo itself (no clone, no commit/push) — see
+		// KustomizeStrategyProvider.TeardownFluxResources's doc comment for
+		// why: this executor has no way to know whether the caller's
+		// manifests-repo lifecycle is shared/persistent (in which case
+		// removing files would matter) or owned end-to-end elsewhere (e.g.
+		// a mediator that deletes the whole repo via a Git host's API, in
+		// which case removing files first is redundant at best). Callers
+		// with a shared-repo model that also need file removal should call
+		// KustomizeStrategyProvider.Teardown directly instead of going
+		// through this executor.
+		return r.Kustomizer.TeardownFluxResources(ctx, sourceCR)
 
 	case intent.ReconciliationHelm:
 		return fmt.Errorf("helm reconciliation not implemented")

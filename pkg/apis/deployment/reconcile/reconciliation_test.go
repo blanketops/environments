@@ -19,6 +19,8 @@ import (
 	"context"
 	"testing"
 
+	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
+	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -29,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	environmentv1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
+	"github.com/blanketops/environments/pkg/apis/deployment/api"
 	"github.com/blanketops/environments/pkg/apis/deployment/domain"
 	"github.com/blanketops/environments/pkg/apis/deployment/strategy"
 	intent "github.com/blanketops/environments/pkg/intent/deployment"
@@ -203,17 +206,33 @@ func TestReconciliationExecutor_Teardown(t *testing.T) {
 		}
 	})
 
-	t.Run("gitops mode requires the environment type label", func(t *testing.T) {
+	t.Run("gitops mode deletes only the Flux GitRepository/Kustomization CRs, not manifests", func(t *testing.T) {
 		scheme := newTestScheme(t)
-		c := fake.NewClientBuilder().WithScheme(scheme).Build()
+		if err := kustomizev1.AddToScheme(scheme); err != nil {
+			t.Fatalf("AddToScheme(kustomizev1): %v", err)
+		}
+		if err := sourcev1.AddToScheme(scheme); err != nil {
+			t.Fatalf("AddToScheme(sourcev1): %v", err)
+		}
+
+		kust := &kustomizev1.Kustomization{
+			ObjectMeta: metav1.ObjectMeta{Name: "web-kustomize", Namespace: "default"},
+		}
+		gitRepo := &sourcev1.GitRepository{
+			ObjectMeta: metav1.ObjectMeta{Name: "web-source", Namespace: "default"},
+		}
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(kust, gitRepo).Build()
 		exec := NewReconciliationExecutor(
 			strategy.NewRuntimeProvider(c, scheme, logr.Discard(), nil),
-			nil, // Kustomizer unused — the label check fails before touching it.
+			api.NewKustomizeStrategyProvider(c, scheme, logr.Discard()),
 			logr.Discard(),
 		)
 
+		// Deliberately no environments.blanketops.dev/type label — this
+		// dispatch path (TeardownFluxResources) doesn't need it, unlike
+		// ReconcileKustomization/CommitAndPush.
 		sourceCR := &environmentv1alpha1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{Name: "web", Namespace: "default"}, // no label
+			ObjectMeta: metav1.ObjectMeta{Name: "web", Namespace: "default"},
 		}
 		dIntent := &intent.DeploymentIntent{
 			Name:                   "web",
@@ -222,9 +241,17 @@ func TestReconciliationExecutor_Teardown(t *testing.T) {
 			ManifestsRepo:          &intent.ManifestsRepo{URL: "https://example.invalid/repo.git"},
 		}
 
-		err := exec.Teardown(context.Background(), sourceCR, dIntent)
-		if err == nil {
-			t.Fatal("expected an error for a missing environments.blanketops.dev/type label, got nil")
+		if err := exec.Teardown(context.Background(), sourceCR, dIntent); err != nil {
+			t.Fatalf("Teardown: unexpected error: %v", err)
+		}
+
+		err := c.Get(context.Background(), client.ObjectKeyFromObject(kust), &kustomizev1.Kustomization{})
+		if !apierrors.IsNotFound(err) {
+			t.Fatalf("expected the Kustomization to be deleted, got err = %v", err)
+		}
+		err = c.Get(context.Background(), client.ObjectKeyFromObject(gitRepo), &sourcev1.GitRepository{})
+		if !apierrors.IsNotFound(err) {
+			t.Fatalf("expected the GitRepository to be deleted, got err = %v", err)
 		}
 	})
 
