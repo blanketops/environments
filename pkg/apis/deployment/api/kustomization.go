@@ -317,7 +317,12 @@ resources:
 			return err
 		}
 
-		if out, err := utils.RunGitWithEnv(repoPath, sshEnv, "push"); err != nil {
+		// ensureLocalClone leaves the working tree on a detached HEAD
+		// (checking out FETCH_HEAD is never a branch), so a bare `push`
+		// fails with "You are not currently on a branch" — the explicit
+		// HEAD:<branch> refspec pushes whatever commit HEAD points at
+		// regardless, landing it on the manifests repo's stable branch.
+		if out, err := utils.RunGitWithEnv(repoPath, sshEnv, "push", "origin", "HEAD:"+defaultGitBranch); err != nil {
 			return fmt.Errorf("push: %w: %s", err, out)
 		}
 
@@ -538,7 +543,10 @@ func (m *KustomizeStrategyProvider) ensureKustomization(
 
 // Teardown removes GitOps-managed resources for this Deployment CR: deletes
 // the workload manifests from the external Git repo (committed + pushed),
-// then deletes the Kustomization and GitRepository Flux CRs.
+// then deletes the Kustomization and GitRepository Flux CRs. repoURL/ref
+// identify the manifests repo exactly as ReconcileKustomization's caller
+// does (ref is a commit SHA) — needed to ensure a local clone exists before
+// removeAndPush can touch it.
 //
 // Order matters: the Kustomization must be deleted (or its manifests must
 // already be absent) before or alongside the repo cleanup — otherwise Flux
@@ -554,6 +562,8 @@ func (m *KustomizeStrategyProvider) Teardown(
 	ctx context.Context,
 	cr *environmentv1alpha1.Deployment,
 	intent *intent.DeploymentIntent,
+	repoURL string,
+	ref string,
 	env string,
 ) error {
 	log := m.Log.WithValues("deployment", cr.Name, "namespace", cr.Namespace)
@@ -581,8 +591,23 @@ func (m *KustomizeStrategyProvider) Teardown(
 		return fmt.Errorf("delete gitrepository: %w", err)
 	}
 
-	// ── 3. Remove committed manifests from the external repo + push.
-	if err := m.removeAndPush(cr, intent, env); err != nil {
+	// ── 3. Ensure a local clone exists, then remove committed manifests
+	//       from the external repo + push. Same clone/auth requirement as
+	//       ReconcileKustomization: nothing else guarantees repoPath is a
+	//       working git clone by the time we get here.
+	repoPath := filepath.Join(os.TempDir(), fmt.Sprintf("%s-manifests", cr.Name))
+
+	sshEnv, cleanup, err := m.resolveGitSSHEnv(ctx, cr)
+	if err != nil {
+		return fmt.Errorf("resolve git ssh credentials: %w", err)
+	}
+	defer cleanup()
+
+	if err := ensureLocalClone(repoPath, repoURL, ref, sshEnv); err != nil {
+		return fmt.Errorf("ensure local clone: %w", err)
+	}
+
+	if err := m.removeAndPush(repoPath, cr, intent, env, sshEnv); err != nil {
 		return fmt.Errorf("remove manifests from gitops repo: %w", err)
 	}
 
@@ -590,19 +615,16 @@ func (m *KustomizeStrategyProvider) Teardown(
 	return nil
 }
 
-// removeAndPush shares ReconcileKustomization/CommitAndPush's assumption
-// that repoPath is already a local clone, but — unlike that path — has no
-// repoURL/ref to call ensureLocalClone with, and Teardown is not yet called
-// from anywhere (see pkg/apis/deployment/application/service.go's TODO on
-// ReconciliationExecutor having no Teardown method). Needs the same
-// clone/SSH-env treatment as ReconcileKustomization once Teardown is wired
-// up to a real caller.
+// removeAndPush removes cr's workload manifests from repoPath (already a
+// local clone — see Teardown) and pushes the result. sshEnv authenticates
+// the push.
 func (m *KustomizeStrategyProvider) removeAndPush(
+	repoPath string,
 	cr *environmentv1alpha1.Deployment,
 	intent *intent.DeploymentIntent,
 	env string,
+	sshEnv []string,
 ) error {
-	repoPath := filepath.Join(os.TempDir(), fmt.Sprintf("%s-manifests", cr.Name))
 	overlayPath := filepath.Join(repoPath, "overlays", env)
 
 	for _, su := range intent.ServiceUnits {
@@ -639,6 +661,10 @@ func (m *KustomizeStrategyProvider) removeAndPush(
 	if _, err := utils.RunGit(repoPath, "commit", "-m", fmt.Sprintf("render(%s): remove workloads for %s", env, cr.Name)); err != nil {
 		return err
 	}
-	_, err := utils.RunGit(repoPath, "push")
-	return err
+	// See CommitAndPush's push call for why this uses an explicit
+	// HEAD:<branch> refspec instead of a bare push.
+	if out, err := utils.RunGitWithEnv(repoPath, sshEnv, "push", "origin", "HEAD:"+defaultGitBranch); err != nil {
+		return fmt.Errorf("push: %w: %s", err, out)
+	}
+	return nil
 }
