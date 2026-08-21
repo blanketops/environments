@@ -138,4 +138,43 @@ func TestPackageCache_PublishResolved(t *testing.T) {
 			t.Errorf("GetPackageRepository = %+v, %v", repo, found)
 		}
 	})
+
+	t.Run("DiffEnabled and non-nil StateRepository are published", func(t *testing.T) {
+		c := newTestPackageCache(t)
+		r := &packagesResolution.ResolvedPackage{
+			Spec: &packagesResolution.ResolvedPackageSpec{
+				Version:         "v1",
+				Enabled:         true,
+				DiffEnabled:     true,
+				StateRepository: &packagesResolution.ResolvedStateRepository{URL: "https://git.example/state"},
+			},
+		}
+		if err := c.PublishResolved(context.Background(), nn, 1, r); err != nil {
+			t.Fatalf("PublishResolved: %v", err)
+		}
+		if v, found, _ := c.GetKappDiff(context.Background(), nn, 1); !found || !v {
+			t.Errorf("GetKappDiff = %v, %v", v, found)
+		}
+		var stateRepo packagesResolution.ResolvedStateRepository
+		if found, _ := c.GetStateRepo(context.Background(), nn, 1, &stateRepo); !found || stateRepo.URL != "https://git.example/state" {
+			t.Errorf("GetStateRepo = %+v, %v", stateRepo, found)
+		}
+	})
+
+	t.Run("nil StateRepository is not published", func(t *testing.T) {
+		c := newTestPackageCache(t)
+		r := &packagesResolution.ResolvedPackage{
+			Spec: &packagesResolution.ResolvedPackageSpec{
+				Version: "v1",
+				Enabled: true,
+			},
+		}
+		if err := c.PublishResolved(context.Background(), nn, 1, r); err != nil {
+			t.Fatalf("PublishResolved: %v", err)
+		}
+		var stateRepo packagesResolution.ResolvedStateRepository
+		if found, _ := c.GetStateRepo(context.Background(), nn, 1, &stateRepo); found {
+			t.Error("GetStateRepo: found = true, want false for a nil StateRepository")
+		}
+	})
 }

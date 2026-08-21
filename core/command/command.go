@@ -105,11 +105,14 @@ func (c Command) String() string {
 // when dispatching a Command to an async worker or retry queue where the
 // caller may mutate Obj after dispatch.
 func (c Command) Clone() Command {
-	return Command{
+	clone := Command{
 		Type: c.Type,
 		GVK:  c.GVK,
-		Obj:  c.Obj.DeepCopyObject().(client.Object),
 		Old:  c.Old,
 		New:  c.New,
 	}
+	if c.Obj != nil {
+		clone.Obj = c.Obj.DeepCopyObject().(client.Object)
+	}
+	return clone
 }

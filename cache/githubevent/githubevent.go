@@ -13,6 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package githubevent provides domain-specific, field-level caching for
+GitHubEvent resources. GitHubEventCache embeds cache.ObjectCache and adds
+typed Set* / Get* helpers for each resolved spec field (repository,
+eventType, ref, webhook), plus PublishResolved, which projects a
+*githubeventResolution.ResolvedGitHubEvent into those fields after
+resolution succeeds.
+*/
 package githubevent
 
 import (

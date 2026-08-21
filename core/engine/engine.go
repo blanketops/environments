@@ -72,6 +72,9 @@ type Engine struct {
 	// workerGroup tracks active workers for graceful shutdown.
 	workerGroup sync.WaitGroup
 	logger      logr.Logger
+
+	// stopOnce guards workerStop against being closed more than once.
+	stopOnce sync.Once
 }
 
 // NewEngine constructs an Engine bound to the given Registry and logger.
@@ -111,7 +114,11 @@ func (e *Engine) Execute(ctx context.Context, cmd command.Command) error {
 // through to Execute when in synchronous mode. Blocks if the queue is full
 // and returns ctx.Err() if the context is cancelled while waiting.
 func (e *Engine) Queue(ctx context.Context, cmd command.Command) error {
-	if e.workers <= 0 {
+	e.mu.RLock()
+	workers := e.workers
+	e.mu.RUnlock()
+
+	if workers <= 0 {
 		return e.Execute(ctx, cmd)
 	}
 	select {
@@ -146,13 +153,17 @@ func (e *Engine) StartWorkers() {
 
 // StopWorkers signals all worker goroutines to exit and waits for them to
 // drain, up to the given timeout. Called during manager shutdown. No-op
-// when workers == 0.
+// when workers == 0. Safe to call more than once.
 func (e *Engine) StopWorkers(timeout time.Duration) {
-	if e.workers <= 0 {
+	e.mu.RLock()
+	workers := e.workers
+	e.mu.RUnlock()
+
+	if workers <= 0 {
 		return
 	}
 
-	close(e.workerStop)
+	e.stopOnce.Do(func() { close(e.workerStop) })
 
 	done := make(chan struct{})
 	go func() {

@@ -439,7 +439,7 @@ type PackageSource struct {
 <a name="PackageSpec"></a>
 ## type [PackageSpec](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/model.go#L22-L75>)
 
-Package represents the domain\-level truth of a Package. It is independent of Kubernetes API machinery.
+PackageSpec represents the domain\-level truth of a Package. It is independent of Kubernetes API machinery.
 
 ```go
 type PackageSpec struct {

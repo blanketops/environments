@@ -63,9 +63,7 @@ func NewApplicationProvider(
 	}
 }
 
-// ------------------------------------------------------------
-// Execute
-// ------------------------------------------------------------
+// Execute builds the kapp-controller App for the intent and applies it.
 func (p *ApplicationProvider) Execute(
 	ctx context.Context,
 	intent *intent.PackageIntent,
@@ -125,9 +123,8 @@ func (p *ApplicationProvider) Execute(
 	}, nil
 }
 
-// ------------------------------------------------------------
-// Apply
-// ------------------------------------------------------------
+// ApplyApplication server-side applies the App with the blanketops-packages
+// field manager, forcing ownership of any conflicting fields.
 func ApplyApplication(
 	ctx context.Context,
 	c client.Client,
@@ -142,9 +139,8 @@ func ApplyApplication(
 	)
 }
 
-// ------------------------------------------------------------
-// Build (pure function)
-// ------------------------------------------------------------
+// BuildKappApplication constructs the kapp-controller App object for a
+// package intent. Pure function: no side effects, no cluster access.
 func BuildKappApplication(
 	intent *intent.PackageIntent,
 ) (*kappctrlv1alpha1.App, error) {
@@ -180,9 +176,7 @@ func BuildKappApplication(
 	}, nil
 }
 
-// ------------------------------------------------------------
-// Observe
-// ------------------------------------------------------------
+// ObserveApplication fetches the current state of the named App.
 func (p *ApplicationProvider) ObserveApplication(
 	ctx context.Context,
 	namespace,
@@ -282,9 +276,7 @@ func packagePhaseFromApplicationPhase(
 	}
 }
 
-// ------------------------------------------------------------
-// Helpers
-// ------------------------------------------------------------
+// failedResult builds a failed PackageResult stamped with start and err's message.
 func failedResult(start time.Time, err error) *domain.PackageResult {
 	return &domain.PackageResult{
 		Success:    false,

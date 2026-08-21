@@ -13,6 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package gitrepository provides domain-specific, field-level caching for
+GitRepository resources. GitRepositoryCache embeds cache.ObjectCache and
+adds typed Set* / Get* helpers for each resolved spec field (provider,
+hookUrl, repository, webhooks), plus PublishResolved, which projects a
+*gitrepositoryResolution.ResolvedGitRepository into those fields —
+hookUrl and webhooks only when resolution actually populated them.
+*/
 package gitrepository
 
 import (

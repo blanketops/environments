@@ -13,6 +13,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package adapter provides concrete core/cache.ExternalCache implementations
+for the external cache's supported backends: Redis (RedisCache) and
+Memcached (MemcachedCache). cache.NewExternal selects and constructs one of
+these from Options; nothing downstream of that composition point imports
+this package directly — everything else depends only on the
+core/cache.ExternalCache interface.
+
+The two backends differ in one structurally important way: Redis supports
+key enumeration (DelPrefix scans and deletes matching keys), while Memcached
+does not (DelPrefix is a no-op there). This is safe because ObjectCache's
+generation-scoped keys are the real correctness guarantee — a stale entry
+simply expires via TTL rather than being explicitly invalidated.
+*/
 package adapter
 
 import (
