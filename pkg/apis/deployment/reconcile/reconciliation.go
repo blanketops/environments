@@ -129,3 +129,53 @@ func (r *ReconciliationExecutor) Execute(
 		)
 	}
 }
+
+// Teardown reverses Execute: deletes whatever the imperative or GitOps path
+// applied for rIntent, dispatching on the same axis Execute uses.
+func (r *ReconciliationExecutor) Teardown(
+	ctx context.Context,
+	sourceCR *environmentv1alpha1.Deployment,
+	rIntent *intent.DeploymentIntent,
+) error {
+
+	if rIntent == nil {
+		return fmt.Errorf("nil deployment intent")
+	}
+
+	// ------------------------------------------------
+	// Imperative Mode (No GitOps)
+	// ------------------------------------------------
+	if rIntent.ManifestsRepo == nil {
+		r.Log.Info("Tearing down imperative reconciliation")
+		return r.RuntimeProvider.Teardown(ctx, rIntent)
+	}
+
+	// ------------------------------------------------
+	// GitOps Mode
+	// ------------------------------------------------
+	switch rIntent.ReconciliationStrategy {
+
+	case intent.ReconciliationKustomize:
+
+		r.Log.Info("Tearing down GitOps reconciliation (kustomize)",
+			"deployment", rIntent.Name,
+		)
+
+		env, ok := sourceCR.Labels["environments.blanketops.dev/type"]
+		if !ok || env == "" {
+			return fmt.Errorf("deployment CR must define label environments.blanketops.dev/type")
+		}
+
+		repo := rIntent.ManifestsRepo
+		return r.Kustomizer.Teardown(ctx, sourceCR, rIntent, repo.URL, repo.Ref.Commit, env)
+
+	case intent.ReconciliationHelm:
+		return fmt.Errorf("helm reconciliation not implemented")
+
+	default:
+		return fmt.Errorf(
+			"unsupported reconciliation strategy: %s",
+			rIntent.ReconciliationStrategy,
+		)
+	}
+}
