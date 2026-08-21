@@ -22,9 +22,9 @@ Options.
 
 ObjectCache is deliberately generic — it knows nothing about any specific
 CR's spec shape. The per-kind subpackages (cache/build, cache/deployment,
-cache/domain, and siblings) embed it and add typed Set* / Get* helpers plus a
-PublishResolved method that projects a resolved contract into individual
-fields.
+cache/domain, and siblings) embed it and add typed Set* / Get* helpers
+plus a PublishResolved method that projects a resolved contract into
+individual fields.
 
 Every read is a fast-path optimization, never a correctness dependency: a
 miss or backend error always falls through to the informer cache (see

@@ -16,8 +16,8 @@ limitations under the License.
 /*
 Package deployment provides domain-specific, field-level caching for
 Deployment resources. DeploymentCache embeds cache.ObjectCache and adds
-typed Set* / Get* helpers for each resolved spec field (serviceUnits, runtime,
-strategy, imageAutomation, reconciliationStrategy, gitOwner,
+typed Set* / Get* helpers for each resolved spec field (serviceUnits,
+runtime, strategy, imageAutomation, reconciliationStrategy, gitOwner,
 manifestsRepo), plus PublishResolved, which projects a
 *deploymentResolution.ResolvedDeployment into those fields — mandatory
 fields unconditionally, optional ones only when resolution produced a
