@@ -24,25 +24,25 @@ import "github.com/blanketops/environments/pkg/apis/packages/api"
 
 
 <a name="ApplyApplication"></a>
-## func ApplyApplication
+## func [ApplyApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L128-L132>)
 
 ```go
 func ApplyApplication(ctx context.Context, c client.Client, app *kappctrlv1alpha1.App) error
 ```
 
-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- Apply \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+ApplyApplication server\-side applies the App with the blanketops\-packages field manager, forcing ownership of any conflicting fields.
 
 <a name="BuildKappApplication"></a>
-## func BuildKappApplication
+## func [BuildKappApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L144-L146>)
 
 ```go
 func BuildKappApplication(intent *intent.PackageIntent) (*kappctrlv1alpha1.App, error)
 ```
 
-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- Build \(pure function\) \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+BuildKappApplication constructs the kapp\-controller App object for a package intent. Pure function: no side effects, no cluster access.
 
 <a name="DeleteApplication"></a>
-## func DeleteApplication
+## func [DeleteApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L296-L300>)
 
 ```go
 func DeleteApplication(ctx context.Context, c client.Client, intent *intent.PackageIntent) error
@@ -53,7 +53,7 @@ DeleteApplication deletes the kapp App this provider created for the given packa
 Idempotent — a missing App is not an error.
 
 <a name="PackageResultFromApplicationState"></a>
-## func PackageResultFromApplicationState
+## func [PackageResultFromApplicationState](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L98-L100>)
 
 ```go
 func PackageResultFromApplicationState(state *domain.ApplicationState) *domain.PackageResult
@@ -62,7 +62,7 @@ func PackageResultFromApplicationState(state *domain.ApplicationState) *domain.P
 PackageResultFromApplicationState translates an observed kapp\-controller App state into a domain.PackageResult, explicitly mapping each ApplicationPhase to its corresponding PackagePhase.
 
 <a name="ApplicationProvider"></a>
-## type ApplicationProvider
+## type [ApplicationProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L41-L46>)
 
 ApplicationProvider executes a Package via a kapp\-controller App. See PackageProvider for the newer implementation with corrected phase mapping.
 
@@ -76,7 +76,7 @@ type ApplicationProvider struct {
 ```
 
 <a name="NewApplicationProvider"></a>
-### func NewApplicationProvider
+### func [NewApplicationProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L52-L57>)
 
 ```go
 func NewApplicationProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *ApplicationProvider
@@ -85,25 +85,25 @@ func NewApplicationProvider(c client.Client, scheme *runtime.Scheme, log logr.Lo
 NewApplicationProvider constructs an ApplicationProvider.
 
 <a name="ApplicationProvider.Execute"></a>
-### func \(\*ApplicationProvider\) Execute
+### func \(\*ApplicationProvider\) [Execute](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L67-L70>)
 
 ```go
 func (p *ApplicationProvider) Execute(ctx context.Context, intent *intent.PackageIntent) (*domain.PackageResult, error)
 ```
 
-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- Execute \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+Execute builds the kapp\-controller App for the intent and applies it.
 
 <a name="ApplicationProvider.ObserveApplication"></a>
-### func \(\*ApplicationProvider\) ObserveApplication
+### func \(\*ApplicationProvider\) [ObserveApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/application.go#L180-L184>)
 
 ```go
 func (p *ApplicationProvider) ObserveApplication(ctx context.Context, namespace, name string) (*domain.ApplicationState, error)
 ```
 
-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- Observe \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+ObserveApplication fetches the current state of the named App.
 
 <a name="PackageProvider"></a>
-## type PackageProvider
+## type [PackageProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L34-L39>)
 
 PackageProvider executes a Package via a kapp\-controller App, replacing ApplicationProvider's older behavior with a corrected phase mapping.
 
@@ -117,7 +117,7 @@ type PackageProvider struct {
 ```
 
 <a name="NewPackageProvider"></a>
-### func NewPackageProvider
+### func [NewPackageProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L42>)
 
 ```go
 func NewPackageProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *PackageProvider
@@ -126,7 +126,7 @@ func NewPackageProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger
 NewPackageProvider constructs a PackageProvider.
 
 <a name="PackageProvider.Execute"></a>
-### func \(\*PackageProvider\) Execute
+### func \(\*PackageProvider\) [Execute](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L54-L57>)
 
 ```go
 func (p *PackageProvider) Execute(ctx context.Context, intent *intent.PackageIntent) (*domain.PackageResult, error)
@@ -135,7 +135,7 @@ func (p *PackageProvider) Execute(ctx context.Context, intent *intent.PackageInt
 Execute builds a kapp App from intent, applies it, observes its resulting state, and translates that into a domain.PackageResult.
 
 <a name="PackageProvider.ObserveApplication"></a>
-### func \(\*PackageProvider\) ObserveApplication
+### func \(\*PackageProvider\) [ObserveApplication](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/package.go#L137-L141>)
 
 ```go
 func (p *PackageProvider) ObserveApplication(ctx context.Context, namespace, name string) (*domain.ApplicationState, error)
@@ -144,7 +144,7 @@ func (p *PackageProvider) ObserveApplication(ctx context.Context, namespace, nam
 ObserveApplication reads the named kapp\-controller App and derives its ApplicationState from the App's ReconcileSucceeded condition.
 
 <a name="Provider"></a>
-## type Provider
+## type [Provider](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/api/provider.go#L26-L28>)
 
 Provider executes a PackageIntent against a concrete backend \(e.g. kapp\).
 

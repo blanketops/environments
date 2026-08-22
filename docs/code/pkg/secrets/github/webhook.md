@@ -17,7 +17,7 @@ Package webhook reconciles the GitHub webhook secret — the ExternalSecret back
 
 
 <a name="GitHubWebhookSecretReconciler"></a>
-## type GitHubWebhookSecretReconciler
+## type [GitHubWebhookSecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/github/webhook/webhook.go#L41-L46>)
 
 GitHubWebhookSecretReconciler converges the ExternalSecret backing the shared secret GitHub signs webhook deliveries with, scoped to a GitHubEvent, and tears it down on GitHubEvent deletion.
 
@@ -31,7 +31,7 @@ type GitHubWebhookSecretReconciler struct {
 ```
 
 <a name="NewGitHubWebhookSecretReconciler"></a>
-### func NewGitHubWebhookSecretReconciler
+### func [NewGitHubWebhookSecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/github/webhook/webhook.go#L50>)
 
 ```go
 func NewGitHubWebhookSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *GitHubWebhookSecretReconciler
@@ -40,7 +40,7 @@ func NewGitHubWebhookSecretReconciler(c client.Client, log logr.Logger, storeNam
 NewGitHubWebhookSecretReconciler constructs a GitHubWebhookSecretReconciler targeting the given ESO store.
 
 <a name="GitHubWebhookSecretReconciler.Delete"></a>
-### func \(\*GitHubWebhookSecretReconciler\) Delete
+### func \(\*GitHubWebhookSecretReconciler\) [Delete](<https://github.com/blanketops/environments/blob/main/pkg/secrets/github/webhook/webhook.go#L137>)
 
 ```go
 func (r *GitHubWebhookSecretReconciler) Delete(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent) error
@@ -49,7 +49,7 @@ func (r *GitHubWebhookSecretReconciler) Delete(ctx context.Context, resolved *gi
 Delete removes both the ExternalSecret and the Secret ESO materialized from it. See git.BuildGitSSHSecretReconciler.Delete for why the Secret must be deleted explicitly rather than left to the ExternalSecret's ownerReference GC cascade.
 
 <a name="GitHubWebhookSecretReconciler.Reconcile"></a>
-### func \(\*GitHubWebhookSecretReconciler\) Reconcile
+### func \(\*GitHubWebhookSecretReconciler\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/secrets/github/webhook/webhook.go#L61>)
 
 ```go
 func (r *GitHubWebhookSecretReconciler) Reconcile(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent) error

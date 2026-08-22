@@ -136,7 +136,7 @@ func (Mapper) MapResolvedToDomain(rp *pkgResolution.ResolvedPackage) *domain.Pac
 	// ---------------------------------------------------------------------
 
 	var applyStrategy domain.ApplyStrategy
-	switch spec.StateRepository.Strategy {
+	switch stateRepo.Strategy {
 	case "kustomization", "kustomize":
 		applyStrategy = domain.StrategyKustomize
 	case "", "plain":
@@ -145,7 +145,7 @@ func (Mapper) MapResolvedToDomain(rp *pkgResolution.ResolvedPackage) *domain.Pac
 		panic(fmt.Sprintf(
 			"resolved package %q has unsupported apply strategy %q (resolver bug)",
 			cr.Name,
-			spec.StateRepository.Strategy,
+			stateRepo.Strategy,
 		))
 	}
 

@@ -13,6 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package environment provides domain-specific, field-level caching for
+Environment resources. EnvironmentCache embeds cache.ObjectCache and adds
+typed Set* / Get* helpers for the resolved spec's identity fields
+(applicationName, environmentType, version, secretStoreProvider) and its
+child CR references (build, gitRepository, gitHubEvent, deployment, route,
+package, serviceUnits) — Environment being the aggregate root that ties the
+other CR kinds together. PublishResolved projects a
+*environmentResolution.ResolvedEnvironment into those fields, publishing
+each reference only when resolution actually populated it.
+*/
 package environment
 
 import (

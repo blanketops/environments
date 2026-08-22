@@ -6,6 +6,8 @@
 import "github.com/blanketops/environments/cache/packages"
 ```
 
+Package packages provides domain\-specific, field\-level caching for Package resources. PackageCache embeds cache.ObjectCache and adds typed Set\* / Get\* helpers for each resolved spec field \(version, packageRepository, stateRepo, kappDiff, enabled\), plus a checksum field that the service layer writes separately after package content is fetched and verified — not part of PublishResolved, which only projects the resolved spec \(version, enabled, packageRepository\) right after resolution succeeds.
+
 ## Index
 
 - [type PackageCache](<#PackageCache>)
@@ -26,7 +28,7 @@ import "github.com/blanketops/environments/cache/packages"
 
 
 <a name="PackageCache"></a>
-## type PackageCache
+## type [PackageCache](<https://github.com/blanketops/environments/blob/main/cache/packages/package.go#L38-L40>)
 
 PackageCache provides domain\-specific, field\-level caching for Package resources.
 
@@ -37,7 +39,7 @@ type PackageCache struct {
 ```
 
 <a name="NewPackageCache"></a>
-### func NewPackageCache
+### func [NewPackageCache](<https://github.com/blanketops/environments/blob/main/cache/packages/package.go#L43>)
 
 ```go
 func NewPackageCache(c *cache.Cache) *PackageCache
@@ -46,7 +48,7 @@ func NewPackageCache(c *cache.Cache) *PackageCache
 NewPackageCache constructs a new PackageCache with the provided cache.Cache.
 
 <a name="PackageCache.GetChecksum"></a>
-### func \(\*PackageCache\) GetChecksum
+### func \(\*PackageCache\) [GetChecksum](<https://github.com/blanketops/environments/blob/main/cache/packages/package.go#L122>)
 
 ```go
 func (p *PackageCache) GetChecksum(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -55,7 +57,7 @@ func (p *PackageCache) GetChecksum(ctx context.Context, nn types.NamespacedName,
 
 
 <a name="PackageCache.GetEnabled"></a>
-### func \(\*PackageCache\) GetEnabled
+### func \(\*PackageCache\) [GetEnabled](<https://github.com/blanketops/environments/blob/main/cache/packages/package.go#L107>)
 
 ```go
 func (p *PackageCache) GetEnabled(ctx context.Context, nn types.NamespacedName, gen int64) (bool, bool, error)
@@ -64,7 +66,7 @@ func (p *PackageCache) GetEnabled(ctx context.Context, nn types.NamespacedName, 
 
 
 <a name="PackageCache.GetKappDiff"></a>
-### func \(\*PackageCache\) GetKappDiff
+### func \(\*PackageCache\) [GetKappDiff](<https://github.com/blanketops/environments/blob/main/cache/packages/package.go#L93>)
 
 ```go
 func (p *PackageCache) GetKappDiff(ctx context.Context, nn types.NamespacedName, gen int64) (bool, bool, error)
@@ -73,7 +75,7 @@ func (p *PackageCache) GetKappDiff(ctx context.Context, nn types.NamespacedName,
 
 
 <a name="PackageCache.GetPackageRepository"></a>
-### func \(\*PackageCache\) GetPackageRepository
+### func \(\*PackageCache\) [GetPackageRepository](<https://github.com/blanketops/environments/blob/main/cache/packages/package.go#L69>)
 
 ```go
 func (p *PackageCache) GetPackageRepository(ctx context.Context, nn types.NamespacedName, gen int64, into any) (bool, error)
@@ -82,7 +84,7 @@ func (p *PackageCache) GetPackageRepository(ctx context.Context, nn types.Namesp
 
 
 <a name="PackageCache.GetStateRepo"></a>
-### func \(\*PackageCache\) GetStateRepo
+### func \(\*PackageCache\) [GetStateRepo](<https://github.com/blanketops/environments/blob/main/cache/packages/package.go#L81>)
 
 ```go
 func (p *PackageCache) GetStateRepo(ctx context.Context, nn types.NamespacedName, gen int64, into any) (bool, error)
@@ -91,7 +93,7 @@ func (p *PackageCache) GetStateRepo(ctx context.Context, nn types.NamespacedName
 
 
 <a name="PackageCache.GetVersion"></a>
-### func \(\*PackageCache\) GetVersion
+### func \(\*PackageCache\) [GetVersion](<https://github.com/blanketops/environments/blob/main/cache/packages/package.go#L55>)
 
 ```go
 func (p *PackageCache) GetVersion(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -100,7 +102,7 @@ func (p *PackageCache) GetVersion(ctx context.Context, nn types.NamespacedName, 
 
 
 <a name="PackageCache.PublishResolved"></a>
-### func \(\*PackageCache\) PublishResolved
+### func \(\*PackageCache\) [PublishResolved](<https://github.com/blanketops/environments/blob/main/cache/packages/package.go#L133>)
 
 ```go
 func (p *PackageCache) PublishResolved(ctx context.Context, nn types.NamespacedName, gen int64, r *packagesResolution.ResolvedPackage) error
@@ -109,7 +111,7 @@ func (p *PackageCache) PublishResolved(ctx context.Context, nn types.NamespacedN
 PublishResolved writes the resolved package contract as a generation\-scoped, field\-level projection. All writes are best\-effort: failures cost queryability, never correctness. Returns the first error encountered for optional logging; callers should not fail reconciliation on it.
 
 <a name="PackageCache.SetChecksum"></a>
-### func \(\*PackageCache\) SetChecksum
+### func \(\*PackageCache\) [SetChecksum](<https://github.com/blanketops/environments/blob/main/cache/packages/package.go#L118>)
 
 ```go
 func (p *PackageCache) SetChecksum(ctx context.Context, nn types.NamespacedName, gen int64, checksum string) error
@@ -118,7 +120,7 @@ func (p *PackageCache) SetChecksum(ctx context.Context, nn types.NamespacedName,
 
 
 <a name="PackageCache.SetEnabled"></a>
-### func \(\*PackageCache\) SetEnabled
+### func \(\*PackageCache\) [SetEnabled](<https://github.com/blanketops/environments/blob/main/cache/packages/package.go#L103>)
 
 ```go
 func (p *PackageCache) SetEnabled(ctx context.Context, nn types.NamespacedName, gen int64, enabled bool) error
@@ -127,7 +129,7 @@ func (p *PackageCache) SetEnabled(ctx context.Context, nn types.NamespacedName, 
 
 
 <a name="PackageCache.SetKappDiff"></a>
-### func \(\*PackageCache\) SetKappDiff
+### func \(\*PackageCache\) [SetKappDiff](<https://github.com/blanketops/environments/blob/main/cache/packages/package.go#L89>)
 
 ```go
 func (p *PackageCache) SetKappDiff(ctx context.Context, nn types.NamespacedName, gen int64, enabled bool) error
@@ -136,7 +138,7 @@ func (p *PackageCache) SetKappDiff(ctx context.Context, nn types.NamespacedName,
 
 
 <a name="PackageCache.SetPackageRepository"></a>
-### func \(\*PackageCache\) SetPackageRepository
+### func \(\*PackageCache\) [SetPackageRepository](<https://github.com/blanketops/environments/blob/main/cache/packages/package.go#L65>)
 
 ```go
 func (p *PackageCache) SetPackageRepository(ctx context.Context, nn types.NamespacedName, gen int64, repo any) error
@@ -145,7 +147,7 @@ func (p *PackageCache) SetPackageRepository(ctx context.Context, nn types.Namesp
 
 
 <a name="PackageCache.SetStateRepo"></a>
-### func \(\*PackageCache\) SetStateRepo
+### func \(\*PackageCache\) [SetStateRepo](<https://github.com/blanketops/environments/blob/main/cache/packages/package.go#L77>)
 
 ```go
 func (p *PackageCache) SetStateRepo(ctx context.Context, nn types.NamespacedName, gen int64, stateRepo any) error
@@ -154,7 +156,7 @@ func (p *PackageCache) SetStateRepo(ctx context.Context, nn types.NamespacedName
 
 
 <a name="PackageCache.SetVersion"></a>
-### func \(\*PackageCache\) SetVersion
+### func \(\*PackageCache\) [SetVersion](<https://github.com/blanketops/environments/blob/main/cache/packages/package.go#L51>)
 
 ```go
 func (p *PackageCache) SetVersion(ctx context.Context, nn types.NamespacedName, gen int64, version string) error

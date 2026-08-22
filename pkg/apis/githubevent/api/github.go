@@ -29,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/blanketops/environments/pkg/apis/githubevent/domain"
 	githubeventResolution "github.com/blanketops/environments/resolution/githubevent/resolve"
@@ -267,23 +266,21 @@ func (p *GitHubProvider) Ensure(ctx context.Context, resolved *githubeventResolu
 	}
 
 	// ------------------------------------------------
-	// Stage 2: Owner references. EventBus is intentionally excluded — it's
-	// a shared cluster-wide singleton, not owned by any single GitHubEvent
-	// CR. The RBAC trio (sa/role/roleBinding) follows the same lifecycle as
-	// the Sensor they support, so they're owned alongside it.
-	// ------------------------------------------------
-	for _, obj := range []client.Object{src, sensor, sa, role, roleBinding} {
-		if err := controllerutil.SetControllerReference(cr, obj, p.Scheme); err != nil {
-			res.Message = err.Error()
-			return res, err
-		}
-	}
-
-	// ------------------------------------------------
-	// Stage 3: Apply (upsert) each object. RBAC and the EventSource land
-	// before the Sensor, since the Sensor's pod template references the SA
-	// by name and its trigger depends on the EventSource existing. First
-	// failure aborts.
+	// Stage 2: Apply (upsert) each object. No owner references are set —
+	// EventBus, the EventSource, and the RBAC trio (sa/role/roleBinding)
+	// are shared cluster-wide singletons reused across every GitHubEvent
+	// CR, so owning them per-CR would let whichever CR reconciled last
+	// become sole owner and cascade-delete them on its own deletion. The
+	// Sensor is genuinely per-CR, but it lives in argoEventsNamespace while
+	// cr can live in any namespace — SetControllerReference rejects
+	// cross-namespace owner refs outright, so it can't be used here even
+	// for the Sensor alone. Teardown deletes the Sensor explicitly by its
+	// deterministic name ("github-sensor-" + crName) instead of relying on
+	// GC cascade.
+	//
+	// RBAC and the EventSource land before the Sensor, since the Sensor's
+	// pod template references the SA by name and its trigger depends on
+	// the EventSource existing. First failure aborts.
 	// ------------------------------------------------
 	for _, obj := range []client.Object{bus, sa, role, roleBinding, src, sensor} {
 		if err := p.apply(ctx, obj); err != nil {

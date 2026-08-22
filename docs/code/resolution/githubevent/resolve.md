@@ -24,7 +24,7 @@ All failures surface as errors. Resolution never panics.
 
 
 <a name="ResolvedGitHubEvent"></a>
-## type ResolvedGitHubEvent
+## type [ResolvedGitHubEvent](<https://github.com/blanketops/environments/blob/main/resolution/githubevent/resolve/resolve.go#L45-L48>)
 
 ResolvedGitHubEvent pairs the original Kubernetes GitHubEvent object with its fully decoded and validated spec.
 
@@ -36,7 +36,7 @@ type ResolvedGitHubEvent struct {
 ```
 
 <a name="ResolveGitHubEvent"></a>
-### func ResolveGitHubEvent
+### func [ResolveGitHubEvent](<https://github.com/blanketops/environments/blob/main/resolution/githubevent/resolve/resolve.go#L87>)
 
 ```go
 func ResolveGitHubEvent(ev *eventsv1alpha1.GitHubEvent) (*ResolvedGitHubEvent, error)
@@ -45,7 +45,7 @@ func ResolveGitHubEvent(ev *eventsv1alpha1.GitHubEvent) (*ResolvedGitHubEvent, e
 ResolveGitHubEvent decodes and validates the raw JSON contract from the GitHubEvent CR spec into a ResolvedGitHubEvent. Returns an error if the CR is nil, the contract is absent, or any required field is missing or malformed.
 
 <a name="ResolvedGitHubEventSpec"></a>
-## type ResolvedGitHubEventSpec
+## type [ResolvedGitHubEventSpec](<https://github.com/blanketops/environments/blob/main/resolution/githubevent/resolve/resolve.go#L53-L66>)
 
 ResolvedGitHubEventSpec is the decoded GitHubEvent spec. Fields are facts copied from the webhook payload — none are derived or transformed at this layer.
 
@@ -67,7 +67,7 @@ type ResolvedGitHubEventSpec struct {
 ```
 
 <a name="ResolvedSecretRef"></a>
-## type ResolvedSecretRef
+## type [ResolvedSecretRef](<https://github.com/blanketops/environments/blob/main/resolution/githubevent/resolve/resolve.go#L75-L78>)
 
 ResolvedSecretRef is the resolved Kubernetes Secret reference for the webhook HMAC secret.
 
@@ -79,7 +79,7 @@ type ResolvedSecretRef struct {
 ```
 
 <a name="ResolvedWebhook"></a>
-## type ResolvedWebhook
+## type [ResolvedWebhook](<https://github.com/blanketops/environments/blob/main/resolution/githubevent/resolve/resolve.go#L69-L71>)
 
 ResolvedWebhook is the resolved webhook configuration.
 

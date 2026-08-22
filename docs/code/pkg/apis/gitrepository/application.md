@@ -34,7 +34,7 @@ const (
 ```
 
 <a name="BackendSelector"></a>
-## type BackendSelector
+## type [BackendSelector](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/application/backend_selector.go#L26-L31>)
 
 BackendSelector selects the appropriate repository provider.
 
@@ -45,7 +45,7 @@ type BackendSelector struct {
 ```
 
 <a name="NewBackendSelector"></a>
-### func NewBackendSelector
+### func [NewBackendSelector](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/application/backend_selector.go#L34>)
 
 ```go
 func NewBackendSelector(github api.Provider) *BackendSelector
@@ -54,7 +54,7 @@ func NewBackendSelector(github api.Provider) *BackendSelector
 NewBackendSelector constructs a BackendSelector.
 
 <a name="BackendSelector.ForRepository"></a>
-### func \(\*BackendSelector\) ForRepository
+### func \(\*BackendSelector\) [ForRepository](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/application/backend_selector.go#L41-L43>)
 
 ```go
 func (b *BackendSelector) ForRepository(spec domain.GitRepository) api.Provider
@@ -63,7 +63,7 @@ func (b *BackendSelector) ForRepository(spec domain.GitRepository) api.Provider
 ForRepository selects a provider based on repository spec.
 
 <a name="GitRepositoryService"></a>
-## type GitRepositoryService
+## type [GitRepositoryService](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/application/service.go#L25-L29>)
 
 GitRepositoryService orchestrates GitRepository reconciliation.
 
@@ -74,7 +74,7 @@ type GitRepositoryService struct {
 ```
 
 <a name="NewGitRepositoryService"></a>
-### func NewGitRepositoryService
+### func [NewGitRepositoryService](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/application/service.go#L33>)
 
 ```go
 func NewGitRepositoryService(mapper *Mapper, status *StatusWriter, backend *BackendSelector) *GitRepositoryService
@@ -83,7 +83,7 @@ func NewGitRepositoryService(mapper *Mapper, status *StatusWriter, backend *Back
 NewGitRepositoryService constructs a GitRepositoryService from its collaborators.
 
 <a name="GitRepositoryService.Reconcile"></a>
-### func \(\*GitRepositoryService\) Reconcile
+### func \(\*GitRepositoryService\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/application/service.go#L42>)
 
 ```go
 func (s *GitRepositoryService) Reconcile(ctx context.Context, resolved *gitrepoResolution.ResolvedGitRepository) error
@@ -92,7 +92,7 @@ func (s *GitRepositoryService) Reconcile(ctx context.Context, resolved *gitrepoR
 Reconcile reconciles a resolved GitRepository declaratively.
 
 <a name="Mapper"></a>
-## type Mapper
+## type [Mapper](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/application/mapper.go#L27>)
 
 Mapper converts a fully resolved GitRepository into a pure domain GitRepository.
 
@@ -101,7 +101,7 @@ type Mapper struct{}
 ```
 
 <a name="NewMapper"></a>
-### func NewMapper
+### func [NewMapper](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/application/mapper.go#L30>)
 
 ```go
 func NewMapper() *Mapper
@@ -110,7 +110,7 @@ func NewMapper() *Mapper
 NewMapper constructs a Mapper.
 
 <a name="Mapper.MapResolvedToDomain"></a>
-### func \(Mapper\) MapResolvedToDomain
+### func \(Mapper\) [MapResolvedToDomain](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/application/mapper.go#L42>)
 
 ```go
 func (Mapper) MapResolvedToDomain(r *gitrepoResolution.ResolvedGitRepository) domain.GitRepository
@@ -121,7 +121,7 @@ MapResolvedToDomain converts a fully resolved GitRepository into a pure domain G
 CONTRACT: \- Resolver guarantees presence of mandatory fields \- Nil / empty mandatory values indicate a resolver bug and MUST panic \- Optional fields must be preserved verbatim \- Mapper must not invent defaults or reinterpret intent
 
 <a name="StatusWriter"></a>
-## type StatusWriter
+## type [StatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/application/status.go#L35>)
 
 StatusWriter mutates GitRepository status IN\-MEMORY only. Persistence is owned exclusively by the controller layer.
 
@@ -130,7 +130,7 @@ type StatusWriter struct{}
 ```
 
 <a name="NewStatusWriter"></a>
-### func NewStatusWriter
+### func [NewStatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/application/status.go#L38>)
 
 ```go
 func NewStatusWriter() *StatusWriter
@@ -139,7 +139,7 @@ func NewStatusWriter() *StatusWriter
 NewStatusWriter constructs a StatusWriter.
 
 <a name="StatusWriter.Write"></a>
-### func \(\*StatusWriter\) Write
+### func \(\*StatusWriter\) [Write](<https://github.com/blanketops/environments/blob/main/pkg/apis/gitrepository/application/status.go#L44-L49>)
 
 ```go
 func (w *StatusWriter) Write(_ context.Context, cr *sourcesv1alpha1.GitRepository, result domain.Result, err error) error

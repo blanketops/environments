@@ -14,7 +14,7 @@ import "github.com/blanketops/environments/resolution/environment/adapter"
 
 
 <a name="Adapter"></a>
-## type Adapter
+## type [Adapter](<https://github.com/blanketops/environments/blob/main/resolution/environment/adapter/adapter.go#L42-L46>)
 
 Adapter is a thin struct wrapper around resolve.ResolveEnvironment, satisfying interface\-based injection points that need a concrete resolution dependency rather than a free function.
 
@@ -24,7 +24,7 @@ type Adapter struct {
 ```
 
 <a name="NewAdapter"></a>
-### func NewAdapter
+### func [NewAdapter](<https://github.com/blanketops/environments/blob/main/resolution/environment/adapter/adapter.go#L49>)
 
 ```go
 func NewAdapter() *Adapter
@@ -33,7 +33,7 @@ func NewAdapter() *Adapter
 NewAdapter constructs an Adapter.
 
 <a name="Adapter.Resolve"></a>
-### func \(\*Adapter\) Resolve
+### func \(\*Adapter\) [Resolve](<https://github.com/blanketops/environments/blob/main/resolution/environment/adapter/adapter.go#L54>)
 
 ```go
 func (a *Adapter) Resolve(ctx context.Context, environment *environmentv1alpha1.Environment) (*resolve.ResolvedEnvironment, error)

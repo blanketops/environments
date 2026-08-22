@@ -22,7 +22,7 @@ Resolution is nil\-tolerant for the CR itself but strict on the contract payload
 
 
 <a name="ResolvedEnvironment"></a>
-## type ResolvedEnvironment
+## type [ResolvedEnvironment](<https://github.com/blanketops/environments/blob/main/resolution/environment/resolve/resolve.go#L43-L46>)
 
 ResolvedEnvironment pairs the original Kubernetes Environment object with its fully decoded and validated spec.
 
@@ -34,7 +34,7 @@ type ResolvedEnvironment struct {
 ```
 
 <a name="ResolveEnvironment"></a>
-### func ResolveEnvironment
+### func [ResolveEnvironment](<https://github.com/blanketops/environments/blob/main/resolution/environment/resolve/resolve.go#L120>)
 
 ```go
 func ResolveEnvironment(environment *environmentv1alpha1.Environment) (*ResolvedEnvironment, error)
@@ -43,7 +43,7 @@ func ResolveEnvironment(environment *environmentv1alpha1.Environment) (*Resolved
 ResolveEnvironment decodes and validates the raw JSON contract from the Environment CR spec into a ResolvedEnvironment.
 
 <a name="ResolvedEnvironmentContract"></a>
-## type ResolvedEnvironmentContract
+## type [ResolvedEnvironmentContract](<https://github.com/blanketops/environments/blob/main/resolution/environment/resolve/resolve.go#L82-L89>)
 
 ResolvedEnvironmentContract holds platform\-level bindings declared on the Environment — the ESO secret store provider, plus provider\-specific connection config needed to provision the store itself \(currently Vault only; AWS/GCP/Azure still resolve to a pre\-provisioned platform store\).
 
@@ -59,7 +59,7 @@ type ResolvedEnvironmentContract struct {
 ```
 
 <a name="ResolvedEnvironmentSpec"></a>
-## type ResolvedEnvironmentSpec
+## type [ResolvedEnvironmentSpec](<https://github.com/blanketops/environments/blob/main/resolution/environment/resolve/resolve.go#L51-L76>)
 
 ResolvedEnvironmentSpec is the decoded Environment spec. All CR references are stored as name strings — cross\-CR lookups are the responsibility of the domain layer.
 
@@ -78,7 +78,11 @@ type ResolvedEnvironmentSpec struct {
     GitHubEvent   string
     Deployment    string
     Route         string
-    Package       string
+    // Domain is resolved and validated here but not yet projected to the
+    // contract or cached — Domain CR support is still a stub elsewhere in
+    // the platform. Kept as its own field so it no longer clobbers Route.
+    Domain  string
+    Package string
 
     // Slices are nil when not declared; empty slice is never returned.
     ServiceUnits []string
@@ -89,7 +93,7 @@ type ResolvedEnvironmentSpec struct {
 ```
 
 <a name="ResolvedVaultConfig"></a>
-## type ResolvedVaultConfig
+## type [ResolvedVaultConfig](<https://github.com/blanketops/environments/blob/main/resolution/environment/resolve/resolve.go#L95-L112>)
 
 ResolvedVaultConfig is the Environment\-declared HashiCorp Vault connection used to provision the ClusterSecretStore/SecretStore ESO reads from. This is connection config only — secret values are populated into Vault by a separate out\-of\-band process, never by this repo.
 

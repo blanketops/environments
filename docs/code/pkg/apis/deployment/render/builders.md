@@ -15,7 +15,7 @@ Package builders owns BuildDeployment and BuildService — pure functions that t
 
 
 <a name="BuildDeployment"></a>
-## func BuildDeployment
+## func [BuildDeployment](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/render/builders/builder.go#L40-L43>)
 
 ```go
 func BuildDeployment(intent *intent.DeploymentIntent, su *serviceunitIntent.ServiceUnitIntent) *appsv1.Deployment
@@ -24,7 +24,7 @@ func BuildDeployment(intent *intent.DeploymentIntent, su *serviceunitIntent.Serv
 BuildDeployment renders su's Kubernetes Deployment object literal within intent. Pure — no client, no side effects.
 
 <a name="BuildService"></a>
-## func BuildService
+## func [BuildService](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/render/builders/builder.go#L88-L91>)
 
 ```go
 func BuildService(intent *intent.DeploymentIntent, su *serviceunitIntent.ServiceUnitIntent) *corev1.Service

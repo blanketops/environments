@@ -13,6 +13,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package cache provides the generic, reusable half of the external cache
+layer: ObjectCache, a namespace- and generation-scoped field cache for a
+single CR kind, plus NewExternal, the single composition point that picks
+and constructs the concrete backend (Redis, Memcached, or a no-op) from
+Options.
+
+ObjectCache is deliberately generic — it knows nothing about any specific
+CR's spec shape. The per-kind subpackages (cache/build, cache/deployment,
+cache/domain, and siblings) embed it and add typed Set* / Get* helpers
+plus a PublishResolved method that projects a resolved contract into
+individual fields.
+
+Every read is a fast-path optimization, never a correctness dependency: a
+miss or backend error always falls through to the informer cache (see
+core/cache), so this package's failure modes cost queryability, not
+correctness.
+*/
 package cache
 
 import (

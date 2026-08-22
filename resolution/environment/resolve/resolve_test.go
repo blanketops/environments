@@ -193,16 +193,18 @@ func TestResolveEnvironment_DeploymentRouteDomainPackageRefs(t *testing.T) {
 // "domain" branch in resolve.go assigns to spec.Route instead of a
 // spec.Domain field (which doesn't exist on ResolvedEnvironmentSpec at all).
 // Declaring "domain" silently overwrites whatever "route" resolved to.
-func TestResolveEnvironment_DomainRefOverwritesRoute_KnownBug(t *testing.T) {
+func TestResolveEnvironment_RouteAndDomainRefsResolveIndependently(t *testing.T) {
 	e := envWithContract(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0",
 		"route":{"name":"route1"},"domain":{"name":"domain1"}}`)
 	resolved, err := ResolveEnvironment(e)
 	if err != nil {
 		t.Fatalf("ResolveEnvironment: %v", err)
 	}
-	if resolved.Spec.Route != "domain1" {
-		t.Fatalf("expected the known domain->Route overwrite bug (got %q) — if this now reads %q, the bug was fixed and this test should be updated",
-			resolved.Spec.Route, "route1")
+	if resolved.Spec.Route != "route1" {
+		t.Fatalf("expected Route %q, got %q — domain ref must not overwrite it", "route1", resolved.Spec.Route)
+	}
+	if resolved.Spec.Domain != "domain1" {
+		t.Fatalf("expected Domain %q, got %q", "domain1", resolved.Spec.Domain)
 	}
 }
 

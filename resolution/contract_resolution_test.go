@@ -84,17 +84,23 @@ func TestAdapter_Resolve_GitRepository(t *testing.T) {
 	}
 }
 
-// This test documents a gap rather than desired behavior: the Adapter
-// constructs a packages.Adapter (a.packages) but the type switch has no
-// case for *environmentv1alpha1.Package, so it always falls through to the
-// "unsupported object type" default — the packages adapter is currently
-// dead weight.
-func TestAdapter_Resolve_Package_UnsupportedByDispatch_KnownGap(t *testing.T) {
+// Package now reaches the wired-up packages.Adapter instead of falling
+// through to the "unsupported object type" default. A zero-value Package
+// fails resolution's own spec validation ("spec.contract is required"),
+// proving dispatch reached ResolvePackage rather than being rejected at
+// the type switch.
+func TestAdapter_Resolve_Package_DispatchesToPackagesAdapter(t *testing.T) {
 	a := NewAdapter()
 	p := &environmentv1alpha1.Package{}
 	err := a.Resolve(context.Background(), p)
-	if err == nil || !strings.Contains(err.Error(), "unsupported object type") {
-		t.Fatalf("expected unsupported-object-type error (documenting the missing Package case), got %v", err)
+	if err == nil {
+		t.Fatal("expected an error from resolution's own validation")
+	}
+	if strings.Contains(err.Error(), "unsupported object type") {
+		t.Fatalf("Package should no longer fall through to the unsupported-object-type default, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "spec.contract") {
+		t.Fatalf("expected a spec.contract validation error from ResolvePackage, got %v", err)
 	}
 }
 

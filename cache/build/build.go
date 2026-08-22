@@ -13,6 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package build provides domain-specific, field-level caching for Build
+resources. BuildCache embeds cache.ObjectCache and adds typed Set* / Get*
+helpers for each resolved spec field (image, source, strategy,
+serviceAccount, policy), plus PublishResolved, which projects a
+*buildResolution.ResolvedBuild into those fields in one best-effort call
+after resolution succeeds.
+*/
 package build
 
 import (

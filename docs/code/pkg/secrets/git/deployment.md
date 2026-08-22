@@ -17,7 +17,7 @@ Package deployment reconciles the Deployment git\-ssh clone secret — the same 
 
 
 <a name="DeploymentGitSSHSecretReconciler"></a>
-## type DeploymentGitSSHSecretReconciler
+## type [DeploymentGitSSHSecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/deployment/deployment.go#L40-L45>)
 
 DeploymentGitSSHSecretReconciler converges the ExternalSecret used to clone a Deployment's manifests repository over SSH — the same lifecycle as BuildGitSSHSecretReconciler, scoped to Deployment.
 
@@ -31,7 +31,7 @@ type DeploymentGitSSHSecretReconciler struct {
 ```
 
 <a name="NewDeploymentGitSSHSecretReconciler"></a>
-### func NewDeploymentGitSSHSecretReconciler
+### func [NewDeploymentGitSSHSecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/deployment/deployment.go#L49>)
 
 ```go
 func NewDeploymentGitSSHSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *DeploymentGitSSHSecretReconciler
@@ -40,7 +40,7 @@ func NewDeploymentGitSSHSecretReconciler(c client.Client, log logr.Logger, store
 NewDeploymentGitSSHSecretReconciler constructs a DeploymentGitSSHSecretReconciler targeting the given ESO store.
 
 <a name="DeploymentGitSSHSecretReconciler.Delete"></a>
-### func \(\*DeploymentGitSSHSecretReconciler\) Delete
+### func \(\*DeploymentGitSSHSecretReconciler\) [Delete](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/deployment/deployment.go#L160>)
 
 ```go
 func (r *DeploymentGitSSHSecretReconciler) Delete(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) error
@@ -49,7 +49,7 @@ func (r *DeploymentGitSSHSecretReconciler) Delete(ctx context.Context, deploymen
 Delete removes both the ExternalSecret and the Secret ESO materialized from it. See BuildGitSSHSecretReconciler.Delete for why the Secret must be deleted explicitly rather than left to the ExternalSecret's ownerReference GC cascade.
 
 <a name="DeploymentGitSSHSecretReconciler.Reconcile"></a>
-### func \(\*DeploymentGitSSHSecretReconciler\) Reconcile
+### func \(\*DeploymentGitSSHSecretReconciler\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/deployment/deployment.go#L60>)
 
 ```go
 func (r *DeploymentGitSSHSecretReconciler) Reconcile(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) error

@@ -13,6 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package serviceunit provides domain-specific, field-level caching for
+ServiceUnit resources. ServiceUnitCache embeds cache.ObjectCache and adds
+typed Set* / Get* helpers for each resolved spec field (type, image,
+buildRef, containerPort, size, appType, stackType), plus PublishResolved,
+which projects a *serviceunitResolution.ResolvedServiceUnit into those
+fields. image and buildRef are type-discriminated: a ServiceUnit is either
+type: static (image) or type: build (buildRef), and PublishResolved caches
+exactly one of the pair based on the resolved spec's Type.
+*/
 package serviceunit
 
 import (

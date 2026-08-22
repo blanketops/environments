@@ -178,7 +178,7 @@ See also:
 
 
 <a name="IngressProvider"></a>
-## type IngressProvider
+## type [IngressProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/api/ingress.go#L86-L89>)
 
 IngressProvider implements Provider for the Kubernetes Ingress runtime. Materializes Route as a networking.k8s.io/v1 Ingress resource.
 
@@ -189,7 +189,7 @@ type IngressProvider struct {
 ```
 
 <a name="NewIngressProvider"></a>
-### func NewIngressProvider
+### func [NewIngressProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/api/ingress.go#L92>)
 
 ```go
 func NewIngressProvider(c client.Client, log logr.Logger) *IngressProvider
@@ -198,7 +198,7 @@ func NewIngressProvider(c client.Client, log logr.Logger) *IngressProvider
 NewIngressProvider constructs an IngressProvider with the given client and logger.
 
 <a name="IngressProvider.Ensure"></a>
-### func \(\*IngressProvider\) Ensure
+### func \(\*IngressProvider\) [Ensure](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/api/ingress.go#L98-L102>)
 
 ```go
 func (p *IngressProvider) Ensure(ctx context.Context, resolved *routeResolution.ResolvedRoute, route domain.Route) (domain.RouteResult, error)
@@ -207,16 +207,16 @@ func (p *IngressProvider) Ensure(ctx context.Context, resolved *routeResolution.
 Ensure creates or reconciles the Kubernetes Ingress for the given Route. When Route.Enabled is false the Ingress is removed instead.
 
 <a name="IngressProvider.Teardown"></a>
-### func \(\*IngressProvider\) Teardown
+### func \(\*IngressProvider\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/api/ingress.go#L231>)
 
 ```go
 func (p *IngressProvider) Teardown(ctx context.Context, route domain.Route) error
 ```
 
-ingress.go
+Teardown deletes the Ingress for the route's host, if one exists.
 
 <a name="KnativeProvider"></a>
-## type KnativeProvider
+## type [KnativeProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/api/knative.go#L71-L74>)
 
 KnativeProvider implements Provider for the Knative serving runtime. Materializes Route as a serving.knative.dev/v1beta1 DomainMapping.
 
@@ -227,7 +227,7 @@ type KnativeProvider struct {
 ```
 
 <a name="NewKnativeProvider"></a>
-### func NewKnativeProvider
+### func [NewKnativeProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/api/knative.go#L77>)
 
 ```go
 func NewKnativeProvider(c client.Client, log logr.Logger) *KnativeProvider
@@ -236,7 +236,7 @@ func NewKnativeProvider(c client.Client, log logr.Logger) *KnativeProvider
 NewKnativeProvider constructs a KnativeProvider with the given client and logger.
 
 <a name="KnativeProvider.Ensure"></a>
-### func \(\*KnativeProvider\) Ensure
+### func \(\*KnativeProvider\) [Ensure](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/api/knative.go#L83-L87>)
 
 ```go
 func (p *KnativeProvider) Ensure(ctx context.Context, resolved *routeResolution.ResolvedRoute, route domain.Route) (domain.RouteResult, error)
@@ -245,16 +245,16 @@ func (p *KnativeProvider) Ensure(ctx context.Context, resolved *routeResolution.
 Ensure creates or reconciles the Knative DomainMapping for the given Route. When Route.Enabled is false the DomainMapping is removed instead.
 
 <a name="KnativeProvider.Teardown"></a>
-### func \(\*KnativeProvider\) Teardown
+### func \(\*KnativeProvider\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/api/knative.go#L177>)
 
 ```go
 func (p *KnativeProvider) Teardown(ctx context.Context, route domain.Route) error
 ```
 
-route/api/knative.go
+Teardown deletes the DomainMapping for the route's host, if one exists.
 
 <a name="KourierProvider"></a>
-## type KourierProvider
+## type [KourierProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/api/kourier.go#L71-L74>)
 
 KourierProvider implements Provider for the Knative serving runtime. Materializes Route as a serving.knative.dev/v1beta1 DomainMapping.
 
@@ -265,7 +265,7 @@ type KourierProvider struct {
 ```
 
 <a name="NewKourierProvider"></a>
-### func NewKourierProvider
+### func [NewKourierProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/api/kourier.go#L77>)
 
 ```go
 func NewKourierProvider(c client.Client, log logr.Logger) *KourierProvider
@@ -274,7 +274,7 @@ func NewKourierProvider(c client.Client, log logr.Logger) *KourierProvider
 NewKourierProvider constructs a KourierProvider with the given client and logger.
 
 <a name="KourierProvider.Ensure"></a>
-### func \(\*KourierProvider\) Ensure
+### func \(\*KourierProvider\) [Ensure](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/api/kourier.go#L83>)
 
 ```go
 func (p *KourierProvider) Ensure(ctx context.Context, resolved *routeResolution.ResolvedRoute, route domain.Route) (domain.RouteResult, error)
@@ -283,16 +283,16 @@ func (p *KourierProvider) Ensure(ctx context.Context, resolved *routeResolution.
 Ensure creates or reconciles the Knative DomainMapping for the given Route. When Route.Enabled is false the DomainMapping is removed instead.
 
 <a name="KourierProvider.Teardown"></a>
-### func \(\*KourierProvider\) Teardown
+### func \(\*KourierProvider\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/api/kourier.go#L173>)
 
 ```go
 func (p *KourierProvider) Teardown(ctx context.Context, route domain.Route) error
 ```
 
-route/api/knative.go
+Teardown deletes the DomainMapping for the route's host, if one exists.
 
 <a name="Provider"></a>
-## type Provider
+## type [Provider](<https://github.com/blanketops/environments/blob/main/pkg/apis/route/api/provider.go#L46-L52>)
 
 Provider materializes and maintains the runtime resource for a Route CR. Implementations must be idempotent and must not mutate the Route CR directly.
 

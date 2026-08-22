@@ -317,7 +317,9 @@ func sanitizeHost(host string) string {
 
 func stringPtr(s string) *string { return &s }
 
-// domain/api/knative.go
+// Teardown releases the ClusterDomainClaim for the domain's host, and for
+// custom-strategy domains also deletes the per-host Certificate (the shared
+// Issuer is left alone; see the comment below).
 func (p *KnativeProvider) Teardown(ctx context.Context, d domain.Domain) error {
 	// ClusterDomainClaim is per-host, always safe to release regardless of strategy.
 	cdc := &knnetworkingv1alpha1.ClusterDomainClaim{

@@ -14,7 +14,7 @@ import "github.com/blanketops/environments/pkg/providerconfig"
 
 
 <a name="GitHubProviderConfigReconciler"></a>
-## type GitHubProviderConfigReconciler
+## type [GitHubProviderConfigReconciler](<https://github.com/blanketops/environments/blob/main/pkg/providerconfig/github_upjet.go#L31-L34>)
 
 GitHubProviderConfigReconciler converges the Crossplane ProviderConfig that points the upjet\-github provider at its credentials Secret.
 
@@ -26,7 +26,7 @@ type GitHubProviderConfigReconciler struct {
 ```
 
 <a name="NewGitHubProviderConfigReconciler"></a>
-### func NewGitHubProviderConfigReconciler
+### func [NewGitHubProviderConfigReconciler](<https://github.com/blanketops/environments/blob/main/pkg/providerconfig/github_upjet.go#L38-L41>)
 
 ```go
 func NewGitHubProviderConfigReconciler(c client.Client, log logr.Logger) *GitHubProviderConfigReconciler
@@ -35,7 +35,7 @@ func NewGitHubProviderConfigReconciler(c client.Client, log logr.Logger) *GitHub
 NewGitHubProviderConfigReconciler constructs a GitHubProviderConfigReconciler.
 
 <a name="GitHubProviderConfigReconciler.Reconcile"></a>
-### func \(\*GitHubProviderConfigReconciler\) Reconcile
+### func \(\*GitHubProviderConfigReconciler\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/providerconfig/github_upjet.go#L51>)
 
 ```go
 func (r *GitHubProviderConfigReconciler) Reconcile(ctx context.Context) error

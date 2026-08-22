@@ -20,7 +20,7 @@ Current deps are intentionally empty — client and logger will be added here wh
 
 
 <a name="Adapter"></a>
-## type Adapter
+## type [Adapter](<https://github.com/blanketops/environments/blob/main/resolution/githubevent/adapter/adapter.go#L44-L48>)
 
 Adapter wraps the GitHubEvent resolution function for interface\-based injection. Stateless — all resolution logic lives in resolve.ResolveGitHubEvent.
 
@@ -35,7 +35,7 @@ type Adapter struct {
 ```
 
 <a name="NewAdapter"></a>
-### func NewAdapter
+### func [NewAdapter](<https://github.com/blanketops/environments/blob/main/resolution/githubevent/adapter/adapter.go#L51>)
 
 ```go
 func NewAdapter() *Adapter
@@ -44,7 +44,7 @@ func NewAdapter() *Adapter
 NewAdapter constructs a stateless GitHubEvent resolution Adapter.
 
 <a name="Adapter.Resolve"></a>
-### func \(\*Adapter\) Resolve
+### func \(\*Adapter\) [Resolve](<https://github.com/blanketops/environments/blob/main/resolution/githubevent/adapter/adapter.go#L57-L60>)
 
 ```go
 func (a *Adapter) Resolve(ctx context.Context, githubevent *eventsv1alpha1.GitHubEvent) (*resolve.ResolvedGitHubEvent, error)

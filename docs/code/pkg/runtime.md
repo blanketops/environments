@@ -13,7 +13,7 @@ import "github.com/blanketops/environments/pkg/runtime"
 
 
 <a name="Context"></a>
-## type Context
+## type [Context](<https://github.com/blanketops/environments/blob/main/pkg/runtime/runtime.go#L22-L36>)
 
 Context holds platform runtime configuration \(secret names, cluster identity, webhook URLs\) sourced from the process environment.
 
@@ -36,7 +36,7 @@ type Context struct {
 ```
 
 <a name="FromEnv"></a>
-### func FromEnv
+### func [FromEnv](<https://github.com/blanketops/environments/blob/main/pkg/runtime/runtime.go#L40>)
 
 ```go
 func FromEnv() *Context

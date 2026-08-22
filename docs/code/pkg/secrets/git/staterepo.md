@@ -17,7 +17,7 @@ Package staterepo reconciles the Package state\-repository clone secret — the 
 
 
 <a name="PackageStateRepositorySecretReconciler"></a>
-## type PackageStateRepositorySecretReconciler
+## type [PackageStateRepositorySecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/staterepo/staterepo.go#L42-L47>)
 
 PackageStateRepositorySecretReconciler converges the ExternalSecret used to clone a Package's declared state repository — the same lifecycle as BuildGitSSHSecretReconciler, scoped to Package.
 
@@ -31,7 +31,7 @@ type PackageStateRepositorySecretReconciler struct {
 ```
 
 <a name="NewPackageStateRepositorySecretReconciler"></a>
-### func NewPackageStateRepositorySecretReconciler
+### func [NewPackageStateRepositorySecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/staterepo/staterepo.go#L51>)
 
 ```go
 func NewPackageStateRepositorySecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *PackageStateRepositorySecretReconciler
@@ -40,7 +40,7 @@ func NewPackageStateRepositorySecretReconciler(c client.Client, log logr.Logger,
 NewPackageStateRepositorySecretReconciler constructs a PackageStateRepositorySecretReconciler targeting the given ESO store.
 
 <a name="PackageStateRepositorySecretReconciler.Delete"></a>
-### func \(\*PackageStateRepositorySecretReconciler\) Delete
+### func \(\*PackageStateRepositorySecretReconciler\) [Delete](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/staterepo/staterepo.go#L160>)
 
 ```go
 func (r *PackageStateRepositorySecretReconciler) Delete(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage) error
@@ -49,7 +49,7 @@ func (r *PackageStateRepositorySecretReconciler) Delete(ctx context.Context, res
 Delete removes both the ExternalSecret and the Secret ESO materialized from it. See BuildGitSSHSecretReconciler.Delete for why the Secret must be deleted explicitly rather than left to the ExternalSecret's ownerReference GC cascade.
 
 <a name="PackageStateRepositorySecretReconciler.Reconcile"></a>
-### func \(\*PackageStateRepositorySecretReconciler\) Reconcile
+### func \(\*PackageStateRepositorySecretReconciler\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/secrets/git/staterepo/staterepo.go#L62>)
 
 ```go
 func (r *PackageStateRepositorySecretReconciler) Reconcile(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage) error

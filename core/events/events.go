@@ -113,20 +113,24 @@ func (er *EventRecorder) Event(
 	// but the assertion guards against edge cases at the type boundary.
 	// The action field mirrors reason; the related object is nil since
 	// BlanketOps events are always scoped to the owning CR.
+	//
+	// Eventf's note is itself a format string applied to args, so passing
+	// the already-formatted message as note with no args would Sprintf it
+	// a second time — corrupting any literal '%' it contains. When args are
+	// present, pass msg/args straight through so Eventf formats it exactly
+	// once; when absent, pass message via "%s" so it's substituted verbatim
+	// instead of being re-parsed for format verbs.
 	// ------------------------------------------------
 	if er.eventsRecorder != nil {
 		runtimeObj, ok := obj.(runtime.Object)
 		if !ok {
 			return
 		}
-		er.eventsRecorder.Eventf(
-			runtimeObj,
-			nil, // related object — not used
-			eventType,
-			reason,
-			reason, // action mirrors reason
-			message,
-		)
+		if len(args) > 0 {
+			er.eventsRecorder.Eventf(runtimeObj, nil, eventType, reason, reason, msg, args...)
+			return
+		}
+		er.eventsRecorder.Eventf(runtimeObj, nil, eventType, reason, reason, "%s", message)
 	}
 }
 
