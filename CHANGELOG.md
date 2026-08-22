@@ -1,3 +1,22 @@
+## [0.8.0] - 2026-08-22
+
+### 🐛 Bug Fixes
+
+- Add Route Teardown -- Provider interface, RouteService
+
+### 💼 Other
+
+- Merge release/v0.8.0 into main
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.7.9
+- Sync develop with main after release/v0.7.9
 ## [0.7.9] - 2026-08-22
 
 ### 🐛 Bug Fixes
