@@ -11,6 +11,20 @@
 #   GPG signing is unrelated and unchanged: the App token authenticates the
 #   push, GPG_PRIVATE_KEY is what makes the merge commits and tag "Verified".
 #
+# Docs regeneration:
+#   ci.yml's code-docs job also regenerates docs/code on every push to main,
+#   but it runs as a separate, asynchronously-triggered workflow run. This
+#   job used to merge main back into develop immediately after tagging,
+#   which raced ahead of that async commit — develop never actually
+#   received it, and drifted a little further from main's generated docs on
+#   every release. The generate-and-commit steps below make this job
+#   self-sufficient: docs are regenerated and committed to main
+#   synchronously, before merging back into develop, so develop is always
+#   caught up regardless of what ci.yml's code-docs job does on its own
+#   schedule. Unlike that job, this one commits with plain `git commit` —
+#   GPG signing is already configured globally by the Import GPG key step
+#   above, so no Git Data API workaround is needed here.
+#
 # Secrets required:
 #   APP_ID, APP_PRIVATE_KEY — GitHub App credentials
 #   GPG_PRIVATE_KEY  — signs the merge commits and release tag
@@ -37,7 +51,7 @@ jobs:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: blanketops
-          repositories: environments
+          repositories: environments,environments-api,environments-contract
 
       - name: Checkout
         uses: actions/checkout@v7
@@ -68,6 +82,44 @@ jobs:
           git merge --no-ff -S -m "release: merge release/${{ github.event.inputs.version }} into main" \
             origin/release/${{ github.event.inputs.version }}
           git push origin main
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Configure Git for private modules
+        run: |
+          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "https://github.com/"
+          go env -w GOPRIVATE=github.com/BlanketOps/*,github.com/blanketops/*
+          go env -w GONOSUMDB=github.com/BlanketOps/*,github.com/blanketops/*
+          go env -w GOPROXY=direct
+
+      - name: Install gomarkdoc
+        run: go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+
+      - name: Generate code docs
+        run: |
+          mkdir -p docs/code
+          gomarkdoc \
+            --output 'docs/code/{{.Dir}}.md' \
+            ./core/... \
+            ./cache/... \
+            ./logging/... \
+            ./pkg/... \
+            ./resolution/... \
+            ./runtime/...
+
+      - name: Commit and push code docs
+        run: |
+          git add docs/code/ -f
+          if ! git diff-index --quiet HEAD; then
+            git commit -S -m "docs: auto-generate code documentation [skip ci]"
+            git push origin main
+          else
+            echo "No documentation changes to commit"
+          fi
 
       - name: Tag release
         run: |
