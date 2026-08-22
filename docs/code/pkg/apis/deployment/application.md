@@ -25,7 +25,7 @@ This mirrors every other CR's application layer. mapper.go's Mapper / MapResolve
 
 
 <a name="DeploymentService"></a>
-## type [DeploymentService](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/application/service.go#L47-L52>)
+## type DeploymentService
 
 DeploymentService is the single entry point that orchestrates a Deployment's reconciliation: build a DeploymentIntent, execute it, then persist the outcome as CR status and conditions.
 
@@ -36,7 +36,7 @@ type DeploymentService struct {
 ```
 
 <a name="NewDeploymentService"></a>
-### func [NewDeploymentService](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/application/service.go#L56-L60>)
+### func NewDeploymentService
 
 ```go
 func NewDeploymentService(intentBuilder *intent.IntentBuilder, status *StatusWriter, reconciliationExecutor *reconcile.ReconciliationExecutor, log logr.Logger) *DeploymentService
@@ -45,7 +45,7 @@ func NewDeploymentService(intentBuilder *intent.IntentBuilder, status *StatusWri
 NewDeploymentService constructs a DeploymentService from its collaborators.
 
 <a name="DeploymentService.Reconcile"></a>
-### func \(\*DeploymentService\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/application/service.go#L71-L76>)
+### func \(\*DeploymentService\) Reconcile
 
 ```go
 func (s *DeploymentService) Reconcile(ctx context.Context, resolved *deploymentResolution.ResolvedDeployment, serviceUnits []serviceunitResolution.ResolvedServiceUnit, log logr.Logger) error
@@ -54,7 +54,7 @@ func (s *DeploymentService) Reconcile(ctx context.Context, resolved *deploymentR
 Reconcile builds a DeploymentIntent from resolved, executes it via the reconciliation executor, and writes the resulting status onto the CR.
 
 <a name="DeploymentService.Teardown"></a>
-### func \(\*DeploymentService\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/application/service.go#L109-L114>)
+### func \(\*DeploymentService\) Teardown
 
 ```go
 func (s *DeploymentService) Teardown(ctx context.Context, resolved *deploymentResolution.ResolvedDeployment, serviceUnits []serviceunitResolution.ResolvedServiceUnit, log logr.Logger) error
@@ -63,7 +63,7 @@ func (s *DeploymentService) Teardown(ctx context.Context, resolved *deploymentRe
 Teardown deletes whatever Reconcile applied for this Deployment. It takes the same resolved inputs as Reconcile so the intent it builds — and tears down — matches exactly what was applied. No status write: the CR is being deleted, so there is nothing left to persist status onto once this returns.
 
 <a name="Mapper"></a>
-## type [Mapper](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/application/mapper.go#L29>)
+## type Mapper
 
 Mapper converts a fully resolved Deployment into a pure domain DeploymentSpec. Predates the Intent layer and has no callers — DeploymentService goes straight from ResolvedDeployment through IntentBuilder instead.
 
@@ -72,7 +72,7 @@ type Mapper struct{}
 ```
 
 <a name="NewMapper"></a>
-### func [NewMapper](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/application/mapper.go#L32>)
+### func NewMapper
 
 ```go
 func NewMapper() *Mapper
@@ -81,7 +81,7 @@ func NewMapper() *Mapper
 NewMapper constructs a Mapper.
 
 <a name="Mapper.MapResolvedToDomain"></a>
-### func \(Mapper\) [MapResolvedToDomain](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/application/mapper.go#L43-L45>)
+### func \(Mapper\) MapResolvedToDomain
 
 ```go
 func (Mapper) MapResolvedToDomain(rd *deploymentResolution.ResolvedDeployment) domain.DeploymentSpec
@@ -92,7 +92,7 @@ MapResolvedToDomain converts a fully resolved deployment into a pure domain Depl
 CONTRACT: \- Resolver guarantees presence of mandatory fields \- Nil values indicate a resolver bug and MUST crash loudly \- Optional fields must be preserved verbatim \- Mapper must not invent defaults or hide intent
 
 <a name="StatusWriter"></a>
-## type [StatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/application/status.go#L33-L36>)
+## type StatusWriter
 
 StatusWriter merges a Deployment's reconciliation outcome onto the CR's status subresource as contract status and conditions.
 
@@ -104,7 +104,7 @@ type StatusWriter struct {
 ```
 
 <a name="NewStatusWriter"></a>
-### func [NewStatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/application/status.go#L39>)
+### func NewStatusWriter
 
 ```go
 func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter
@@ -113,7 +113,7 @@ func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter
 NewStatusWriter constructs a StatusWriter.
 
 <a name="StatusWriter.WriteDeploymentResult"></a>
-### func \(\*StatusWriter\) [WriteDeploymentResult](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/application/status.go#L51-L56>)
+### func \(\*StatusWriter\) WriteDeploymentResult
 
 ```go
 func (w *StatusWriter) WriteDeploymentResult(ctx context.Context, depl *env1alpha1.Deployment, result *domain.DeploymentResult, runErr error) error

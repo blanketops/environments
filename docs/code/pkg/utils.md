@@ -19,7 +19,7 @@ import "github.com/blanketops/environments/pkg/utils"
 
 
 <a name="ComputeExecutionHash"></a>
-## func [ComputeExecutionHash](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L38-L41>)
+## func ComputeExecutionHash
 
 ```go
 func ComputeExecutionHash(spec *contractv1.BuildSpec, trigger domain.TriggerContext) (string, error)
@@ -28,7 +28,7 @@ func ComputeExecutionHash(spec *contractv1.BuildSpec, trigger domain.TriggerCont
 ComputeExecutionHash hashes a build's semantic intent so equivalent builds hash identically regardless of Kubernetes storage format or metadata.
 
 <a name="CreateOrPatch"></a>
-## func [CreateOrPatch](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L75>)
+## func CreateOrPatch
 
 ```go
 func CreateOrPatch(ctx context.Context, c client.Client, obj client.Object) error
@@ -37,7 +37,7 @@ func CreateOrPatch(ctx context.Context, c client.Client, obj client.Object) erro
 CreateOrPatch creates obj if it doesn't exist, or leaves it unchanged if it does — a thin wrapper around controllerutil.CreateOrUpdate with a no\-op mutate func.
 
 <a name="ParseImage"></a>
-## func [ParseImage](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L113>)
+## func ParseImage
 
 ```go
 func ParseImage(image string) (string, string)
@@ -46,7 +46,7 @@ func ParseImage(image string) (string, string)
 ParseImage splits an image reference on its last colon into repository and tag, defaulting to tag "latest" when no colon is present.
 
 <a name="PointerBool"></a>
-## func [PointerBool](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L123>)
+## func PointerBool
 
 ```go
 func PointerBool(b bool) *bool
@@ -55,7 +55,7 @@ func PointerBool(b bool) *bool
 PointerBool returns a pointer to b.
 
 <a name="PrintRepoTree"></a>
-## func [PrintRepoTree](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L135>)
+## func PrintRepoTree
 
 ```go
 func PrintRepoTree(basePath string) error
@@ -64,7 +64,7 @@ func PrintRepoTree(basePath string) error
 PrintRepoTree prints an indented directory tree of basePath to stdout, for debugging what a cloned repository actually contains.
 
 <a name="RunGit"></a>
-## func [RunGit](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L96>)
+## func RunGit
 
 ```go
 func RunGit(dir string, args ...string) (string, error)
@@ -73,7 +73,7 @@ func RunGit(dir string, args ...string) (string, error)
 RunGit runs a git command in dir \(or the current directory if dir is empty\) and returns its combined stdout/stderr output, trimmed.
 
 <a name="RunGitWithEnv"></a>
-## func [RunGitWithEnv](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L172>)
+## func RunGitWithEnv
 
 ```go
 func RunGitWithEnv(dir string, env []string, args ...string) (string, error)
@@ -82,7 +82,7 @@ func RunGitWithEnv(dir string, env []string, args ...string) (string, error)
 RunGitWithEnv runs a git command with additional environment variables.
 
 <a name="ShortHash"></a>
-## func [ShortHash](<https://github.com/blanketops/environments/blob/main/pkg/utils/util.go#L164>)
+## func ShortHash
 
 ```go
 func ShortHash(hash string) string

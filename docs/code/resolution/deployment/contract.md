@@ -26,7 +26,7 @@ The common proto wrapper pattern applies: Runtime and ReconciliationStrategy are
 
 
 <a name="ToDeploymentContract"></a>
-## func [ToDeploymentContract](<https://github.com/blanketops/environments/blob/main/resolution/deployment/contract/contract_adapter.go#L59>)
+## func ToDeploymentContract
 
 ```go
 func ToDeploymentContract(s *resolve.ResolvedDeploymentSpec) *environmentscontractv1alpha1.DeploymentSpec

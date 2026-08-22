@@ -33,7 +33,7 @@ All failures surface as errors. Resolution never panics.
 
 
 <a name="ResolvedRoute"></a>
-## type [ResolvedRoute](<https://github.com/blanketops/environments/blob/main/resolution/route/resolve/resolve.go#L72-L75>)
+## type ResolvedRoute
 
 ResolvedRoute pairs the original Kubernetes Route object with its fully decoded and validated spec.
 
@@ -45,7 +45,7 @@ type ResolvedRoute struct {
 ```
 
 <a name="ResolveRoute"></a>
-### func [ResolveRoute](<https://github.com/blanketops/environments/blob/main/resolution/route/resolve/resolve.go#L123>)
+### func ResolveRoute
 
 ```go
 func ResolveRoute(route *networksv1alpha1.Route) (*ResolvedRoute, error)
@@ -54,7 +54,7 @@ func ResolveRoute(route *networksv1alpha1.Route) (*ResolvedRoute, error)
 ResolveRoute decodes and validates the raw JSON contract from the Route CR spec into a ResolvedRoute. Returns an error if the CR is nil, the contract is absent, or any required field is missing or malformed.
 
 <a name="ResolvedRouteSpec"></a>
-## type [ResolvedRouteSpec](<https://github.com/blanketops/environments/blob/main/resolution/route/resolve/resolve.go#L79-L107>)
+## type ResolvedRouteSpec
 
 ResolvedRouteSpec is the decoded and validated Route spec. Fields mirror the proto RouteSpec — consumers must not re\-read from the raw CR.
 
@@ -91,7 +91,7 @@ type ResolvedRouteSpec struct {
 ```
 
 <a name="ResolvedServiceUnitRef"></a>
-## type [ResolvedServiceUnitRef](<https://github.com/blanketops/environments/blob/main/resolution/route/resolve/resolve.go#L111-L114>)
+## type ResolvedServiceUnitRef
 
 ResolvedServiceUnitRef is the decoded reference to a ServiceUnit CR. Mirrors proto ServiceUnitRef — name only; namespace is always this Route's namespace.
 
@@ -103,7 +103,7 @@ type ResolvedServiceUnitRef struct {
 ```
 
 <a name="Runtime"></a>
-## type [Runtime](<https://github.com/blanketops/environments/blob/main/resolution/route/resolve/resolve.go#L50>)
+## type Runtime
 
 Runtime identifies the serving backend that materializes this Route. Corresponds to blanketops.common.v1.RouteRuntime in the proto contract.
 

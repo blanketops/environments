@@ -26,7 +26,7 @@ The common proto wrapper pattern applies: EventType is projected as \*v1.GitHubE
 
 
 <a name="ToGitHubEventContract"></a>
-## func [ToGitHubEventContract](<https://github.com/blanketops/environments/blob/main/resolution/githubevent/contract/contract_adapter.go#L58>)
+## func ToGitHubEventContract
 
 ```go
 func ToGitHubEventContract(s *resolve.ResolvedGitHubEventSpec) *eventscontractv1alpha1.GitHubEventSpec

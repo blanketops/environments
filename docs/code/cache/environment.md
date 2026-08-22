@@ -38,7 +38,7 @@ Package environment provides domain\-specific, field\-level caching for Environm
 
 
 <a name="EnvironmentCache"></a>
-## type [EnvironmentCache](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L40-L42>)
+## type EnvironmentCache
 
 EnvironmentCache provides domain\-specific, field\-level caching for Environment resources.
 
@@ -49,7 +49,7 @@ type EnvironmentCache struct {
 ```
 
 <a name="NewEnvironmentCache"></a>
-### func [NewEnvironmentCache](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L45>)
+### func NewEnvironmentCache
 
 ```go
 func NewEnvironmentCache(c *cache.Cache) *EnvironmentCache
@@ -58,7 +58,7 @@ func NewEnvironmentCache(c *cache.Cache) *EnvironmentCache
 NewEnvironmentCache constructs a new EnvironmentCache with the provided cache.Cache.
 
 <a name="EnvironmentCache.GetApplicationName"></a>
-### func \(\*EnvironmentCache\) [GetApplicationName](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L57>)
+### func \(\*EnvironmentCache\) GetApplicationName
 
 ```go
 func (e *EnvironmentCache) GetApplicationName(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -67,7 +67,7 @@ func (e *EnvironmentCache) GetApplicationName(ctx context.Context, nn types.Name
 
 
 <a name="EnvironmentCache.GetBuild"></a>
-### func \(\*EnvironmentCache\) [GetBuild](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L113>)
+### func \(\*EnvironmentCache\) GetBuild
 
 ```go
 func (e *EnvironmentCache) GetBuild(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -76,7 +76,7 @@ func (e *EnvironmentCache) GetBuild(ctx context.Context, nn types.NamespacedName
 
 
 <a name="EnvironmentCache.GetDeployment"></a>
-### func \(\*EnvironmentCache\) [GetDeployment](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L143>)
+### func \(\*EnvironmentCache\) GetDeployment
 
 ```go
 func (e *EnvironmentCache) GetDeployment(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -85,7 +85,7 @@ func (e *EnvironmentCache) GetDeployment(ctx context.Context, nn types.Namespace
 
 
 <a name="EnvironmentCache.GetEnvironmentType"></a>
-### func \(\*EnvironmentCache\) [GetEnvironmentType](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L71>)
+### func \(\*EnvironmentCache\) GetEnvironmentType
 
 ```go
 func (e *EnvironmentCache) GetEnvironmentType(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -94,7 +94,7 @@ func (e *EnvironmentCache) GetEnvironmentType(ctx context.Context, nn types.Name
 
 
 <a name="EnvironmentCache.GetGitHubEvent"></a>
-### func \(\*EnvironmentCache\) [GetGitHubEvent](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L133>)
+### func \(\*EnvironmentCache\) GetGitHubEvent
 
 ```go
 func (e *EnvironmentCache) GetGitHubEvent(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -103,7 +103,7 @@ func (e *EnvironmentCache) GetGitHubEvent(ctx context.Context, nn types.Namespac
 
 
 <a name="EnvironmentCache.GetGitRepository"></a>
-### func \(\*EnvironmentCache\) [GetGitRepository](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L123>)
+### func \(\*EnvironmentCache\) GetGitRepository
 
 ```go
 func (e *EnvironmentCache) GetGitRepository(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -112,7 +112,7 @@ func (e *EnvironmentCache) GetGitRepository(ctx context.Context, nn types.Namesp
 
 
 <a name="EnvironmentCache.GetPackage"></a>
-### func \(\*EnvironmentCache\) [GetPackage](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L163>)
+### func \(\*EnvironmentCache\) GetPackage
 
 ```go
 func (e *EnvironmentCache) GetPackage(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -121,7 +121,7 @@ func (e *EnvironmentCache) GetPackage(ctx context.Context, nn types.NamespacedNa
 
 
 <a name="EnvironmentCache.GetRoute"></a>
-### func \(\*EnvironmentCache\) [GetRoute](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L153>)
+### func \(\*EnvironmentCache\) GetRoute
 
 ```go
 func (e *EnvironmentCache) GetRoute(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -130,7 +130,7 @@ func (e *EnvironmentCache) GetRoute(ctx context.Context, nn types.NamespacedName
 
 
 <a name="EnvironmentCache.GetSecretStoreProvider"></a>
-### func \(\*EnvironmentCache\) [GetSecretStoreProvider](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L99>)
+### func \(\*EnvironmentCache\) GetSecretStoreProvider
 
 ```go
 func (e *EnvironmentCache) GetSecretStoreProvider(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -139,7 +139,7 @@ func (e *EnvironmentCache) GetSecretStoreProvider(ctx context.Context, nn types.
 
 
 <a name="EnvironmentCache.GetServiceUnits"></a>
-### func \(\*EnvironmentCache\) [GetServiceUnits](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L173>)
+### func \(\*EnvironmentCache\) GetServiceUnits
 
 ```go
 func (e *EnvironmentCache) GetServiceUnits(ctx context.Context, nn types.NamespacedName, gen int64) ([]string, bool, error)
@@ -148,7 +148,7 @@ func (e *EnvironmentCache) GetServiceUnits(ctx context.Context, nn types.Namespa
 
 
 <a name="EnvironmentCache.GetVersion"></a>
-### func \(\*EnvironmentCache\) [GetVersion](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L85>)
+### func \(\*EnvironmentCache\) GetVersion
 
 ```go
 func (e *EnvironmentCache) GetVersion(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -157,7 +157,7 @@ func (e *EnvironmentCache) GetVersion(ctx context.Context, nn types.NamespacedNa
 
 
 <a name="EnvironmentCache.PublishResolved"></a>
-### func \(\*EnvironmentCache\) [PublishResolved](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L187>)
+### func \(\*EnvironmentCache\) PublishResolved
 
 ```go
 func (e *EnvironmentCache) PublishResolved(ctx context.Context, nn types.NamespacedName, gen int64, r *environmentResolution.ResolvedEnvironment) error
@@ -166,7 +166,7 @@ func (e *EnvironmentCache) PublishResolved(ctx context.Context, nn types.Namespa
 PublishResolved writes the resolved environment contract as a generation\-scoped, field\-level projection. All writes are best\-effort: failures cost queryability, never correctness. Returns the first error encountered for optional logging; callers must not fail reconciliation on it.
 
 <a name="EnvironmentCache.SetApplicationName"></a>
-### func \(\*EnvironmentCache\) [SetApplicationName](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L53>)
+### func \(\*EnvironmentCache\) SetApplicationName
 
 ```go
 func (e *EnvironmentCache) SetApplicationName(ctx context.Context, nn types.NamespacedName, gen int64, name string) error
@@ -175,7 +175,7 @@ func (e *EnvironmentCache) SetApplicationName(ctx context.Context, nn types.Name
 
 
 <a name="EnvironmentCache.SetBuild"></a>
-### func \(\*EnvironmentCache\) [SetBuild](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L109>)
+### func \(\*EnvironmentCache\) SetBuild
 
 ```go
 func (e *EnvironmentCache) SetBuild(ctx context.Context, nn types.NamespacedName, gen int64, name string) error
@@ -184,7 +184,7 @@ func (e *EnvironmentCache) SetBuild(ctx context.Context, nn types.NamespacedName
 
 
 <a name="EnvironmentCache.SetDeployment"></a>
-### func \(\*EnvironmentCache\) [SetDeployment](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L139>)
+### func \(\*EnvironmentCache\) SetDeployment
 
 ```go
 func (e *EnvironmentCache) SetDeployment(ctx context.Context, nn types.NamespacedName, gen int64, name string) error
@@ -193,7 +193,7 @@ func (e *EnvironmentCache) SetDeployment(ctx context.Context, nn types.Namespace
 
 
 <a name="EnvironmentCache.SetEnvironmentType"></a>
-### func \(\*EnvironmentCache\) [SetEnvironmentType](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L67>)
+### func \(\*EnvironmentCache\) SetEnvironmentType
 
 ```go
 func (e *EnvironmentCache) SetEnvironmentType(ctx context.Context, nn types.NamespacedName, gen int64, envType string) error
@@ -202,7 +202,7 @@ func (e *EnvironmentCache) SetEnvironmentType(ctx context.Context, nn types.Name
 
 
 <a name="EnvironmentCache.SetGitHubEvent"></a>
-### func \(\*EnvironmentCache\) [SetGitHubEvent](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L129>)
+### func \(\*EnvironmentCache\) SetGitHubEvent
 
 ```go
 func (e *EnvironmentCache) SetGitHubEvent(ctx context.Context, nn types.NamespacedName, gen int64, name string) error
@@ -211,7 +211,7 @@ func (e *EnvironmentCache) SetGitHubEvent(ctx context.Context, nn types.Namespac
 
 
 <a name="EnvironmentCache.SetGitRepository"></a>
-### func \(\*EnvironmentCache\) [SetGitRepository](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L119>)
+### func \(\*EnvironmentCache\) SetGitRepository
 
 ```go
 func (e *EnvironmentCache) SetGitRepository(ctx context.Context, nn types.NamespacedName, gen int64, name string) error
@@ -220,7 +220,7 @@ func (e *EnvironmentCache) SetGitRepository(ctx context.Context, nn types.Namesp
 
 
 <a name="EnvironmentCache.SetPackage"></a>
-### func \(\*EnvironmentCache\) [SetPackage](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L159>)
+### func \(\*EnvironmentCache\) SetPackage
 
 ```go
 func (e *EnvironmentCache) SetPackage(ctx context.Context, nn types.NamespacedName, gen int64, name string) error
@@ -229,7 +229,7 @@ func (e *EnvironmentCache) SetPackage(ctx context.Context, nn types.NamespacedNa
 
 
 <a name="EnvironmentCache.SetRoute"></a>
-### func \(\*EnvironmentCache\) [SetRoute](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L149>)
+### func \(\*EnvironmentCache\) SetRoute
 
 ```go
 func (e *EnvironmentCache) SetRoute(ctx context.Context, nn types.NamespacedName, gen int64, name string) error
@@ -238,7 +238,7 @@ func (e *EnvironmentCache) SetRoute(ctx context.Context, nn types.NamespacedName
 
 
 <a name="EnvironmentCache.SetSecretStoreProvider"></a>
-### func \(\*EnvironmentCache\) [SetSecretStoreProvider](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L95>)
+### func \(\*EnvironmentCache\) SetSecretStoreProvider
 
 ```go
 func (e *EnvironmentCache) SetSecretStoreProvider(ctx context.Context, nn types.NamespacedName, gen int64, provider string) error
@@ -247,7 +247,7 @@ func (e *EnvironmentCache) SetSecretStoreProvider(ctx context.Context, nn types.
 
 
 <a name="EnvironmentCache.SetServiceUnits"></a>
-### func \(\*EnvironmentCache\) [SetServiceUnits](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L169>)
+### func \(\*EnvironmentCache\) SetServiceUnits
 
 ```go
 func (e *EnvironmentCache) SetServiceUnits(ctx context.Context, nn types.NamespacedName, gen int64, units []string) error
@@ -256,7 +256,7 @@ func (e *EnvironmentCache) SetServiceUnits(ctx context.Context, nn types.Namespa
 
 
 <a name="EnvironmentCache.SetVersion"></a>
-### func \(\*EnvironmentCache\) [SetVersion](<https://github.com/blanketops/environments/blob/main/cache/environment/environment.go#L81>)
+### func \(\*EnvironmentCache\) SetVersion
 
 ```go
 func (e *EnvironmentCache) SetVersion(ctx context.Context, nn types.NamespacedName, gen int64, version string) error

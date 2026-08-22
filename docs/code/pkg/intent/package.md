@@ -17,7 +17,7 @@ BuildPackageIntent \(builder.go\) is the constructor, compiling a resolved Packa
 
 
 <a name="PackageIntent"></a>
-## type [PackageIntent](<https://github.com/blanketops/environments/blob/main/pkg/intent/package/package_intent.go#L36-L53>)
+## type PackageIntent
 
 PackageIntent is the compiled, immutable execution plan.
 
@@ -43,7 +43,7 @@ type PackageIntent struct {
 ```
 
 <a name="BuildPackageIntent"></a>
-### func [BuildPackageIntent](<https://github.com/blanketops/environments/blob/main/pkg/intent/package/builder.go#L26-L28>)
+### func BuildPackageIntent
 
 ```go
 func BuildPackageIntent(rp *resolve.ResolvedPackage) (*PackageIntent, error)

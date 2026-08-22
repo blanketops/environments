@@ -65,7 +65,7 @@ var (
 ```
 
 <a name="Actor"></a>
-## type [Actor](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/domain/model.go#L50-L52>)
+## type Actor
 
 Actor is the identity that triggered the event on the provider.
 
@@ -76,7 +76,7 @@ type Actor struct {
 ```
 
 <a name="Commit"></a>
-## type [Commit](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/domain/model.go#L45-L47>)
+## type Commit
 
 Commit represents the commit at the head of the event.
 
@@ -87,7 +87,7 @@ type Commit struct {
 ```
 
 <a name="EventID"></a>
-## type [EventID](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/domain/model.go#L32>)
+## type EventID
 
 EventID is the provider\-assigned delivery GUID.
 
@@ -96,7 +96,7 @@ type EventID string
 ```
 
 <a name="EventType"></a>
-## type [EventType](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/domain/model.go#L29>)
+## type EventType
 
 EventType is the semantic type of a GitHub webhook event.
 
@@ -114,7 +114,7 @@ const (
 ```
 
 <a name="GitHubEvent"></a>
-## type [GitHubEvent](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/domain/model.go#L63-L70>)
+## type GitHubEvent
 
 GitHubEvent is the pure domain representation of an observed GitHub webhook event. It is produced by the Mapper and consumed by the Provider.
 
@@ -130,7 +130,7 @@ type GitHubEvent struct {
 ```
 
 <a name="GitHubEventResult"></a>
-## type [GitHubEventResult](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/domain/result.go#L33-L61>)
+## type GitHubEventResult
 
 GitHubEventResult is the unified return value for the GitHubEvent domain. It reflects both the infrastructure state \(from the Provider\) and the delivery state \(from the Observer\).
 
@@ -165,7 +165,7 @@ type GitHubEventResult struct {
 ```
 
 <a name="GitHubEventStatus"></a>
-## type [GitHubEventStatus](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/domain/model.go#L74-L92>)
+## type GitHubEventStatus
 
 GitHubEventStatus is the internal domain status for a GitHubEvent decision. Serialised into the CR's status.contract field by the StatusWriter.
 
@@ -192,7 +192,7 @@ type GitHubEventStatus struct {
 ```
 
 <a name="GitRef"></a>
-## type [GitRef](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/domain/model.go#L40-L42>)
+## type GitRef
 
 GitRef represents a Git reference carried by the event.
 
@@ -203,7 +203,7 @@ type GitRef struct {
 ```
 
 <a name="Repository"></a>
-## type [Repository](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/domain/model.go#L55-L59>)
+## type Repository
 
 Repository identifies the source repository on the provider.
 
@@ -216,7 +216,7 @@ type Repository struct {
 ```
 
 <a name="State"></a>
-## type [State](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/domain/state.go#L25>)
+## type State
 
 State is the lifecycle state of a GitHubEvent.
 

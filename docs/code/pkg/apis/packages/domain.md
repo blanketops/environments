@@ -48,7 +48,7 @@ import "github.com/blanketops/environments/pkg/apis/packages/domain"
 
 
 <a name="ApplicationPhase"></a>
-## type [ApplicationPhase](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/state.go#L94>)
+## type ApplicationPhase
 
 ApplicationPhase is the observed lifecycle phase of the kapp\-controller App CR backing a Package.
 
@@ -67,7 +67,7 @@ const (
 ```
 
 <a name="ApplicationState"></a>
-## type [ApplicationState](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/state.go#L104-L118>)
+## type ApplicationState
 
 ApplicationState is the state observed from the kapp\-controller App CR backing a Package, before it is mapped onto PackageResult/PackageStatus.
 
@@ -90,7 +90,7 @@ type ApplicationState struct {
 ```
 
 <a name="ApplyStrategy"></a>
-## type [ApplyStrategy](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/model.go#L191>)
+## type ApplyStrategy
 
 ApplyStrategy selects how a package's manifests are applied to the cluster.
 
@@ -108,7 +108,7 @@ const (
 ```
 
 <a name="DiffRequiredError"></a>
-## type [DiffRequiredError](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L108-L110>)
+## type DiffRequiredError
 
 DiffRequiredError indicates a kapp diff was required before applying but could not be obtained.
 
@@ -119,7 +119,7 @@ type DiffRequiredError struct {
 ```
 
 <a name="DiffRequiredError.Error"></a>
-### func \(DiffRequiredError\) [Error](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L112>)
+### func \(DiffRequiredError\) Error
 
 ```go
 func (e DiffRequiredError) Error() string
@@ -128,7 +128,7 @@ func (e DiffRequiredError) Error() string
 
 
 <a name="DiffRequiredError.Reason"></a>
-### func \(DiffRequiredError\) [Reason](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L116>)
+### func \(DiffRequiredError\) Reason
 
 ```go
 func (e DiffRequiredError) Reason() string
@@ -137,7 +137,7 @@ func (e DiffRequiredError) Reason() string
 
 
 <a name="DiffRequiredError.Retryable"></a>
-### func \(DiffRequiredError\) [Retryable](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L120>)
+### func \(DiffRequiredError\) Retryable
 
 ```go
 func (e DiffRequiredError) Retryable() bool
@@ -146,7 +146,7 @@ func (e DiffRequiredError) Retryable() bool
 
 
 <a name="DiffState"></a>
-## type [DiffState](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/state.go#L83>)
+## type DiffState
 
 DiffState is the outcome of the most recent kapp diff check.
 
@@ -166,7 +166,7 @@ const (
 ```
 
 <a name="DriftDetectedError"></a>
-## type [DriftDetectedError](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L130-L132>)
+## type DriftDetectedError
 
 DriftDetectedError indicates the cluster's applied state has drifted from the package's desired manifests.
 
@@ -177,7 +177,7 @@ type DriftDetectedError struct {
 ```
 
 <a name="DriftDetectedError.Error"></a>
-### func \(DriftDetectedError\) [Error](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L134>)
+### func \(DriftDetectedError\) Error
 
 ```go
 func (e DriftDetectedError) Error() string
@@ -186,7 +186,7 @@ func (e DriftDetectedError) Error() string
 
 
 <a name="DriftDetectedError.Reason"></a>
-### func \(DriftDetectedError\) [Reason](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L138>)
+### func \(DriftDetectedError\) Reason
 
 ```go
 func (e DriftDetectedError) Reason() string
@@ -195,7 +195,7 @@ func (e DriftDetectedError) Reason() string
 
 
 <a name="DriftDetectedError.Retryable"></a>
-### func \(DriftDetectedError\) [Retryable](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L142>)
+### func \(DriftDetectedError\) Retryable
 
 ```go
 func (e DriftDetectedError) Retryable() bool
@@ -204,7 +204,7 @@ func (e DriftDetectedError) Retryable() bool
 
 
 <a name="InvalidSpecError"></a>
-## type [InvalidSpecError](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L39-L41>)
+## type InvalidSpecError
 
 InvalidSpecError indicates a Package's spec failed validation before reconciliation could proceed.
 
@@ -215,7 +215,7 @@ type InvalidSpecError struct {
 ```
 
 <a name="InvalidSpecError.Error"></a>
-### func \(InvalidSpecError\) [Error](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L43>)
+### func \(InvalidSpecError\) Error
 
 ```go
 func (e InvalidSpecError) Error() string
@@ -224,7 +224,7 @@ func (e InvalidSpecError) Error() string
 
 
 <a name="InvalidSpecError.Reason"></a>
-### func \(InvalidSpecError\) [Reason](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L47>)
+### func \(InvalidSpecError\) Reason
 
 ```go
 func (e InvalidSpecError) Reason() string
@@ -233,7 +233,7 @@ func (e InvalidSpecError) Reason() string
 
 
 <a name="InvalidSpecError.Retryable"></a>
-### func \(InvalidSpecError\) [Retryable](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L51>)
+### func \(InvalidSpecError\) Retryable
 
 ```go
 func (e InvalidSpecError) Retryable() bool
@@ -242,7 +242,7 @@ func (e InvalidSpecError) Retryable() bool
 
 
 <a name="KappAction"></a>
-## type [KappAction](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/result.go#L93>)
+## type KappAction
 
 KappAction identifies which operation kapp performed \(or would perform\).
 
@@ -261,7 +261,7 @@ const (
 ```
 
 <a name="KappExecutionError"></a>
-## type [KappExecutionError](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L83-L87>)
+## type KappExecutionError
 
 KappExecutionError wraps a failure invoking kapp during reconciliation.
 
@@ -274,7 +274,7 @@ type KappExecutionError struct {
 ```
 
 <a name="KappExecutionError.Error"></a>
-### func \(KappExecutionError\) [Error](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L89>)
+### func \(KappExecutionError\) Error
 
 ```go
 func (e KappExecutionError) Error() string
@@ -283,7 +283,7 @@ func (e KappExecutionError) Error() string
 
 
 <a name="KappExecutionError.Reason"></a>
-### func \(KappExecutionError\) [Reason](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L93>)
+### func \(KappExecutionError\) Reason
 
 ```go
 func (e KappExecutionError) Reason() string
@@ -292,7 +292,7 @@ func (e KappExecutionError) Reason() string
 
 
 <a name="KappExecutionError.Retryable"></a>
-### func \(KappExecutionError\) [Retryable](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L97>)
+### func \(KappExecutionError\) Retryable
 
 ```go
 func (e KappExecutionError) Retryable() bool
@@ -301,7 +301,7 @@ func (e KappExecutionError) Retryable() bool
 
 
 <a name="KappResult"></a>
-## type [KappResult](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/result.go#L60-L86>)
+## type KappResult
 
 KappResult captures the outcome of a single kapp invocation during package reconciliation.
 
@@ -336,7 +336,7 @@ type KappResult struct {
 ```
 
 <a name="Maintainer"></a>
-## type [Maintainer](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/model.go#L92-L95>)
+## type Maintainer
 
 Maintainer identifies a person or team accountable for a package.
 
@@ -348,7 +348,7 @@ type Maintainer struct {
 ```
 
 <a name="PackageError"></a>
-## type [PackageError](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L27-L31>)
+## type PackageError
 
 PackageError is the common interface implemented by all domain\-level Package errors, carrying a stable machine\-readable Reason and whether the failure is worth retrying.
 
@@ -361,7 +361,7 @@ type PackageError interface {
 ```
 
 <a name="PackageID"></a>
-## type [PackageID](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/model.go#L82-L85>)
+## type PackageID
 
 PackageID uniquely identifies a Package within a namespace.
 
@@ -373,7 +373,7 @@ type PackageID struct {
 ```
 
 <a name="PackagePhase"></a>
-## type [PackagePhase](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/state.go#L64>)
+## type PackagePhase
 
 PackagePhase is the high\-level reconciliation phase of a Package.
 
@@ -398,7 +398,7 @@ const (
 ```
 
 <a name="PackageResult"></a>
-## type [PackageResult](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/result.go#L21-L52>)
+## type PackageResult
 
 PackageResult represents the outcome of a single reconciliation run.
 
@@ -422,7 +422,7 @@ type PackageResult struct {
 ```
 
 <a name="PackageSource"></a>
-## type [PackageSource](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/model.go#L102-L108>)
+## type PackageSource
 
 PackageSource defines where a package's manifests come from.
 
@@ -437,7 +437,7 @@ type PackageSource struct {
 ```
 
 <a name="PackageSpec"></a>
-## type [PackageSpec](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/model.go#L22-L75>)
+## type PackageSpec
 
 PackageSpec represents the domain\-level truth of a Package. It is independent of Kubernetes API machinery.
 
@@ -480,7 +480,7 @@ type PackageSpec struct {
 ```
 
 <a name="PackageState"></a>
-## type [PackageState](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/state.go#L21-L57>)
+## type PackageState
 
 PackageState represents the observed state of a Package.
 
@@ -509,7 +509,7 @@ type PackageState struct {
 ```
 
 <a name="PackageStatus"></a>
-## type [PackageStatus](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/model.go#L148-L184>)
+## type PackageStatus
 
 PackageStatus is the USER\-FACING contract status. Stable, backend\-agnostic, derived from PackageResult.
 
@@ -538,7 +538,7 @@ type PackageStatus struct {
 ```
 
 <a name="Ref"></a>
-## type [Ref](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/model.go#L134-L144>)
+## type Ref
 
 Ref pins the state/manifests repository to a specific branch, tag, or commit.
 
@@ -557,7 +557,7 @@ type Ref struct {
 ```
 
 <a name="RepositoryError"></a>
-## type [RepositoryError](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L61-L64>)
+## type RepositoryError
 
 RepositoryError wraps a failure resolving or accessing the package's manifest repository.
 
@@ -569,7 +569,7 @@ type RepositoryError struct {
 ```
 
 <a name="RepositoryError.Error"></a>
-### func \(RepositoryError\) [Error](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L66>)
+### func \(RepositoryError\) Error
 
 ```go
 func (e RepositoryError) Error() string
@@ -578,7 +578,7 @@ func (e RepositoryError) Error() string
 
 
 <a name="RepositoryError.Reason"></a>
-### func \(RepositoryError\) [Reason](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L70>)
+### func \(RepositoryError\) Reason
 
 ```go
 func (e RepositoryError) Reason() string
@@ -587,7 +587,7 @@ func (e RepositoryError) Reason() string
 
 
 <a name="RepositoryError.Retryable"></a>
-### func \(RepositoryError\) [Retryable](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/errors.go#L74>)
+### func \(RepositoryError\) Retryable
 
 ```go
 func (e RepositoryError) Retryable() bool
@@ -596,7 +596,7 @@ func (e RepositoryError) Retryable() bool
 
 
 <a name="StateRepository"></a>
-## type [StateRepository](<https://github.com/blanketops/environments/blob/main/pkg/apis/packages/domain/model.go#L116-L131>)
+## type StateRepository
 
 StateRepository defines the Git repository used as the GitOps anchor for a package's rendered/applied state.
 

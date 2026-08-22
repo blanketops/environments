@@ -16,7 +16,7 @@ Package crossplane reconciles the Crossplane GitHub provider credential secret â
 
 
 <a name="GitHubProviderSecretReconciler"></a>
-## type [GitHubProviderSecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/github/crossplane/crossplane.go#L39-L44>)
+## type GitHubProviderSecretReconciler
 
 GitHubProviderSecretReconciler converges the cluster\-scoped ExternalSecret backing the Crossplane GitHub \(Upjet\) provider's credentials in crossplane\-system. Not owned by any CR â€” the provider is a platform singleton with no teardown.
 
@@ -30,7 +30,7 @@ type GitHubProviderSecretReconciler struct {
 ```
 
 <a name="NewGitHubProviderSecretReconciler"></a>
-### func [NewGitHubProviderSecretReconciler](<https://github.com/blanketops/environments/blob/main/pkg/secrets/github/crossplane/crossplane.go#L48>)
+### func NewGitHubProviderSecretReconciler
 
 ```go
 func NewGitHubProviderSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *GitHubProviderSecretReconciler
@@ -39,7 +39,7 @@ func NewGitHubProviderSecretReconciler(c client.Client, log logr.Logger, storeNa
 NewGitHubProviderSecretReconciler constructs a GitHubProviderSecretReconciler targeting the given ESO store.
 
 <a name="GitHubProviderSecretReconciler.Reconcile"></a>
-### func \(\*GitHubProviderSecretReconciler\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/secrets/github/crossplane/crossplane.go#L59>)
+### func \(\*GitHubProviderSecretReconciler\) Reconcile
 
 ```go
 func (r *GitHubProviderSecretReconciler) Reconcile(ctx context.Context) error

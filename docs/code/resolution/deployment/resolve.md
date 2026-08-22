@@ -24,7 +24,7 @@ Resolution is strict: required fields that are missing or malformed return error
 
 
 <a name="ReconciliationStrategy"></a>
-## type [ReconciliationStrategy](<https://github.com/blanketops/environments/blob/main/resolution/deployment/resolve/resolve.go#L63>)
+## type ReconciliationStrategy
 
 ReconciliationStrategy selects how a Deployment's manifests are applied \(imperative apply, Kustomize, or Helm\).
 
@@ -43,7 +43,7 @@ const (
 ```
 
 <a name="ResolvedDeployment"></a>
-## type [ResolvedDeployment](<https://github.com/blanketops/environments/blob/main/resolution/deployment/resolve/resolve.go#L77-L80>)
+## type ResolvedDeployment
 
 ResolvedDeployment pairs the original Kubernetes Deployment object with its fully decoded and validated spec.
 
@@ -55,7 +55,7 @@ type ResolvedDeployment struct {
 ```
 
 <a name="ResolveDeployment"></a>
-### func [ResolveDeployment](<https://github.com/blanketops/environments/blob/main/resolution/deployment/resolve/resolve.go#L109>)
+### func ResolveDeployment
 
 ```go
 func ResolveDeployment(depl *environmentv1alpha1.Deployment) (*ResolvedDeployment, error)
@@ -64,7 +64,7 @@ func ResolveDeployment(depl *environmentv1alpha1.Deployment) (*ResolvedDeploymen
 ResolveDeployment decodes and validates the raw JSON contract from the Deployment CR spec into a ResolvedDeployment. Returns an error if the CR is nil, the contract is absent, or any required field is missing or malformed.
 
 <a name="ResolvedDeploymentSpec"></a>
-## type [ResolvedDeploymentSpec](<https://github.com/blanketops/environments/blob/main/resolution/deployment/resolve/resolve.go#L83-L91>)
+## type ResolvedDeploymentSpec
 
 ResolvedDeploymentSpec is the decoded and validated Deployment spec.
 
@@ -81,7 +81,7 @@ type ResolvedDeploymentSpec struct {
 ```
 
 <a name="ResolvedManifestsRepo"></a>
-## type [ResolvedManifestsRepo](<https://github.com/blanketops/environments/blob/main/resolution/deployment/resolve/resolve.go#L94-L100>)
+## type ResolvedManifestsRepo
 
 ResolvedManifestsRepo is the resolved GitOps manifests repository.
 
@@ -96,7 +96,7 @@ type ResolvedManifestsRepo struct {
 ```
 
 <a name="Runtime"></a>
-## type [Runtime](<https://github.com/blanketops/environments/blob/main/resolution/deployment/resolve/resolve.go#L42>)
+## type Runtime
 
 Runtime identifies which execution platform a ServiceUnit deploys to.
 
@@ -117,7 +117,7 @@ const (
 ```
 
 <a name="Strategy"></a>
-## type [Strategy](<https://github.com/blanketops/environments/blob/main/resolution/deployment/resolve/resolve.go#L53>)
+## type Strategy
 
 Strategy selects the rollout strategy used when deploying a ServiceUnit.
 

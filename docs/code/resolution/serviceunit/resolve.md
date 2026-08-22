@@ -24,7 +24,7 @@ Image resolution for BUILD\-type units \(reading the referenced Build CR's produ
 
 
 <a name="ResolvedBuildRef"></a>
-## type [ResolvedBuildRef](<https://github.com/blanketops/environments/blob/main/resolution/serviceunit/resolve/resolve.go#L83-L86>)
+## type ResolvedBuildRef
 
 ResolvedBuildRef is the resolved Build CR reference for BUILD\-type service units.
 
@@ -36,7 +36,7 @@ type ResolvedBuildRef struct {
 ```
 
 <a name="ResolvedRouteRef"></a>
-## type [ResolvedRouteRef](<https://github.com/blanketops/environments/blob/main/resolution/serviceunit/resolve/resolve.go#L89-L91>)
+## type ResolvedRouteRef
 
 ResolvedRouteRef is the resolved Route CR reference for this service unit.
 
@@ -47,7 +47,7 @@ type ResolvedRouteRef struct {
 ```
 
 <a name="ResolvedServiceUnit"></a>
-## type [ResolvedServiceUnit](<https://github.com/blanketops/environments/blob/main/resolution/serviceunit/resolve/resolve.go#L53-L56>)
+## type ResolvedServiceUnit
 
 ResolvedServiceUnit is the single runtime representation of a ServiceUnit CR. All downstream domain and application logic MUST use this type.
 
@@ -59,7 +59,7 @@ type ResolvedServiceUnit struct {
 ```
 
 <a name="ResolveServiceUnit"></a>
-### func [ResolveServiceUnit](<https://github.com/blanketops/environments/blob/main/resolution/serviceunit/resolve/resolve.go#L100>)
+### func ResolveServiceUnit
 
 ```go
 func ResolveServiceUnit(su *environmentv1alpha1.ServiceUnit) (*ResolvedServiceUnit, error)
@@ -68,7 +68,7 @@ func ResolveServiceUnit(su *environmentv1alpha1.ServiceUnit) (*ResolvedServiceUn
 ResolveServiceUnit decodes the raw JSON contract from the ServiceUnit CR spec into a ResolvedServiceUnit. Returns an error if the CR is nil, the contract is absent, or the type\-specific required fields are missing.
 
 <a name="ResolvedServiceUnitSpec"></a>
-## type [ResolvedServiceUnitSpec](<https://github.com/blanketops/environments/blob/main/resolution/serviceunit/resolve/resolve.go#L63-L80>)
+## type ResolvedServiceUnitSpec
 
 ResolvedServiceUnitSpec is the decoded and validated ServiceUnit spec.
 

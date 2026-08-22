@@ -74,7 +74,7 @@ var (
 ```
 
 <a name="BuildRef"></a>
-## type [BuildRef](<https://github.com/blanketops/environments/blob/main/pkg/apis/serviceunit/domain/model.go#L77-L80>)
+## type BuildRef
 
 BuildRef identifies the source Build CR for a BUILD\-type ServiceUnit.
 
@@ -86,7 +86,7 @@ type BuildRef struct {
 ```
 
 <a name="Phase"></a>
-## type [Phase](<https://github.com/blanketops/environments/blob/main/pkg/apis/serviceunit/domain/state.go#L39>)
+## type Phase
 
 Phase represents the current lifecycle phase of a ServiceUnit CR. Set by the application service after each Reconcile call.
 
@@ -117,7 +117,7 @@ const (
 ```
 
 <a name="Result"></a>
-## type [Result](<https://github.com/blanketops/environments/blob/main/pkg/apis/serviceunit/domain/result.go#L33-L40>)
+## type Result
 
 Result is the outcome of a single ServiceUnitService.Reconcile call.
 
@@ -133,7 +133,7 @@ type Result struct {
 ```
 
 <a name="Result.Ready"></a>
-### func \(Result\) [Ready](<https://github.com/blanketops/environments/blob/main/pkg/apis/serviceunit/domain/result.go#L45>)
+### func \(Result\) Ready
 
 ```go
 func (r Result) Ready() bool
@@ -142,7 +142,7 @@ func (r Result) Ready() bool
 Ready returns true when the unit's image is resolved and available \(Phase == PhaseReady\). Callers use this as the predicate before treating the unit as consumable by a Deployment.
 
 <a name="RouteRef"></a>
-## type [RouteRef](<https://github.com/blanketops/environments/blob/main/pkg/apis/serviceunit/domain/model.go#L83-L85>)
+## type RouteRef
 
 RouteRef identifies the Route CR exposing a ServiceUnit.
 
@@ -153,7 +153,7 @@ type RouteRef struct {
 ```
 
 <a name="ServiceUnit"></a>
-## type [ServiceUnit](<https://github.com/blanketops/environments/blob/main/pkg/apis/serviceunit/domain/model.go#L40-L74>)
+## type ServiceUnit
 
 ServiceUnit is the authoritative domain aggregate for the ServiceUnit CR. Constructed once by the Mapper; consumed by the application service. Never mutated after construction.
 
@@ -196,7 +196,7 @@ type ServiceUnit struct {
 ```
 
 <a name="Type"></a>
-## type [Type](<https://github.com/blanketops/environments/blob/main/pkg/apis/serviceunit/domain/model.go#L89>)
+## type Type
 
 Type discriminates how a ServiceUnit's image is sourced. Mirrors blanketops.common.v1.ServiceUnitType in the proto contract.
 

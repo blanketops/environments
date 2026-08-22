@@ -17,7 +17,7 @@ Package testutil provides fake\-client test helpers shared by every reconciler p
 
 
 <a name="ExternalSecretExists"></a>
-## func [ExternalSecretExists](<https://github.com/blanketops/environments/blob/main/pkg/secrets/internal/testutil/testutil.go#L66>)
+## func ExternalSecretExists
 
 ```go
 func ExternalSecretExists(t *testing.T, c client.Client, name, namespace string) bool
@@ -26,7 +26,7 @@ func ExternalSecretExists(t *testing.T, c client.Client, name, namespace string)
 ExternalSecretExists reports whether the named ExternalSecret exists.
 
 <a name="GetExternalSecret"></a>
-## func [GetExternalSecret](<https://github.com/blanketops/environments/blob/main/pkg/secrets/internal/testutil/testutil.go#L54>)
+## func GetExternalSecret
 
 ```go
 func GetExternalSecret(t *testing.T, c client.Client, name, namespace string) *unstructured.Unstructured
@@ -35,7 +35,7 @@ func GetExternalSecret(t *testing.T, c client.Client, name, namespace string) *u
 GetExternalSecret fetches the named ExternalSecret, failing the test if it does not exist.
 
 <a name="NewScheme"></a>
-## func [NewScheme](<https://github.com/blanketops/environments/blob/main/pkg/secrets/internal/testutil/testutil.go#L38>)
+## func NewScheme
 
 ```go
 func NewScheme(t *testing.T, adders ...func(*runtime.Scheme) error) *runtime.Scheme
@@ -44,7 +44,7 @@ func NewScheme(t *testing.T, adders ...func(*runtime.Scheme) error) *runtime.Sch
 NewScheme builds a runtime.Scheme with corev1 registered, plus any additional AddToScheme functions the caller needs — typically the environments\-api CR groups required for controllerutil.SetControllerReference.
 
 <a name="SecretExists"></a>
-## func [SecretExists](<https://github.com/blanketops/environments/blob/main/pkg/secrets/internal/testutil/testutil.go#L83>)
+## func SecretExists
 
 ```go
 func SecretExists(t *testing.T, c client.Client, name, namespace string) bool
