@@ -1,17 +1,20 @@
 # =============================================================================
 # release.yml — Publish GitHub Release
 #
-# Fires on push of a v* tag. Generates CHANGELOG.md via git-cliff, commits
-# it to main, then publishes a GitHub Release with the latest release notes.
+# Fires on push of a v* tag. Reads the already-current CHANGELOG.md for
+# release notes and publishes a GitHub Release.
+#
+# CHANGELOG.md itself is generated and committed by finalize-release.yml,
+# synchronously, before it merges main back into develop -- doing it there
+# instead of here closes a race where this workflow (triggered
+# asynchronously by the tag push) used to commit the changelog to main
+# after finalize-release.yml had already synced develop, leaving develop
+# permanently missing that commit.
 #
 # Secrets required:
 #   APP_ID, APP_PRIVATE_KEY — GitHub App credentials, exchanged for a
-#   short-lived installation token. The changelog commit pushes straight to
-#   main, which required-status-checks protects against direct pushes; the
-#   default GITHUB_TOKEN can't bypass that the way an App installation
-#   token can.
-#   GPG_PRIVATE_KEY  — signs the changelog commit
-#   GPG_PASSPHRASE   — passphrase for GPG_PRIVATE_KEY
+#   short-lived installation token, used to check out main and publish
+#   the release.
 # =============================================================================
 
 name: Release
@@ -52,34 +55,12 @@ jobs:
           rm -rf git-cliff.tar.gz "git-cliff-${GITCLIFF_VERSION}"
           git-cliff --version
 
+      # finalize-release.yml already generated and committed CHANGELOG.md
+      # to main before tagging -- this just gets onto that tip.
       - name: Checkout main
         run: |
           git checkout main
           git pull origin main
-
-      - name: Generate CHANGELOG.md
-        run: git-cliff --config .cliff.toml --output CHANGELOG.md
-
-      # v6 targets Node 20, which Actions now force-runs under a Node 24
-      # shim — this intermittently broke gpg-agent's pinentry hand-off
-      # during signing ("Inappropriate ioctl for device"). v7 runs
-      # natively on Node 24, same inputs/outputs.
-      - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@v7
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.GPG_PASSPHRASE }}
-          git_user_signingkey: true
-          git_commit_gpgsign: true
-          git_config_global: true
-          git_committer_name: github-actions
-          git_committer_email: actions@github.com
-
-      - name: Commit changelog
-        run: |
-          git add CHANGELOG.md
-          git commit -S -m "chore(release): update changelog for ${{ github.ref_name }}" || echo "No changes"
-          git push origin main
 
       - name: Generate release notes
         run: git-cliff --config .cliff.toml --latest --output RELEASE_NOTES.md
@@ -100,9 +81,7 @@ jobs:
 
           ## Completed
 
-          - Generated CHANGELOG.md using git-cliff
-          - Committed changelog updates to main
-          - Generated release notes
+          - Generated release notes from the already-current CHANGELOG.md
           - Published GitHub Release
 
           ## Artifacts
