@@ -1,3 +1,25 @@
+## [0.7.8] - 2026-08-20
+
+### 🐛 Bug Fixes
+
+- *(templates)* Move issue templates to the path GitHub actually reads
+- *(templates)* Remove Contract Change issue type -- doesn't belong here
+
+### 💼 Other
+
+- Merge release/v0.7.8 into main
+
+### 📚 Documentation
+
+- Refresh generated code docs via gomarkdoc
+- Fill in missing GoDoc comments, regenerate docs/code
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.7.7
+- Drop unnecessary App-token auth from read-only build/scan/coverage jobs
+- *(ci)* Bump the github-actions group across 1 directory with 6 updates (#295)
+- Bring issue/PR template fixes into main
 ## [0.7.7] - 2026-08-20
 
 ### 📚 Documentation

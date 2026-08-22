@@ -21,9 +21,10 @@ K8SProvider applies/tears down Kubernetes Deployment and Service objects via ser
   - [func NewKustomizationProvider\(c client.Client, scheme \*runtime.Scheme, log logr.Logger, Recorder record.EventRecorder\) \*KustomizeStrategyProvider](<#NewKustomizationProvider>)
   - [func NewKustomizeStrategyProvider\(c client.Client, scheme \*runtime.Scheme, log logr.Logger\) \*KustomizeStrategyProvider](<#NewKustomizeStrategyProvider>)
   - [func \(m \*KustomizeStrategyProvider\) BuildKustomize\(intent \*intent.DeploymentIntent\) \(\[\]runtime.Object, error\)](<#KustomizeStrategyProvider.BuildKustomize>)
-  - [func \(m \*KustomizeStrategyProvider\) CommitAndPush\(repoPath string, intent \*intent.DeploymentIntent, env string\) error](<#KustomizeStrategyProvider.CommitAndPush>)
+  - [func \(m \*KustomizeStrategyProvider\) CommitAndPush\(repoPath string, intent \*intent.DeploymentIntent, env string, sshEnv \[\]string\) error](<#KustomizeStrategyProvider.CommitAndPush>)
   - [func \(m \*KustomizeStrategyProvider\) ReconcileKustomization\(ctx context.Context, cr \*environmentv1alpha1.Deployment, intent \*intent.DeploymentIntent, repoURL string, ref string, path string\) error](<#KustomizeStrategyProvider.ReconcileKustomization>)
-  - [func \(m \*KustomizeStrategyProvider\) Teardown\(ctx context.Context, cr \*environmentv1alpha1.Deployment, intent \*intent.DeploymentIntent, env string\) error](<#KustomizeStrategyProvider.Teardown>)
+  - [func \(m \*KustomizeStrategyProvider\) Teardown\(ctx context.Context, cr \*environmentv1alpha1.Deployment, intent \*intent.DeploymentIntent, repoURL string, ref string, env string\) error](<#KustomizeStrategyProvider.Teardown>)
+  - [func \(m \*KustomizeStrategyProvider\) TeardownFluxResources\(ctx context.Context, cr \*environmentv1alpha1.Deployment\) error](<#KustomizeStrategyProvider.TeardownFluxResources>)
 - [type Provider](<#Provider>)
 - [type ProviderRegistry](<#ProviderRegistry>)
   - [func NewProviderRegistry\(providers ...Provider\) \*ProviderRegistry](<#NewProviderRegistry>)
@@ -89,7 +90,7 @@ type KustomizationProvider struct {
 ```
 
 <a name="KustomizeStrategyProvider"></a>
-## type [KustomizeStrategyProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomization.go#L53-L57>)
+## type [KustomizeStrategyProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomization.go#L65-L69>)
 
 KustomizeStrategyProvider implements the GitOps deployment path: it renders manifests, commits them to a repo, and ensures the Flux GitRepository/Kustomization CRs that make the cluster reconcile them.
 
@@ -111,7 +112,7 @@ func NewKustomizationProvider(c client.Client, scheme *runtime.Scheme, log logr.
 NewKustomizationProvider constructs a KustomizeStrategyProvider from the given clients.
 
 <a name="NewKustomizeStrategyProvider"></a>
-### func [NewKustomizeStrategyProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomization.go#L60-L64>)
+### func [NewKustomizeStrategyProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomization.go#L72-L76>)
 
 ```go
 func NewKustomizeStrategyProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger) *KustomizeStrategyProvider
@@ -120,7 +121,7 @@ func NewKustomizeStrategyProvider(c client.Client, scheme *runtime.Scheme, log l
 NewKustomizeStrategyProvider constructs a KustomizeStrategyProvider.
 
 <a name="KustomizeStrategyProvider.BuildKustomize"></a>
-### func \(\*KustomizeStrategyProvider\) [BuildKustomize](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomization.go#L74-L76>)
+### func \(\*KustomizeStrategyProvider\) [BuildKustomize](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomization.go#L86-L88>)
 
 ```go
 func (m *KustomizeStrategyProvider) BuildKustomize(intent *intent.DeploymentIntent) ([]runtime.Object, error)
@@ -129,16 +130,16 @@ func (m *KustomizeStrategyProvider) BuildKustomize(intent *intent.DeploymentInte
 BuildKustomize renders the Deployment and Service objects for every ServiceUnit in intent, without writing them anywhere.
 
 <a name="KustomizeStrategyProvider.CommitAndPush"></a>
-### func \(\*KustomizeStrategyProvider\) [CommitAndPush](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomization.go#L161-L165>)
+### func \(\*KustomizeStrategyProvider\) [CommitAndPush](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomization.go#L189-L194>)
 
 ```go
-func (m *KustomizeStrategyProvider) CommitAndPush(repoPath string, intent *intent.DeploymentIntent, env string) error
+func (m *KustomizeStrategyProvider) CommitAndPush(repoPath string, intent *intent.DeploymentIntent, env string, sshEnv []string) error
 ```
 
-CommitAndPush renders each ServiceUnit's Deployment/Service manifests into the env overlay under repoPath, removing previously generated workload files first, then commits and pushes the result.
+CommitAndPush renders each ServiceUnit's Deployment/Service manifests into the env overlay under repoPath, removing previously generated workload files first, then commits and pushes the result. repoPath must already be a local clone \(see ensureLocalClone\); sshEnv authenticates the push.
 
 <a name="KustomizeStrategyProvider.ReconcileKustomization"></a>
-### func \(\*KustomizeStrategyProvider\) [ReconcileKustomization](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomization.go#L98-L105>)
+### func \(\*KustomizeStrategyProvider\) [ReconcileKustomization](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomization.go#L110-L117>)
 
 ```go
 func (m *KustomizeStrategyProvider) ReconcileKustomization(ctx context.Context, cr *environmentv1alpha1.Deployment, intent *intent.DeploymentIntent, repoURL string, ref string, path string) error
@@ -147,17 +148,30 @@ func (m *KustomizeStrategyProvider) ReconcileKustomization(ctx context.Context, 
 ReconcileKustomization is the GitOps path's public entrypoint: it renders and commits manifests to repoURL, then ensures the Flux GitRepository and Kustomization CRs that make the cluster apply them from ref/path.
 
 <a name="KustomizeStrategyProvider.Teardown"></a>
-### func \(\*KustomizeStrategyProvider\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomization.go#L452-L457>)
+### func \(\*KustomizeStrategyProvider\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomization.go#L618-L625>)
 
 ```go
-func (m *KustomizeStrategyProvider) Teardown(ctx context.Context, cr *environmentv1alpha1.Deployment, intent *intent.DeploymentIntent, env string) error
+func (m *KustomizeStrategyProvider) Teardown(ctx context.Context, cr *environmentv1alpha1.Deployment, intent *intent.DeploymentIntent, repoURL string, ref string, env string) error
 ```
 
-Teardown removes GitOps\-managed resources for this Deployment CR: deletes the workload manifests from the external Git repo \(committed \+ pushed\), then deletes the Kustomization and GitRepository Flux CRs.
+Teardown removes GitOps\-managed resources for this Deployment CR: deletes the workload manifests from the external Git repo \(committed \+ pushed\), then deletes the Kustomization and GitRepository Flux CRs via TeardownFluxResources. repoURL/ref identify the manifests repo exactly as ReconcileKustomization's caller does \(ref is a commit SHA\) — needed to ensure a local clone exists before removeAndPush can touch it.
 
-Order matters: the Kustomization must be deleted \(or its manifests must already be absent\) before or alongside the repo cleanup — otherwise Flux may reconcile a stale kustomization.yaml pointing at files mid\-removal. Deleting first, removing files second, is the safer order here since a missing Kustomization simply stops reconciling rather than reconciling a broken state.
+Only meaningful for a manifests repo whose lifecycle this type owns end to end \(shared/persistent repo, files added and removed per Deployment\). If something else owns that repo's lifecycle \(creates and deletes the whole repo per Deployment\), call TeardownFluxResources alone instead — see its doc comment.
 
-GitRepository and Kustomization are ownerRef'd \(SetControllerReference\), so GC would eventually reclaim them — deleted explicitly here anyway for determinism, matching the rest of the chain.
+Order matters: the Flux CRs must be deleted \(or their manifests must already be absent\) before or alongside the repo cleanup — otherwise Flux may reconcile a stale kustomization.yaml pointing at files mid\-removal. Deleting first, removing files second, is the safer order here since a missing Kustomization simply stops reconciling rather than reconciling a broken state.
+
+<a name="KustomizeStrategyProvider.TeardownFluxResources"></a>
+### func \(\*KustomizeStrategyProvider\) [TeardownFluxResources](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/kustomization.go#L572-L575>)
+
+```go
+func (m *KustomizeStrategyProvider) TeardownFluxResources(ctx context.Context, cr *environmentv1alpha1.Deployment) error
+```
+
+TeardownFluxResources deletes the Kustomization and GitRepository Flux CRs this Deployment's GitOps reconciliation created. It does not touch the manifests repo itself \(no clone, no commit/push\) — callers whose manifests\-repo lifecycle is managed elsewhere \(e.g. a mediator that provisions and deletes a whole per\-Deployment repo via a Git host's API\) call this alone rather than the fuller Teardown, since removing files from a repo that's about to be deleted wholesale is redundant at best and a failing clone/push at worst.
+
+The Kustomization is deleted before the GitRepository — stop reconciliation before the source it points at goes away, rather than after.
+
+GitRepository and Kustomization are ownerRef'd \(SetControllerReference\), so GC would eventually reclaim them — deleted explicitly here anyway for determinism.
 
 <a name="Provider"></a>
 ## type [Provider](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/api/provider.go#L40-L52>)
