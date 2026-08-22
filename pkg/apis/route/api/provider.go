@@ -49,4 +49,8 @@ type Provider interface {
 	// PhaseFailed on terminal failure. Non-terminal errors (e.g. transient API
 	// failures) are returned as Go errors for the controller to requeue.
 	Ensure(ctx context.Context, resolved *routeResolution.ResolvedRoute, route domain.Route) (domain.RouteResult, error)
+
+	// Teardown deletes the runtime resource Ensure created for route.
+	// Idempotent — a missing resource is not an error.
+	Teardown(ctx context.Context, route domain.Route) error
 }

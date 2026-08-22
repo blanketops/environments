@@ -84,6 +84,22 @@ func (s *RouteService) Reconcile(ctx context.Context, resolved *routeResolution.
 	return s.status.Write(ctx, resolved.Route, conditions...)
 }
 
+// Teardown deletes whatever Reconcile applied for this Route CR. It maps
+// and selects the backend exactly as Reconcile does, so it tears down the
+// same provider that would have been (or was) used to materialize the
+// route. No status write: the CR is being deleted, so there is nothing
+// left to persist status onto once this returns.
+func (s *RouteService) Teardown(ctx context.Context, resolved *routeResolution.ResolvedRoute) error {
+	route := s.mapper.MapResolvedToDomain(resolved)
+
+	provider, selErr := s.backend.ForRoute(route)
+	if selErr != nil {
+		return selErr
+	}
+
+	return provider.Teardown(ctx, route)
+}
+
 // routeConditions derives a metav1.Condition slice from the domain Route,
 // RouteResult, and any provider error.
 //
