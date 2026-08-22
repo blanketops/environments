@@ -52,4 +52,9 @@ type Provider interface {
 	// so the controller requeues while ACME challenge or cert issuance is
 	// in progress.
 	Ensure(ctx context.Context, resolved *domainResolution.ResolvedDomain, d domain.Domain) (domain.DomainResult, error)
+
+	// Teardown releases the ClusterDomainClaim and, for custom-strategy domains,
+	// the per-host Certificate created by Ensure. Idempotent — a missing
+	// resource is not an error. The shared per-namespace Issuer is left alone.
+	Teardown(ctx context.Context, d domain.Domain) error
 }
