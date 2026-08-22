@@ -1,3 +1,33 @@
+## [0.7.9] - 2026-08-22
+
+### 🐛 Bug Fixes
+
+- GitOps commit/push ran against a repo that was never cloned
+- Six correctness bugs from the full-repo review pass
+- Replace bogus doc comments attached to exported funcs
+- GitHubEvent Ensure() no longer sets owner references
+- Complete GitOps Teardown -- clone/auth wiring, detached-HEAD push
+- Wire DeploymentService.Teardown through the dispatch chain
+- Split Flux CR teardown from manifests-repo file removal
+- Git commit calls had no identity, failing outright in CI/prod pods
+
+### 💼 Other
+
+- Merge release/v0.7.9 into main
+
+### 📚 Documentation
+
+- Add missing package doc comments across cache/
+- Fix ragged line-wrap in two package doc comments
+- Fix last banner-as-doc comment, regenerate docs/code
+- Auto-generate code documentation [skip ci]
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.7.8
+- *(release)* Update changelog for v0.7.8
+- Sync develop with main (auto-docs + changelog commits from v0.7.8)
 ## [0.7.8] - 2026-08-20
 
 ### 🐛 Bug Fixes
