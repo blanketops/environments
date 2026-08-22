@@ -98,6 +98,22 @@ func (s *DomainService) Reconcile(ctx context.Context, resolved *domainResolutio
 	return nil
 }
 
+// Teardown releases whatever Reconcile provisioned for this Domain CR. It maps
+// and selects the backend exactly as Reconcile does, so it tears down the
+// same provider that would have been (or was) used to materialize the
+// cert/mapping chain. No status write: the CR is being deleted, so there is
+// nothing left to persist status onto once this returns.
+func (s *DomainService) Teardown(ctx context.Context, resolved *domainResolution.ResolvedDomain) error {
+	d := s.mapper.MapResolvedToDomain(resolved)
+
+	provider, selErr := s.backend.ForDomain(d)
+	if selErr != nil {
+		return selErr
+	}
+
+	return provider.Teardown(ctx, d)
+}
+
 // domainConditions derives a metav1.Condition slice from the dispatch outcome.
 // This is application logic: it knows what Ready/Provisioning/Failed mean.
 func (s *DomainService) domainConditions(d domain.Domain, result domain.DomainResult, runErr error) []metav1.Condition {
