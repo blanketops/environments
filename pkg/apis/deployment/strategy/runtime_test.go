@@ -22,6 +22,7 @@ import (
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -88,6 +89,61 @@ func TestRuntimeProvider_Execute(t *testing.T) {
 			var gotDeploy appsv1.Deployment
 			if err := c.Get(context.Background(), client.ObjectKey{Name: "api", Namespace: "default"}, &gotDeploy); err != nil {
 				t.Fatalf("expected the Kubernetes strategy to have applied a Deployment: %v", err)
+			}
+		})
+	}
+}
+
+func TestRuntimeProvider_Teardown(t *testing.T) {
+	tests := []struct {
+		name    string
+		runtime intent.Runtime
+		wantErr bool
+	}{
+		{"kubernetes dispatches to K8SStrategy", intent.RuntimeKubernetes, false},
+		{"knative is not implemented", intent.RuntimeKnative, true},
+		{"ecs is not implemented", intent.RuntimeECS, true},
+		{"unknown runtime is rejected", intent.Runtime("blanketops.dev/mystery-runtime"), true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			scheme := newRuntimeTestScheme(t)
+			c := fake.NewClientBuilder().WithScheme(scheme).Build()
+			p := NewRuntimeProvider(c, scheme, logr.Discard(), nil)
+
+			dIntent := &intent.DeploymentIntent{
+				Name:      "web",
+				Namespace: "default",
+				Runtime:   tt.runtime,
+				Strategy:  intent.StrategyRolling,
+				ServiceUnits: []serviceunitIntent.ServiceUnitIntent{
+					{Name: "api", Image: "docker.io/blanketops/api:v1", Port: 8080, Size: 1},
+				},
+			}
+
+			// Apply first so there's something real to tear down.
+			if !tt.wantErr {
+				if _, err := p.Execute(context.Background(), dIntent); err != nil {
+					t.Fatalf("Execute (setup): %v", err)
+				}
+			}
+
+			err := p.Teardown(context.Background(), dIntent)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("expected an error for runtime %q, got nil", tt.runtime)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("Teardown(%q): unexpected error: %v", tt.runtime, err)
+			}
+
+			var gotDeploy appsv1.Deployment
+			err = c.Get(context.Background(), client.ObjectKey{Name: "api", Namespace: "default"}, &gotDeploy)
+			if !apierrors.IsNotFound(err) {
+				t.Fatalf("expected the Deployment to be deleted by Teardown, got err = %v", err)
 			}
 		})
 	}

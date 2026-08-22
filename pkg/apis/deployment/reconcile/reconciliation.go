@@ -129,3 +129,58 @@ func (r *ReconciliationExecutor) Execute(
 		)
 	}
 }
+
+// Teardown reverses Execute: deletes whatever the imperative or GitOps path
+// applied for rIntent, dispatching on the same axis Execute uses.
+func (r *ReconciliationExecutor) Teardown(
+	ctx context.Context,
+	sourceCR *environmentv1alpha1.Deployment,
+	rIntent *intent.DeploymentIntent,
+) error {
+
+	if rIntent == nil {
+		return fmt.Errorf("nil deployment intent")
+	}
+
+	// ------------------------------------------------
+	// Imperative Mode (No GitOps)
+	// ------------------------------------------------
+	if rIntent.ManifestsRepo == nil {
+		r.Log.Info("Tearing down imperative reconciliation")
+		return r.RuntimeProvider.Teardown(ctx, rIntent)
+	}
+
+	// ------------------------------------------------
+	// GitOps Mode
+	// ------------------------------------------------
+	switch rIntent.ReconciliationStrategy {
+
+	case intent.ReconciliationKustomize:
+
+		r.Log.Info("Tearing down GitOps reconciliation (kustomize)",
+			"deployment", rIntent.Name,
+		)
+
+		// Only the Flux GitRepository/Kustomization CRs, not the manifests
+		// repo itself (no clone, no commit/push) — see
+		// KustomizeStrategyProvider.TeardownFluxResources's doc comment for
+		// why: this executor has no way to know whether the caller's
+		// manifests-repo lifecycle is shared/persistent (in which case
+		// removing files would matter) or owned end-to-end elsewhere (e.g.
+		// a mediator that deletes the whole repo via a Git host's API, in
+		// which case removing files first is redundant at best). Callers
+		// with a shared-repo model that also need file removal should call
+		// KustomizeStrategyProvider.Teardown directly instead of going
+		// through this executor.
+		return r.Kustomizer.TeardownFluxResources(ctx, sourceCR)
+
+	case intent.ReconciliationHelm:
+		return fmt.Errorf("helm reconciliation not implemented")
+
+	default:
+		return fmt.Errorf(
+			"unsupported reconciliation strategy: %s",
+			rIntent.ReconciliationStrategy,
+		)
+	}
+}

@@ -47,6 +47,18 @@ import (
 const fieldManager = "blanketops-kustomize-provider"
 const defaultGitBranch = "master"
 
+// gitCommitIdentity is the author/committer identity for commits this
+// provider makes to the manifests repo. Set explicitly rather than relying
+// on ambient global git config — a minimal controller pod image has none,
+// and `git commit` fails outright ("Please tell me who you are", exit 128)
+// without one. Passed via -c on each commit rather than a persistent
+// `git config` call, since repoPath's local git config shouldn't outlive
+// this provider's use of it.
+var gitCommitIdentity = []string{
+	"-c", "user.name=blanketops-kustomize-provider",
+	"-c", "user.email=noreply@blanketops.dev",
+}
+
 // KustomizeStrategyProvider implements the GitOps deployment path: it
 // renders manifests, commits them to a repo, and ensures the Flux
 // GitRepository/Kustomization CRs that make the cluster reconcile them.
@@ -309,15 +321,21 @@ resources:
 
 	if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
 
-		if _, err := utils.RunGit(repoPath,
+		commitArgs := append(append([]string{}, gitCommitIdentity...),
 			"commit",
 			"-m",
 			fmt.Sprintf("render(%s): update workloads", env),
-		); err != nil {
-			return err
+		)
+		if out, err := utils.RunGit(repoPath, commitArgs...); err != nil {
+			return fmt.Errorf("commit: %w: %s", err, out)
 		}
 
-		if out, err := utils.RunGitWithEnv(repoPath, sshEnv, "push"); err != nil {
+		// ensureLocalClone leaves the working tree on a detached HEAD
+		// (checking out FETCH_HEAD is never a branch), so a bare `push`
+		// fails with "You are not currently on a branch" — the explicit
+		// HEAD:<branch> refspec pushes whatever commit HEAD points at
+		// regardless, landing it on the manifests repo's stable branch.
+		if out, err := utils.RunGitWithEnv(repoPath, sshEnv, "push", "origin", "HEAD:"+defaultGitBranch); err != nil {
 			return fmt.Errorf("push: %w: %s", err, out)
 		}
 
@@ -536,30 +554,25 @@ func (m *KustomizeStrategyProvider) ensureKustomization(
 	)
 }
 
-// Teardown removes GitOps-managed resources for this Deployment CR: deletes
-// the workload manifests from the external Git repo (committed + pushed),
-// then deletes the Kustomization and GitRepository Flux CRs.
+// TeardownFluxResources deletes the Kustomization and GitRepository Flux
+// CRs this Deployment's GitOps reconciliation created. It does not touch
+// the manifests repo itself (no clone, no commit/push) — callers whose
+// manifests-repo lifecycle is managed elsewhere (e.g. a mediator that
+// provisions and deletes a whole per-Deployment repo via a Git host's API)
+// call this alone rather than the fuller Teardown, since removing files
+// from a repo that's about to be deleted wholesale is redundant at best and
+// a failing clone/push at worst.
 //
-// Order matters: the Kustomization must be deleted (or its manifests must
-// already be absent) before or alongside the repo cleanup — otherwise Flux
-// may reconcile a stale kustomization.yaml pointing at files mid-removal.
-// Deleting first, removing files second, is the safer order here since a
-// missing Kustomization simply stops reconciling rather than reconciling
-// a broken state.
+// The Kustomization is deleted before the GitRepository — stop reconciliation
+// before the source it points at goes away, rather than after.
 //
 // GitRepository and Kustomization are ownerRef'd (SetControllerReference),
 // so GC would eventually reclaim them — deleted explicitly here anyway for
-// determinism, matching the rest of the chain.
-func (m *KustomizeStrategyProvider) Teardown(
+// determinism.
+func (m *KustomizeStrategyProvider) TeardownFluxResources(
 	ctx context.Context,
 	cr *environmentv1alpha1.Deployment,
-	intent *intent.DeploymentIntent,
-	env string,
 ) error {
-	log := m.Log.WithValues("deployment", cr.Name, "namespace", cr.Namespace)
-
-	// ── 1. Delete Kustomization CR first — stop reconciliation before
-	//       touching files it points at.
 	kust := &kustomizev1.Kustomization{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-kustomize", cr.Name),
@@ -570,7 +583,6 @@ func (m *KustomizeStrategyProvider) Teardown(
 		return fmt.Errorf("delete kustomization: %w", err)
 	}
 
-	// ── 2. Delete GitRepository CR.
 	repo := &sourcev1.GitRepository{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-source", cr.Name),
@@ -581,8 +593,59 @@ func (m *KustomizeStrategyProvider) Teardown(
 		return fmt.Errorf("delete gitrepository: %w", err)
 	}
 
-	// ── 3. Remove committed manifests from the external repo + push.
-	if err := m.removeAndPush(cr, intent, env); err != nil {
+	return nil
+}
+
+// Teardown removes GitOps-managed resources for this Deployment CR: deletes
+// the workload manifests from the external Git repo (committed + pushed),
+// then deletes the Kustomization and GitRepository Flux CRs via
+// TeardownFluxResources. repoURL/ref identify the manifests repo exactly as
+// ReconcileKustomization's caller does (ref is a commit SHA) — needed to
+// ensure a local clone exists before removeAndPush can touch it.
+//
+// Only meaningful for a manifests repo whose lifecycle this type owns
+// end to end (shared/persistent repo, files added and removed per
+// Deployment). If something else owns that repo's lifecycle (creates and
+// deletes the whole repo per Deployment), call TeardownFluxResources alone
+// instead — see its doc comment.
+//
+// Order matters: the Flux CRs must be deleted (or their manifests must
+// already be absent) before or alongside the repo cleanup — otherwise Flux
+// may reconcile a stale kustomization.yaml pointing at files mid-removal.
+// Deleting first, removing files second, is the safer order here since a
+// missing Kustomization simply stops reconciling rather than reconciling
+// a broken state.
+func (m *KustomizeStrategyProvider) Teardown(
+	ctx context.Context,
+	cr *environmentv1alpha1.Deployment,
+	intent *intent.DeploymentIntent,
+	repoURL string,
+	ref string,
+	env string,
+) error {
+	log := m.Log.WithValues("deployment", cr.Name, "namespace", cr.Namespace)
+
+	if err := m.TeardownFluxResources(ctx, cr); err != nil {
+		return err
+	}
+
+	// Ensure a local clone exists, then remove committed manifests from the
+	// external repo + push. Same clone/auth requirement as
+	// ReconcileKustomization: nothing else guarantees repoPath is a working
+	// git clone by the time we get here.
+	repoPath := filepath.Join(os.TempDir(), fmt.Sprintf("%s-manifests", cr.Name))
+
+	sshEnv, cleanup, err := m.resolveGitSSHEnv(ctx, cr)
+	if err != nil {
+		return fmt.Errorf("resolve git ssh credentials: %w", err)
+	}
+	defer cleanup()
+
+	if err := ensureLocalClone(repoPath, repoURL, ref, sshEnv); err != nil {
+		return fmt.Errorf("ensure local clone: %w", err)
+	}
+
+	if err := m.removeAndPush(repoPath, cr, intent, env, sshEnv); err != nil {
 		return fmt.Errorf("remove manifests from gitops repo: %w", err)
 	}
 
@@ -590,19 +653,16 @@ func (m *KustomizeStrategyProvider) Teardown(
 	return nil
 }
 
-// removeAndPush shares ReconcileKustomization/CommitAndPush's assumption
-// that repoPath is already a local clone, but — unlike that path — has no
-// repoURL/ref to call ensureLocalClone with, and Teardown is not yet called
-// from anywhere (see pkg/apis/deployment/application/service.go's TODO on
-// ReconciliationExecutor having no Teardown method). Needs the same
-// clone/SSH-env treatment as ReconcileKustomization once Teardown is wired
-// up to a real caller.
+// removeAndPush removes cr's workload manifests from repoPath (already a
+// local clone — see Teardown) and pushes the result. sshEnv authenticates
+// the push.
 func (m *KustomizeStrategyProvider) removeAndPush(
+	repoPath string,
 	cr *environmentv1alpha1.Deployment,
 	intent *intent.DeploymentIntent,
 	env string,
+	sshEnv []string,
 ) error {
-	repoPath := filepath.Join(os.TempDir(), fmt.Sprintf("%s-manifests", cr.Name))
 	overlayPath := filepath.Join(repoPath, "overlays", env)
 
 	for _, su := range intent.ServiceUnits {
@@ -636,9 +696,18 @@ func (m *KustomizeStrategyProvider) removeAndPush(
 		m.Log.Info("no manifest changes to remove", "env", env)
 		return nil
 	}
-	if _, err := utils.RunGit(repoPath, "commit", "-m", fmt.Sprintf("render(%s): remove workloads for %s", env, cr.Name)); err != nil {
-		return err
+	commitArgs := append(append([]string{}, gitCommitIdentity...),
+		"commit",
+		"-m",
+		fmt.Sprintf("render(%s): remove workloads for %s", env, cr.Name),
+	)
+	if out, err := utils.RunGit(repoPath, commitArgs...); err != nil {
+		return fmt.Errorf("commit: %w: %s", err, out)
 	}
-	_, err := utils.RunGit(repoPath, "push")
-	return err
+	// See CommitAndPush's push call for why this uses an explicit
+	// HEAD:<branch> refspec instead of a bare push.
+	if out, err := utils.RunGitWithEnv(repoPath, sshEnv, "push", "origin", "HEAD:"+defaultGitBranch); err != nil {
+		return fmt.Errorf("push: %w: %s", err, out)
+	}
+	return nil
 }

@@ -22,6 +22,7 @@ import (
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -125,6 +126,67 @@ func TestDeploymentService_Reconcile(t *testing.T) {
 	}
 	if len(gotCR.Status.Conditions) == 0 {
 		t.Error("expected the Deployment CR to have at least one condition written")
+	}
+}
+
+// TestDeploymentService_Teardown_RemovesWhatReconcileApplied is a regression
+// test for Teardown's TODO stub: ReconciliationExecutor had no Teardown
+// method, so DeploymentService.Teardown was a no-op that never removed
+// anything, and it was never even called from environments-controller
+// either. Reconciles first (mirroring TestDeploymentService_Reconcile), then
+// tears down and verifies the same objects Reconcile applied are gone.
+func TestDeploymentService_Teardown_RemovesWhatReconcileApplied(t *testing.T) {
+	scheme := newServiceTestScheme(t)
+	depl := &environmentv1alpha1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: "web", Namespace: "default", Generation: 1},
+	}
+	c := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(depl).
+		WithStatusSubresource(&environmentv1alpha1.Deployment{}).
+		Build()
+
+	svc := newTestDeploymentService(t, c, scheme)
+
+	resolved := &deploymentResolution.ResolvedDeployment{
+		Deployment: depl,
+		Spec: &deploymentResolution.ResolvedDeploymentSpec{
+			ServiceUnits:           []string{"api"},
+			Runtime:                deploymentResolution.RuntimeKubernetes,
+			Strategy:               deploymentResolution.StrategyRolling,
+			ReconciliationStrategy: deploymentResolution.ReconciliationImperative,
+		},
+	}
+	serviceUnits := []serviceunitResolution.ResolvedServiceUnit{
+		{
+			ServiceUnit: &environmentv1alpha1.ServiceUnit{ObjectMeta: metav1.ObjectMeta{Name: "api", Namespace: "default"}},
+			Spec: &serviceunitResolution.ResolvedServiceUnitSpec{
+				Type:          commoncontractv1.ServiceUnitType_SERVICE_UNIT_TYPE_STATIC,
+				Image:         "docker.io/blanketops/api:v1",
+				ContainerPort: 8080,
+				Size:          2,
+			},
+		},
+	}
+
+	if err := svc.Reconcile(context.Background(), resolved, serviceUnits, logr.Discard()); err != nil {
+		t.Fatalf("Reconcile (setup): unexpected error: %v", err)
+	}
+	if err := c.Get(context.Background(), client.ObjectKey{Name: "api", Namespace: "default"}, &appsv1.Deployment{}); err != nil {
+		t.Fatalf("expected the setup Reconcile to have applied a Deployment: %v", err)
+	}
+
+	if err := svc.Teardown(context.Background(), resolved, serviceUnits, logr.Discard()); err != nil {
+		t.Fatalf("Teardown: unexpected error: %v", err)
+	}
+
+	err := c.Get(context.Background(), client.ObjectKey{Name: "api", Namespace: "default"}, &appsv1.Deployment{})
+	if !apierrors.IsNotFound(err) {
+		t.Fatalf("expected the Deployment applied by Reconcile to be deleted by Teardown, got err = %v", err)
+	}
+	err = c.Get(context.Background(), client.ObjectKey{Name: "api", Namespace: "default"}, &corev1.Service{})
+	if !apierrors.IsNotFound(err) {
+		t.Fatalf("expected the Service applied by Reconcile to be deleted by Teardown, got err = %v", err)
 	}
 }
 

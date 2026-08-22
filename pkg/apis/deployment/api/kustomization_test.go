@@ -21,13 +21,18 @@ import (
 	"path/filepath"
 	"testing"
 
+	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
+	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	environmentv1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
+	intent "github.com/blanketops/environments/pkg/intent/deployment"
+	serviceunitIntent "github.com/blanketops/environments/pkg/intent/serviceunit"
 	"github.com/blanketops/environments/pkg/utils"
 )
 
@@ -143,8 +148,17 @@ func newDeploymentTestScheme(t *testing.T) *runtime.Scheme {
 	if err := corev1.AddToScheme(scheme); err != nil {
 		t.Fatalf("AddToScheme(corev1): %v", err)
 	}
+	if err := appsv1.AddToScheme(scheme); err != nil {
+		t.Fatalf("AddToScheme(appsv1): %v", err)
+	}
 	if err := environmentv1alpha1.AddToScheme(scheme); err != nil {
 		t.Fatalf("AddToScheme(environmentv1alpha1): %v", err)
+	}
+	if err := kustomizev1.AddToScheme(scheme); err != nil {
+		t.Fatalf("AddToScheme(kustomizev1): %v", err)
+	}
+	if err := sourcev1.AddToScheme(scheme); err != nil {
+		t.Fatalf("AddToScheme(sourcev1): %v", err)
 	}
 	return scheme
 }
@@ -241,4 +255,72 @@ func splitFields(s string) []string {
 		fields = append(fields, string(cur))
 	}
 	return fields
+}
+
+// TestKustomizeStrategyProvider_Teardown_RemovesCommittedManifests is a
+// regression test for Teardown/removeAndPush sharing CommitAndPush's
+// missing-clone bug (fixed in ReconcileKustomization, but Teardown had no
+// repoURL/ref to call ensureLocalClone with, since it was never called from
+// anywhere). Seeds a remote via CommitAndPush, then verifies Teardown
+// actually removes what was committed and pushes the removal — proving the
+// local clone/checkout it now performs works end to end.
+func TestKustomizeStrategyProvider_Teardown_RemovesCommittedManifests(t *testing.T) {
+	scheme := newDeploymentTestScheme(t)
+	cr := &environmentv1alpha1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: "teardown-test-deploy", Namespace: "default"},
+	}
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: "teardown-test-deploy-flux-ssh", Namespace: "default"},
+		Data: map[string][]byte{
+			"identity":    []byte("fake-private-key"),
+			"known_hosts": []byte("fake-known-hosts"),
+		},
+	}
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(secret).Build()
+	m := &KustomizeStrategyProvider{Client: c, Scheme: scheme, Log: logr.Discard()}
+
+	remote := newBareRemote(t)
+	sha := commitFile(t, remote, "README.md", "seed")
+
+	repoPath := filepath.Join(os.TempDir(), cr.Name+"-manifests")
+	t.Cleanup(func() { _ = os.RemoveAll(repoPath) })
+
+	di := &intent.DeploymentIntent{
+		Namespace: "default",
+		ServiceUnits: []serviceunitIntent.ServiceUnitIntent{
+			{Name: "api", Image: "example/api:v1", Port: 8080, Size: 1},
+		},
+	}
+
+	// Seed the remote with committed workload manifests, exactly as
+	// ReconcileKustomization would.
+	if err := ensureLocalClone(repoPath, remote, sha, nil); err != nil {
+		t.Fatalf("ensureLocalClone (seed): %v", err)
+	}
+	if err := m.CommitAndPush(repoPath, di, "prod", nil); err != nil {
+		t.Fatalf("CommitAndPush (seed): %v", err)
+	}
+
+	manifestPath := filepath.Join(repoPath, "overlays", "prod", "api-deployment.yaml")
+	if _, err := os.Stat(manifestPath); err != nil {
+		t.Fatalf("expected seeded manifest to exist before Teardown: %v", err)
+	}
+
+	if err := m.Teardown(context.Background(), cr, di, remote, "", "prod"); err != nil {
+		t.Fatalf("Teardown: %v", err)
+	}
+
+	if _, err := os.Stat(manifestPath); !os.IsNotExist(err) {
+		t.Fatalf("expected api-deployment.yaml to be removed after Teardown, stat err = %v", err)
+	}
+
+	// Verify the removal was actually pushed: clone fresh from remote and
+	// check the file is gone there too, not just in the local working copy.
+	freshClone := t.TempDir()
+	if out, err := utils.RunGit("", "clone", remote, freshClone); err != nil {
+		t.Fatalf("clone fresh: %v: %s", err, out)
+	}
+	if _, err := os.Stat(filepath.Join(freshClone, "overlays", "prod", "api-deployment.yaml")); !os.IsNotExist(err) {
+		t.Fatalf("expected manifest removal to be pushed to the remote, stat err = %v", err)
+	}
 }

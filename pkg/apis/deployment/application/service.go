@@ -122,7 +122,5 @@ func (s *DeploymentService) Teardown(
 		"reconciliationStrategy", intent.ReconciliationStrategy,
 	)
 
-	// TODO: ReconciliationExecutor has no Teardown method yet (PR #290 wired
-	// this caller but never added it) -- stubbed out until that lands.
-	return nil
+	return s.reconciliationExecutor.Teardown(ctx, resolved.Deployment, intent)
 }

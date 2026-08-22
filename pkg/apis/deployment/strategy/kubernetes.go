@@ -48,6 +48,15 @@ func (s *K8SStrategy) Runtime() intent.Runtime {
 	return intent.RuntimeKubernetes
 }
 
+// Teardown delegates to K8S.Teardown, deleting the Kubernetes Deployment
+// and Service objects this strategy applied for dIntent.
+func (s *K8SStrategy) Teardown(
+	ctx context.Context,
+	dIntent *intent.DeploymentIntent,
+) error {
+	return s.K8S.Teardown(ctx, dIntent)
+}
+
 // Supports reports whether K8SStrategy can run the given rollout strategy
 // (only Rolling and BlueGreen).
 func (s *K8SStrategy) Supports(
