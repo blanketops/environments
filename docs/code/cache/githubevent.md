@@ -24,7 +24,7 @@ Package githubevent provides domain\-specific, field\-level caching for GitHubEv
 
 
 <a name="GitHubEventCache"></a>
-## type [GitHubEventCache](<https://github.com/blanketops/environments/blob/main/cache/githubevent/githubevent.go#L37-L39>)
+## type GitHubEventCache
 
 GitHubEventCache provides domain\-specific, field\-level caching for GitHubEvent resources.
 
@@ -35,7 +35,7 @@ type GitHubEventCache struct {
 ```
 
 <a name="NewGitHubEventCache"></a>
-### func [NewGitHubEventCache](<https://github.com/blanketops/environments/blob/main/cache/githubevent/githubevent.go#L42>)
+### func NewGitHubEventCache
 
 ```go
 func NewGitHubEventCache(c *cache.Cache) *GitHubEventCache
@@ -44,7 +44,7 @@ func NewGitHubEventCache(c *cache.Cache) *GitHubEventCache
 NewGitHubEventCache constructs a new GitHubEventCache with the provided cache.Cache.
 
 <a name="GitHubEventCache.GetEventType"></a>
-### func \(\*GitHubEventCache\) [GetEventType](<https://github.com/blanketops/environments/blob/main/cache/githubevent/githubevent.go#L69>)
+### func \(\*GitHubEventCache\) GetEventType
 
 ```go
 func (g *GitHubEventCache) GetEventType(ctx context.Context, nn types.NamespacedName, gen int64, name string) (string, bool, error)
@@ -53,7 +53,7 @@ func (g *GitHubEventCache) GetEventType(ctx context.Context, nn types.Namespaced
 
 
 <a name="GitHubEventCache.GetRef"></a>
-### func \(\*GitHubEventCache\) [GetRef](<https://github.com/blanketops/environments/blob/main/cache/githubevent/githubevent.go#L83>)
+### func \(\*GitHubEventCache\) GetRef
 
 ```go
 func (g *GitHubEventCache) GetRef(ctx context.Context, nn types.NamespacedName, gen int64, name string) (string, bool, error)
@@ -62,7 +62,7 @@ func (g *GitHubEventCache) GetRef(ctx context.Context, nn types.NamespacedName, 
 
 
 <a name="GitHubEventCache.GetRepository"></a>
-### func \(\*GitHubEventCache\) [GetRepository](<https://github.com/blanketops/environments/blob/main/cache/githubevent/githubevent.go#L55>)
+### func \(\*GitHubEventCache\) GetRepository
 
 ```go
 func (g *GitHubEventCache) GetRepository(ctx context.Context, nn types.NamespacedName, gen int64, name string) (string, bool, error)
@@ -71,7 +71,7 @@ func (g *GitHubEventCache) GetRepository(ctx context.Context, nn types.Namespace
 
 
 <a name="GitHubEventCache.GetWebhook"></a>
-### func \(\*GitHubEventCache\) [GetWebhook](<https://github.com/blanketops/environments/blob/main/cache/githubevent/githubevent.go#L97>)
+### func \(\*GitHubEventCache\) GetWebhook
 
 ```go
 func (g *GitHubEventCache) GetWebhook(ctx context.Context, nn types.NamespacedName, gen int64, name string, into any) (bool, error)
@@ -80,7 +80,7 @@ func (g *GitHubEventCache) GetWebhook(ctx context.Context, nn types.NamespacedNa
 
 
 <a name="GitHubEventCache.PublishResolved"></a>
-### func \(\*GitHubEventCache\) [PublishResolved](<https://github.com/blanketops/environments/blob/main/cache/githubevent/githubevent.go#L106>)
+### func \(\*GitHubEventCache\) PublishResolved
 
 ```go
 func (g *GitHubEventCache) PublishResolved(ctx context.Context, nn types.NamespacedName, gen int64, r *githubeventResolution.ResolvedGitHubEvent) error
@@ -89,7 +89,7 @@ func (g *GitHubEventCache) PublishResolved(ctx context.Context, nn types.Namespa
 PublishResolved writes the resolved event contract as a generation\-scoped, field\-level projection. All writes are best\-effort: failures cost queryability, never correctness. Returns the first error encountered for optional logging; callers should not fail reconciliation on it.
 
 <a name="GitHubEventCache.SetEventType"></a>
-### func \(\*GitHubEventCache\) [SetEventType](<https://github.com/blanketops/environments/blob/main/cache/githubevent/githubevent.go#L65>)
+### func \(\*GitHubEventCache\) SetEventType
 
 ```go
 func (g *GitHubEventCache) SetEventType(ctx context.Context, nn types.NamespacedName, gen int64, name string, eventType string) error
@@ -98,7 +98,7 @@ func (g *GitHubEventCache) SetEventType(ctx context.Context, nn types.Namespaced
 
 
 <a name="GitHubEventCache.SetRef"></a>
-### func \(\*GitHubEventCache\) [SetRef](<https://github.com/blanketops/environments/blob/main/cache/githubevent/githubevent.go#L79>)
+### func \(\*GitHubEventCache\) SetRef
 
 ```go
 func (g *GitHubEventCache) SetRef(ctx context.Context, nn types.NamespacedName, gen int64, name string, ref string) error
@@ -107,7 +107,7 @@ func (g *GitHubEventCache) SetRef(ctx context.Context, nn types.NamespacedName, 
 
 
 <a name="GitHubEventCache.SetRepository"></a>
-### func \(\*GitHubEventCache\) [SetRepository](<https://github.com/blanketops/environments/blob/main/cache/githubevent/githubevent.go#L50>)
+### func \(\*GitHubEventCache\) SetRepository
 
 ```go
 func (g *GitHubEventCache) SetRepository(ctx context.Context, nn types.NamespacedName, gen int64, name string, repo string) error
@@ -116,7 +116,7 @@ func (g *GitHubEventCache) SetRepository(ctx context.Context, nn types.Namespace
 
 
 <a name="GitHubEventCache.SetWebhook"></a>
-### func \(\*GitHubEventCache\) [SetWebhook](<https://github.com/blanketops/environments/blob/main/cache/githubevent/githubevent.go#L93>)
+### func \(\*GitHubEventCache\) SetWebhook
 
 ```go
 func (g *GitHubEventCache) SetWebhook(ctx context.Context, nn types.NamespacedName, gen int64, name string, webhook any) error

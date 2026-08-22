@@ -26,7 +26,7 @@ Resolution validates required fields, normalises strategy kind, and enforces pol
 
 
 <a name="ResolvedBuild"></a>
-## type [ResolvedBuild](<https://github.com/blanketops/environments/blob/main/resolution/build/resolve/resolve.go#L48-L51>)
+## type ResolvedBuild
 
 ResolvedBuild pairs the original Kubernetes Build object with its fully decoded and validated spec.
 
@@ -38,7 +38,7 @@ type ResolvedBuild struct {
 ```
 
 <a name="ResolveBuild"></a>
-### func [ResolveBuild](<https://github.com/blanketops/environments/blob/main/resolution/build/resolve/resolve.go#L110>)
+### func ResolveBuild
 
 ```go
 func ResolveBuild(build *environmentv1alpha1.Build) (*ResolvedBuild, error)
@@ -47,7 +47,7 @@ func ResolveBuild(build *environmentv1alpha1.Build) (*ResolvedBuild, error)
 ResolveBuild decodes and validates the raw JSON contract from the Build CR spec into a ResolvedBuild. Returns an error if the CR is nil, the contract is absent, or any required field is missing or malformed.
 
 <a name="ResolvedBuildPolicy"></a>
-## type [ResolvedBuildPolicy](<https://github.com/blanketops/environments/blob/main/resolution/build/resolve/resolve.go#L86-L89>)
+## type ResolvedBuildPolicy
 
 ResolvedBuildPolicy is the decoded trigger and retry policy for a Build.
 
@@ -59,7 +59,7 @@ type ResolvedBuildPolicy struct {
 ```
 
 <a name="ResolvedBuildSpec"></a>
-## type [ResolvedBuildSpec](<https://github.com/blanketops/environments/blob/main/resolution/build/resolve/resolve.go#L54-L61>)
+## type ResolvedBuildSpec
 
 ResolvedBuildSpec is the decoded and validated Build spec.
 
@@ -75,7 +75,7 @@ type ResolvedBuildSpec struct {
 ```
 
 <a name="ResolvedRetryPolicy"></a>
-## type [ResolvedRetryPolicy](<https://github.com/blanketops/environments/blob/main/resolution/build/resolve/resolve.go#L98-L101>)
+## type ResolvedRetryPolicy
 
 ResolvedRetryPolicy is the decoded retry behavior for a failed Build run.
 
@@ -87,7 +87,7 @@ type ResolvedRetryPolicy struct {
 ```
 
 <a name="ResolvedServiceAccount"></a>
-## type [ResolvedServiceAccount](<https://github.com/blanketops/environments/blob/main/resolution/build/resolve/resolve.go#L80-L83>)
+## type ResolvedServiceAccount
 
 ResolvedServiceAccount is the decoded service account a Build's execution runs as.
 
@@ -99,7 +99,7 @@ type ResolvedServiceAccount struct {
 ```
 
 <a name="ResolvedSource"></a>
-## type [ResolvedSource](<https://github.com/blanketops/environments/blob/main/resolution/build/resolve/resolve.go#L64-L69>)
+## type ResolvedSource
 
 ResolvedSource is the decoded source\-repository configuration for a Build.
 
@@ -113,7 +113,7 @@ type ResolvedSource struct {
 ```
 
 <a name="ResolvedStrategy"></a>
-## type [ResolvedStrategy](<https://github.com/blanketops/environments/blob/main/resolution/build/resolve/resolve.go#L73-L76>)
+## type ResolvedStrategy
 
 ResolvedStrategy is the decoded build strategy \(e.g. Buildah, Kaniko, Buildpacks\) selected for a Build.
 
@@ -125,7 +125,7 @@ type ResolvedStrategy struct {
 ```
 
 <a name="ResolvedTrigger"></a>
-## type [ResolvedTrigger](<https://github.com/blanketops/environments/blob/main/resolution/build/resolve/resolve.go#L93-L95>)
+## type ResolvedTrigger
 
 ResolvedTrigger is a single decoded trigger condition that can initiate a Build run.
 

@@ -41,7 +41,7 @@ See also:
 
 
 <a name="ToDomainContract"></a>
-## func [ToDomainContract](<https://github.com/blanketops/environments/blob/main/resolution/domain/contract/contract_adapter.go#L57>)
+## func ToDomainContract
 
 ```go
 func ToDomainContract(d *resolve.ResolvedDomain) (*networkscontractv1alpha1.DomainSpec, error)

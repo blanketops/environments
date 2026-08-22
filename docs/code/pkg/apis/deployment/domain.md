@@ -28,7 +28,7 @@ This package represents the \*intent\* and \*result\* of a Deployment, not how i
 
 
 <a name="DeploymentPhase"></a>
-## type [DeploymentPhase](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/domain/model.go#L99>)
+## type DeploymentPhase
 
 DeploymentPhase is the high\-level reconciliation phase of a Deployment.
 
@@ -37,7 +37,7 @@ type DeploymentPhase string
 ```
 
 <a name="DeploymentResult"></a>
-## type [DeploymentResult](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/domain/model.go#L110-L121>)
+## type DeploymentResult
 
 DeploymentResult represents the outcome of executing a DeploymentIntent
 
@@ -57,7 +57,7 @@ type DeploymentResult struct {
 ```
 
 <a name="DeploymentSpec"></a>
-## type [DeploymentSpec](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/domain/model.go#L39-L56>)
+## type DeploymentSpec
 
 DeploymentSpec represents the desired state of a Deployment. This is the canonical domain input used by application logic.
 
@@ -83,7 +83,7 @@ type DeploymentSpec struct {
 ```
 
 <a name="ManifestsRepo"></a>
-## type [ManifestsRepo](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/domain/model.go#L60-L66>)
+## type ManifestsRepo
 
 ManifestsRepo is the Git repository a Deployment's manifests are rendered from or applied against.
 
@@ -98,7 +98,7 @@ type ManifestsRepo struct {
 ```
 
 <a name="ReconciliationStrategy"></a>
-## type [ReconciliationStrategy](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/domain/model.go#L70>)
+## type ReconciliationStrategy
 
 ReconciliationStrategy selects how a Deployment's manifests are applied \(imperative apply, Kustomize, or Helm\).
 
@@ -117,7 +117,7 @@ const (
 ```
 
 <a name="Runtime"></a>
-## type [Runtime](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/domain/model.go#L79>)
+## type Runtime
 
 Runtime identifies which execution platform a ServiceUnit deploys to.
 
@@ -138,7 +138,7 @@ const (
 ```
 
 <a name="ServiceUnitPhase"></a>
-## type [ServiceUnitPhase](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/domain/model.go#L103>)
+## type ServiceUnitPhase
 
 ServiceUnitPhase is the reconciliation phase of a single ServiceUnit within a Deployment.
 
@@ -147,7 +147,7 @@ type ServiceUnitPhase string
 ```
 
 <a name="ServiceUnitResult"></a>
-## type [ServiceUnitResult](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/domain/model.go#L125-L138>)
+## type ServiceUnitResult
 
 ServiceUnitResult is the observed outcome of reconciling a single ServiceUnit within a Deployment.
 
@@ -169,7 +169,7 @@ type ServiceUnitResult struct {
 ```
 
 <a name="Strategy"></a>
-## type [Strategy](<https://github.com/blanketops/environments/blob/main/pkg/apis/deployment/domain/model.go#L90>)
+## type Strategy
 
 Strategy selects the rollout strategy used when deploying a ServiceUnit.
 

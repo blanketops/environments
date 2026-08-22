@@ -28,7 +28,7 @@ Package route provides domain\-specific, field\-level caching for Route resource
 
 
 <a name="RouteCache"></a>
-## type [RouteCache](<https://github.com/blanketops/environments/blob/main/cache/route/route.go#L36-L38>)
+## type RouteCache
 
 RouteCache provides domain\-specific, field\-level caching for Route resources.
 
@@ -39,7 +39,7 @@ type RouteCache struct {
 ```
 
 <a name="NewRouteCache"></a>
-### func [NewRouteCache](<https://github.com/blanketops/environments/blob/main/cache/route/route.go#L41>)
+### func NewRouteCache
 
 ```go
 func NewRouteCache(c *cache.Cache) *RouteCache
@@ -48,7 +48,7 @@ func NewRouteCache(c *cache.Cache) *RouteCache
 NewRouteCache constructs a new RouteCache with the provided cache.Cache.
 
 <a name="RouteCache.GetEnabled"></a>
-### func \(\*RouteCache\) [GetEnabled](<https://github.com/blanketops/environments/blob/main/cache/route/route.go#L63>)
+### func \(\*RouteCache\) GetEnabled
 
 ```go
 func (r *RouteCache) GetEnabled(ctx context.Context, nn types.NamespacedName, gen int64) (bool, bool, error)
@@ -57,7 +57,7 @@ func (r *RouteCache) GetEnabled(ctx context.Context, nn types.NamespacedName, ge
 
 
 <a name="RouteCache.GetHost"></a>
-### func \(\*RouteCache\) [GetHost](<https://github.com/blanketops/environments/blob/main/cache/route/route.go#L53>)
+### func \(\*RouteCache\) GetHost
 
 ```go
 func (r *RouteCache) GetHost(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -66,7 +66,7 @@ func (r *RouteCache) GetHost(ctx context.Context, nn types.NamespacedName, gen i
 
 
 <a name="RouteCache.GetPath"></a>
-### func \(\*RouteCache\) [GetPath](<https://github.com/blanketops/environments/blob/main/cache/route/route.go#L73>)
+### func \(\*RouteCache\) GetPath
 
 ```go
 func (r *RouteCache) GetPath(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -75,7 +75,7 @@ func (r *RouteCache) GetPath(ctx context.Context, nn types.NamespacedName, gen i
 
 
 <a name="RouteCache.GetRuntime"></a>
-### func \(\*RouteCache\) [GetRuntime](<https://github.com/blanketops/environments/blob/main/cache/route/route.go#L93>)
+### func \(\*RouteCache\) GetRuntime
 
 ```go
 func (r *RouteCache) GetRuntime(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -84,7 +84,7 @@ func (r *RouteCache) GetRuntime(ctx context.Context, nn types.NamespacedName, ge
 
 
 <a name="RouteCache.GetServiceUnitRefName"></a>
-### func \(\*RouteCache\) [GetServiceUnitRefName](<https://github.com/blanketops/environments/blob/main/cache/route/route.go#L107>)
+### func \(\*RouteCache\) GetServiceUnitRefName
 
 ```go
 func (r *RouteCache) GetServiceUnitRefName(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
@@ -93,7 +93,7 @@ func (r *RouteCache) GetServiceUnitRefName(ctx context.Context, nn types.Namespa
 GetServiceUnitRefName retrieves the cached ServiceUnit name for this Route.
 
 <a name="RouteCache.GetTLSEnabled"></a>
-### func \(\*RouteCache\) [GetTLSEnabled](<https://github.com/blanketops/environments/blob/main/cache/route/route.go#L83>)
+### func \(\*RouteCache\) GetTLSEnabled
 
 ```go
 func (r *RouteCache) GetTLSEnabled(ctx context.Context, nn types.NamespacedName, gen int64) (bool, bool, error)
@@ -102,7 +102,7 @@ func (r *RouteCache) GetTLSEnabled(ctx context.Context, nn types.NamespacedName,
 
 
 <a name="RouteCache.PublishResolved"></a>
-### func \(\*RouteCache\) [PublishResolved](<https://github.com/blanketops/environments/blob/main/cache/route/route.go#L117>)
+### func \(\*RouteCache\) PublishResolved
 
 ```go
 func (r *RouteCache) PublishResolved(ctx context.Context, nn types.NamespacedName, gen int64, res *routeResolution.ResolvedRoute) error
@@ -111,7 +111,7 @@ func (r *RouteCache) PublishResolved(ctx context.Context, nn types.NamespacedNam
 PublishResolved writes the resolved contract as a generation\-scoped, field\-level projection. All writes are best\-effort: failures cost queryability, never correctness. Returns the first error encountered for optional logging; callers should not fail reconciliation on it.
 
 <a name="RouteCache.SetEnabled"></a>
-### func \(\*RouteCache\) [SetEnabled](<https://github.com/blanketops/environments/blob/main/cache/route/route.go#L59>)
+### func \(\*RouteCache\) SetEnabled
 
 ```go
 func (r *RouteCache) SetEnabled(ctx context.Context, nn types.NamespacedName, gen int64, enabled bool) error
@@ -120,7 +120,7 @@ func (r *RouteCache) SetEnabled(ctx context.Context, nn types.NamespacedName, ge
 
 
 <a name="RouteCache.SetHost"></a>
-### func \(\*RouteCache\) [SetHost](<https://github.com/blanketops/environments/blob/main/cache/route/route.go#L49>)
+### func \(\*RouteCache\) SetHost
 
 ```go
 func (r *RouteCache) SetHost(ctx context.Context, nn types.NamespacedName, gen int64, host string) error
@@ -129,7 +129,7 @@ func (r *RouteCache) SetHost(ctx context.Context, nn types.NamespacedName, gen i
 
 
 <a name="RouteCache.SetPath"></a>
-### func \(\*RouteCache\) [SetPath](<https://github.com/blanketops/environments/blob/main/cache/route/route.go#L69>)
+### func \(\*RouteCache\) SetPath
 
 ```go
 func (r *RouteCache) SetPath(ctx context.Context, nn types.NamespacedName, gen int64, path string) error
@@ -138,7 +138,7 @@ func (r *RouteCache) SetPath(ctx context.Context, nn types.NamespacedName, gen i
 
 
 <a name="RouteCache.SetRuntime"></a>
-### func \(\*RouteCache\) [SetRuntime](<https://github.com/blanketops/environments/blob/main/cache/route/route.go#L89>)
+### func \(\*RouteCache\) SetRuntime
 
 ```go
 func (r *RouteCache) SetRuntime(ctx context.Context, nn types.NamespacedName, gen int64, runtime string) error
@@ -147,7 +147,7 @@ func (r *RouteCache) SetRuntime(ctx context.Context, nn types.NamespacedName, ge
 
 
 <a name="RouteCache.SetServiceUnitRefName"></a>
-### func \(\*RouteCache\) [SetServiceUnitRefName](<https://github.com/blanketops/environments/blob/main/cache/route/route.go#L102>)
+### func \(\*RouteCache\) SetServiceUnitRefName
 
 ```go
 func (r *RouteCache) SetServiceUnitRefName(ctx context.Context, nn types.NamespacedName, gen int64, name string) error
@@ -156,7 +156,7 @@ func (r *RouteCache) SetServiceUnitRefName(ctx context.Context, nn types.Namespa
 SetServiceUnitRefName caches the ServiceUnit name bound to this Route. Stored as a string field — the controller derives the ksvc name by convention \(ksvc name == ServiceUnit name\) without a status lookup.
 
 <a name="RouteCache.SetTLSEnabled"></a>
-### func \(\*RouteCache\) [SetTLSEnabled](<https://github.com/blanketops/environments/blob/main/cache/route/route.go#L79>)
+### func \(\*RouteCache\) SetTLSEnabled
 
 ```go
 func (r *RouteCache) SetTLSEnabled(ctx context.Context, nn types.NamespacedName, gen int64, tlsEnabled bool) error

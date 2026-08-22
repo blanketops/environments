@@ -22,7 +22,7 @@ Ensure is idempotent — calling it multiple times for the same GitHubEvent CR m
 
 
 <a name="GitHubProvider"></a>
-## type [GitHubProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/api/github.go#L54-L59>)
+## type GitHubProvider
 
 GitHubProvider is the concrete Provider implementation for GitHubEvent. It provisions the Argo Events stack \(EventBus, EventSource, Sensor\) and the RBAC the Sensor needs to write GitHubEvent CRs.
 
@@ -36,7 +36,7 @@ type GitHubProvider struct {
 ```
 
 <a name="NewGitHubProvider"></a>
-### func [NewGitHubProvider](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/api/github.go#L62>)
+### func NewGitHubProvider
 
 ```go
 func NewGitHubProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *GitHubProvider
@@ -45,7 +45,7 @@ func NewGitHubProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger,
 NewGitHubProvider constructs a GitHubProvider.
 
 <a name="GitHubProvider.Ensure"></a>
-### func \(\*GitHubProvider\) [Ensure](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/api/github.go#L240>)
+### func \(\*GitHubProvider\) Ensure
 
 ```go
 func (p *GitHubProvider) Ensure(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent, spec domain.GitHubEvent) (domain.GitHubEventResult, error)
@@ -56,7 +56,7 @@ Ensure provisions or reconciles the Argo Events stack — plus the RBAC the Sens
 Ensure does NOT wait for a webhook delivery. Infrastructure provisioning completing successfully is signaled via Triggered=true — the actual payload\-received outcome is written later by the observer/reconcile path that detects the Sensor's patch on this CR's own spec.contract.
 
 <a name="GitHubProvider.Teardown"></a>
-### func \(\*GitHubProvider\) [Teardown](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/api/github.go#L338>)
+### func \(\*GitHubProvider\) Teardown
 
 ```go
 func (p *GitHubProvider) Teardown(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent) error
@@ -69,7 +69,7 @@ EventBus, EventSource, the Sensor ServiceAccount, and its RBAC are shared cluste
 Idempotent — a missing Sensor is not an error.
 
 <a name="Provider"></a>
-## type [Provider](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/api/provider.go#L37-L46>)
+## type Provider
 
 Provider provisions and maintains the event ingress infrastructure for a GitHubEvent CR. Implementations must be idempotent.
 

@@ -48,7 +48,7 @@ const (
 ```
 
 <a name="EnvironmentContext"></a>
-## type [EnvironmentContext](<https://github.com/blanketops/environments/blob/main/pkg/apis/environment/query/query.go#L53-L65>)
+## type EnvironmentContext
 
 EnvironmentContext holds the resolved platform bindings for a given Environment CR. Returned by Lookup and passed into mediators.
 
@@ -69,7 +69,7 @@ type EnvironmentContext struct {
 ```
 
 <a name="Lookup"></a>
-### func [Lookup](<https://github.com/blanketops/environments/blob/main/pkg/apis/environment/query/query.go#L75>)
+### func Lookup
 
 ```go
 func Lookup(ctx context.Context, c client.Client, namespace string, labels map[string]string) (*EnvironmentContext, error)

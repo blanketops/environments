@@ -20,7 +20,7 @@ Current deps are intentionally empty — client and logger will be added here wh
 
 
 <a name="Adapter"></a>
-## type [Adapter](<https://github.com/blanketops/environments/blob/main/resolution/route/adapter/adapter.go#L44-L48>)
+## type Adapter
 
 Adapter wraps the Route resolution function for interface\-based injection. Stateless — all resolution logic lives in resolve.ResolveRoute.
 
@@ -35,7 +35,7 @@ type Adapter struct {
 ```
 
 <a name="NewAdapter"></a>
-### func [NewAdapter](<https://github.com/blanketops/environments/blob/main/resolution/route/adapter/adapter.go#L51>)
+### func NewAdapter
 
 ```go
 func NewAdapter() *Adapter
@@ -44,7 +44,7 @@ func NewAdapter() *Adapter
 NewAdapter constructs a stateless Route resolution Adapter.
 
 <a name="Adapter.Resolve"></a>
-### func \(\*Adapter\) [Resolve](<https://github.com/blanketops/environments/blob/main/resolution/route/adapter/adapter.go#L57>)
+### func \(\*Adapter\) Resolve
 
 ```go
 func (a *Adapter) Resolve(ctx context.Context, route *networksv1alpha1.Route) (*resolve.ResolvedRoute, error)

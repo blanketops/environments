@@ -46,7 +46,7 @@ StatusWriter is always called regardless of provider error so the CR always refl
 
 
 <a name="BackendSelector"></a>
-## type [BackendSelector](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/application/backend_selector.go#L30-L32>)
+## type BackendSelector
 
 BackendSelector routes a GitHubEvent to the correct Provider. Currently always returns the GitHub provider.
 
@@ -57,7 +57,7 @@ type BackendSelector struct {
 ```
 
 <a name="NewBackendSelector"></a>
-### func [NewBackendSelector](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/application/backend_selector.go#L35>)
+### func NewBackendSelector
 
 ```go
 func NewBackendSelector(github api.Provider) *BackendSelector
@@ -66,7 +66,7 @@ func NewBackendSelector(github api.Provider) *BackendSelector
 NewBackendSelector constructs a BackendSelector with the GitHub provider.
 
 <a name="BackendSelector.Default"></a>
-### func \(\*BackendSelector\) [Default](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/application/backend_selector.go#L46>)
+### func \(\*BackendSelector\) Default
 
 ```go
 func (b *BackendSelector) Default() api.Provider
@@ -75,7 +75,7 @@ func (b *BackendSelector) Default() api.Provider
 Default returns the GitHub provider — the only registered provider.
 
 <a name="BackendSelector.ForEvent"></a>
-### func \(\*BackendSelector\) [ForEvent](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/application/backend_selector.go#L41>)
+### func \(\*BackendSelector\) ForEvent
 
 ```go
 func (b *BackendSelector) ForEvent(_ domain.GitHubEvent) api.Provider
@@ -84,7 +84,7 @@ func (b *BackendSelector) ForEvent(_ domain.GitHubEvent) api.Provider
 ForEvent returns the provider for the given event. All events are currently GitHub events so selection is unconditional.
 
 <a name="GitHubEventService"></a>
-## type [GitHubEventService](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/application/service.go#L38-L42>)
+## type GitHubEventService
 
 GitHubEventService orchestrates GitHubEvent reconciliation. Stateless and safe for concurrent use.
 
@@ -95,7 +95,7 @@ type GitHubEventService struct {
 ```
 
 <a name="NewGitHubEventService"></a>
-### func [NewGitHubEventService](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/application/service.go#L46-L50>)
+### func NewGitHubEventService
 
 ```go
 func NewGitHubEventService(mapper *Mapper, status *StatusWriter, backend *BackendSelector) *GitHubEventService
@@ -104,7 +104,7 @@ func NewGitHubEventService(mapper *Mapper, status *StatusWriter, backend *Backen
 NewGitHubEventService constructs a GitHubEventService with the required collaborators.
 
 <a name="GitHubEventService.Reconcile"></a>
-### func \(\*GitHubEventService\) [Reconcile](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/application/service.go#L57>)
+### func \(\*GitHubEventService\) Reconcile
 
 ```go
 func (s *GitHubEventService) Reconcile(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent) error
@@ -113,7 +113,7 @@ func (s *GitHubEventService) Reconcile(ctx context.Context, resolved *githubeven
 Reconcile maps the resolved event to a domain model, delegates provisioning to the provider, then writes the result back to the GitHubEvent CR. Status is always written — even when provisioning fails.
 
 <a name="Mapper"></a>
-## type [Mapper](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/application/mapper.go#L36>)
+## type Mapper
 
 Mapper converts a ResolvedGitHubEvent into a pure domain.GitHubEvent. Stateless and safe for concurrent use.
 
@@ -122,7 +122,7 @@ type Mapper struct{}
 ```
 
 <a name="NewMapper"></a>
-### func [NewMapper](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/application/mapper.go#L39>)
+### func NewMapper
 
 ```go
 func NewMapper() *Mapper
@@ -131,7 +131,7 @@ func NewMapper() *Mapper
 NewMapper constructs a Mapper.
 
 <a name="Mapper.MapResolvedToDomain"></a>
-### func \(Mapper\) [MapResolvedToDomain](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/application/mapper.go#L45>)
+### func \(Mapper\) MapResolvedToDomain
 
 ```go
 func (Mapper) MapResolvedToDomain(r *githubeventResolution.ResolvedGitHubEvent) domain.GitHubEvent
@@ -140,7 +140,7 @@ func (Mapper) MapResolvedToDomain(r *githubeventResolution.ResolvedGitHubEvent) 
 MapResolvedToDomain translates a ResolvedGitHubEvent into a domain.GitHubEvent. Panics if resolved or resolved.Spec is nil — these indicate a resolver bug.
 
 <a name="StatusWriter"></a>
-## type [StatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/application/status.go#L45-L48>)
+## type StatusWriter
 
 StatusWriter persists a provider's result onto a GitHubEvent CR's status as contract status and conditions, regardless of provider error.
 
@@ -152,7 +152,7 @@ type StatusWriter struct {
 ```
 
 <a name="NewStatusWriter"></a>
-### func [NewStatusWriter](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/application/status.go#L51>)
+### func NewStatusWriter
 
 ```go
 func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter
@@ -161,7 +161,7 @@ func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter
 NewStatusWriter constructs a StatusWriter.
 
 <a name="StatusWriter.Write"></a>
-### func \(\*StatusWriter\) [Write](<https://github.com/blanketops/environments/blob/main/pkg/apis/githubevent/application/status.go#L56>)
+### func \(\*StatusWriter\) Write
 
 ```go
 func (w *StatusWriter) Write(ctx context.Context, gh *eventsv1alpha1.GitHubEvent, conditions ...metav1.Condition) error

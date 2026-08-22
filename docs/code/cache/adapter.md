@@ -30,7 +30,7 @@ The two backends differ in one structurally important way: Redis supports key en
 
 
 <a name="MemcachedCache"></a>
-## type [MemcachedCache](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L49-L51>)
+## type MemcachedCache
 
 MemcachedCache implements core.ExternalCache backed by Memcached.
 
@@ -41,7 +41,7 @@ type MemcachedCache struct {
 ```
 
 <a name="NewMemcached"></a>
-### func [NewMemcached](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L56>)
+### func NewMemcached
 
 ```go
 func NewMemcached(cfg MemcachedConfig) *MemcachedCache
@@ -50,7 +50,7 @@ func NewMemcached(cfg MemcachedConfig) *MemcachedCache
 NewMemcached constructs a MemcachedCache connected to cfg's servers.
 
 <a name="MemcachedCache.Del"></a>
-### func \(\*MemcachedCache\) [Del](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L83>)
+### func \(\*MemcachedCache\) Del
 
 ```go
 func (c *MemcachedCache) Del(ctx context.Context, key string) error
@@ -59,7 +59,7 @@ func (c *MemcachedCache) Del(ctx context.Context, key string) error
 
 
 <a name="MemcachedCache.DelPrefix"></a>
-### func \(\*MemcachedCache\) [DelPrefix](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L94>)
+### func \(\*MemcachedCache\) DelPrefix
 
 ```go
 func (c *MemcachedCache) DelPrefix(ctx context.Context, prefix string) error
@@ -68,7 +68,7 @@ func (c *MemcachedCache) DelPrefix(ctx context.Context, prefix string) error
 DelPrefix: Memcached cannot enumerate keys, so prefix invalidation is a no\-op here. Generation\-scoped keys \(see cache.ObjectCache\) are the correctness guarantee on this backend — stale entries expire via TTL.
 
 <a name="MemcachedCache.Get"></a>
-### func \(\*MemcachedCache\) [Get](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L72>)
+### func \(\*MemcachedCache\) Get
 
 ```go
 func (c *MemcachedCache) Get(ctx context.Context, key string, into any) (bool, error)
@@ -77,7 +77,7 @@ func (c *MemcachedCache) Get(ctx context.Context, key string, into any) (bool, e
 
 
 <a name="MemcachedCache.Set"></a>
-### func \(\*MemcachedCache\) [Set](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L60>)
+### func \(\*MemcachedCache\) Set
 
 ```go
 func (c *MemcachedCache) Set(ctx context.Context, key string, val any, ttl time.Duration) error
@@ -86,7 +86,7 @@ func (c *MemcachedCache) Set(ctx context.Context, key string, val any, ttl time.
 
 
 <a name="MemcachedConfig"></a>
-## type [MemcachedConfig](<https://github.com/blanketops/environments/blob/main/cache/adapter/memcached.go#L44-L46>)
+## type MemcachedConfig
 
 MemcachedConfig holds connection settings for the Memcached backend.
 
@@ -97,7 +97,7 @@ type MemcachedConfig struct {
 ```
 
 <a name="RedisCache"></a>
-## type [RedisCache](<https://github.com/blanketops/environments/blob/main/cache/adapter/redis.go#L37-L39>)
+## type RedisCache
 
 RedisCache implements cache.ExternalCache backed by Redis.
 
@@ -108,7 +108,7 @@ type RedisCache struct {
 ```
 
 <a name="NewRedis"></a>
-### func [NewRedis](<https://github.com/blanketops/environments/blob/main/cache/adapter/redis.go#L44>)
+### func NewRedis
 
 ```go
 func NewRedis(cfg RedisConfig) *RedisCache
@@ -117,7 +117,7 @@ func NewRedis(cfg RedisConfig) *RedisCache
 NewRedis constructs a RedisCache connected per cfg.
 
 <a name="RedisCache.Del"></a>
-### func \(\*RedisCache\) [Del](<https://github.com/blanketops/environments/blob/main/cache/adapter/redis.go#L71>)
+### func \(\*RedisCache\) Del
 
 ```go
 func (c *RedisCache) Del(ctx context.Context, key string) error
@@ -126,7 +126,7 @@ func (c *RedisCache) Del(ctx context.Context, key string) error
 
 
 <a name="RedisCache.DelPrefix"></a>
-### func \(\*RedisCache\) [DelPrefix](<https://github.com/blanketops/environments/blob/main/cache/adapter/redis.go#L75>)
+### func \(\*RedisCache\) DelPrefix
 
 ```go
 func (c *RedisCache) DelPrefix(ctx context.Context, prefix string) error
@@ -135,7 +135,7 @@ func (c *RedisCache) DelPrefix(ctx context.Context, prefix string) error
 
 
 <a name="RedisCache.Get"></a>
-### func \(\*RedisCache\) [Get](<https://github.com/blanketops/environments/blob/main/cache/adapter/redis.go#L60>)
+### func \(\*RedisCache\) Get
 
 ```go
 func (c *RedisCache) Get(ctx context.Context, key string, into any) (bool, error)
@@ -144,7 +144,7 @@ func (c *RedisCache) Get(ctx context.Context, key string, into any) (bool, error
 
 
 <a name="RedisCache.Ping"></a>
-### func \(\*RedisCache\) [Ping](<https://github.com/blanketops/environments/blob/main/cache/adapter/redis.go#L86>)
+### func \(\*RedisCache\) Ping
 
 ```go
 func (c *RedisCache) Ping(ctx context.Context) error
@@ -153,7 +153,7 @@ func (c *RedisCache) Ping(ctx context.Context) error
 Ping verifies connectivity; useful at startup or in health checks.
 
 <a name="RedisCache.Set"></a>
-### func \(\*RedisCache\) [Set](<https://github.com/blanketops/environments/blob/main/cache/adapter/redis.go#L52>)
+### func \(\*RedisCache\) Set
 
 ```go
 func (c *RedisCache) Set(ctx context.Context, key string, val any, ttl time.Duration) error
@@ -162,7 +162,7 @@ func (c *RedisCache) Set(ctx context.Context, key string, val any, ttl time.Dura
 
 
 <a name="RedisConfig"></a>
-## type [RedisConfig](<https://github.com/blanketops/environments/blob/main/cache/adapter/redis.go#L30-L34>)
+## type RedisConfig
 
 RedisConfig holds connection settings for the Redis backend.
 
