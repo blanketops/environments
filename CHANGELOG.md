@@ -1,4 +1,4 @@
-## [0.9.0] - 2026-08-22
+## [0.8.1] - 2026-08-22
 
 ### 🚀 Features
 
@@ -16,11 +16,14 @@
 
 - Auto-generate code documentation [skip ci]
 - Auto-generate code documentation [skip ci]
+- Auto-generate code documentation [skip ci]
+- Auto-generate code documentation [skip ci]
 
 ### ⚙️ Miscellaneous Tasks
 
 - *(release)* Update changelog for v0.8.0
 - Sync develop with main after release/v0.8.0
+- *(release)* Update changelog for v0.9.0
 ## [0.8.0] - 2026-08-22
 
 ### 🐛 Bug Fixes
