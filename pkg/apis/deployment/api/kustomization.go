@@ -47,6 +47,18 @@ import (
 const fieldManager = "blanketops-kustomize-provider"
 const defaultGitBranch = "master"
 
+// gitCommitIdentity is the author/committer identity for commits this
+// provider makes to the manifests repo. Set explicitly rather than relying
+// on ambient global git config — a minimal controller pod image has none,
+// and `git commit` fails outright ("Please tell me who you are", exit 128)
+// without one. Passed via -c on each commit rather than a persistent
+// `git config` call, since repoPath's local git config shouldn't outlive
+// this provider's use of it.
+var gitCommitIdentity = []string{
+	"-c", "user.name=blanketops-kustomize-provider",
+	"-c", "user.email=noreply@blanketops.dev",
+}
+
 // KustomizeStrategyProvider implements the GitOps deployment path: it
 // renders manifests, commits them to a repo, and ensures the Flux
 // GitRepository/Kustomization CRs that make the cluster reconcile them.
@@ -309,12 +321,13 @@ resources:
 
 	if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
 
-		if _, err := utils.RunGit(repoPath,
+		commitArgs := append(append([]string{}, gitCommitIdentity...),
 			"commit",
 			"-m",
 			fmt.Sprintf("render(%s): update workloads", env),
-		); err != nil {
-			return err
+		)
+		if out, err := utils.RunGit(repoPath, commitArgs...); err != nil {
+			return fmt.Errorf("commit: %w: %s", err, out)
 		}
 
 		// ensureLocalClone leaves the working tree on a detached HEAD
@@ -683,8 +696,13 @@ func (m *KustomizeStrategyProvider) removeAndPush(
 		m.Log.Info("no manifest changes to remove", "env", env)
 		return nil
 	}
-	if _, err := utils.RunGit(repoPath, "commit", "-m", fmt.Sprintf("render(%s): remove workloads for %s", env, cr.Name)); err != nil {
-		return err
+	commitArgs := append(append([]string{}, gitCommitIdentity...),
+		"commit",
+		"-m",
+		fmt.Sprintf("render(%s): remove workloads for %s", env, cr.Name),
+	)
+	if out, err := utils.RunGit(repoPath, commitArgs...); err != nil {
+		return fmt.Errorf("commit: %w: %s", err, out)
 	}
 	// See CommitAndPush's push call for why this uses an explicit
 	// HEAD:<branch> refspec instead of a bare push.
