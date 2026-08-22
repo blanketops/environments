@@ -56,6 +56,7 @@ Condition derivation lives here: the service knows what Ready/Pending/Failed mea
 - [type RouteService](<#RouteService>)
   - [func NewRouteService\(mapper \*Mapper, status \*StatusWriter, backend \*BackendSelector\) \*RouteService](<#NewRouteService>)
   - [func \(s \*RouteService\) Reconcile\(ctx context.Context, resolved \*routeResolution.ResolvedRoute\) error](<#RouteService.Reconcile>)
+  - [func \(s \*RouteService\) Teardown\(ctx context.Context, resolved \*routeResolution.ResolvedRoute\) error](<#RouteService.Teardown>)
 - [type StatusWriter](<#StatusWriter>)
   - [func NewStatusWriter\(c client.Client, log logr.Logger\) \*StatusWriter](<#NewStatusWriter>)
   - [func \(w \*StatusWriter\) Write\(ctx context.Context, route \*networksv1alpha1.Route, conditions ...metav1.Condition\) error](<#StatusWriter.Write>)
@@ -156,6 +157,15 @@ func (s *RouteService) Reconcile(ctx context.Context, resolved *routeResolution.
 ```
 
 Reconcile executes the full route pipeline for a resolved Route CR. It maps, selects, dispatches, and writes status in sequence. An error from any stage is converted to conditions and forwarded to StatusWriter so the Route CR always reflects the latest outcome, even on failure.
+
+<a name="RouteService.Teardown"></a>
+### func \(\*RouteService\) Teardown
+
+```go
+func (s *RouteService) Teardown(ctx context.Context, resolved *routeResolution.ResolvedRoute) error
+```
+
+Teardown deletes whatever Reconcile applied for this Route CR. It maps and selects the backend exactly as Reconcile does, so it tears down the same provider that would have been \(or was\) used to materialize the route. No status write: the CR is being deleted, so there is nothing left to persist status onto once this returns.
 
 <a name="StatusWriter"></a>
 ## type StatusWriter
