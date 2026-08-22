@@ -64,6 +64,7 @@ See also:
 - [type DomainService](<#DomainService>)
   - [func NewDomainService\(mapper \*Mapper, status \*StatusWriter, backend \*BackendSelector\) \*DomainService](<#NewDomainService>)
   - [func \(s \*DomainService\) Reconcile\(ctx context.Context, resolved \*domainResolution.ResolvedDomain\) error](<#DomainService.Reconcile>)
+  - [func \(s \*DomainService\) Teardown\(ctx context.Context, resolved \*domainResolution.ResolvedDomain\) error](<#DomainService.Teardown>)
 - [type Mapper](<#Mapper>)
   - [func NewMapper\(\) \*Mapper](<#NewMapper>)
   - [func \(Mapper\) MapResolvedToDomain\(rd \*domainResolution.ResolvedDomain\) domain.Domain](<#Mapper.MapResolvedToDomain>)
@@ -129,6 +130,15 @@ func (s *DomainService) Reconcile(ctx context.Context, resolved *domainResolutio
 ```
 
 Reconcile executes the full domain pipeline for a resolved Domain CR. It maps, selects, dispatches, and writes conditions in sequence. Scalar status fields are published to the cache by the controller — not written here, because DomainStatus.Contract is opaque.
+
+<a name="DomainService.Teardown"></a>
+### func \(\*DomainService\) Teardown
+
+```go
+func (s *DomainService) Teardown(ctx context.Context, resolved *domainResolution.ResolvedDomain) error
+```
+
+Teardown releases whatever Reconcile provisioned for this Domain CR. It maps and selects the backend exactly as Reconcile does, so it tears down the same provider that would have been \(or was\) used to materialize the cert/mapping chain. No status write: the CR is being deleted, so there is nothing left to persist status onto once this returns.
 
 <a name="Mapper"></a>
 ## type Mapper
