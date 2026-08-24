@@ -5,7 +5,7 @@ go 1.26.3
 require (
 	carvel.dev/kapp-controller v0.60.4
 	github.com/argoproj/argo-events v1.9.11
-	github.com/blanketops/environments-api v0.2.7
+	github.com/blanketops/environments-api v0.2.9
 	github.com/blanketops/environments-contract v0.5.1
 	github.com/bradfitz/gomemcache v0.0.0-20260422231931-4d751bb6e37c
 	github.com/cert-manager/cert-manager v1.21.1
