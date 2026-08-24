@@ -16,12 +16,12 @@ require (
 	github.com/magefile/mage v1.17.2
 	github.com/princjef/gomarkdoc v1.1.0
 	github.com/redis/go-redis/v9 v9.22.0
-	github.com/shipwright-io/build v0.20.11
+	github.com/shipwright-io/build v0.20.13
 	golang.org/x/crypto v0.55.0
-	honnef.co/go/tools v0.7.0
-	k8s.io/api v0.36.3
-	k8s.io/apimachinery v0.36.3
-	k8s.io/client-go v0.36.3
+	honnef.co/go/tools v0.8.0
+	k8s.io/api v0.36.4
+	k8s.io/apimachinery v0.36.4
+	k8s.io/client-go v0.36.4
 	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3
 	knative.dev/networking v0.0.0-20260727162500-c7a7b772cac9
 	knative.dev/pkg v0.0.0-20260727151759-521cb33b33dd
@@ -53,7 +53,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.9.2 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.9.0 // indirect
-	github.com/go-git/go-git/v5 v5.19.1 // indirect
+	github.com/go-git/go-git/v5 v5.19.2 // indirect
 	github.com/go-logr/zapr v1.3.0 // indirect
 	github.com/go-openapi/jsonpointer v0.23.1 // indirect
 	github.com/go-openapi/jsonreference v0.21.6 // indirect
