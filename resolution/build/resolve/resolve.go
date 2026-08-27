@@ -189,8 +189,9 @@ func ResolveBuild(build *environmentv1alpha1.Build) (*ResolvedBuild, error) {
 	if polRaw, ok := raw["policy"].(map[string]any); ok {
 		policy = &ResolvedBuildPolicy{}
 
-		// Extract triggers
-		if triggersRaw, ok := polRaw["triggers"].([]any); ok {
+		// Extract triggers. Contract key is "allowedTriggers"
+		// (build.proto's BuildPolicy.allowed_triggers) — not "triggers".
+		if triggersRaw, ok := polRaw["allowedTriggers"].([]any); ok {
 			for _, t := range triggersRaw {
 				if tMap, ok := t.(map[string]any); ok {
 					if typeStr, ok := tMap["type"].(string); ok {

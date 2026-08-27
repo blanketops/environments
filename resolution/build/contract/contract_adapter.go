@@ -31,10 +31,29 @@ artifact, not a source of truth.
 package contract
 
 import (
+	commonv1 "github.com/blanketops/environments-contract/blanketops/common/v1"
 	contractv1 "github.com/blanketops/environments-contract/blanketops/environments/v1alpha1"
 
 	"github.com/blanketops/environments/resolution/build/resolve"
 )
+
+// triggerTypeToProto maps a resolved trigger type string (as declared on
+// Build.spec.contract.policy.allowedTriggers[].type — "push", "pull_request",
+// "manual") to its proto enum. Unrecognised values (including "schedule",
+// which BuildTriggerType has no enum value for yet) map to UNSPECIFIED
+// rather than erroring — this adapter never fails the caller.
+func triggerTypeToProto(t string) commonv1.BuildTriggerType_BuildTriggerType {
+	switch t {
+	case "push":
+		return commonv1.BuildTriggerType_BUILD_TRIGGER_TYPE_COMMIT
+	case "pull_request":
+		return commonv1.BuildTriggerType_BUILD_TRIGGER_TYPE_PULL_REQUEST
+	case "manual":
+		return commonv1.BuildTriggerType_BUILD_TRIGGER_TYPE_MANUAL
+	default:
+		return commonv1.BuildTriggerType_BUILD_TRIGGER_TYPE_UNSPECIFIED
+	}
+}
 
 // ToBuildContract projects the resolved runtime spec into a protobuf
 // contractv1.BuildSpec for infrastructure consumers (hashing, comparison,
@@ -96,18 +115,31 @@ func ToBuildContract(s *resolve.ResolvedBuildSpec) *contractv1.BuildSpec {
 	}
 
 	// ------------------------------------------------
-	// Build policy (retry).
+	// Build policy (triggers, retry).
 	//
-	// Both Policy and Retry are checked for nil independently — a Build
-	// may have a Policy without a Retry sub-policy configured.
+	// Policy, Retry, and Triggers are all checked independently — a Build
+	// may declare triggers without a retry sub-policy, or vice versa.
+	// AllowedTriggers was missing from this projection entirely; without it
+	// the execution hash and audit trail were blind to trigger-policy
+	// changes on the Build.
 	// ------------------------------------------------
-	if s.Policy != nil && s.Policy.Retry != nil {
-		out.Policy = &contractv1.BuildPolicy{
-			Retry: &contractv1.RetryPolicy{
+	if s.Policy != nil && (len(s.Policy.Triggers) > 0 || s.Policy.Retry != nil) {
+		policy := &contractv1.BuildPolicy{}
+
+		for _, t := range s.Policy.Triggers {
+			policy.AllowedTriggers = append(policy.AllowedTriggers, &contractv1.BuildTriggerPolicy{
+				Type: &commonv1.BuildTriggerType{Type: triggerTypeToProto(t.Type)},
+			})
+		}
+
+		if s.Policy.Retry != nil {
+			policy.Retry = &contractv1.RetryPolicy{
 				OnFailure:   s.Policy.Retry.OnFailure,
 				MaxAttempts: uint32(s.Policy.Retry.MaxAttempts),
-			},
+			}
 		}
+
+		out.Policy = policy
 	}
 
 	return out
