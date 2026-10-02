@@ -38,9 +38,14 @@
 
 name: Security
 
+# TEMPORARY: push and pull_request triggers are removed. These jobs are
+# CPU-heavy and the self-hosted pool has three slots on one 6-core machine —
+# running them on every push starved the required CI checks. They still run
+# on their weekly schedules and on manual dispatch. GitHub-hosted runners are
+# not an option while the account is billing-locked. Restore the two triggers
+# once there is capacity for them.
 on:
-  push:
-  pull_request:
+  workflow_dispatch:
   schedule:
     - cron: '0 7 * * 3' # CodeQL — Wednesday 07:00 UTC
     - cron: '0 6 * * 0' # Scorecard — Sunday 06:00 UTC
@@ -61,11 +66,10 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   codeql:
     name: CodeQL (Go)
-    # GitHub-hosted: free for this public repo, and keeps this CPU-heavy job
-    # off the self-hosted pool, which saturates at three concurrent jobs.
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: >
       github.event_name == 'push' || github.event_name == 'pull_request' ||
+      github.event_name == 'workflow_dispatch' ||
       github.event.schedule == '0 7 * * 3'
     permissions:
       contents: read
@@ -157,12 +161,11 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   scorecard:
     name: OpenSSF Scorecard
-    # GitHub-hosted: free for this public repo, and keeps this CPU-heavy job
-    # off the self-hosted pool, which saturates at three concurrent jobs.
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: >
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       github.event_name == 'pull_request' ||
+      github.event_name == 'workflow_dispatch' ||
       github.event.schedule == '0 6 * * 0'
     permissions:
       contents: read
@@ -238,12 +241,11 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   govulncheck:
     name: govulncheck
-    # GitHub-hosted: free for this public repo, and keeps this CPU-heavy job
-    # off the self-hosted pool, which saturates at three concurrent jobs.
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: >
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       github.event_name == 'pull_request' ||
+      github.event_name == 'workflow_dispatch' ||
       github.event.schedule == '0 8 * * 1'
     permissions:
       contents: read
