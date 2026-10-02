@@ -21,6 +21,12 @@
 #
 # Registry credentials come from a prior `docker login` / `oras login`.
 #
+# Local cache: if VENDOR_SNAPSHOT_CACHE_DIR is set — or ZENITH_CACHE_DIR, which
+# the self-hosted runners export for their persistent cache volume — a restored
+# or pushed snapshot is also kept there as <repo>/<tag>.tar.gz, and `restore`
+# uses that copy instead of downloading. The `latest` tag moves, so it is never
+# served from the local cache.
+#
 # Snapshot format: a manifest whose layers are tarballs holding a top-level
 # vendor/ directory. `push` writes a single gzip layer. `restore` unpacks
 # vendor/ from every layer, which also reads the snapshots that were built
@@ -29,6 +35,30 @@ set -euo pipefail
 
 ARTIFACT_TYPE="application/vnd.blanketops.vendor-snapshot.v1"
 LAYER_MEDIA_TYPE="application/vnd.oci.image.layer.v1.tar+gzip"
+
+CACHE_DIR="${VENDOR_SNAPSHOT_CACHE_DIR:-${ZENITH_CACHE_DIR:+${ZENITH_CACHE_DIR}/vendor-snapshots}}"
+
+# Print the local cache file for <repo>:<tag>, or nothing if caching is off or
+# the tag is one that moves.
+cache_file() {
+	local repo=$1 tag=$2
+	[ -n "${CACHE_DIR}" ] && [ "${tag}" != "latest" ] || return 0
+	printf '%s/%s/%s.tar.gz' "${CACHE_DIR}" "${repo//\//_}" "${tag}"
+}
+
+# Store ./vendor (or an already-built tarball, if given) as the local copy of
+# <repo>:<tag>. Best-effort: a cache that cannot be written is not an error.
+cache_store() {
+	local repo=$1 tag=$2 tarball=${3:-} file tmp
+	file=$(cache_file "${repo}" "${tag}")
+	[ -n "${file}" ] || return 0
+	tmp="${file}.tmp.$$"
+	{
+		mkdir -p "$(dirname "${file}")" &&
+			if [ -n "${tarball}" ]; then cp "${tarball}" "${tmp}"; else tar -czf "${tmp}" vendor; fi &&
+			mv -f "${tmp}" "${file}"
+	} 2>/dev/null || rm -f "${tmp}"
+}
 
 die() {
 	echo "vendor-snapshot: $*" >&2
@@ -56,8 +86,18 @@ fetch_manifest() {
 
 # Unpack vendor/ from every layer of <repo>:<tag> into ./vendor.
 restore_tag() {
-	local repo=$1 tag=$2 manifest layers digest media_type status
+	local repo=$1 tag=$2 manifest layers digest media_type status cached
 	local -a tar_flags
+
+	cached=$(cache_file "${repo}" "${tag}")
+	if [ -n "${cached}" ] && [ -f "${cached}" ]; then
+		if tar -xzf "${cached}" vendor/ 2>/dev/null && [ -f vendor/modules.txt ]; then
+			echo "Using local copy ${cached}"
+			return 0
+		fi
+		echo "vendor-snapshot: discarding unreadable local copy ${cached}" >&2
+		rm -rf ./vendor "${cached}"
+	fi
 
 	manifest=$(fetch_manifest "${repo}" "${tag}") || return 1
 	layers=$(jq -r '.layers[] | "\(.digest) \(.mediaType)"' <<<"${manifest}")
@@ -89,6 +129,7 @@ restore_tag() {
 		rm -rf ./vendor
 		return 1
 	fi
+	cache_store "${repo}" "${tag}"
 }
 
 cmd_exists() {
@@ -128,6 +169,10 @@ cmd_push() {
 	(cd "${workdir}" && oras push "${repo}:${tag}" \
 		--artifact-type "${ARTIFACT_TYPE}" \
 		"vendor.tar.gz:${LAYER_MEDIA_TYPE}")
+
+	# A push to an existing tag replaces a stale snapshot, so replace the local
+	# copy too rather than keep serving the old one.
+	cache_store "${repo}" "${tag}" "${workdir}/vendor.tar.gz"
 
 	if [ $# -gt 0 ]; then
 		oras tag "${repo}:${tag}" "$@"
