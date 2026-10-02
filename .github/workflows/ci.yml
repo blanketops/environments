@@ -703,7 +703,9 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   fuzz:
     name: Fuzz (${{ matrix.target.name }})
-    runs-on: self-hosted
+    # GitHub-hosted: free for this public repo, and keeps this CPU-heavy job
+    # off the self-hosted pool, which saturates at three concurrent jobs.
+    runs-on: ubuntu-latest
     if: >
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'schedule' && github.event.schedule == '0 9 * * 2') ||

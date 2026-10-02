@@ -49,7 +49,9 @@ env:
 jobs:
   fuzz:
     name: Fuzz (${{ matrix.target.name }})
-    runs-on: self-hosted
+    # GitHub-hosted: free for this public repo, and keeps this CPU-heavy job
+    # off the self-hosted pool, which saturates at three concurrent jobs.
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
