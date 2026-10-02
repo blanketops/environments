@@ -38,12 +38,12 @@
 #
 # Go version:
 #   Extracted from go.mod at runtime — never hardcoded in this file.
-#   Passed as GO_VERSION build-arg to tools/Dockerfile.
 #
-# vendor restore:
-#   FROM scratch images have no default CMD — docker create requires a command
-#   even though it is never executed. /nonexistent is used as the placeholder.
-#   docker export | tar extracts vendor/ directly — no path nesting issues.
+# vendor snapshot:
+#   Stored and restored by hack/vendor-snapshot.sh using oras — no Docker
+#   daemon involved, because the self-hosted runners are pods without one.
+#   A snapshot is a single gzip layer holding vendor/. Snapshots built by the
+#   earlier `docker build` of tools/Dockerfile are still readable.
 #
 # Auth:
 #   environments-api and environments-contract are public modules, so `go
@@ -169,7 +169,7 @@ jobs:
       - name: Check if vendor snapshot already exists
         id: check
         run: |
-          if docker manifest inspect ${{ env.VENDOR_IMAGE }}:${{ steps.tag.outputs.tag }} > /dev/null 2>&1; then
+          if hack/vendor-snapshot.sh exists "${{ env.VENDOR_IMAGE }}" "${{ steps.tag.outputs.tag }}"; then
             echo "hit=true" >> "$GITHUB_OUTPUT"
             echo "Vendor snapshot exists — skipping build"
           else
@@ -190,17 +190,7 @@ jobs:
       - name: Build and push vendor snapshot
         if: steps.check.outputs.hit == 'false'
         id: push
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          provenance: false
-          file: tools/Dockerfile
-          push: true
-          tags: |
-            ${{ env.VENDOR_IMAGE }}:${{ steps.tag.outputs.tag }}
-            ${{ env.VENDOR_IMAGE }}:latest
-          build-args: |
-            GO_VERSION=${{ steps.goversion.outputs.minor }}
+        run: hack/vendor-snapshot.sh push "${{ env.VENDOR_IMAGE }}" "${{ steps.tag.outputs.tag }}" latest
 
       # Build provenance attestation — disabled. Artifact attestations require
       # a public repo or a GitHub Team/Enterprise plan; this repo is private.
@@ -244,16 +234,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Restore vendor from snapshot
-        run: |
-          IMAGE="${{ env.VENDOR_IMAGE }}:${{ needs.vendor-snapshot.outputs.vendor-tag }}"
-          echo "Restoring vendor from ${IMAGE}"
-          docker pull "${IMAGE}"
-          CONTAINER=$(docker create "${IMAGE}" /nonexistent)
-          rm -rf ./vendor
-          docker export "${CONTAINER}" | tar -xf - vendor/
-          docker rm "${CONTAINER}"
-          echo "vendor/ restored — $(find vendor -mindepth 1 -maxdepth 1 -type d | wc -l) packages"
-          echo "modules.txt present: $(test -f vendor/modules.txt && echo yes || echo NO)"
+        run: hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${{ needs.vendor-snapshot.outputs.vendor-tag }}"
 
       # go.sum only changes when a required module's version changes — adding
       # a new import of an already-required module's not-yet-vendored
@@ -290,15 +271,7 @@ jobs:
 
       - name: Push corrected vendor snapshot
         if: steps.build.outcome == 'failure'
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          provenance: false
-          file: tools/Dockerfile
-          push: true
-          tags: |
-            ${{ env.VENDOR_IMAGE }}:${{ needs.vendor-snapshot.outputs.vendor-tag }}
-            ${{ env.VENDOR_IMAGE }}:latest
+        run: hack/vendor-snapshot.sh push "${{ env.VENDOR_IMAGE }}" "${{ needs.vendor-snapshot.outputs.vendor-tag }}" latest
 
       - name: Build + Vet (retry after rebuild)
         if: steps.build.outcome == 'failure'
@@ -384,16 +357,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Restore vendor from snapshot
-        run: |
-          IMAGE="${{ env.VENDOR_IMAGE }}:${{ steps.vendor.outputs.tag }}"
-          echo "Restoring vendor from ${IMAGE}"
-          docker pull "${IMAGE}"
-          CONTAINER=$(docker create "${IMAGE}" /nonexistent)
-          rm -rf ./vendor
-          docker export "${CONTAINER}" | tar -xf - vendor/
-          docker rm "${CONTAINER}"
-          echo "vendor/ restored — $(find vendor -mindepth 1 -maxdepth 1 -type d | wc -l) packages"
-          echo "modules.txt present: $(test -f vendor/modules.txt && echo yes || echo NO)"
+        run: hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${{ steps.vendor.outputs.tag }}"
 
       # See the matching comment in the validate job: go.sum doesn't change
       # when a test newly imports a not-yet-vendored subpackage of an
@@ -423,15 +387,7 @@ jobs:
 
       - name: Push corrected vendor snapshot
         if: steps.vendor-check.outcome == 'failure'
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          provenance: false
-          file: tools/Dockerfile
-          push: true
-          tags: |
-            ${{ env.VENDOR_IMAGE }}:${{ steps.vendor.outputs.tag }}
-            ${{ env.VENDOR_IMAGE }}:latest
+        run: hack/vendor-snapshot.sh push "${{ env.VENDOR_IMAGE }}" "${{ steps.vendor.outputs.tag }}" latest
 
       - name: Check formatting
         run: |
@@ -754,27 +710,10 @@ jobs:
 
       - name: Restore vendor from snapshot
         run: |
-          IMAGE_TAG="${{ env.VENDOR_IMAGE }}:${{ steps.vendor.outputs.tag }}"
-          IMAGE_LATEST="${{ env.VENDOR_IMAGE }}:latest"
-          rm -rf ./vendor
-
-          if docker pull "${IMAGE_TAG}" 2>/dev/null; then
-            echo "Restoring vendor from tagged snapshot: ${IMAGE_TAG}"
-            CONTAINER=$(docker create "${IMAGE_TAG}" /nonexistent)
-            docker export "${CONTAINER}" | tar -xf - vendor/
-            docker rm "${CONTAINER}"
-          elif docker pull "${IMAGE_LATEST}" 2>/dev/null; then
-            echo "Tagged snapshot not found — restoring from latest: ${IMAGE_LATEST}"
-            CONTAINER=$(docker create "${IMAGE_LATEST}" /nonexistent)
-            docker export "${CONTAINER}" | tar -xf - vendor/
-            docker rm "${CONTAINER}"
-          else
+          if ! hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${{ steps.vendor.outputs.tag }}" latest; then
             echo "No snapshot available — building vendor inline"
             go mod vendor
           fi
-
-          echo "vendor/ ready — $(find vendor -mindepth 1 -maxdepth 1 -type d | wc -l) packages"
-          echo "modules.txt present: $(test -f vendor/modules.txt && echo yes || echo NO)"
 
       - name: Verify vendor completeness
         id: vendor-check
@@ -792,15 +731,7 @@ jobs:
 
       - name: Push corrected vendor snapshot
         if: steps.vendor-check.outcome == 'failure'
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          provenance: false
-          file: tools/Dockerfile
-          push: true
-          tags: |
-            ${{ env.VENDOR_IMAGE }}:${{ steps.vendor.outputs.tag }}
-            ${{ env.VENDOR_IMAGE }}:latest
+        run: hack/vendor-snapshot.sh push "${{ env.VENDOR_IMAGE }}" "${{ steps.vendor.outputs.tag }}" latest
 
       - name: Run ${{ matrix.target.name }}
         id: fuzz

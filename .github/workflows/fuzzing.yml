@@ -112,27 +112,10 @@ jobs:
 
       - name: Restore vendor from snapshot
         run: |
-          IMAGE_TAG="${{ env.VENDOR_IMAGE }}:${{ steps.vendor.outputs.tag }}"
-          IMAGE_LATEST="${{ env.VENDOR_IMAGE }}:latest"
-          rm -rf ./vendor
-
-          if docker pull "${IMAGE_TAG}" 2>/dev/null; then
-            echo "Restoring vendor from tagged snapshot: ${IMAGE_TAG}"
-            CONTAINER=$(docker create "${IMAGE_TAG}" /nonexistent)
-            docker export "${CONTAINER}" | tar -xf - vendor/
-            docker rm "${CONTAINER}"
-          elif docker pull "${IMAGE_LATEST}" 2>/dev/null; then
-            echo "Tagged snapshot not found — restoring from latest: ${IMAGE_LATEST}"
-            CONTAINER=$(docker create "${IMAGE_LATEST}" /nonexistent)
-            docker export "${CONTAINER}" | tar -xf - vendor/
-            docker rm "${CONTAINER}"
-          else
+          if ! hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${{ steps.vendor.outputs.tag }}" latest; then
             echo "No snapshot available — building vendor inline"
             go mod vendor
           fi
-
-          echo "vendor/ ready — $(find vendor -mindepth 1 -maxdepth 1 -type d | wc -l) packages"
-          echo "modules.txt present: $(test -f vendor/modules.txt && echo yes || echo NO)"
 
       # See the matching comment in security.yml's govulncheck job: go.sum
       # doesn't change when a test newly imports a not-yet-vendored
@@ -156,15 +139,7 @@ jobs:
 
       - name: Push corrected vendor snapshot
         if: steps.vendor-check.outcome == 'failure'
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          provenance: false
-          file: tools/Dockerfile
-          push: true
-          tags: |
-            ${{ env.VENDOR_IMAGE }}:${{ steps.vendor.outputs.tag }}
-            ${{ env.VENDOR_IMAGE }}:latest
+        run: hack/vendor-snapshot.sh push "${{ env.VENDOR_IMAGE }}" "${{ steps.vendor.outputs.tag }}" latest
 
       - name: Run ${{ matrix.target.name }}
         id: fuzz
