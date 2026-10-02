@@ -660,8 +660,11 @@ jobs:
   fuzz:
     name: Fuzz (${{ matrix.target.name }})
     runs-on: self-hosted
+    # TEMPORARY: no longer runs on push to main. Eight fuzz legs on every
+    # merge saturate the three-slot self-hosted pool and starve the required
+    # checks above. Still runs weekly and on manual dispatch. Restore the
+    # `push` + `refs/heads/main` clause once there is capacity for it.
     if: >
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'schedule' && github.event.schedule == '0 9 * * 2') ||
       github.event_name == 'workflow_dispatch'
     strategy:
