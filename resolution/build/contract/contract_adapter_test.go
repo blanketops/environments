@@ -18,6 +18,7 @@ package contract
 import (
 	"testing"
 
+	commonv1 "github.com/blanketops/environments-contract/blanketops/common/v1"
 	"github.com/blanketops/environments/resolution/build/resolve"
 )
 
@@ -91,6 +92,42 @@ func TestToBuildContract_PolicyWithoutRetry(t *testing.T) {
 	s := &resolve.ResolvedBuildSpec{Image: "foo", Policy: &resolve.ResolvedBuildPolicy{}}
 	out := ToBuildContract(s)
 	if out.Policy != nil {
-		t.Fatal("expected nil Policy in the contract when Policy.Retry is nil")
+		t.Fatal("expected nil Policy in the contract when it has neither triggers nor retry")
+	}
+}
+
+func TestToBuildContract_PolicyTriggers(t *testing.T) {
+	s := &resolve.ResolvedBuildSpec{
+		Image: "foo",
+		Policy: &resolve.ResolvedBuildPolicy{
+			Triggers: []resolve.ResolvedTrigger{
+				{Type: "push"},
+				{Type: "pull_request"},
+				{Type: "manual"},
+				{Type: "schedule"}, // no proto enum value yet — maps to UNSPECIFIED
+			},
+		},
+	}
+	out := ToBuildContract(s)
+	if out.Policy == nil || len(out.Policy.AllowedTriggers) != 4 {
+		t.Fatalf("unexpected Policy: %+v", out.Policy)
+	}
+	if out.Policy.Retry != nil {
+		t.Fatal("expected nil Retry when Policy.Retry is nil")
+	}
+	got := make([]commonv1.BuildTriggerType_BuildTriggerType, len(out.Policy.AllowedTriggers))
+	for i, t := range out.Policy.AllowedTriggers {
+		got[i] = t.GetType().GetType()
+	}
+	want := []commonv1.BuildTriggerType_BuildTriggerType{
+		commonv1.BuildTriggerType_BUILD_TRIGGER_TYPE_COMMIT,
+		commonv1.BuildTriggerType_BUILD_TRIGGER_TYPE_PULL_REQUEST,
+		commonv1.BuildTriggerType_BUILD_TRIGGER_TYPE_MANUAL,
+		commonv1.BuildTriggerType_BUILD_TRIGGER_TYPE_UNSPECIFIED,
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("trigger %d: got %v, want %v", i, got[i], want[i])
+		}
 	}
 }

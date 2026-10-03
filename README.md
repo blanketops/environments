@@ -27,9 +27,9 @@ This is not a pipeline runner. It is a reconciliation engine. The difference mat
 
 ---
 
-## About BlanketOps
+## About BlanketOps Environments
 
-BlanketOps is a Kubernetes-native delivery framework designed to move code from IDE to production — with reduced entropy and governed reconciliation.
+BlanketOps Environments is a Kubernetes-native delivery framework designed to move code from IDE to production — with reduced entropy and governed reconciliation.
 
 Instead of ad-hoc pipelines and implicit state, BlanketOps Environments models delivery as structured, deterministic domain primitives:
 
