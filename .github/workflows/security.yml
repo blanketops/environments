@@ -193,8 +193,22 @@ jobs:
       - name: Run Scorecard analysis
         env:
           GITHUB_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # The CLI writes its JSON and then exits 1 if any single check errored.
+        # Branch-Protection always does with GITHUB_TOKEN, which cannot read
+        # classic branch protection rules. That check is reported as an error
+        # (score -1) in the results; only a run with no results at all fails.
         run: |
+          set +e
           scorecard --repo="github.com/${{ github.repository }}" --format=json > results.json
+          status=$?
+          set -e
+          if ! jq -e '.checks | length > 0' results.json >/dev/null 2>&1; then
+            echo "::error::Scorecard produced no results (exit code ${status})."
+            exit 1
+          fi
+          if [ "${status}" -ne 0 ]; then
+            echo "::warning::Some Scorecard checks could not run and are reported as errors — Branch-Protection cannot be read with GITHUB_TOKEN."
+          fi
 
       - name: Upload results artifact
         uses: actions/upload-artifact@v7
