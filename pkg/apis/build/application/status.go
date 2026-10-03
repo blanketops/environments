@@ -56,9 +56,13 @@ func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter {
 // reconciler's initial fetch and this write, causing conflicts. Re-fetching
 // on every retry attempt guarantees we always write to the latest version.
 //
-// The caller's Build object is used only as a lookup key — its conditions
-// are NOT read here, and its local status is NOT refreshed by this write.
-// Only the conditions passed explicitly are merged.
+// The caller's Build object is used only as a lookup key for its conditions
+// — its local status is NOT refreshed from the re-fetched latest version.
+// The one exception is Status.Contract: if the caller has populated it
+// (buildrun-observer does, to carry ExecutionRef/BuildHash/Success/Triggered
+// for build-observer's applyRetry to read back), it is persisted verbatim
+// alongside the conditions. Callers that leave Contract empty (the primary
+// BuildService.Reconcile path today) see no change in behavior.
 func (w *StatusWriter) Write(ctx context.Context, build *buildv1.Build, conditions ...metav1.Condition) error {
 	log := w.Log.WithValues("build", build.Name, "namespace", build.Namespace)
 	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -72,6 +76,10 @@ func (w *StatusWriter) Write(ctx context.Context, build *buildv1.Build, conditio
 		for _, cond := range conditions {
 			latest.Status.Conditions = mergeCondition(latest.Status.Conditions, cond)
 			log.Info("condition merged", "type", cond.Type, "status", cond.Status, "reason", cond.Reason)
+		}
+		if len(build.Status.Contract.Raw) > 0 {
+			latest.Status.Contract = build.Status.Contract
+			log.Info("contract persisted")
 		}
 		if err := w.Client.Status().Update(ctx, latest); err != nil {
 			log.Error(err, "failed to persist build status")
