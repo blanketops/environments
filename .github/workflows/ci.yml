@@ -184,6 +184,10 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version: ${{ steps.goversion.outputs.full }}
+          # setup-go caches by default when `cache` is unset. See the codeql
+          # job in security.yml: the runners keep Go's caches on a persistent
+          # volume, and uploading them took 22 minutes on the last snapshot build.
+          cache: false
 
       - name: Vendor dependencies
         if: steps.check.outputs.hit == 'false'
