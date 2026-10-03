@@ -134,7 +134,7 @@ The full BlanketOps Environments documentation is available at:
 ## Installation
 
 ```bash
-go get github.com/blanketops/environments@v0.7.6
+go get github.com/blanketops/environments@v0.8.2
 ```
 
 ---
@@ -189,7 +189,7 @@ The goal is to reduce delivery entropy through structured reconciliation.
 
 | | |
 |---|---|
-| **Current Version** | `v0.7.6` |
+| **Current Version** | `v0.8.2` |
 | **API Status** | Evolving — breaking changes possible before `v1.0.0` |
 | **Intended Use** | Integration with BlanketOps Environments controllers |
 | **Versioning** | Semantic Versioning — `v1.0.0` will signal a stable public contract |
@@ -208,9 +208,19 @@ If you are looking for the controller runtime, see the [BlanketOps Environments 
 
 ---
 
-## Contributing
+## Community
 
-This project is currently in active development. Contributions and architectural discussions are welcome.
+BlanketOps Environments is developed in the open, and contributions are welcome.
+
+| | |
+|---|---|
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to report issues, set up a development environment and open pull requests |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | The CNCF Code of Conduct, which applies in all project spaces |
+| [GOVERNANCE.md](GOVERNANCE.md) | How decisions are made, the repositories in scope, and how the project relates to BlanketOps' commercial products |
+| [MAINTAINERS.md](MAINTAINERS.md) | Who maintains the project |
+| [ROADMAP.md](ROADMAP.md) | What has shipped and what is planned |
+| [ADOPTERS.md](ADOPTERS.md) | Who uses it — add your organization |
+| [SECURITY.md](SECURITY.md) | Supported versions and how to report a vulnerability privately |
 
 ---
 
