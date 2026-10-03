@@ -153,7 +153,7 @@ func TestResolveBuild_PolicyTriggersAndRetry(t *testing.T) {
 	b := buildWithContract(t, `{
 		"image":"foo","source":{"url":"x"},
 		"policy":{
-			"triggers":[{"type":"push"},{"type":"pull_request"}, "not-an-object"],
+			"allowedTriggers":[{"type":"push"},{"type":"pull_request"}, "not-an-object"],
 			"retry":{"onFailure":true,"maxAttempts":3}
 		}
 	}`)
