@@ -83,7 +83,10 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-          cache: true
+          # The self-hosted runners keep Go's module and build caches on a
+          # persistent volume. setup-go's own cache would upload and download
+          # the same data through GitHub's cache service on every job.
+          cache: false
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
@@ -110,6 +113,8 @@ jobs:
       - name: Upload SARIF artifact
         uses: actions/upload-artifact@v7
         if: always()
+        # Report-only: an artifact-storage problem must not turn a clean scan red.
+        continue-on-error: true
         with:
           name: codeql-results-${{ github.sha }}
           path: sarif-results/go.sarif
@@ -176,23 +181,26 @@ jobs:
         with:
           persist-credentials: false
 
-      # ossf/scorecard-action has no moving "v2" tag — only exact releases
-      # (v2.4.3 etc). @v2 fails to resolve, so it's pinned explicitly.
-      # repo_token is GITHUB_TOKEN rather than a GitHub App token so this
+      # Runs the scorecard CLI baked into the self-hosted runner image.
+      # ossf/scorecard-action is a Docker container action, and the runner
+      # pods have no Docker daemon, so the action cannot start there. The CLI
+      # scores the repository's default branch through the GitHub API; its
+      # JSON has the same shape the Summary step below reads.
+      # The token is GITHUB_TOKEN rather than a GitHub App token so this
       # job still runs on Dependabot PRs, which get no repo secrets — some
       # checks (e.g. Branch-Protection) are less complete this way, but
       # Scorecard is report-only here, not a merge gate.
       - name: Run Scorecard analysis
-        uses: ossf/scorecard-action@v2.4.4
-        with:
-          results_file: results.json
-          results_format: json
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_results: false
+        env:
+          GITHUB_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          scorecard --repo="github.com/${{ github.repository }}" --format=json > results.json
 
       - name: Upload results artifact
         uses: actions/upload-artifact@v7
         if: always()
+        # Report-only: an artifact-storage problem must not turn a clean scan red.
+        continue-on-error: true
         with:
           name: scorecard-results-${{ github.sha }}
           path: results.json
@@ -221,7 +229,7 @@ jobs:
           # 🛡️ OpenSSF Scorecard
 
           **Overall score:** \`${OVERALL}/10\`
-          **Tool:** [ossf/scorecard-action](https://github.com/ossf/scorecard-action)
+          **Tool:** [ossf/scorecard](https://github.com/ossf/scorecard) CLI \`$(scorecard version 2>/dev/null | awk '/GitVersion/ {print $2}')\`
 
           > Private repo — results are not published to the public Scorecard API/badge.
 
@@ -348,6 +356,8 @@ jobs:
       - name: Upload scan artifacts
         uses: actions/upload-artifact@v7
         if: always()
+        # Report-only: an artifact-storage problem must not turn a clean scan red.
+        continue-on-error: true
         with:
           name: govulncheck-${{ github.sha }}
           path: |
