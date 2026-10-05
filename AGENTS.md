@@ -68,8 +68,8 @@ returned error: `Reconcile` often returns the result of the status write.
   terminal outcomes.
 - Set BlanketOps labels (`environments.blanketops.dev/*`) where required.
 - Provider writes are idempotent.
-- `resolution/*` and `core/*` are fully covered by tests. Keep them that
-  way; new code in those trees ships with tests.
+- New or changed code in `resolution/*` and `core/*` ships with tests that
+  cover every statement of it.
 - Keep a cohesive domain package as one package. Split only when the parts
   have independent reasons to change.
 

@@ -151,8 +151,8 @@ fake client. Register every type that has a status subresource with
 found". The fake client runs no controllers, so readiness fields such as
 `status.readyReplicas` are never populated.
 
-`resolution/*` and `core/*` are fully covered. New code there ships with
-tests.
+New or changed code in `resolution/*` and `core/*` ships with tests that
+cover every statement of it.
 
 To see a change work end to end, write a throwaway `main.go` in a scratch
 directory inside the module, build the Kind's service as the controller
