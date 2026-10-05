@@ -2,7 +2,7 @@
 
 How the code is organised, how the repositories fit together, and how to
 make the common kinds of change. For process — issues, branches, commit
-format, sign-off, review — see [CONTRIBUTING.md](CONTRIBUTING.md).
+format, sign-off, review — see [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## How the repositories relate
 
@@ -34,7 +34,7 @@ A change that crosses repositories lands in that order, and each step is a
 tagged release that the next one picks up through `go.mod`. Dependabot opens
 the bump pull requests here for environments-api and environments-contract.
 
-Pinned versions are in [go.mod](go.mod). Check them before assuming a
+Pinned versions are in [go.mod](../go.mod). Check them before assuming a
 contract field or a CRD Kind is available.
 
 ## Path of a reconcile
@@ -60,7 +60,7 @@ building block a Domain draws on.
 
 The controller also runs observers: reconcilers that watch child resources
 and write status only. They do not go through `Command` or the engine.
-[docs/architecture](docs/architecture) covers both sides in detail.
+[docs/architecture](architecture) covers both sides in detail.
 
 ## Anatomy of a Kind
 
@@ -165,7 +165,7 @@ Adding or changing a field:
 
 1. Add the field to the Kind's `.proto` in environments-contract and
    release it. Skip this if the field already exists there.
-2. Bump environments-contract in [go.mod](go.mod).
+2. Bump environments-contract in [go.mod](../go.mod).
 3. Decode and validate the field in `resolution/<kind>/resolve/resolve.go`
    and add it to the `Resolved<Kind>Spec` struct.
 4. Add it to the projection in `resolution/<kind>/contract/`.
@@ -195,22 +195,22 @@ the exact commands.
    `mage verify`, then release.
 
 3. **environments** (here).
-   1. Bump both modules in [go.mod](go.mod).
+   1. Bump both modules in [go.mod](../go.mod).
    2. Create `resolution/<kind>/resolve`, `adapter` and `contract`, with
       tests.
    3. Wire the adapter into
-      [resolution/contract_resolution.go](resolution/contract_resolution.go):
+      [resolution/contract_resolution.go](../resolution/contract_resolution.go):
       a field on `Adapter`, a line in `NewAdapter`, a case in `Resolve`.
    4. Create `pkg/apis/<kind>/domain` and `pkg/apis/<kind>/application`.
       Add `pkg/apis/<kind>/api` with a `Provider` interface if the Kind
       creates cluster objects.
    5. Create `cache/<kind>/` if other Kinds will read its resolved fields.
    6. Add a case for the Kind to `MeaningfulChangePredicate` in
-      [core/predicates/predicates.go](core/predicates/predicates.go). A
+      [core/predicates/predicates.go](../core/predicates/predicates.go). A
       Kind with no case reconciles on every update, including status-only
       ones.
    7. Add the Kind to the primitives table and Project Structure in
-      [README.md](README.md).
+      [README.md](../README.md).
    8. Release.
 
 4. **environments-controller.** Bump this module. Add a Domain under

@@ -19,3 +19,6 @@ paths:
   generated.
 - Developer and contributor docs live in this repository, not the docs
   site.
+- `docs/README.md` says where each document lives. Engineering docs go in
+  `docs/`, GitHub policy files in `.github/`; add to the root only what a
+  tool reads from there.

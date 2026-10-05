@@ -197,13 +197,13 @@ BlanketOps Environments is developed in the open, and contributions are welcome.
 | | |
 |---|---|
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to report issues, set up a development environment and open pull requests |
-| [DEVELOPING.md](DEVELOPING.md) | How the repositories relate, the patterns the code follows, and how to add or change a resource type |
-| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | The CNCF Code of Conduct, which applies in all project spaces |
+| [DEVELOPING.md](docs/DEVELOPING.md) | How the repositories relate, the patterns the code follows, and how to add or change a resource type |
+| [CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md) | The CNCF Code of Conduct, which applies in all project spaces |
 | [GOVERNANCE.md](GOVERNANCE.md) | How decisions are made, the repositories in scope, and how the project relates to BlanketOps' commercial products |
 | [MAINTAINERS.md](MAINTAINERS.md) | Who maintains the project |
 | [ROADMAP.md](ROADMAP.md) | What has shipped and what is planned |
 | [ADOPTERS.md](ADOPTERS.md) | Who uses it — add your organization |
-| [SECURITY.md](SECURITY.md) | Supported versions and how to report a vulnerability privately |
+| [SECURITY.md](.github/SECURITY.md) | Supported versions and how to report a vulnerability privately |
 
 ---
 

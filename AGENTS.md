@@ -11,7 +11,7 @@ and domain logic for BlanketOps Environments. There is no `cmd/`, no
 `main.go` and no running service: the surface is the package boundary, and
 the controller that calls it lives elsewhere.
 
-Read [DEVELOPING.md](DEVELOPING.md) for how the repositories relate, the
+Read [DEVELOPING.md](docs/DEVELOPING.md) for how the repositories relate, the
 patterns in use and the steps for adding or changing a Kind. Read
 [docs/architecture](docs/architecture) before changing how layers talk to
 each other.
@@ -27,9 +27,11 @@ each other.
 | `core/` | Engine, commands, conditions, events, predicates, registry, cache factory |
 | `cache/` | Generation-scoped field-level object cache and typed helpers |
 | `hack/` | `vendor-snapshot.sh` (CI vendor snapshots) and `build-push.sh` |
-| `docs/architecture/` | Type system, contract boundary, engine design |
+| `docs/` | `DEVELOPING.md`, `architecture/` (type system, contract boundary, engine design), and `README.md`, which says where each document lives |
+| `.github/` | Workflows, templates, `SECURITY.md`, `CODE_OF_CONDUCT.md` |
 
-`vendor/` and `docs/code/` are gitignored and generated. Do not commit them.
+`vendor/` is gitignored; do not commit it. `docs/code/` is generated and
+committed by a workflow; do not edit it by hand.
 
 CRD types come from `github.com/blanketops/environments-api` and contract
 types from `github.com/blanketops/environments-contract`. Both are separate
@@ -92,7 +94,7 @@ returned error: `Reconcile` often returns the result of the status write.
 
 - Commit secrets, `.secrets`, `.vars`, `.env*`, keys or certificates.
 - Report or discuss a vulnerability in a public issue. Follow
-  [SECURITY.md](SECURITY.md).
+  [SECURITY.md](.github/SECURITY.md).
 - Edit `CHANGELOG.md` by hand, or bump versions outside the release
   workflows.
 - State facts in docs (versions, module paths, sibling repositories) without

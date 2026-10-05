@@ -73,12 +73,12 @@ table or a tree is a candidate.
 | Change | Places to extend |
 |---|---|
 | New Kind | `README.md` primitives table and Project Structure; `ROADMAP.md` API group table and its count of kinds; `docs/architecture/01-*.md` "Currently reconciled domains" and the `Adapter` listing |
-| Wiring change | `docs/architecture/01-*.md` wiring sections; the "not wired" sentence at the end of `DEVELOPING.md`; `README.md` if it states the Kind's status |
-| New provider, runtime or strategy | `ROADMAP.md` components list; `DEVELOPING.md` Patterns, only if it names the selector's implementations |
+| Wiring change | `docs/architecture/01-*.md` wiring sections; the "not wired" sentence at the end of `docs/DEVELOPING.md`; `README.md` if it states the Kind's status |
+| New provider, runtime or strategy | `ROADMAP.md` components list; `docs/DEVELOPING.md` Patterns, only if it names the selector's implementations |
 | New top-level or `pkg/` package | `README.md` Project Structure; `AGENTS.md` Layout table |
 | New field | Nothing here, unless an example in these files shows the Kind's spec |
 
-`DEVELOPING.md` describes patterns, not an inventory. Change it only when a
+`docs/DEVELOPING.md` describes patterns, not an inventory. Change it only when a
 sentence in it has become false.
 
 Do not edit `CHANGELOG.md` (generated at release) or `docs/code/` (generated
