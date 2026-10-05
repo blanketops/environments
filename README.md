@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/logo.png" alt="BlanketOps — Deterministic Software Delivery" width="220">
+</p>
+
 # BlanketOps Environments
 
 **A Deterministic Software Delivery Engine for Kubernetes.**
