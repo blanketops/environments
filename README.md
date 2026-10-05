@@ -73,42 +73,6 @@ This ensures:
 
 ---
 
-## Networking Layer
-
-`v0.6.0` shipped the first-class networking domain — Route and Domain — completing the delivery chain from source commit to live, TLS-terminated endpoint.
-
-```
-Deployment
-  └── ServiceUnit   owns: workload declaration (image, port, size)
-        ↑ serviceUnitRef
-      Route         owns: host + path + runtime binding
-        ↑ routeRef
-      Domain        owns: TLS chain (cert-manager Certificate + Knative DomainMapping)
-```
-
-**Ownership is structural, not conventional:**
-
-- `Route.spec.serviceUnitRef` → controller derives `ksvc name == ServiceUnit name` — no label, no status lookup.
-- `Domain.spec.routeRef` → Domain is cascade-deleted when its Route is deleted.
-- TLS secret name `blanketops-tls-{sanitized-host}` is the shared contract between Route (DomainMapping.Spec.TLS.SecretName) and Domain (cert-manager Certificate secretName). One convention. Two providers. Zero coupling.
-
-**Supported runtimes:**
-
-| Runtime | Materialises As | Status |
-|---------|----------------|--------|
-| `knative-service` | Knative DomainMapping via Kourier | Implemented |
-| `kubernetes-container` | Kubernetes Ingress via nginx | Implemented |
-| `gateway-api` | Gateway API HTTPRoute | Planned |
-
-**TLS strategies:**
-
-| Strategy | Mechanism | Emits |
-|----------|-----------|-------|
-| `platform` | DNS01 wildcard ClusterIssuer | ClusterDomainClaim |
-| `custom` | HTTP01 ACME via nginx solver | Issuer + ClusterDomainClaim + Certificate |
-
----
-
 ## Since v0.6.0 → v0.7.4
 
 - **ServiceUnit** now has its own resolution and domain floor, rather than inheriting Deployment's.
@@ -146,29 +110,43 @@ go get github.com/blanketops/environments@v0.8.2
 ## Project Structure
 
 ```
-cache/              → Generation-scoped field-level cache (ObjectCache, typed helpers)
-core/               → Engine, orchestration, and core.Cache factory
-pkg/apis
+cache/                → Generation-scoped field-level cache (ObjectCache, typed per-CR helpers)
+core/
+  cache/              → core.Cache factory
+  command/            → Command type handed to the engine
+  conditions/         → Condition helpers (SetCondition)
+  domain/             → Domain interface the engine dispatches to
+  engine/             → Engine and orchestration
+  events/             → EventRecorder
+  predicates/         → Reconcile predicates
+  registry/           → Domain registry
+pkg/
+  apis/
     build/            → Build domain (application, api, domain layers)
     deployment/       → Deployment domain
     domain/           → Domain CR domain (TLS chain, cert-manager, Knative)
+    environment/      → Environment domain
     githubevent/      → GitHubEvent trigger domain
     gitrepository/    → GitRepository source binding domain
-    package/          → Package and artifact promotion domain
+    packages/         → Package and artifact promotion domain
     route/            → Route domain (Knative DomainMapping, Kubernetes Ingress)
     serviceunit/      → ServiceUnit workload domain
-   secrets/        → Platform secrets used by resources
-   intent/         → Resource dedicated declared intent
+  intent/             → Declared intent per resource
+  providerconfig/     → GitHub ProviderConfig reconciler
+  runtime/            → Runtime context read from the process environment
+  secrets/            → Platform secrets used by resources (git, github, registry)
+  serviceaccounts/    → Build service account reconciler
+  utils/              → Shared helpers
 resolution/
-  build/            → Build resolution and contract adapter
-  deployment/       → Deployment resolution and contract adapter
-  domain/           → Domain resolution and contract adapter
-  githubevent/      → GitHubEvent resolution and contract adapter
-  gitrepository/    → GitRepository resolution and contract adapter
-  serviceunit/      → ServiceUnit resolution and contract adapter
-  route/            → Route resolution and contract adapter
-runtime/            → Event runtime components
-logging/            → Structured logging abstractions
+  build/              → Build resolution and contract adapter
+  deployment/         → Deployment resolution and contract adapter
+  domain/             → Domain resolution and contract adapter
+  environment/        → Environment resolution and contract adapter
+  githubevent/        → GitHubEvent resolution and contract adapter
+  gitrepository/      → GitRepository resolution and contract adapter
+  packages/           → Package resolution and contract adapter
+  route/              → Route resolution and contract adapter
+  serviceunit/        → ServiceUnit resolution and contract adapter
 ```
 
 ---

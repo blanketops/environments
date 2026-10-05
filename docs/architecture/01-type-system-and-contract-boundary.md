@@ -166,8 +166,8 @@ README and consistent with the engine boundary above.
 
 `environments-controller`'s README states Route and Domain reconcilers are
 "written, not yet registered — deferred to v0.7.0." The `environments`
-README currently claims v0.6.0 "ships the first-class networking domain —
-Route and Domain — completing the delivery chain." These contradict each
+README used to claim v0.6.0 "ships the first-class networking domain —
+Route and Domain — completing the delivery chain." These contradicted each
 other, and the code confirms which one is right.
 
 In `resolution/contract_resolution.go`, the top-level `Adapter` — the one
@@ -190,8 +190,8 @@ type Adapter struct {
 Route/Domain resolution and provider code exists elsewhere in the tree
 (`resolution/route/*`, `resolution/domain/*`, `pkg/apis/route/*`,
 `pkg/apis/domain/*`) — it's built, just not connected. **The controller
-README is accurate. The `environments` README's v0.6.0 claim is not** and
-needs correcting once we're back on README work.
+README is accurate. The `environments` README's v0.6.0 claim was not**,
+and its Networking Layer section has been removed.
 
 ## Currently reconciled domains
 
