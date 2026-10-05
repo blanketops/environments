@@ -48,6 +48,9 @@ The architecture notes in [`docs/architecture`](docs/architecture) explain
 the type system, the contract boundary and how the engine is split across
 repositories.
 
+[DEVELOPING.md](DEVELOPING.md) covers how the repositories relate, the
+patterns the code follows, and how to add or change a resource type.
+
 ## Making a change
 
 1. Fork the repository and create a branch from **`develop`**.

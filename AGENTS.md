@@ -11,8 +11,10 @@ and domain logic for BlanketOps Environments. There is no `cmd/`, no
 `main.go` and no running service: the surface is the package boundary, and
 the controller that calls it lives elsewhere.
 
-Read [docs/architecture](docs/architecture) before changing how layers talk
-to each other.
+Read [DEVELOPING.md](DEVELOPING.md) for how the repositories relate, the
+patterns in use and the steps for adding or changing a Kind. Read
+[docs/architecture](docs/architecture) before changing how layers talk to
+each other.
 
 ## Layout
 
