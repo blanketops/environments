@@ -3,7 +3,7 @@
 Thank you for your interest. Contributions of every kind are welcome: bug
 reports, documentation, reviews, design discussion and code.
 
-Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md). How
+Everyone taking part follows the [Code of Conduct](.github/CODE_OF_CONDUCT.md). How
 decisions are made is described in [GOVERNANCE.md](GOVERNANCE.md).
 
 ## Where things live
@@ -20,7 +20,7 @@ Open an issue using one of the templates — **Bug**, **Feature** or
 and the smallest set of commands or Custom Resources that reproduces it.
 
 Do **not** report security vulnerabilities in a public issue. Follow
-[SECURITY.md](SECURITY.md) instead.
+[SECURITY.md](.github/SECURITY.md) instead.
 
 ## Proposing a larger change
 
@@ -48,8 +48,9 @@ The architecture notes in [`docs/architecture`](docs/architecture) explain
 the type system, the contract boundary and how the engine is split across
 repositories.
 
-[DEVELOPING.md](DEVELOPING.md) covers how the repositories relate, the
+[DEVELOPING.md](docs/DEVELOPING.md) covers how the repositories relate, the
 patterns the code follows, and how to add or change a resource type.
+[docs/README.md](docs/README.md) says where each document lives.
 
 ## Making a change
 
