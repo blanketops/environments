@@ -52,6 +52,11 @@ code-docs.html
 .env.local
 .env.*.local
 
+# Claude Code — personal settings and session state; .claude/settings.json is shared
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/worktrees/
+
 # act (local GitHub Actions runner) — real secrets, never commit
 .secrets
 .vars
