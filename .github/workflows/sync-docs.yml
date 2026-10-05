@@ -1,0 +1,184 @@
+# =============================================================================
+# sync-docs.yml — Extend the docs to match a code change (STUB)
+#
+# Runs the `sync-docs` skill (.claude/skills/sync-docs/SKILL.md) through
+# Claude Code on a branch that adds or changes a Kind, field, provider or
+# wiring. The skill extends the docs in this repository and drafts the
+# matching pages for the environments-docs site.
+#
+# STUB: there is no Anthropic API key yet. Until ANTHROPIC_API_KEY exists as
+# a repository secret, the job stops after "Check configuration" and writes
+# a summary saying it is not configured. It succeeds, so it never blocks a
+# pull request. Nothing after that step has run on a real runner.
+#
+# Triggers:
+#   - workflow_dispatch, with the branch to document
+#   - a pull request into develop being given the `sync-docs` label
+# Pull requests from forks are skipped: they must not reach the API key or
+# the GitHub App token.
+#
+# Before enabling (add the secret, then check each of these on a first run):
+#   1. The GitHub App is installed on environments-install and
+#      environments-docs with contents + pull-requests write on the latter.
+#   2. The claude-code-action inputs below (`prompt`, `claude_args`,
+#      `github_token`) still match the action's README, and Claude is
+#      allowed the tools the skill needs (git, grep, file edits).
+#   3. The skill expects sibling repositories at ../<name>. Here they are
+#      checked out under _siblings/, and the prompt says so.
+#   4. The action is pinned to the commit v1 pointed at on 2026-10-05.
+#
+# Secrets required:
+#   ANTHROPIC_API_KEY       — not set yet; the job is a no-op without it
+#   APP_ID, APP_PRIVATE_KEY — GitHub App credentials for the sibling
+#                             checkouts and the docs site pull request
+# =============================================================================
+
+name: Sync Docs
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to document (compared against develop)'
+        required: true
+  pull_request:
+    types: [labeled]
+    branches: [develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-docs-${{ github.event.pull_request.number || github.event.inputs.branch }}
+  cancel-in-progress: true
+
+jobs:
+  sync-docs:
+    name: Sync Docs
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.label.name == 'sync-docs' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: self-hosted
+    permissions:
+      contents: write # commit doc changes to the branch being documented
+      pull-requests: write # comment on the pull request
+    env:
+      TARGET_BRANCH: ${{ github.event.pull_request.head.ref || github.event.inputs.branch }}
+    steps:
+      - name: Check configuration
+        id: config
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::sync-docs is a stub: ANTHROPIC_API_KEY is not set, nothing was run."
+          fi
+
+      - name: Generate GitHub App token
+        if: steps.config.outputs.configured == 'true'
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments,environments-contract,environments-install,environments-docs
+
+      - name: Checkout
+        if: steps.config.outputs.configured == 'true'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Checkout environments-contract
+        if: steps.config.outputs.configured == 'true'
+        uses: actions/checkout@v7
+        with:
+          repository: blanketops/environments-contract
+          path: _siblings/environments-contract
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Checkout environments-install
+        if: steps.config.outputs.configured == 'true'
+        uses: actions/checkout@v7
+        with:
+          repository: blanketops/environments-install
+          path: _siblings/environments-install
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Checkout environments-docs
+        if: steps.config.outputs.configured == 'true'
+        uses: actions/checkout@v7
+        with:
+          repository: blanketops/environments-docs
+          ref: develop
+          path: _siblings/environments-docs
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Pin environments-contract to the go.mod version
+        if: steps.config.outputs.configured == 'true'
+        run: |
+          VERSION=$(awk '$1 == "github.com/blanketops/environments-contract" {print $2}' go.mod)
+          git -C _siblings/environments-contract checkout --quiet "$VERSION"
+          echo "environments-contract at $VERSION"
+
+      - name: Run sync-docs
+        if: steps.config.outputs.configured == 'true'
+        uses: anthropics/claude-code-action@cab360f6565aa35a51d6ce9e43f1f4287c0a32ea # v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ steps.app-token.outputs.token }}
+          prompt: |
+            Run the sync-docs skill for the branch `${{ env.TARGET_BRANCH }}`
+            against `develop`.
+
+            Differences from a local run:
+            - Sibling repositories are under `./_siblings/<name>`, not
+              `../<name>`. `_siblings/` is not part of this repository:
+              never add it to a commit here.
+            - environments-contract is already checked out at the version
+              pinned in go.mod.
+            - Commit this repository's doc changes to
+              `${{ env.TARGET_BRANCH }}` with a `docs:` Conventional Commit
+              message, signed off, and push.
+            - In `_siblings/environments-docs`, create the branch
+              `docs/${{ env.TARGET_BRANCH }}` from `develop`, commit, push,
+              and open a pull request against `develop` using that
+              repository's pull request template.
+            - Never push to `develop` or `main` in either repository.
+            - If nothing needs documenting, change nothing and say so.
+
+            Finish by writing the skill's report to the file named in the
+            GITHUB_STEP_SUMMARY environment variable.
+          claude_args: --max-turns 60
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ "${{ steps.config.outputs.configured }}" != "true" ]; then
+            cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          # Sync Docs — not configured
+
+          This workflow is a stub. \`ANTHROPIC_API_KEY\` is not set as a
+          repository secret, so the \`sync-docs\` skill was not run and no
+          files were changed.
+
+          **Branch:** \`${TARGET_BRANCH}\`
+
+          To document this change now, run the \`sync-docs\` skill locally.
+          EOF
+          else
+            cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+
+          ---
+          **Sync Docs:** ${{ job.status }} · **Branch:** \`${TARGET_BRANCH}\`
+          EOF
+          fi
