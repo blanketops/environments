@@ -1,3 +1,21 @@
+## [0.8.4] - 2026-10-08
+
+### 🚀 Features
+
+- *(build)* Add the pushed image to the Build status
+
+### 💼 Other
+
+- Merge release/v0.8.4 into main
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.8.3
+- Sync develop with main after release/v0.8.3
 ## [0.8.3] - 2026-10-08
 
 ### 🐛 Bug Fixes
