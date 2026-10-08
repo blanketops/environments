@@ -27,7 +27,11 @@ applied after construction.
 */
 package domain
 
-import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+import (
+	"strings"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 // BuildSpec is the canonical semantic input to build execution. It is produced
 // by the Mapper from a resolved Build contract and consumed by the provider layer.
@@ -99,4 +103,27 @@ type BuildStatus struct {
 	// LastFailureAt is the timestamp of the most recent failure.
 	// Optional — populated by the buildrun observer for observability only.
 	LastFailureAt *metav1.Time
+	// Image is the fully qualified reference of the last image this Build
+	// pushed, including its digest (see ImageWithDigest). Populated by the
+	// buildrun observer when a BuildRun succeeds; a later failed run does
+	// not clear it, so consumers keep the last artifact that exists.
+	Image string
+}
+
+// ImageWithDigest pins an image reference to the digest the registry
+// reported for it: "registry/repo:tag@sha256:...". The tag is kept so the
+// reference still shows what was built. A digest already present on the
+// reference is replaced. An empty digest returns the image unchanged, and an
+// empty image returns "" — a digest alone does not identify an artifact.
+func ImageWithDigest(image, digest string) string {
+	if image == "" {
+		return ""
+	}
+	if i := strings.Index(image, "@"); i != -1 {
+		image = image[:i]
+	}
+	if digest == "" {
+		return image
+	}
+	return image + "@" + digest
 }
