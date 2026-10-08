@@ -1,8 +1,12 @@
 # =============================================================================
 # ci.yml — Blanketops Environments Library CI
 #
-# Seven-job pipeline (merges the former ci.yml, build.yml, coverage.yml,
+# Eight-job pipeline (merges the former ci.yml, build.yml, coverage.yml,
 # code-docs.yml, fuzzing.yml, vendor-cleanup.yml):
+#   0. changes         — lists the files a push or pull request changed and
+#                         reports whether any of them is not documentation.
+#                         build, vendor-snapshot, coverage and code-docs skip
+#                         when none is (validate skips with vendor-snapshot).
 #   1. build           — fast compile check on every push, any branch. Gives
 #                         feature-branch pushes a quick signal without paying
 #                         for the full vendor-snapshot/lint/test/coverage cost.
@@ -35,6 +39,15 @@
 # trigger — a manual "Run workflow" click runs both (each is a harmless,
 # idempotent maintenance job on its own, so this coupling is a deliberate
 # simplification, not an oversight).
+#
+# Docs-only changes:
+#   Skipping is done per job, through the `changes` job's output, and not
+#   with `paths-ignore` on the trigger. A workflow filtered out by path never
+#   reports its checks, so the required ones (Vendor Snapshot; Lint, Vet,
+#   Test; Test and Coverage) would stay "Expected" and block the pull
+#   request. A job skipped by `if:` reports as skipped, which satisfies a
+#   required check. The gates fail open: they test `!= 'false'` under
+#   `!cancelled()`, so if `changes` fails or yields no output the jobs run.
 #
 # Go version:
 #   Extracted from go.mod at runtime — never hardcoded in this file.
@@ -91,13 +104,89 @@ env:
 jobs:
 
   # ───────────────────────────────────────────────────────────────────────────
+  # Job 0: Changes
+  # Scope: push or pull_request.
+  # Outputs code=false only when every changed file is documentation; any
+  # doubt (new branch, unreadable range, empty diff) leaves it true.
+  # Workflow files are deliberately not documentation: a change under
+  # .github/workflows/ must still run the pipeline.
+  # ───────────────────────────────────────────────────────────────────────────
+  changes:
+    name: Detect Changes
+    runs-on: self-hosted
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    outputs:
+      code: ${{ steps.detect.outputs.code }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Detect non-documentation changes
+        id: detect
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          DOCS='^(.*\.md|\.claude/.*|docs/.*|LICENSE|\.gitignore|\.github/ISSUE_TEMPLATE/.*)$'
+          ZERO=0000000000000000000000000000000000000000
+
+          code=true
+          reason=""
+          range=""
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            # The checkout is the merge commit; its first parent is the base.
+            range="HEAD^1 HEAD"
+          elif [ -z "$BEFORE" ] || [ "$BEFORE" = "$ZERO" ]; then
+            reason="new branch, nothing to compare against"
+          else
+            range="$BEFORE $SHA"
+          fi
+
+          if [ -n "$range" ]; then
+            # shellcheck disable=SC2086 # range is two revisions
+            if files=$(git diff --name-only $range 2>/dev/null) && [ -n "$files" ]; then
+              other=$(printf '%s\n' "$files" | grep -vE "$DOCS" || true)
+              total=$(printf '%s\n' "$files" | wc -l | tr -d ' ')
+              if [ -z "$other" ]; then
+                code=false
+                reason="all $total changed files are documentation"
+              else
+                reason="$(printf '%s\n' "$other" | wc -l | tr -d ' ') of $total changed files are not documentation"
+              fi
+            else
+              reason="could not list changed files"
+            fi
+          fi
+
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "reason=$reason" >> "$GITHUB_OUTPUT"
+          echo "code=$code ($reason)"
+
+      - name: Summary
+        if: always()
+        run: |
+          RESULT="${{ steps.detect.outputs.code == 'false' && 'Documentation only — build, vendor, lint, test and coverage jobs are skipped' || 'Code changed — full pipeline runs' }}"
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          # Change Detection
+
+          **Result:** ${RESULT}
+          **Reason:** ${{ steps.detect.outputs.reason || 'detection did not complete' }}
+          **Event:** \`${{ github.event_name }}\`
+          **Commit:** \`${{ github.sha }}\`
+          EOF
+
+  # ───────────────────────────────────────────────────────────────────────────
   # Job 1: Build (from build.yml)
   # Original scope: push, every branch, no pull_request trigger.
   # ───────────────────────────────────────────────────────────────────────────
   build:
     name: Build
     runs-on: self-hosted
-    if: github.event_name == 'push'
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && github.event_name == 'push' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -134,7 +223,10 @@ jobs:
   vendor-snapshot:
     name: Vendor Snapshot
     runs-on: self-hosted
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    needs: changes
+    if: >-
+      ${{ !cancelled() && needs.changes.outputs.code != 'false' &&
+      (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) }}
     outputs:
       vendor-tag: ${{ steps.tag.outputs.tag }}
       cache-hit: ${{ steps.check.outputs.hit }}
@@ -339,9 +431,11 @@ jobs:
   coverage:
     name: Test and Coverage
     runs-on: self-hosted
-    if: >
-      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')) ||
-      (github.event_name == 'pull_request' && github.base_ref == 'main')
+    needs: changes
+    if: >-
+      ${{ !cancelled() && needs.changes.outputs.code != 'false' &&
+      ((github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')) ||
+      (github.event_name == 'pull_request' && github.base_ref == 'main')) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -513,7 +607,8 @@ jobs:
   code-docs:
     name: Generate Code Docs
     runs-on: self-hosted
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
       - name: Generate GitHub App token
         id: app-token
