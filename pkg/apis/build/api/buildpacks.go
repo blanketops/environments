@@ -80,6 +80,15 @@ func (p *BuildpacksProvider) CreateBuildSpec(
 
 	strategyKind := shipwrightv1alpha1.BuildStrategyKind(spec.StrategyKind)
 
+	// Derive image tag and git revision from trigger annotations: a commit
+	// SHA delivered by a webhook overrides the static spec values.
+	image := spec.Image
+	revision := spec.Revision
+	if sha := build.Build.Annotations[triggerSHAAnnotation]; sha != "" {
+		image = replaceImageTag(image, sha)
+		revision = sha
+	}
+
 	return &shipwrightv1alpha1.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      build.Build.Name,
@@ -93,7 +102,7 @@ func (p *BuildpacksProvider) CreateBuildSpec(
 			Source: shipwrightv1alpha1.Source{
 				URL:        &spec.SourceURL,
 				ContextDir: &spec.ContextDir,
-				Revision:   &spec.Revision,
+				Revision:   &revision,
 				Credentials: &corev1.LocalObjectReference{
 					Name: spec.CloneSecret,
 				},
@@ -103,7 +112,7 @@ func (p *BuildpacksProvider) CreateBuildSpec(
 				Kind: &strategyKind,
 			},
 			Output: shipwrightv1alpha1.Image{
-				Image: spec.Image,
+				Image: image,
 				Credentials: &corev1.LocalObjectReference{
 					Name: spec.ServiceAccountSecret,
 				},
