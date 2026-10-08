@@ -57,7 +57,9 @@ type ResolvedBuildSpec struct {
 	Githubevent    string
 	Strategy       ResolvedStrategy
 	ServiceAccount *ResolvedServiceAccount
-	Policy         *ResolvedBuildPolicy
+	// Policy is never nil after ResolveBuild. It is empty when the contract
+	// declares no policy.
+	Policy *ResolvedBuildPolicy
 }
 
 // ResolvedSource is the decoded source-repository configuration for a Build.
@@ -83,6 +85,8 @@ type ResolvedServiceAccount struct {
 }
 
 // ResolvedBuildPolicy is the decoded trigger and retry policy for a Build.
+// Both parts are optional: no Triggers means no event starts a build, and a
+// nil Retry means a failed build is not retried.
 type ResolvedBuildPolicy struct {
 	Triggers []ResolvedTrigger
 	Retry    *ResolvedRetryPolicy
@@ -185,10 +189,16 @@ func ResolveBuild(build *environmentv1alpha1.Build) (*ResolvedBuild, error) {
 		}
 	}
 
-	var policy *ResolvedBuildPolicy
+	// ------------------------------------------------
+	// Policy (OPTIONAL).
+	//
+	// Neither the policy block nor allowedTriggers is required. The
+	// resolved policy is never nil: a Build that declares none resolves to
+	// an empty one — no triggers, no retry — so consumers can read it
+	// without a nil check.
+	// ------------------------------------------------
+	policy := &ResolvedBuildPolicy{}
 	if polRaw, ok := raw["policy"].(map[string]any); ok {
-		policy = &ResolvedBuildPolicy{}
-
 		// Extract triggers. Contract key is "allowedTriggers"
 		// (build.proto's BuildPolicy.allowed_triggers) — not "triggers".
 		if triggersRaw, ok := polRaw["allowedTriggers"].([]any); ok {
