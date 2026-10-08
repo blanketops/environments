@@ -33,6 +33,7 @@ TriggerContext is combined with the resolved BuildSpec to produce the determinis
 ## Index
 
 - [Variables](<#variables>)
+- [func ImageWithDigest\(image, digest string\) string](<#ImageWithDigest>)
 - [type BuildPolicy](<#BuildPolicy>)
 - [type BuildResult](<#BuildResult>)
 - [type BuildSpec](<#BuildSpec>)
@@ -49,6 +50,15 @@ TriggerContext is combined with the resolved BuildSpec to produce the determinis
 ```go
 var ErrBuildFailed = errors.New("build failed")
 ```
+
+<a name="ImageWithDigest"></a>
+## func ImageWithDigest
+
+```go
+func ImageWithDigest(image, digest string) string
+```
+
+ImageWithDigest pins an image reference to the digest the registry reported for it: "registry/repo:tag@sha256:...". The tag is kept so the reference still shows what was built. A digest already present on the reference is replaced. An empty digest returns the image unchanged, and an empty image returns "" — a digest alone does not identify an artifact.
 
 <a name="BuildPolicy"></a>
 ## type BuildPolicy
@@ -172,6 +182,11 @@ type BuildStatus struct {
     // LastFailureAt is the timestamp of the most recent failure.
     // Optional — populated by the buildrun observer for observability only.
     LastFailureAt *metav1.Time
+    // Image is the fully qualified reference of the last image this Build
+    // pushed, including its digest (see ImageWithDigest). Populated by the
+    // buildrun observer when a BuildRun succeeds; a later failed run does
+    // not clear it, so consumers keep the last artifact that exists.
+    Image string
 }
 ```
 
