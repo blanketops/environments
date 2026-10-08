@@ -1,3 +1,61 @@
+## [0.8.3] - 2026-10-08
+
+### 🐛 Bug Fixes
+
+- Resolve Build.spec.contract.policy.allowedTriggers correctly
+- StatusWriter.Write now persists Status.Contract, not just conditions
+- *(build)* Build the triggered commit in the Buildah and Buildpacks providers
+
+### 💼 Other
+
+- Merge release/v0.8.3 into main
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+- Add community and governance files for CNCF Sandbox readiness
+- Add logo to README and AGENTS.md
+- Remove networking section and correct project structure in README
+- Add DEVELOPING.md
+- Add sync-docs skill, rewrite verify skill, correct coverage wording
+- List DEVELOPING.md in the README
+- Add Claude Code project instructions and path-scoped rules
+- Move policy files to .github and DEVELOPING.md to docs
+
+### 🧪 Testing
+
+- *(build)* Cover retry scenarios across the build providers
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.8.2
+- Switch all workflow jobs to self-hosted runners
+- Switch all workflow jobs to self-hosted runners
+- Store and restore the vendor snapshot with oras instead of Docker
+- Run CodeQL, Scorecard, govulncheck and fuzz jobs on GitHub-hosted runners
+- Stop running security and fuzz jobs on push and pull_request
+- Use the runner image's tools and the runners' persistent cache
+- Stop vendor-snapshot uploading Go's cache to GitHub
+- Sync develop with main
+- Report Scorecard results when a single check cannot run
+- Add sync-docs workflow stub
+- Add shared Claude Code settings and ignore personal ones
+- Skip build, vendor, test and coverage jobs for docs-only changes
+## [0.8.2] - 2026-08-22
+
+### 🐛 Bug Fixes
+
+- Correct SLSA provenance output key mismatch
+- Close the release.yml changelog race too
+
+### 💼 Other
+
+- Merge release/v0.8.2 into main
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.8.1
+- Sync develop with main after manual v0.8.1 changelog fix
 ## [0.8.1] - 2026-08-22
 
 ### 🚀 Features
@@ -23,6 +81,7 @@
 
 - *(release)* Update changelog for v0.8.0
 - Sync develop with main after release/v0.8.0
+- Sync develop with main after release/v0.9.0
 - *(release)* Update changelog for v0.9.0
 ## [0.8.0] - 2026-08-22
 
