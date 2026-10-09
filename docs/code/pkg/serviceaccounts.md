@@ -8,11 +8,106 @@ import "github.com/blanketops/environments/pkg/serviceaccounts"
 
 ## Index
 
+- [type PackageDeployerBindingReconciler](<#PackageDeployerBindingReconciler>)
+  - [func NewPackageDeployerBindingReconciler\(c client.Client, log logr.Logger, clusterRole string\) \*PackageDeployerBindingReconciler](<#NewPackageDeployerBindingReconciler>)
+  - [func \(r \*PackageDeployerBindingReconciler\) Delete\(ctx context.Context, pkg \*packageResolution.ResolvedPackage\) error](<#PackageDeployerBindingReconciler.Delete>)
+  - [func \(r \*PackageDeployerBindingReconciler\) Reconcile\(ctx context.Context, pkg \*packageResolution.ResolvedPackage\) error](<#PackageDeployerBindingReconciler.Reconcile>)
+- [type PackageServiceAccountReconciler](<#PackageServiceAccountReconciler>)
+  - [func NewPackageServiceAccountReconciler\(c client.Client, scheme \*runtime.Scheme, log logr.Logger\) \*PackageServiceAccountReconciler](<#NewPackageServiceAccountReconciler>)
+  - [func \(r \*PackageServiceAccountReconciler\) Delete\(ctx context.Context, pkg \*packageResolution.ResolvedPackage\) error](<#PackageServiceAccountReconciler.Delete>)
+  - [func \(r \*PackageServiceAccountReconciler\) Reconcile\(ctx context.Context, pkg \*packageResolution.ResolvedPackage\) error](<#PackageServiceAccountReconciler.Reconcile>)
 - [type ServiceAccountReconciler](<#ServiceAccountReconciler>)
   - [func NewServiceAccountReconciler\(c client.Client, scheme \*runtime.Scheme, log logr.Logger\) \*ServiceAccountReconciler](<#NewServiceAccountReconciler>)
   - [func \(r \*ServiceAccountReconciler\) Delete\(ctx context.Context, build \*buildResolution.ResolvedBuild\) error](<#ServiceAccountReconciler.Delete>)
   - [func \(r \*ServiceAccountReconciler\) Reconcile\(ctx context.Context, build \*buildResolution.ResolvedBuild\) error](<#ServiceAccountReconciler.Reconcile>)
 
+
+<a name="PackageDeployerBindingReconciler"></a>
+## type PackageDeployerBindingReconciler
+
+PackageDeployerBindingReconciler converges the ClusterRoleBinding that grants a Package's ServiceAccount what its kapp App may deploy.
+
+The rights themselves are not decided here. They are one ClusterRole, shipped with the installation, and this binds each Package's ServiceAccount to it.
+
+```go
+type PackageDeployerBindingReconciler struct {
+    Client client.Client
+    Log    logr.Logger
+    // ClusterRole is the name of the ClusterRole to bind.
+    ClusterRole string
+}
+```
+
+<a name="NewPackageDeployerBindingReconciler"></a>
+### func NewPackageDeployerBindingReconciler
+
+```go
+func NewPackageDeployerBindingReconciler(c client.Client, log logr.Logger, clusterRole string) *PackageDeployerBindingReconciler
+```
+
+NewPackageDeployerBindingReconciler constructs a PackageDeployerBindingReconciler binding to the named ClusterRole.
+
+<a name="PackageDeployerBindingReconciler.Delete"></a>
+### func \(\*PackageDeployerBindingReconciler\) Delete
+
+```go
+func (r *PackageDeployerBindingReconciler) Delete(ctx context.Context, pkg *packageResolution.ResolvedPackage) error
+```
+
+Delete removes the ClusterRoleBinding created for the Package. Idempotent — a missing ClusterRoleBinding is not an error.
+
+<a name="PackageDeployerBindingReconciler.Reconcile"></a>
+### func \(\*PackageDeployerBindingReconciler\) Reconcile
+
+```go
+func (r *PackageDeployerBindingReconciler) Reconcile(ctx context.Context, pkg *packageResolution.ResolvedPackage) error
+```
+
+Reconcile ensures the ClusterRoleBinding exists for the Package's ServiceAccount.
+
+RULES: \- The binding has exactly one subject, the Package's ServiceAccount \- It is cluster\-scoped, so the Package cannot own it; Delete removes it \- A binding to another role is replaced: roleRef cannot be updated
+
+<a name="PackageServiceAccountReconciler"></a>
+## type PackageServiceAccountReconciler
+
+PackageServiceAccountReconciler converges the ServiceAccount a Package's kapp App deploys as.
+
+```go
+type PackageServiceAccountReconciler struct {
+    Client client.Client
+    Scheme *runtime.Scheme
+    Log    logr.Logger
+}
+```
+
+<a name="NewPackageServiceAccountReconciler"></a>
+### func NewPackageServiceAccountReconciler
+
+```go
+func NewPackageServiceAccountReconciler(c client.Client, scheme *runtime.Scheme, log logr.Logger) *PackageServiceAccountReconciler
+```
+
+NewPackageServiceAccountReconciler constructs a PackageServiceAccountReconciler.
+
+<a name="PackageServiceAccountReconciler.Delete"></a>
+### func \(\*PackageServiceAccountReconciler\) Delete
+
+```go
+func (r *PackageServiceAccountReconciler) Delete(ctx context.Context, pkg *packageResolution.ResolvedPackage) error
+```
+
+Delete removes the ServiceAccount created for the Package's kapp App. Mirrors the name\-resolution logic in Reconcile so it targets the same object. Idempotent — a missing ServiceAccount is not an error.
+
+<a name="PackageServiceAccountReconciler.Reconcile"></a>
+### func \(\*PackageServiceAccountReconciler\) Reconcile
+
+```go
+func (r *PackageServiceAccountReconciler) Reconcile(ctx context.Context, pkg *packageResolution.ResolvedPackage) error
+```
+
+Reconcile ensures the ServiceAccount exists for the Package's kapp App.
+
+RULES: \- ServiceAccount is ALWAYS created \- Its name is derived from the Package, the same way the App names it \- It grants nothing by itself; what it may deploy is bound to it separately
 
 <a name="ServiceAccountReconciler"></a>
 ## type ServiceAccountReconciler

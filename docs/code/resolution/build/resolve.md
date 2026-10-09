@@ -10,10 +10,11 @@ Package resolve implements resolution for the Build CR.
 
 The Build CR stores its spec as a raw JSON contract \(spec.contract\) rather than typed Kubernetes fields. ResolveBuild decodes this raw contract into a fully typed ResolvedBuild — the authoritative runtime representation consumed by all downstream domain and application logic.
 
-Resolution validates required fields, normalises strategy kind, and enforces policy invariants \(e.g. maxAttempts must be \> 0 when retry is enabled\). All failures surface as errors — resolution never panics. A panic in the resolution layer would crash the controller process.
+Resolution validates required fields, including the strategy, and enforces policy invariants \(e.g. maxAttempts must be \> 0 when retry is enabled\). All failures surface as errors — resolution never panics. A panic in the resolution layer would crash the controller process.
 
 ## Index
 
+- [Constants](<#constants>)
 - [type ResolvedBuild](<#ResolvedBuild>)
   - [func ResolveBuild\(build \*environmentv1alpha1.Build\) \(\*ResolvedBuild, error\)](<#ResolveBuild>)
 - [type ResolvedBuildPolicy](<#ResolvedBuildPolicy>)
@@ -24,6 +25,19 @@ Resolution validates required fields, normalises strategy kind, and enforces pol
 - [type ResolvedStrategy](<#ResolvedStrategy>)
 - [type ResolvedTrigger](<#ResolvedTrigger>)
 
+
+## Constants
+
+<a name="StrategyKindCluster"></a>Strategy kinds a Build contract may declare.
+
+```go
+const (
+    // StrategyKindCluster is a cluster-scoped build strategy.
+    StrategyKindCluster = "ClusterBuildStrategy"
+    // StrategyKindNamespaced is a build strategy in the Build's namespace.
+    StrategyKindNamespaced = "NamespacedBuildStrategy"
+)
+```
 
 <a name="ResolvedBuild"></a>
 ## type ResolvedBuild
@@ -117,7 +131,7 @@ type ResolvedSource struct {
 <a name="ResolvedStrategy"></a>
 ## type ResolvedStrategy
 
-ResolvedStrategy is the decoded build strategy \(e.g. Buildah, Kaniko, Buildpacks\) selected for a Build.
+ResolvedStrategy is the decoded build strategy \(e.g. Buildah, Kaniko, Buildpacks\) selected for a Build. Both fields are required by resolution: Name is never empty and StrategyKind is one of the StrategyKind constants.
 
 ```go
 type ResolvedStrategy struct {

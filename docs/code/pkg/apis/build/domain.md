@@ -51,6 +51,12 @@ TriggerContext is combined with the resolved BuildSpec to produce the determinis
 var ErrBuildFailed = errors.New("build failed")
 ```
 
+<a name="ErrInvalidBuild"></a>ErrInvalidBuild signals that a resolved Build is missing something the build cannot run without, such as its source or strategy. Resolution rejects such a Build first; seeing this error means it was bypassed.
+
+```go
+var ErrInvalidBuild = errors.New("invalid build")
+```
+
 <a name="ImageWithDigest"></a>
 ## func ImageWithDigest
 

@@ -14,9 +14,9 @@ BackendSelector sits in the application layer — it is called by the build appl
 
 This file owns the Mapper — the translation layer between the resolved Build contract and the domain BuildSpec consumed by the provider layer.
 
-The Mapper enforces the resolution contract: it panics on fields the resolver guarantees to be present \(Source.URL, Strategy.Name\) so that resolver bugs surface loudly rather than silently producing empty Shipwright specs.
+The Mapper is declarative: it carries over what the contract declares and adds nothing. Fields resolution guarantees \(Source.URL, Strategy.Name, Strategy.StrategyKind\) are checked again and reported as errors, never as a panic, so a caller that bypasses resolution gets a failed build rather than a crashed controller.
 
-Optional fields \(ServiceAccount, CloneSecret\) are passed through verbatim — the Mapper never invents defaults or modifies intent.
+Optional fields \(ServiceAccount, CloneSecret\) are passed through verbatim.
 
 This file owns BuildService — the application service that orchestrates the build reconciliation pipeline.
 
@@ -50,7 +50,7 @@ This file owns the StatusWriter — the persistence boundary between the Build d
   - [func \(s \*BuildService\) Teardown\(ctx context.Context, resolved \*bldResolution.ResolvedBuild\) error](<#BuildService.Teardown>)
 - [type Mapper](<#Mapper>)
   - [func NewMapper\(\) \*Mapper](<#NewMapper>)
-  - [func \(Mapper\) MapResolvedToDomain\(rb \*bldResolution.ResolvedBuild\) domain.BuildSpec](<#Mapper.MapResolvedToDomain>)
+  - [func \(Mapper\) MapResolvedToDomain\(rb \*bldResolution.ResolvedBuild\) \(domain.BuildSpec, error\)](<#Mapper.MapResolvedToDomain>)
 - [type StatusWriter](<#StatusWriter>)
   - [func NewStatusWriter\(c client.Client, log logr.Logger\) \*StatusWriter](<#NewStatusWriter>)
   - [func \(w \*StatusWriter\) Write\(ctx context.Context, build \*buildv1.Build, conditions ...metav1.Condition\) error](<#StatusWriter.Write>)
@@ -148,14 +148,14 @@ NewMapper constructs a Mapper.
 ### func \(Mapper\) MapResolvedToDomain
 
 ```go
-func (Mapper) MapResolvedToDomain(rb *bldResolution.ResolvedBuild) domain.BuildSpec
+func (Mapper) MapResolvedToDomain(rb *bldResolution.ResolvedBuild) (domain.BuildSpec, error)
 ```
 
 MapResolvedToDomain converts a fully resolved Build into a domain BuildSpec for consumption by the provider layer.
 
-Panics on resolver invariant violations \(empty SourceURL or StrategyName\) — these indicate a resolver bug, not a user error, and must not be silently swallowed. All other fields are mapped verbatim.
+It returns an error wrapping domain.ErrInvalidBuild when the resolved Build is missing something resolution should have required. All other fields are mapped verbatim.
 
-StrategyKind is hardcoded to "ClusterBuildStrategy" — BlanketOps platform strategies are always cluster\-scoped. Namespace\-scoped strategies are not currently supported.
+StrategyKind is translated from the contract's spelling to the Shipwright kind the providers write: a namespaced strategy is a Shipwright "BuildStrategy".
 
 <a name="StatusWriter"></a>
 ## type StatusWriter

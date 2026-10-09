@@ -23,6 +23,10 @@ This file owns the Buildpacks provider — structurally identical to the Buildah
 
 See buildah.go for the canonical documentation of the shared pipeline pattern. TODO: consolidate Buildah, Buildpacks, and Kaniko into a single generic provider parameterised by strategy name once the provider interface is stable.
 
+This file owns the helpers that keep the build providers declarative: a Shipwright object carries what the Build contract declares and nothing it does not.
+
+Each helper returns nil for an undeclared value, so the field is left off the object rather than written with an empty name that Shipwright would then try to resolve. They are shared by the Buildah, Kaniko and Buildpacks providers.
+
 Package api implements the build provider layer for the BlanketOps Environments build domain.
 
 This file owns the Kaniko provider — structurally identical to the Kaniko provider but registered under the "kaniko" strategy name. Shipwright selects the ClusterBuildStrategy at run time; the provider layer constructs the spec and dispatches execution.

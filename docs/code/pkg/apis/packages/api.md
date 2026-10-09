@@ -8,20 +8,34 @@ import "github.com/blanketops/environments/pkg/apis/packages/api"
 
 ## Index
 
+- [func ApplicationStateFromApp\(app \*kappctrlv1alpha1.App\) \*domain.ApplicationState](<#ApplicationStateFromApp>)
 - [func ApplyApplication\(ctx context.Context, c client.Client, app \*kappctrlv1alpha1.App\) error](<#ApplyApplication>)
 - [func BuildKappApplication\(intent \*intent.PackageIntent\) \(\*kappctrlv1alpha1.App, error\)](<#BuildKappApplication>)
-- [func DeleteApplication\(ctx context.Context, c client.Client, intent \*intent.PackageIntent\) error](<#DeleteApplication>)
+- [func DeleteApplication\(ctx context.Context, c client.Client, id domain.PackageID\) error](<#DeleteApplication>)
 - [func PackageResultFromApplicationState\(state \*domain.ApplicationState\) \*domain.PackageResult](<#PackageResultFromApplicationState>)
 - [type ApplicationProvider](<#ApplicationProvider>)
   - [func NewApplicationProvider\(c client.Client, scheme \*runtime.Scheme, log logr.Logger, rec events.EventRecorder\) \*ApplicationProvider](<#NewApplicationProvider>)
   - [func \(p \*ApplicationProvider\) Execute\(ctx context.Context, intent \*intent.PackageIntent\) \(\*domain.PackageResult, error\)](<#ApplicationProvider.Execute>)
   - [func \(p \*ApplicationProvider\) ObserveApplication\(ctx context.Context, namespace, name string\) \(\*domain.ApplicationState, error\)](<#ApplicationProvider.ObserveApplication>)
+  - [func \(p \*ApplicationProvider\) Teardown\(ctx context.Context, id domain.PackageID\) error](<#ApplicationProvider.Teardown>)
 - [type PackageProvider](<#PackageProvider>)
   - [func NewPackageProvider\(c client.Client, scheme \*runtime.Scheme, log logr.Logger, rec events.EventRecorder\) \*PackageProvider](<#NewPackageProvider>)
   - [func \(p \*PackageProvider\) Execute\(ctx context.Context, intent \*intent.PackageIntent\) \(\*domain.PackageResult, error\)](<#PackageProvider.Execute>)
   - [func \(p \*PackageProvider\) ObserveApplication\(ctx context.Context, namespace, name string\) \(\*domain.ApplicationState, error\)](<#PackageProvider.ObserveApplication>)
+  - [func \(p \*PackageProvider\) Teardown\(ctx context.Context, id domain.PackageID\) error](<#PackageProvider.Teardown>)
 - [type Provider](<#Provider>)
 
+
+<a name="ApplicationStateFromApp"></a>
+## func ApplicationStateFromApp
+
+```go
+func ApplicationStateFromApp(app *kappctrlv1alpha1.App) *domain.ApplicationState
+```
+
+ApplicationStateFromApp derives an ApplicationState from what a kapp App reports about itself. It is the one place the App's conditions are interpreted, shared by the providers and by observers of the App.
+
+kapp\-controller reports success as ReconcileSucceeded and failure as a separate ReconcileFailed condition, with the detail in status.usefulErrorMessage. An App that has reported neither is pending.
 
 <a name="ApplyApplication"></a>
 ## func ApplyApplication
@@ -45,12 +59,10 @@ BuildKappApplication constructs the kapp\-controller App object for a package in
 ## func DeleteApplication
 
 ```go
-func DeleteApplication(ctx context.Context, c client.Client, intent *intent.PackageIntent) error
+func DeleteApplication(ctx context.Context, c client.Client, id domain.PackageID) error
 ```
 
-DeleteApplication deletes the kapp App this provider created for the given package intent. Mandatory, not optional — BuildKappApplication sets no ownerReference on the App it constructs, so Kubernetes GC will not reclaim it when the parent Package CR is deleted.
-
-Idempotent — a missing App is not an error.
+DeleteApplication deletes the kapp App named after the Package. A missing App is not an error.
 
 <a name="PackageResultFromApplicationState"></a>
 ## func PackageResultFromApplicationState
@@ -102,6 +114,15 @@ func (p *ApplicationProvider) ObserveApplication(ctx context.Context, namespace,
 
 ObserveApplication fetches the current state of the named App.
 
+<a name="ApplicationProvider.Teardown"></a>
+### func \(\*ApplicationProvider\) Teardown
+
+```go
+func (p *ApplicationProvider) Teardown(ctx context.Context, id domain.PackageID) error
+```
+
+Teardown deletes the kapp App created for the Package. kapp\-controller then removes the resources the App deployed. Idempotent — a missing App is not an error.
+
 <a name="PackageProvider"></a>
 ## type PackageProvider
 
@@ -141,7 +162,16 @@ Execute builds a kapp App from intent, applies it, observes its resulting state,
 func (p *PackageProvider) ObserveApplication(ctx context.Context, namespace, name string) (*domain.ApplicationState, error)
 ```
 
-ObserveApplication reads the named kapp\-controller App and derives its ApplicationState from the App's ReconcileSucceeded condition.
+ObserveApplication reads the named kapp\-controller App and derives its ApplicationState \(see ApplicationStateFromApp\).
+
+<a name="PackageProvider.Teardown"></a>
+### func \(\*PackageProvider\) Teardown
+
+```go
+func (p *PackageProvider) Teardown(ctx context.Context, id domain.PackageID) error
+```
+
+Teardown deletes the kapp App created for the Package. Idempotent — a missing App is not an error.
 
 <a name="Provider"></a>
 ## type Provider
@@ -151,6 +181,12 @@ Provider executes a PackageIntent against a concrete backend \(e.g. kapp\).
 ```go
 type Provider interface {
     Execute(ctx context.Context, intent *intent.PackageIntent) (*domain.PackageResult, error)
+
+    // Teardown removes what Execute created for the Package. It takes the
+    // identity only, not an intent, so a Package whose contract no longer
+    // resolves can still be removed. Idempotent — nothing to delete is not
+    // an error.
+    Teardown(ctx context.Context, id domain.PackageID) error
 }
 ```
 

@@ -14,7 +14,6 @@ Resolution is strict: required fields that are missing or malformed return error
 
 ## Index
 
-- [type Ref](<#Ref>)
 - [type ResolvedMaintainer](<#ResolvedMaintainer>)
 - [type ResolvedPackage](<#ResolvedPackage>)
   - [func ResolvePackage\(pkg \*environmentv1alpha1.Package\) \(\*ResolvedPackage, error\)](<#ResolvePackage>)
@@ -22,19 +21,6 @@ Resolution is strict: required fields that are missing or malformed return error
 - [type ResolvedPackageSpec](<#ResolvedPackageSpec>)
 - [type ResolvedStateRepository](<#ResolvedStateRepository>)
 
-
-<a name="Ref"></a>
-## type Ref
-
-Ref is a Git reference — exactly one of Branch, Tag, or Commit should be set. Resolution does not enforce mutual exclusivity; consumers should prefer Commit \> Tag \> Branch when multiple are set.
-
-```go
-type Ref struct {
-    Branch string
-    Tag    string
-    Commit string
-}
-```
 
 <a name="ResolvedMaintainer"></a>
 ## type ResolvedMaintainer
@@ -78,6 +64,13 @@ ResolvedPackageRepository is the resolved OCI or Carvel package repository from 
 type ResolvedPackageRepository struct {
     URL               string
     CredentialsSecret string
+    // Ref is the Git ref to apply: a branch, tag or commit SHA, as the
+    // contract declares it. Required — the repository is not fetched
+    // without one.
+    Ref string
+    // Path is the directory inside the repository that holds the package
+    // definitions. Empty means the repository root.
+    Path string
 }
 ```
 
@@ -88,8 +81,6 @@ ResolvedPackageSpec is the decoded and validated Package spec, ready for domain 
 
 ```go
 type ResolvedPackageSpec struct {
-    // Enabled controls whether the package is active. Defaults to true.
-    Enabled     bool
     Name        string
     Version     string
     Description string
@@ -105,12 +96,14 @@ type ResolvedPackageSpec struct {
 <a name="ResolvedStateRepository"></a>
 ## type ResolvedStateRepository
 
-ResolvedStateRepository is the optional GitOps state repository where package deployment state is tracked by Carvel kapp.
+ResolvedStateRepository is the optional GitOps state repository where package deployment state is tracked.
 
 ```go
 type ResolvedStateRepository struct {
-    URL         string
-    Ref         Ref
+    URL string
+    // Ref is the Git ref to reconcile against: a branch, tag or commit SHA,
+    // as the contract declares it. Empty when not declared.
+    Ref         string
     CloneSecret string
     Strategy    string
     Path        string
