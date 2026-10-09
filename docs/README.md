@@ -5,7 +5,7 @@ Where each document lives, and why it lives there.
 | Location | Documents | Why there |
 |---|---|---|
 | Repository root | `README.md`, `LICENSE`, `CHANGELOG.md`, `AGENTS.md` | Read from the root by GitHub, pkg.go.dev, Go's license detection, the release workflow and agent tools. |
-| Repository root | `CONTRIBUTING.md`, `GOVERNANCE.md`, `MAINTAINERS.md`, `ROADMAP.md`, `ADOPTERS.md`, `SECURITY.md` | Project and community files that visitors, CNCF reviewers and security tooling look for at the top level. |
+| Repository root | `CONTRIBUTING.md`, `GOVERNANCE.md`, `MAINTAINERS.md`, `ROADMAP.md`, `ADOPTERS.md`, `SECURITY.md`, `CODEBASES.md` | Project and community files that visitors, CNCF reviewers and security tooling look for at the top level. |
 | `.github/` | `CODE_OF_CONDUCT.md`, the pull request and issue templates | Files GitHub picks up from `.github/` and links from the repository's Community page. |
 | `docs/` | [DEVELOPING.md](DEVELOPING.md), [architecture/](architecture) | How the code is organised and how to change it. |
 | `docs/code/` | Generated package documentation | Written and committed by a workflow. Do not edit by hand or commit local changes to it. |

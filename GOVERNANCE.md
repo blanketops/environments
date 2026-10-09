@@ -5,20 +5,9 @@ decisions, how, and how to become part of that.
 
 ## Scope
 
-BlanketOps Environments is developed across these repositories, all under the
-Apache License 2.0. This governance applies to all of them:
-
-| Repository | Purpose |
-|---|---|
-| [environments](https://github.com/blanketops/environments) | Resolution engine — turns Custom Resources into execution plans (this repository) |
-| [environments-api](https://github.com/blanketops/environments-api) | Kubernetes API types and CRD definitions |
-| [environments-contract](https://github.com/blanketops/environments-contract) | Canonical contracts shared by every component |
-| [environments-controller](https://github.com/blanketops/environments-controller) | Kubernetes controller that runs the reconciliation loops |
-| [environments-cli](https://github.com/blanketops/environments-cli) | Command-line client |
-| [environments-install](https://github.com/blanketops/environments-install) | Declarative installation (CRDs and controller manifests) |
-| [environments-tests](https://github.com/blanketops/environments-tests) | Conformance test suite for the API surface |
-| [environments-docs](https://github.com/blanketops/environments-docs) | Documentation website |
-| [secure-software-supplychain](https://github.com/blanketops/secure-software-supplychain) | Supply Chain plugin (Tekton, Kaniko, Trivy, Cosign, Grafeas) |
+BlanketOps Environments is developed across several repositories, all under
+the Apache License 2.0. They are listed in [CODEBASES.md](CODEBASES.md), and
+this governance applies to all of them.
 
 ## Roles
 
