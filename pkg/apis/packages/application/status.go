@@ -26,6 +26,7 @@ import (
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -47,14 +48,22 @@ func NewStatusWriter(
 	}
 }
 
-// Write derives PackageStatus from result/runErr and patches it onto pkg's
-// status subresource.
+// Write derives PackageStatus from result/runErr and persists it on the
+// Package's status subresource.
+//
+// The Package is re-fetched and the write retried on conflict, so status
+// written by another reconciler since pkg was read is not overwritten.
 func (w *StatusWriter) Write(
 	ctx context.Context,
 	pkg *env1alpha1.Package,
 	result *domain.PackageResult,
 	runErr error,
 ) error {
+
+	// A provider that fails may return no result.
+	if result == nil {
+		result = &domain.PackageResult{Phase: domain.PackagePhaseUnknown}
+	}
 
 	log := w.Log.WithValues(
 		"package", pkg.Name,
@@ -81,6 +90,7 @@ func (w *StatusWriter) Write(
 	}
 
 	if runErr != nil {
+		contractStatus.Phase = domain.PackagePhaseFailed
 		contractStatus.Success = false
 		contractStatus.Message = runErr.Error()
 	}
@@ -138,6 +148,17 @@ func (w *StatusWriter) Write(
 		}
 		log.Info("package succeeded", "message", result.Message)
 
+	case result.Phase == domain.PackagePhasePending || result.Phase == domain.PackagePhaseUnknown:
+		// The outcome is not known yet. That is not a failure.
+		condition = metav1.Condition{
+			Type:               "Succeeded",
+			Status:             metav1.ConditionUnknown,
+			Reason:             "PackagePending",
+			Message:            "Package is being applied",
+			LastTransitionTime: now,
+		}
+		log.Info("package pending")
+
 	default:
 		condition = metav1.Condition{
 			Type:               "Succeeded",
@@ -165,13 +186,24 @@ func (w *StatusWriter) Write(
 	// 3. Persist
 	// ---------------------------------------------------------------------
 
-	if err := w.Client.Status().Update(ctx, pkg); err != nil {
-		log.Error(err, "failed to persist package status")
-		return err
-	}
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latest := &env1alpha1.Package{}
+		if err := w.Client.Get(ctx, client.ObjectKeyFromObject(pkg), latest); err != nil {
+			log.Error(err, "failed to re-fetch package before status write")
+			return err
+		}
 
-	log.Info("package status persisted successfully")
-	return nil
+		latest.Status.Contract = pkg.Status.Contract
+		latest.Status.Conditions = mergeCondition(latest.Status.Conditions, condition)
+
+		if err := w.Client.Status().Update(ctx, latest); err != nil {
+			log.Error(err, "failed to persist package status")
+			return err
+		}
+
+		log.Info("package status persisted successfully")
+		return nil
+	})
 }
 
 // -----------------------------------------------------------------------------

@@ -53,8 +53,6 @@ type ResolvedPackage struct {
 // ResolvedPackageSpec is the decoded and validated Package spec, ready for
 // domain and application layer consumption.
 type ResolvedPackageSpec struct {
-	// Enabled controls whether the package is active. Defaults to true.
-	Enabled     bool
 	Name        string
 	Version     string
 	Description string
@@ -71,25 +69,25 @@ type ResolvedPackageSpec struct {
 type ResolvedPackageRepository struct {
 	URL               string
 	CredentialsSecret string
+	// Ref is the Git ref to apply: a branch, tag or commit SHA, as the
+	// contract declares it. Required — the repository is not fetched
+	// without one.
+	Ref string
+	// Path is the directory inside the repository that holds the package
+	// definitions. Empty means the repository root.
+	Path string
 }
 
 // ResolvedStateRepository is the optional GitOps state repository where
-// package deployment state is tracked by Carvel kapp.
+// package deployment state is tracked.
 type ResolvedStateRepository struct {
-	URL         string
-	Ref         Ref
+	URL string
+	// Ref is the Git ref to reconcile against: a branch, tag or commit SHA,
+	// as the contract declares it. Empty when not declared.
+	Ref         string
 	CloneSecret string
 	Strategy    string
 	Path        string
-}
-
-// Ref is a Git reference — exactly one of Branch, Tag, or Commit should
-// be set. Resolution does not enforce mutual exclusivity; consumers
-// should prefer Commit > Tag > Branch when multiple are set.
-type Ref struct {
-	Branch string
-	Tag    string
-	Commit string
 }
 
 // ResolvedMaintainer is a package maintainer contact.
@@ -122,50 +120,49 @@ func ResolvePackage(pkg *environmentv1alpha1.Package) (*ResolvedPackage, error) 
 	}
 
 	spec := &ResolvedPackageSpec{
-		Enabled:     optionalBool(raw, "enabled", true),
-		DiffEnabled: optionalBool(raw, "packageKappDiff", false),
-		Description: optionalString(raw, "packageDescription"),
+		DiffEnabled: optionalBool(raw, "diffEnabled", false),
+		Description: optionalString(raw, "description"),
 	}
 
 	// Required string fields — errors propagate immediately.
 	var err error
-	if spec.Name, err = requiredString(raw, "packageName"); err != nil {
+	if spec.Name, err = requiredString(raw, "name"); err != nil {
 		return nil, err
 	}
-	if spec.Version, err = requiredString(raw, "packageVersion"); err != nil {
+	if spec.Version, err = requiredString(raw, "version"); err != nil {
 		return nil, err
 	}
 
 	// ------------------------------------------------
 	// Package repository (REQUIRED)
 	// ------------------------------------------------
-	repoRaw, err := requiredMap(raw, "packageRepository")
+	repoRaw, err := requiredMap(raw, "repository")
 	if err != nil {
 		return nil, err
 	}
 	spec.PackageRepository, err = resolveRepository(repoRaw)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("repository: %w", err)
 	}
 
 	// ------------------------------------------------
 	// State repository (OPTIONAL)
 	// ------------------------------------------------
-	if srRaw, ok := raw["stateRepo"]; ok {
+	if srRaw, ok := raw["stateRepository"]; ok {
 		m, ok := srRaw.(map[string]any)
 		if !ok {
-			return nil, fmt.Errorf("spec.contract.stateRepo must be an object")
+			return nil, fmt.Errorf("stateRepository must be an object")
 		}
 		spec.StateRepository, err = resolveStateRepository(m)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("stateRepository: %w", err)
 		}
 	}
 
 	// ------------------------------------------------
 	// Maintainers (OPTIONAL)
 	// ------------------------------------------------
-	if msRaw, ok := raw["packageMaintainers"]; ok {
+	if msRaw, ok := raw["maintainers"]; ok {
 		spec.Maintainers, err = resolveMaintainers(msRaw)
 		if err != nil {
 			return nil, err
@@ -187,9 +184,15 @@ func resolveRepository(m map[string]any) (ResolvedPackageRepository, error) {
 	if err != nil {
 		return ResolvedPackageRepository{}, err
 	}
+	ref, err := requiredString(m, "ref")
+	if err != nil {
+		return ResolvedPackageRepository{}, err
+	}
 	return ResolvedPackageRepository{
 		URL:               url,
 		CredentialsSecret: optionalString(m, "credentialsSecret"),
+		Ref:               ref,
+		Path:              optionalString(m, "path"),
 	}, nil
 }
 
@@ -199,16 +202,12 @@ func resolveStateRepository(m map[string]any) (*ResolvedStateRepository, error) 
 		return nil, err
 	}
 
-	ref := Ref{}
+	// ref is a single string in the contract: a branch, tag or commit.
+	ref := ""
 	if r, ok := m["ref"]; ok {
-		rm, ok := r.(map[string]any)
+		ref, ok = r.(string)
 		if !ok {
-			return nil, fmt.Errorf("stateRepo.ref must be an object")
-		}
-		ref = Ref{
-			Branch: optionalString(rm, "branch"),
-			Tag:    optionalString(rm, "tag"),
-			Commit: optionalString(rm, "commit"),
+			return nil, fmt.Errorf("ref must be a string")
 		}
 	}
 
@@ -224,23 +223,23 @@ func resolveStateRepository(m map[string]any) (*ResolvedStateRepository, error) 
 func resolveMaintainers(v any) ([]ResolvedMaintainer, error) {
 	list, ok := v.([]any)
 	if !ok {
-		return nil, fmt.Errorf("packageMaintainers must be an array")
+		return nil, fmt.Errorf("maintainers must be an array")
 	}
 
 	out := make([]ResolvedMaintainer, 0, len(list))
 	for i, item := range list {
 		m, ok := item.(map[string]any)
 		if !ok {
-			return nil, fmt.Errorf("packageMaintainers[%d] must be an object", i)
+			return nil, fmt.Errorf("maintainers[%d] must be an object", i)
 		}
 
 		name, err := requiredString(m, "name")
 		if err != nil {
-			return nil, fmt.Errorf("packageMaintainers[%d].name: %w", i, err)
+			return nil, fmt.Errorf("maintainers[%d].name: %w", i, err)
 		}
 		email, err := requiredString(m, "email")
 		if err != nil {
-			return nil, fmt.Errorf("packageMaintainers[%d].email: %w", i, err)
+			return nil, fmt.Errorf("maintainers[%d].email: %w", i, err)
 		}
 
 		out = append(out, ResolvedMaintainer{Name: name, Email: email})

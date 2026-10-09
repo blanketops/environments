@@ -27,7 +27,7 @@ func TestAdapter_Resolve(t *testing.T) {
 	a := NewAdapter()
 	p := &environmentv1alpha1.Package{
 		Spec: environmentv1alpha1.PackageSpec{
-			Contract: runtime.RawExtension{Raw: []byte(`{"packageName":"pkg1","packageVersion":"1.0.0","packageRepository":{"url":"oci://x"}}`)},
+			Contract: runtime.RawExtension{Raw: []byte(`{"name":"pkg1","version":"1.0.0","repository":{"url":"oci://x","ref":"origin/main"}}`)},
 		},
 	}
 	resolved, err := a.Resolve(context.Background(), p)

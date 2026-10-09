@@ -135,7 +135,7 @@ pkg/
   providerconfig/     → GitHub ProviderConfig reconciler
   runtime/            → Runtime context read from the process environment
   secrets/            → Platform secrets used by resources (git, github, registry)
-  serviceaccounts/    → Build service account reconciler
+  serviceaccounts/    → Build and Package service account reconcilers, Package deployer binding
   utils/              → Shared helpers
 resolution/
   build/              → Build resolution and contract adapter

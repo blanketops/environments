@@ -68,13 +68,6 @@ func TestPackageCache_FieldRoundTrips(t *testing.T) {
 		t.Errorf("GetKappDiff = %v, %v, %v", v, found, err)
 	}
 
-	if err := c.SetEnabled(ctx, nn, 1, true); err != nil {
-		t.Fatalf("SetEnabled: %v", err)
-	}
-	if v, found, err := c.GetEnabled(ctx, nn, 1); err != nil || !found || !v {
-		t.Errorf("GetEnabled = %v, %v, %v", v, found, err)
-	}
-
 	if err := c.SetChecksum(ctx, nn, 1, "sha256:abc"); err != nil {
 		t.Fatalf("SetChecksum: %v", err)
 	}
@@ -106,7 +99,6 @@ func TestPackageCache_PublishResolved(t *testing.T) {
 		r := &packagesResolution.ResolvedPackage{
 			Spec: &packagesResolution.ResolvedPackageSpec{
 				Version: "v1",
-				Enabled: true,
 			},
 		}
 		if err := c.PublishResolved(context.Background(), nn, 1, r); err != nil {
@@ -126,7 +118,6 @@ func TestPackageCache_PublishResolved(t *testing.T) {
 		r := &packagesResolution.ResolvedPackage{
 			Spec: &packagesResolution.ResolvedPackageSpec{
 				Version:           "v1",
-				Enabled:           true,
 				PackageRepository: packagesResolution.ResolvedPackageRepository{URL: "oci://x"},
 			},
 		}
@@ -144,7 +135,6 @@ func TestPackageCache_PublishResolved(t *testing.T) {
 		r := &packagesResolution.ResolvedPackage{
 			Spec: &packagesResolution.ResolvedPackageSpec{
 				Version:         "v1",
-				Enabled:         true,
 				DiffEnabled:     true,
 				StateRepository: &packagesResolution.ResolvedStateRepository{URL: "https://git.example/state"},
 			},
@@ -166,7 +156,6 @@ func TestPackageCache_PublishResolved(t *testing.T) {
 		r := &packagesResolution.ResolvedPackage{
 			Spec: &packagesResolution.ResolvedPackageSpec{
 				Version: "v1",
-				Enabled: true,
 			},
 		}
 		if err := c.PublishResolved(context.Background(), nn, 1, r); err != nil {
