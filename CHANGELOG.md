@@ -1,3 +1,40 @@
+## [0.8.5] - 2026-10-09
+
+### 🚀 Features
+
+- *(packages)* Add Teardown and own the kapp App
+- *(packages)* Let the kapp App fetch a private package repository
+- *(packages)* Apply the declared ref and path of the package repository
+- *(packages)* Give the kapp App a service account
+- *(packages)* Bind the Package service account to a deployer ClusterRole
+
+### 🐛 Bug Fixes
+
+- *(build)* Let the status writer drop superseded conditions
+- *(build)* Resolve a Build that declares no policy to an empty one
+- *(build)* Write only what the Build declares onto Shipwright objects
+- *(build)* Require the strategy and stop the mapper panicking
+- *(packages)* Read the Package contract with the proto's field names
+- *(packages)* Reconcile every Package and stop crashing on optional fields
+- *(packages)* Read a failed kapp App as failed, in one place
+- *(packages)* Report the App's state from the wired provider
+- *(packages)* Report kapp's useful error, not the pointer to it
+
+### 💼 Other
+
+- Merge release/v0.8.5 into main
+
+### 📚 Documentation
+
+- *(readme)* List the Package reconcilers under serviceaccounts
+- Auto-generate code documentation [skip ci]
+- Auto-generate code documentation [skip ci]
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.8.4
+- Sync develop with main after release/v0.8.4
 ## [0.8.4] - 2026-10-08
 
 ### 🚀 Features
