@@ -32,7 +32,6 @@ import (
 	"github.com/blanketops/environments/pkg/utils"
 	"github.com/go-logr/logr"
 	shipwrightv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -100,22 +99,18 @@ func (p *BuildpacksProvider) CreateBuildSpec(
 		},
 		Spec: shipwrightv1alpha1.BuildSpec{
 			Source: shipwrightv1alpha1.Source{
-				URL:        &spec.SourceURL,
-				ContextDir: &spec.ContextDir,
-				Revision:   &revision,
-				Credentials: &corev1.LocalObjectReference{
-					Name: spec.CloneSecret,
-				},
+				URL:         &spec.SourceURL,
+				ContextDir:  &spec.ContextDir,
+				Revision:    &revision,
+				Credentials: secretRef(spec.CloneSecret),
 			},
 			Strategy: shipwrightv1alpha1.Strategy{
 				Name: spec.StrategyName,
 				Kind: &strategyKind,
 			},
 			Output: shipwrightv1alpha1.Image{
-				Image: image,
-				Credentials: &corev1.LocalObjectReference{
-					Name: spec.ServiceAccountSecret,
-				},
+				Image:       image,
+				Credentials: secretRef(spec.ServiceAccountSecret),
 			},
 			// Timeout intentionally omitted — enforced at BuildRun level.
 		},
@@ -145,7 +140,8 @@ func (p *BuildpacksProvider) CreateBuildRunSpec(
 			},
 		},
 		Spec: shipwrightv1alpha1.BuildRunSpec{
-			BuildRef: &shipwrightv1alpha1.BuildRef{Name: shipwrightBuild.Name},
+			BuildRef:       &shipwrightv1alpha1.BuildRef{Name: shipwrightBuild.Name},
+			ServiceAccount: runServiceAccount(build),
 		},
 	}
 }
