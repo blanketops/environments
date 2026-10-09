@@ -15,7 +15,10 @@ limitations under the License.
 
 package domain
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // PackageSpec represents the domain-level truth of a Package.
 // It is independent of Kubernetes API machinery.
@@ -36,9 +39,6 @@ type PackageSpec struct {
 	// ---------------------------------------------------------------------
 	// Lifecycle & intent
 	// ---------------------------------------------------------------------
-
-	// Enabled determines whether reconciliation is active.
-	Enabled bool
 
 	// Description provides human context.
 	Description string
@@ -118,7 +118,7 @@ type StateRepository struct {
 	URL string
 
 	// Ref (branch, tag, or commit).
-	Ref Ref
+	Ref string
 
 	// CloneSecret used to authenticate.
 	CloneSecret string
@@ -128,19 +128,6 @@ type StateRepository struct {
 
 	// Path is the path of the kustomization file when kustomization strategy = true.
 	Path string
-}
-
-// Ref pins the state/manifests repository to a specific branch, tag, or commit.
-type Ref struct {
-
-	// Branch is the Git branch to use for the manifests repository.
-	Branch string
-
-	// Tag is the Git tag to use for the manifests repository.
-	Tag string
-
-	// Commit is the specific Git commit SHA to use for the manifests repository.
-	Commit string
 }
 
 // PackageStatus is the USER-FACING contract status.
@@ -194,3 +181,18 @@ const (
 	StrategyKustomize ApplyStrategy = "kustomize"
 	StrategyPlainYAML ApplyStrategy = "plain"
 )
+
+// ParseApplyStrategy maps the strategy a Package contract declares on its
+// state repository to an ApplyStrategy. An empty strategy means plain
+// manifests. It is the one place the accepted spellings are listed; an
+// unknown one is an InvalidSpecError.
+func ParseApplyStrategy(strategy string) (ApplyStrategy, error) {
+	switch strategy {
+	case "kustomization", "kustomize":
+		return StrategyKustomize, nil
+	case "", "plain":
+		return StrategyPlainYAML, nil
+	default:
+		return "", InvalidSpecError{Msg: fmt.Sprintf("unsupported apply strategy %q", strategy)}
+	}
+}

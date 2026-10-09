@@ -17,6 +17,7 @@ package intent
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/blanketops/environments/pkg/apis/packages/domain"
 	"github.com/blanketops/environments/resolution/packages/resolve"
@@ -27,15 +28,11 @@ func BuildPackageIntent(
 	rp *resolve.ResolvedPackage,
 ) (*PackageIntent, error) {
 
-	if rp == nil || rp.Spec == nil {
+	if rp == nil || rp.Package == nil || rp.Spec == nil {
 		return nil, fmt.Errorf("nil ResolvedPackage passed to BuildPackageIntent")
 	}
 
 	spec := rp.Spec
-
-	if !spec.Enabled {
-		return nil, fmt.Errorf("package %s is disabled", rp.Package.Name)
-	}
 
 	// ------------------------------------------------------------
 	// Identity (already normalized)
@@ -54,18 +51,22 @@ func BuildPackageIntent(
 	}
 
 	// ------------------------------------------------------------
-	// State repository (already validated)
+	// State repository (optional — already validated when declared)
 	// ------------------------------------------------------------
-	stateRepo := domain.StateRepository{
-		URL:         spec.StateRepository.URL,
-		Path:        spec.StateRepository.Path,
-		Strategy:    spec.StateRepository.Strategy,
-		CloneSecret: spec.StateRepository.CloneSecret,
-		Ref: domain.Ref{
-			Branch: spec.StateRepository.Ref.Branch,
-			Tag:    spec.StateRepository.Ref.Tag,
-			Commit: spec.StateRepository.Ref.Commit,
-		},
+	var stateRepo domain.StateRepository
+	if spec.StateRepository != nil {
+		stateRepo = domain.StateRepository{
+			URL:         spec.StateRepository.URL,
+			Path:        spec.StateRepository.Path,
+			Strategy:    spec.StateRepository.Strategy,
+			CloneSecret: spec.StateRepository.CloneSecret,
+			Ref:         spec.StateRepository.Ref,
+		}
+	}
+
+	strategy, err := domain.ParseApplyStrategy(stateRepo.Strategy)
+	if err != nil {
+		return nil, err
 	}
 
 	// ------------------------------------------------------------
@@ -73,13 +74,34 @@ func BuildPackageIntent(
 	// ------------------------------------------------------------
 	intent := &PackageIntent{
 		ID:          id,
+		OwnerUID:    rp.Package.UID,
+		Labels:      blanketOpsLabels(rp.Package.Labels),
 		Source:      source,
 		StateRepo:   stateRepo,
 		DiffEnabled: spec.DiffEnabled,
-		Strategy:    domain.ApplyStrategy(spec.StateRepository.Strategy),
+		Strategy:    strategy,
 		//ResolvedRef:    spec.ResolvedRef,
 		//ResolvedCommit: spec.ResolvedCommit,
 	}
 
 	return intent, nil
+}
+
+// labelPrefix marks the labels that tie an object to its Environment.
+const labelPrefix = "environments.blanketops.dev/"
+
+// blanketOpsLabels returns the environments.blanketops.dev/* labels from
+// labels, or nil when there are none.
+func blanketOpsLabels(labels map[string]string) map[string]string {
+	var out map[string]string
+	for k, v := range labels {
+		if !strings.HasPrefix(k, labelPrefix) {
+			continue
+		}
+		if out == nil {
+			out = map[string]string{}
+		}
+		out[k] = v
+	}
+	return out
 }

@@ -48,7 +48,6 @@ func TestToPackageContract_Minimal(t *testing.T) {
 
 func TestToPackageContract_FullyPopulated(t *testing.T) {
 	s := &resolve.ResolvedPackageSpec{
-		Enabled:           true,
 		Name:              "pkg1",
 		Version:           "1.0.0",
 		Description:       "a package",

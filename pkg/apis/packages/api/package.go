@@ -23,7 +23,6 @@ import (
 	"github.com/blanketops/environments/pkg/apis/packages/domain"
 	"github.com/blanketops/environments/pkg/intent/package"
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -133,7 +132,7 @@ func PackageResultFromApplicationState(
 }
 
 // ObserveApplication reads the named kapp-controller App and derives its
-// ApplicationState from the App's ReconcileSucceeded condition.
+// ApplicationState (see ApplicationStateFromApp).
 func (p *PackageProvider) ObserveApplication(
 	ctx context.Context,
 	namespace,
@@ -152,59 +151,11 @@ func (p *PackageProvider) ObserveApplication(
 		return nil, err
 	}
 
-	state := &domain.ApplicationState{
-		Name:      app.Name,
-		Namespace: app.Namespace,
-		Phase:     domain.ApplicationPhasePending,
-	}
+	return ApplicationStateFromApp(&app), nil
+}
 
-	// ------------------------------------------------------------
-	// Phase resolution (ReconcileSucceeded is authoritative)
-	// ------------------------------------------------------------
-	for _, cond := range app.Status.Conditions {
-		if cond.Type != "ReconcileSucceeded" {
-			continue
-		}
-
-		switch cond.Status {
-		case corev1.ConditionTrue:
-			state.Phase = domain.ApplicationPhaseReady
-
-		case corev1.ConditionFalse:
-			state.Phase = domain.ApplicationPhaseFailed
-			state.Message = cond.Message
-
-		case corev1.ConditionUnknown:
-			state.Phase = domain.ApplicationPhasePending
-		}
-	}
-
-	// ------------------------------------------------------------
-	// Deploy execution details (truth from kapp)
-	// ------------------------------------------------------------
-	if d := app.Status.Deploy; d != nil {
-
-		if !d.StartedAt.IsZero() {
-			t := d.StartedAt.Time
-			state.DeployStartedAt = &t
-		}
-
-		if !d.UpdatedAt.IsZero() {
-			t := d.UpdatedAt.Time
-			state.DeployUpdatedAt = &t
-		}
-
-		state.DeployFinished = d.Finished
-
-		if d.ExitCode != 0 {
-			code := d.ExitCode
-			state.DeployExitCode = &code
-		}
-
-		if d.Error != "" {
-			state.Message = d.Error
-		}
-	}
-
-	return state, nil
+// Teardown deletes the kapp App created for the Package. Idempotent — a
+// missing App is not an error.
+func (p *PackageProvider) Teardown(ctx context.Context, id domain.PackageID) error {
+	return DeleteApplication(ctx, p.Client, id)
 }

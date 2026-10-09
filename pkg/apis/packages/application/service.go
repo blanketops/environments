@@ -18,6 +18,7 @@ package application
 import (
 	"context"
 
+	"github.com/blanketops/environments/pkg/apis/packages/domain"
 	pkgintent "github.com/blanketops/environments/pkg/intent/package"
 	pkgResolution "github.com/blanketops/environments/resolution/packages/resolve"
 )
@@ -50,10 +51,17 @@ func (s *PackageService) Reconcile(
 	intent *pkgintent.PackageIntent,
 ) error {
 
+	if resolved == nil || resolved.Package == nil || intent == nil {
+		return domain.InvalidSpecError{Msg: "nil ResolvedPackage or PackageIntent passed to PackageService"}
+	}
+
 	// ------------------------------------------------
 	// 1. Select backend (always kapp)
 	// ------------------------------------------------
-	provider := s.backend.ForIntent(intent)
+	provider, err := s.backend.ForIntent(intent)
+	if err != nil {
+		return err
+	}
 
 	// ------------------------------------------------
 	// 2. Execute package (INTENT → RESULT)
@@ -69,4 +77,15 @@ func (s *PackageService) Reconcile(
 		result,
 		err,
 	)
+}
+
+// Teardown reverses Reconcile: it removes what the provider created for the
+// Package. It needs only the Package's identity, so a Package whose contract
+// does not resolve can still be deleted.
+func (s *PackageService) Teardown(ctx context.Context, id domain.PackageID) error {
+	provider, err := s.backend.ForIntent(nil)
+	if err != nil {
+		return err
+	}
+	return provider.Teardown(ctx, id)
 }

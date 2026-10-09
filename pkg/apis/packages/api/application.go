@@ -31,6 +31,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	environmentv1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
 	"github.com/blanketops/environments/pkg/apis/packages/domain"
 	"github.com/blanketops/environments/pkg/intent/package"
 )
@@ -109,18 +110,16 @@ func (p *ApplicationProvider) Execute(
 
 	// ------------------------------------------------------------
 	// 4. Build domain result
+	//
+	// The result says what the App reported at this moment. It is usually
+	// still pending right after the apply; the outcome that follows is
+	// recorded by whoever observes the App, reading it the same way.
 	// ------------------------------------------------------------
-	return &domain.PackageResult{
-		Success: false, // never final here
-		Phase:   packagePhaseFromApplicationPhase(state.Phase),
-		Message: state.Message,
-		Kapp: domain.KappResult{
-			Name:      state.Name,
-			Namespace: state.Namespace,
-		},
-		StartedAt:  start,
-		FinishedAt: time.Now(),
-	}, nil
+	result := PackageResultFromApplicationState(state)
+	result.StartedAt = start
+	result.FinishedAt = time.Now()
+
+	return result, nil
 }
 
 // ApplyApplication server-side applies the App with the blanketops-packages
@@ -151,8 +150,10 @@ func BuildKappApplication(
 			Kind:       "App",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      intent.ID.Name,
-			Namespace: intent.ID.Namespace,
+			Name:            intent.ID.Name,
+			Namespace:       intent.ID.Namespace,
+			Labels:          intent.Labels,
+			OwnerReferences: ownerReferences(intent),
 		},
 		Spec: kappctrlv1alpha1.AppSpec{
 			// Controller-driven reconciliation
@@ -161,9 +162,19 @@ func BuildKappApplication(
 			Fetch: []kappctrlv1alpha1.AppFetch{
 				{
 					Git: &kappctrlv1alpha1.AppFetchGit{
-						URL: intent.Source.RepositoryURL,
-						Ref: intent.ResolvedRef,
+						URL:       intent.Source.RepositoryURL,
+						Ref:       intent.ResolvedRef,
+						SecretRef: fetchSecretRef(intent.Source.CredentialsSecret),
 					},
+				},
+			},
+
+			// The package repository holds plain manifests. ytt passes
+			// them through and gives the repository a place to add
+			// overlays later.
+			Template: []kappctrlv1alpha1.AppTemplate{
+				{
+					Ytt: &kappctrlv1alpha1.AppTemplateYtt{},
 				},
 			},
 
@@ -200,6 +211,17 @@ func (p *ApplicationProvider) ObserveApplication(
 		)
 	}
 
+	return ApplicationStateFromApp(&app), nil
+}
+
+// ApplicationStateFromApp derives an ApplicationState from what a kapp App
+// reports about itself. It is the one place the App's conditions are
+// interpreted, shared by the providers and by observers of the App.
+//
+// kapp-controller reports success as ReconcileSucceeded and failure as a
+// separate ReconcileFailed condition, with the detail in
+// status.usefulErrorMessage. An App that has reported neither is pending.
+func ApplicationStateFromApp(app *kappctrlv1alpha1.App) *domain.ApplicationState {
 	state := &domain.ApplicationState{
 		Name:      app.Name,
 		Namespace: app.Namespace,
@@ -207,23 +229,31 @@ func (p *ApplicationProvider) ObserveApplication(
 	}
 
 	// --------------------------------------------------------
-	// Phase resolution (ReconcileSucceeded is authoritative)
+	// Phase resolution (ReconcileSucceeded and ReconcileFailed)
 	// --------------------------------------------------------
 	for _, cond := range app.Status.Conditions {
-		if cond.Type != "ReconcileSucceeded" {
-			continue
-		}
+		switch cond.Type {
+		case kappctrlv1alpha1.ReconcileSucceeded:
+			switch cond.Status {
+			case corev1.ConditionTrue:
+				state.Phase = domain.ApplicationPhaseReady
 
-		switch cond.Status {
-		case corev1.ConditionTrue:
-			state.Phase = domain.ApplicationPhaseReady
+			case corev1.ConditionFalse:
+				state.Phase = domain.ApplicationPhaseFailed
+				state.Message = cond.Message
 
-		case corev1.ConditionFalse:
-			state.Phase = domain.ApplicationPhaseFailed
-			state.Message = cond.Message
+			case corev1.ConditionUnknown:
+				state.Phase = domain.ApplicationPhasePending
+			}
 
-		case corev1.ConditionUnknown:
-			state.Phase = domain.ApplicationPhasePending
+		case kappctrlv1alpha1.ReconcileFailed:
+			if cond.Status == corev1.ConditionTrue {
+				state.Phase = domain.ApplicationPhaseFailed
+				state.Message = cond.Message
+				if app.Status.UsefulErrorMessage != "" {
+					state.Message = app.Status.UsefulErrorMessage
+				}
+			}
 		}
 	}
 
@@ -254,26 +284,7 @@ func (p *ApplicationProvider) ObserveApplication(
 		}
 	}
 
-	return state, nil
-}
-
-func packagePhaseFromApplicationPhase(
-	phase domain.ApplicationPhase,
-) domain.PackagePhase {
-
-	switch phase {
-	case domain.ApplicationPhaseReady:
-		return domain.PackagePhaseSucceeded
-
-	case domain.ApplicationPhaseFailed:
-		return domain.PackagePhaseFailed
-
-	case domain.ApplicationPhasePending:
-		return domain.PackagePhasePending
-
-	default:
-		return domain.PackagePhaseUnknown
-	}
+	return state
 }
 
 // failedResult builds a failed PackageResult stamped with start and err's message.
@@ -287,25 +298,54 @@ func failedResult(start time.Time, err error) *domain.PackageResult {
 	}
 }
 
-// DeleteApplication deletes the kapp App this provider created for the
-// given package intent. Mandatory, not optional — BuildKappApplication
-// sets no ownerReference on the App it constructs, so Kubernetes GC will
-// not reclaim it when the parent Package CR is deleted.
-//
-// Idempotent — a missing App is not an error.
-func DeleteApplication(
-	ctx context.Context,
-	c client.Client,
-	intent *intent.PackageIntent,
-) error {
+// fetchSecretRef references the Secret kapp-controller authenticates the
+// fetch with. Returns nil when the contract declares no credentials, so a
+// public repository gets no reference at all.
+func fetchSecretRef(name string) *kappctrlv1alpha1.AppFetchLocalRef {
+	if name == "" {
+		return nil
+	}
+	return &kappctrlv1alpha1.AppFetchLocalRef{Name: name}
+}
+
+// ownerReferences makes the Package CR the controlling owner of an object
+// created for it. Returns nil when the intent carries no owner UID.
+func ownerReferences(intent *intent.PackageIntent) []metav1.OwnerReference {
+	if intent.OwnerUID == "" {
+		return nil
+	}
+	return []metav1.OwnerReference{{
+		APIVersion:         environmentv1alpha1.GroupVersion.String(),
+		Kind:               "Package",
+		Name:               intent.ID.Name,
+		UID:                intent.OwnerUID,
+		Controller:         ptr.To(true),
+		BlockOwnerDeletion: ptr.To(true),
+	}}
+}
+
+// Teardown deletes the kapp App created for the Package. kapp-controller
+// then removes the resources the App deployed. Idempotent — a missing App is
+// not an error.
+func (p *ApplicationProvider) Teardown(ctx context.Context, id domain.PackageID) error {
+	if err := DeleteApplication(ctx, p.Client, id); err != nil {
+		return err
+	}
+	p.Log.Info("provider.teardown: complete", "package", id.Name, "namespace", id.Namespace)
+	return nil
+}
+
+// DeleteApplication deletes the kapp App named after the Package. A missing
+// App is not an error.
+func DeleteApplication(ctx context.Context, c client.Client, id domain.PackageID) error {
 	app := &kappctrlv1alpha1.App{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      intent.ID.Name,
-			Namespace: intent.ID.Namespace,
+			Name:      id.Name,
+			Namespace: id.Namespace,
 		},
 	}
 	if err := c.Delete(ctx, app); err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("delete kapp app %s/%s: %w", intent.ID.Namespace, intent.ID.Name, err)
+		return fmt.Errorf("delete kapp app %s/%s: %w", id.Namespace, id.Name, err)
 	}
 	return nil
 }
