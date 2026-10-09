@@ -203,6 +203,17 @@ func (p *ApplicationProvider) ObserveApplication(
 		)
 	}
 
+	return ApplicationStateFromApp(&app), nil
+}
+
+// ApplicationStateFromApp derives an ApplicationState from what a kapp App
+// reports about itself. It is the one place the App's conditions are
+// interpreted, shared by the providers and by observers of the App.
+//
+// kapp-controller reports success as ReconcileSucceeded and failure as a
+// separate ReconcileFailed condition, with the detail in
+// status.usefulErrorMessage. An App that has reported neither is pending.
+func ApplicationStateFromApp(app *kappctrlv1alpha1.App) *domain.ApplicationState {
 	state := &domain.ApplicationState{
 		Name:      app.Name,
 		Namespace: app.Namespace,
@@ -210,23 +221,31 @@ func (p *ApplicationProvider) ObserveApplication(
 	}
 
 	// --------------------------------------------------------
-	// Phase resolution (ReconcileSucceeded is authoritative)
+	// Phase resolution (ReconcileSucceeded and ReconcileFailed)
 	// --------------------------------------------------------
 	for _, cond := range app.Status.Conditions {
-		if cond.Type != "ReconcileSucceeded" {
-			continue
-		}
+		switch cond.Type {
+		case kappctrlv1alpha1.ReconcileSucceeded:
+			switch cond.Status {
+			case corev1.ConditionTrue:
+				state.Phase = domain.ApplicationPhaseReady
 
-		switch cond.Status {
-		case corev1.ConditionTrue:
-			state.Phase = domain.ApplicationPhaseReady
+			case corev1.ConditionFalse:
+				state.Phase = domain.ApplicationPhaseFailed
+				state.Message = cond.Message
 
-		case corev1.ConditionFalse:
-			state.Phase = domain.ApplicationPhaseFailed
-			state.Message = cond.Message
+			case corev1.ConditionUnknown:
+				state.Phase = domain.ApplicationPhasePending
+			}
 
-		case corev1.ConditionUnknown:
-			state.Phase = domain.ApplicationPhasePending
+		case kappctrlv1alpha1.ReconcileFailed:
+			if cond.Status == corev1.ConditionTrue {
+				state.Phase = domain.ApplicationPhaseFailed
+				state.Message = cond.Message
+				if app.Status.UsefulErrorMessage != "" {
+					state.Message = app.Status.UsefulErrorMessage
+				}
+			}
 		}
 	}
 
@@ -257,7 +276,7 @@ func (p *ApplicationProvider) ObserveApplication(
 		}
 	}
 
-	return state, nil
+	return state
 }
 
 func packagePhaseFromApplicationPhase(
