@@ -64,6 +64,15 @@ func NewStatusWriter(c client.Client, log logr.Logger) *StatusWriter {
 // alongside the conditions. Callers that leave Contract empty (the primary
 // BuildService.Reconcile path today) see no change in behavior.
 func (w *StatusWriter) Write(ctx context.Context, build *buildv1.Build, conditions ...metav1.Condition) error {
+	return w.WriteReplacing(ctx, build, nil, conditions...)
+}
+
+// WriteReplacing behaves like Write and, in the same update, removes the
+// condition types listed in superseded. Use it when the conditions being
+// written make earlier ones false: a succeeded run supersedes BuildFailed, a
+// failed run supersedes BuildSuccess. Merging alone would leave both on the
+// Build. A type that is also in conditions is written, not removed.
+func (w *StatusWriter) WriteReplacing(ctx context.Context, build *buildv1.Build, superseded []string, conditions ...metav1.Condition) error {
 	log := w.Log.WithValues("build", build.Name, "namespace", build.Namespace)
 	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// Re-fetch latest version — resourceVersion may have been bumped by
@@ -72,6 +81,12 @@ func (w *StatusWriter) Write(ctx context.Context, build *buildv1.Build, conditio
 		if err := w.Client.Get(ctx, client.ObjectKeyFromObject(build), latest); err != nil {
 			log.Error(err, "failed to re-fetch build before status write")
 			return err
+		}
+		for _, condType := range superseded {
+			if removed := removeCondition(latest.Status.Conditions, condType); len(removed) != len(latest.Status.Conditions) {
+				latest.Status.Conditions = removed
+				log.Info("condition removed", "type", condType)
+			}
 		}
 		for _, cond := range conditions {
 			latest.Status.Conditions = mergeCondition(latest.Status.Conditions, cond)
@@ -103,4 +118,15 @@ func mergeCondition(conds []metav1.Condition, newCond metav1.Condition) []metav1
 		}
 	}
 	return append(conds, newCond)
+}
+
+// removeCondition returns conds without the condition of the given type.
+func removeCondition(conds []metav1.Condition, condType string) []metav1.Condition {
+	kept := conds[:0:0]
+	for _, c := range conds {
+		if c.Type != condType {
+			kept = append(kept, c)
+		}
+	}
+	return kept
 }

@@ -141,3 +141,100 @@ func TestStatusWriter_Write_LeavesContractUntouchedWhenCallerDoesNotSetIt(t *tes
 		t.Fatalf("existing contract was disturbed: got %+v, want %+v", gotStatus, existing)
 	}
 }
+
+func conditionTypes(conds []metav1.Condition) []string {
+	types := make([]string, 0, len(conds))
+	for _, c := range conds {
+		types = append(types, c.Type)
+	}
+	return types
+}
+
+// TestStatusWriter_WriteReplacing covers the outcome conditions: a later
+// success must not leave the earlier BuildFailed on the Build, and the
+// reverse.
+func TestStatusWriter_WriteReplacing(t *testing.T) {
+	tests := []struct {
+		name       string
+		existing   []string
+		superseded []string
+		write      string
+		want       []string
+	}{
+		{
+			name:       "success supersedes an earlier failure",
+			existing:   []string{"BuildResolved", "BuildFailed", "BuildReady"},
+			superseded: []string{"BuildFailed"},
+			write:      "BuildSuccess",
+			want:       []string{"BuildResolved", "BuildReady", "BuildSuccess"},
+		},
+		{
+			name:       "failure supersedes an earlier success",
+			existing:   []string{"BuildResolved", "BuildSuccess"},
+			superseded: []string{"BuildSuccess"},
+			write:      "BuildFailed",
+			want:       []string{"BuildResolved", "BuildFailed"},
+		},
+		{
+			name:       "superseded type that is absent changes nothing else",
+			existing:   []string{"BuildResolved"},
+			superseded: []string{"BuildFailed"},
+			write:      "BuildSuccess",
+			want:       []string{"BuildResolved", "BuildSuccess"},
+		},
+		{
+			name:       "a type both superseded and written is written",
+			existing:   []string{"BuildSuccess"},
+			superseded: []string{"BuildSuccess"},
+			write:      "BuildSuccess",
+			want:       []string{"BuildSuccess"},
+		},
+		{
+			name:     "nothing superseded behaves like Write",
+			existing: []string{"BuildFailed"},
+			write:    "BuildSuccess",
+			want:     []string{"BuildFailed", "BuildSuccess"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			scheme := newStatusTestScheme(t)
+			build := newTestBuild("b-replacing")
+			for _, condType := range tt.existing {
+				build.Status.Conditions = append(build.Status.Conditions, metav1.Condition{
+					Type: condType, Status: metav1.ConditionTrue, Reason: "Earlier", Message: "earlier",
+				})
+			}
+			c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(build).WithStatusSubresource(build).Build()
+			w := NewStatusWriter(c, logr.Discard())
+
+			caller := &buildv1.Build{ObjectMeta: metav1.ObjectMeta{Name: "b-replacing", Namespace: "default"}}
+			err := w.WriteReplacing(context.Background(), caller, tt.superseded, metav1.Condition{
+				Type: tt.write, Status: metav1.ConditionTrue, Reason: "Now", Message: "now",
+			})
+			if err != nil {
+				t.Fatalf("WriteReplacing: %v", err)
+			}
+
+			got := &buildv1.Build{}
+			if err := c.Get(context.Background(), types.NamespacedName{Name: "b-replacing", Namespace: "default"}, got); err != nil {
+				t.Fatalf("Get: %v", err)
+			}
+			gotTypes := conditionTypes(got.Status.Conditions)
+			if len(gotTypes) != len(tt.want) {
+				t.Fatalf("conditions = %v, want %v", gotTypes, tt.want)
+			}
+			for i := range tt.want {
+				if gotTypes[i] != tt.want[i] {
+					t.Fatalf("conditions = %v, want %v", gotTypes, tt.want)
+				}
+			}
+			for _, cond := range got.Status.Conditions {
+				if cond.Type == tt.write && cond.Message != "now" {
+					t.Errorf("%s was not rewritten: %+v", tt.write, cond)
+				}
+			}
+		})
+	}
+}
