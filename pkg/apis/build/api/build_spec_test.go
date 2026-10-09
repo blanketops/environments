@@ -500,3 +500,91 @@ func TestTeardown_RemovesEveryRetryBuildRun(t *testing.T) {
 		})
 	}
 }
+
+// -----------------------------------------------------------------------------
+// Declared values only
+//
+// A Shipwright object carries what the Build contract declares. An undeclared
+// secret or service account is left off, not written with an empty name.
+// -----------------------------------------------------------------------------
+
+func TestCreateBuildSpec_CredentialsOnlyWhenDeclared(t *testing.T) {
+	tests := []struct {
+		name         string
+		cloneSecret  string
+		pushSecret   string
+		wantClone    string
+		wantPush     string
+		wantNilClone bool
+		wantNilPush  bool
+	}{
+		{name: "both declared", cloneSecret: "git-creds", pushSecret: "registry-creds", wantClone: "git-creds", wantPush: "registry-creds"},
+		{name: "public source, private registry", pushSecret: "registry-creds", wantNilClone: true, wantPush: "registry-creds"},
+		{name: "private source, no push secret", cloneSecret: "git-creds", wantClone: "git-creds", wantNilPush: true},
+		{name: "neither declared", wantNilClone: true, wantNilPush: true},
+	}
+
+	for provider, create := range buildSpecProviders() {
+		for _, tt := range tests {
+			t.Run(provider+"/"+tt.name, func(t *testing.T) {
+				spec := newDomainSpec("ghcr.io/acme/app:main")
+				spec.CloneSecret = tt.cloneSecret
+				spec.ServiceAccountSecret = tt.pushSecret
+
+				got, err := create(spec, newResolvedBuild(nil))
+				if err != nil {
+					t.Fatalf("CreateBuildSpec: %v", err)
+				}
+
+				clone := got.Spec.Source.Credentials
+				if tt.wantNilClone != (clone == nil) || (clone != nil && clone.Name != tt.wantClone) {
+					t.Errorf("source credentials = %+v, want nil=%v name=%q", clone, tt.wantNilClone, tt.wantClone)
+				}
+				push := got.Spec.Output.Credentials
+				if tt.wantNilPush != (push == nil) || (push != nil && push.Name != tt.wantPush) {
+					t.Errorf("output credentials = %+v, want nil=%v name=%q", push, tt.wantNilPush, tt.wantPush)
+				}
+			})
+		}
+	}
+}
+
+func TestRun_BuildRunUsesTheDeclaredServiceAccount(t *testing.T) {
+	tests := []struct {
+		name           string
+		serviceAccount *buildResolution.ResolvedServiceAccount
+		want           string
+	}{
+		{name: "declared", serviceAccount: &buildResolution.ResolvedServiceAccount{Name: "build-bot", Secret: "registry-creds"}, want: "build-bot"},
+		{name: "declared without a name", serviceAccount: &buildResolution.ResolvedServiceAccount{Secret: "registry-creds"}},
+		{name: "not declared"},
+	}
+
+	scheme := newRunScheme(t)
+	for provider := range runProviders(nil, scheme) {
+		for _, tt := range tests {
+			t.Run(provider+"/"+tt.name, func(t *testing.T) {
+				c := fake.NewClientBuilder().WithScheme(scheme).Build()
+				p := runProviders(c, scheme)[provider]
+				rb := newRetryBuild()
+				rb.Spec.ServiceAccount = tt.serviceAccount
+
+				mustRun(t, p, rb)
+
+				runs := listRuns(t, c, rb)
+				if len(runs) != 1 {
+					t.Fatalf("%d BuildRuns, want 1", len(runs))
+				}
+				sa := runs[0].Spec.ServiceAccount
+				switch {
+				case tt.want == "" && sa != nil:
+					t.Errorf("service account = %+v, want none", sa)
+				case tt.want != "" && (sa == nil || sa.Name == nil || *sa.Name != tt.want):
+					t.Errorf("service account = %+v, want %q", sa, tt.want)
+				case sa != nil && sa.Generate != nil:
+					t.Errorf("service account generation was requested: %+v", sa)
+				}
+			})
+		}
+	}
+}
