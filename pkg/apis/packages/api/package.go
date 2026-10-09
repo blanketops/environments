@@ -208,3 +208,9 @@ func (p *PackageProvider) ObserveApplication(
 
 	return state, nil
 }
+
+// Teardown deletes the kapp App created for the Package. Idempotent — a
+// missing App is not an error.
+func (p *PackageProvider) Teardown(ctx context.Context, id domain.PackageID) error {
+	return DeleteApplication(ctx, p.Client, id)
+}

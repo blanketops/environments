@@ -25,4 +25,10 @@ import (
 // Provider executes a PackageIntent against a concrete backend (e.g. kapp).
 type Provider interface {
 	Execute(ctx context.Context, intent *intent.PackageIntent) (*domain.PackageResult, error)
+
+	// Teardown removes what Execute created for the Package. It takes the
+	// identity only, not an intent, so a Package whose contract no longer
+	// resolves can still be removed. Idempotent — nothing to delete is not
+	// an error.
+	Teardown(ctx context.Context, id domain.PackageID) error
 }
