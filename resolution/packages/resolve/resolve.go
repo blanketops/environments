@@ -69,6 +69,13 @@ type ResolvedPackageSpec struct {
 type ResolvedPackageRepository struct {
 	URL               string
 	CredentialsSecret string
+	// Ref is the Git ref to apply: a branch, tag or commit SHA, as the
+	// contract declares it. Required — the repository is not fetched
+	// without one.
+	Ref string
+	// Path is the directory inside the repository that holds the package
+	// definitions. Empty means the repository root.
+	Path string
 }
 
 // ResolvedStateRepository is the optional GitOps state repository where
@@ -177,9 +184,15 @@ func resolveRepository(m map[string]any) (ResolvedPackageRepository, error) {
 	if err != nil {
 		return ResolvedPackageRepository{}, err
 	}
+	ref, err := requiredString(m, "ref")
+	if err != nil {
+		return ResolvedPackageRepository{}, err
+	}
 	return ResolvedPackageRepository{
 		URL:               url,
 		CredentialsSecret: optionalString(m, "credentialsSecret"),
+		Ref:               ref,
+		Path:              optionalString(m, "path"),
 	}, nil
 }
 

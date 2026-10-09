@@ -165,6 +165,7 @@ func BuildKappApplication(
 						URL:       intent.Source.RepositoryURL,
 						Ref:       intent.ResolvedRef,
 						SecretRef: fetchSecretRef(intent.Source.CredentialsSecret),
+						SubPath:   intent.Source.Path,
 					},
 				},
 			},

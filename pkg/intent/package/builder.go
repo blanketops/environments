@@ -48,6 +48,7 @@ func BuildPackageIntent(
 	source := domain.PackageSource{
 		RepositoryURL:     spec.PackageRepository.URL,
 		CredentialsSecret: spec.PackageRepository.CredentialsSecret,
+		Path:              spec.PackageRepository.Path,
 	}
 
 	// ------------------------------------------------------------
@@ -80,7 +81,7 @@ func BuildPackageIntent(
 		StateRepo:   stateRepo,
 		DiffEnabled: spec.DiffEnabled,
 		Strategy:    strategy,
-		//ResolvedRef:    spec.ResolvedRef,
+		ResolvedRef: spec.PackageRepository.Ref,
 		//ResolvedCommit: spec.ResolvedCommit,
 	}
 

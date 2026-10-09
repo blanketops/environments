@@ -31,7 +31,7 @@ func pkgWithContract(raw string) *environmentv1alpha1.Package {
 	}
 }
 
-const minimalValid = `{"name":"pkg1","version":"1.0.0","repository":{"url":"oci://x"}}`
+const minimalValid = `{"name":"pkg1","version":"1.0.0","repository":{"url":"oci://x","ref":"origin/main"}}`
 
 func TestResolvePackage_Nil(t *testing.T) {
 	if _, err := ResolvePackage(nil); err == nil {
@@ -55,7 +55,7 @@ func TestResolvePackage_InvalidJSON(t *testing.T) {
 }
 
 func TestResolvePackage_NameMissing(t *testing.T) {
-	p := pkgWithContract(`{"version":"1.0.0","repository":{"url":"x"}}`)
+	p := pkgWithContract(`{"version":"1.0.0","repository":{"url":"x","ref":"origin/main"}}`)
 	_, err := ResolvePackage(p)
 	if err == nil || !strings.Contains(err.Error(), "name") {
 		t.Fatalf("expected packageName error, got %v", err)
@@ -63,7 +63,7 @@ func TestResolvePackage_NameMissing(t *testing.T) {
 }
 
 func TestResolvePackage_VersionMissing(t *testing.T) {
-	p := pkgWithContract(`{"name":"pkg1","repository":{"url":"x"}}`)
+	p := pkgWithContract(`{"name":"pkg1","repository":{"url":"x","ref":"origin/main"}}`)
 	_, err := ResolvePackage(p)
 	if err == nil || !strings.Contains(err.Error(), "version") {
 		t.Fatalf("expected packageVersion error, got %v", err)
@@ -118,7 +118,7 @@ func TestResolvePackage_MinimalValid(t *testing.T) {
 // "enabled" key. There is no such switch: a Package that exists is
 // reconciled, and removing it is how it is stopped. The key is ignored.
 func TestResolvePackage_NoEnabledSwitch(t *testing.T) {
-	p := pkgWithContract(`{"enabled":false,"name":"pkg1","version":"1.0.0","repository":{"url":"x"}}`)
+	p := pkgWithContract(`{"enabled":false,"name":"pkg1","version":"1.0.0","repository":{"url":"x","ref":"origin/main"}}`)
 	resolved, err := ResolvePackage(p)
 	if err != nil {
 		t.Fatalf("ResolvePackage: %v", err)
@@ -129,7 +129,7 @@ func TestResolvePackage_NoEnabledSwitch(t *testing.T) {
 }
 
 func TestResolvePackage_StateRepositoryWrongType(t *testing.T) {
-	p := pkgWithContract(`{"name":"pkg1","version":"1.0.0","repository":{"url":"x"},"stateRepository":"not-an-object"}`)
+	p := pkgWithContract(`{"name":"pkg1","version":"1.0.0","repository":{"url":"x","ref":"origin/main"},"stateRepository":"not-an-object"}`)
 	_, err := ResolvePackage(p)
 	if err == nil || !strings.Contains(err.Error(), "stateRepository must be an object") {
 		t.Fatalf("expected stateRepository type error, got %v", err)
@@ -137,7 +137,7 @@ func TestResolvePackage_StateRepositoryWrongType(t *testing.T) {
 }
 
 func TestResolvePackage_StateRepositoryURLMissing(t *testing.T) {
-	p := pkgWithContract(`{"name":"pkg1","version":"1.0.0","repository":{"url":"x"},"stateRepository":{}}`)
+	p := pkgWithContract(`{"name":"pkg1","version":"1.0.0","repository":{"url":"x","ref":"origin/main"},"stateRepository":{}}`)
 	_, err := ResolvePackage(p)
 	if err == nil || !strings.Contains(err.Error(), "url") {
 		t.Fatalf("expected stateRepo.url error, got %v", err)
@@ -145,7 +145,7 @@ func TestResolvePackage_StateRepositoryURLMissing(t *testing.T) {
 }
 
 func TestResolvePackage_StateRepositoryFull(t *testing.T) {
-	p := pkgWithContract(`{"name":"pkg1","version":"1.0.0","repository":{"url":"x"},
+	p := pkgWithContract(`{"name":"pkg1","version":"1.0.0","repository":{"url":"x","ref":"origin/main"},
 		"stateRepository":{"url":"git@x","ref":"main","cloneSecret":"sec","strategy":"kapp","path":"/state"}}`)
 	resolved, err := ResolvePackage(p)
 	if err != nil {
@@ -161,7 +161,7 @@ func TestResolvePackage_StateRepositoryFull(t *testing.T) {
 }
 
 func TestResolvePackage_StateRepositoryRefWrongType(t *testing.T) {
-	p := pkgWithContract(`{"name":"pkg1","version":"1.0.0","repository":{"url":"x"},"stateRepository":{"url":"git@x","ref":{"branch":"main"}}}`)
+	p := pkgWithContract(`{"name":"pkg1","version":"1.0.0","repository":{"url":"x","ref":"origin/main"},"stateRepository":{"url":"git@x","ref":{"branch":"main"}}}`)
 	_, err := ResolvePackage(p)
 	if err == nil || !strings.Contains(err.Error(), "stateRepository: ref must be a string") {
 		t.Fatalf("expected stateRepo.ref type error, got %v", err)
@@ -169,7 +169,7 @@ func TestResolvePackage_StateRepositoryRefWrongType(t *testing.T) {
 }
 
 func TestResolvePackage_MaintainersWrongType(t *testing.T) {
-	p := pkgWithContract(`{"name":"pkg1","version":"1.0.0","repository":{"url":"x"},"maintainers":"not-an-array"}`)
+	p := pkgWithContract(`{"name":"pkg1","version":"1.0.0","repository":{"url":"x","ref":"origin/main"},"maintainers":"not-an-array"}`)
 	_, err := ResolvePackage(p)
 	if err == nil || !strings.Contains(err.Error(), "maintainers must be an array") {
 		t.Fatalf("expected packageMaintainers type error, got %v", err)
@@ -177,7 +177,7 @@ func TestResolvePackage_MaintainersWrongType(t *testing.T) {
 }
 
 func TestResolvePackage_MaintainersEntryNotObject(t *testing.T) {
-	p := pkgWithContract(`{"name":"pkg1","version":"1.0.0","repository":{"url":"x"},"maintainers":["not-an-object"]}`)
+	p := pkgWithContract(`{"name":"pkg1","version":"1.0.0","repository":{"url":"x","ref":"origin/main"},"maintainers":["not-an-object"]}`)
 	_, err := ResolvePackage(p)
 	if err == nil || !strings.Contains(err.Error(), "maintainers[0] must be an object") {
 		t.Fatalf("expected maintainers[0] error, got %v", err)
@@ -185,7 +185,7 @@ func TestResolvePackage_MaintainersEntryNotObject(t *testing.T) {
 }
 
 func TestResolvePackage_MaintainersEntryMissingName(t *testing.T) {
-	p := pkgWithContract(`{"name":"pkg1","version":"1.0.0","repository":{"url":"x"},"maintainers":[{"email":"a@b.com"}]}`)
+	p := pkgWithContract(`{"name":"pkg1","version":"1.0.0","repository":{"url":"x","ref":"origin/main"},"maintainers":[{"email":"a@b.com"}]}`)
 	_, err := ResolvePackage(p)
 	if err == nil || !strings.Contains(err.Error(), "maintainers[0].name") {
 		t.Fatalf("expected maintainers[0].name error, got %v", err)
@@ -193,7 +193,7 @@ func TestResolvePackage_MaintainersEntryMissingName(t *testing.T) {
 }
 
 func TestResolvePackage_MaintainersEntryMissingEmail(t *testing.T) {
-	p := pkgWithContract(`{"name":"pkg1","version":"1.0.0","repository":{"url":"x"},"maintainers":[{"name":"neo"}]}`)
+	p := pkgWithContract(`{"name":"pkg1","version":"1.0.0","repository":{"url":"x","ref":"origin/main"},"maintainers":[{"name":"neo"}]}`)
 	_, err := ResolvePackage(p)
 	if err == nil || !strings.Contains(err.Error(), "maintainers[0].email") {
 		t.Fatalf("expected maintainers[0].email error, got %v", err)
@@ -201,7 +201,7 @@ func TestResolvePackage_MaintainersEntryMissingEmail(t *testing.T) {
 }
 
 func TestResolvePackage_MaintainersValid(t *testing.T) {
-	p := pkgWithContract(`{"name":"pkg1","version":"1.0.0","repository":{"url":"x"},"maintainers":[{"name":"neo","email":"neo@x.com"}]}`)
+	p := pkgWithContract(`{"name":"pkg1","version":"1.0.0","repository":{"url":"x","ref":"origin/main"},"maintainers":[{"name":"neo","email":"neo@x.com"}]}`)
 	resolved, err := ResolvePackage(p)
 	if err != nil {
 		t.Fatalf("ResolvePackage: %v", err)
@@ -220,7 +220,7 @@ func TestResolvePackage_ContractNilRawIsError(t *testing.T) {
 }
 
 func TestResolvePackage_NameWrongType(t *testing.T) {
-	p := pkgWithContract(`{"name":5,"version":"1.0.0","repository":{"url":"x"}}`)
+	p := pkgWithContract(`{"name":5,"version":"1.0.0","repository":{"url":"x","ref":"origin/main"}}`)
 	_, err := ResolvePackage(p)
 	if err == nil || !strings.Contains(err.Error(), "must be a non-empty string") {
 		t.Fatalf("expected type error, got %v", err)
@@ -237,7 +237,10 @@ func TestResolvePackage_ContractKeysMatchTheProto(t *testing.T) {
 		"version": "v1.2.3",
 		"description": "manifests",
 		"maintainers": [{"name": "Neo", "email": "neo@example.com"}],
-		"repository": {"url": "git@github.com:example-org/packages.git", "credentialsSecret": "packages-creds"},
+		"repository": {
+			"url": "git@github.com:example-org/packages.git", "credentialsSecret": "packages-creds",
+			"ref": "origin/main", "path": "manifests"
+		},
 		"diffEnabled": true,
 		"stateRepository": {
 			"url": "git@github.com:example-org/state.git", "ref": "master",
@@ -255,7 +258,8 @@ func TestResolvePackage_ContractKeysMatchTheProto(t *testing.T) {
 	if len(spec.Maintainers) != 1 || spec.Maintainers[0].Email != "neo@example.com" {
 		t.Errorf("unexpected maintainers: %+v", spec.Maintainers)
 	}
-	if spec.PackageRepository.URL != "git@github.com:example-org/packages.git" || spec.PackageRepository.CredentialsSecret != "packages-creds" {
+	if spec.PackageRepository.URL != "git@github.com:example-org/packages.git" || spec.PackageRepository.CredentialsSecret != "packages-creds" ||
+		spec.PackageRepository.Ref != "origin/main" || spec.PackageRepository.Path != "manifests" {
 		t.Errorf("unexpected repository: %+v", spec.PackageRepository)
 	}
 	sr := spec.StateRepository
@@ -270,13 +274,55 @@ func TestResolvePackage_ContractKeysMatchTheProto(t *testing.T) {
 	}
 }
 
+// TestResolvePackage_RepositoryRefAndPath covers the two fields that tell
+// kapp-controller what to apply. The ref is required: the repository is not
+// fetched without one, so a Package that omits it is rejected here and not
+// left to fail at fetch time. The path is optional.
+func TestResolvePackage_RepositoryRefAndPath(t *testing.T) {
+	tests := []struct {
+		name       string
+		repository string
+		wantRef    string
+		wantPath   string
+		wantErr    string
+	}{
+		{name: "branch and path", repository: `{"url":"x","ref":"origin/main","path":"manifests"}`, wantRef: "origin/main", wantPath: "manifests"},
+		{name: "tag, no path", repository: `{"url":"x","ref":"v1.2.3"}`, wantRef: "v1.2.3"},
+		{name: "commit", repository: `{"url":"x","ref":"5060670ca242a6b5f1ea24699dbf259791e0b04e"}`, wantRef: "5060670ca242a6b5f1ea24699dbf259791e0b04e"},
+		{name: "path of the wrong type is ignored", repository: `{"url":"x","ref":"origin/main","path":7}`, wantRef: "origin/main"},
+		{name: "no ref", repository: `{"url":"x"}`, wantErr: `repository: missing required field "ref"`},
+		{name: "empty ref", repository: `{"url":"x","ref":""}`, wantErr: `repository: field "ref" must be a non-empty string`},
+		{name: "ref of the wrong type", repository: `{"url":"x","ref":{"branch":"main"}}`, wantErr: `repository: field "ref" must be a non-empty string`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := pkgWithContract(`{"name":"pkg1","version":"1.0.0","repository":` + tt.repository + `}`)
+			resolved, err := ResolvePackage(p)
+			if tt.wantErr != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
+					t.Fatalf("ResolvePackage error = %v, want it to contain %q", err, tt.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("ResolvePackage: %v", err)
+			}
+			repo := resolved.Spec.PackageRepository
+			if repo.Ref != tt.wantRef || repo.Path != tt.wantPath {
+				t.Errorf("ref = %q path = %q, want %q %q", repo.Ref, repo.Path, tt.wantRef, tt.wantPath)
+			}
+		})
+	}
+}
+
 func FuzzResolvePackage(f *testing.F) {
 	f.Add(minimalValid)
 	f.Add(`{not json`)
-	f.Add(`{"name":5,"version":"1.0.0","repository":{"url":"x"}}`)
+	f.Add(`{"name":5,"version":"1.0.0","repository":{"url":"x","ref":"origin/main"}}`)
 	f.Add(`{"name":"pkg1","version":"1.0.0","repository":"not-an-object"}`)
-	f.Add(`{"name":"pkg1","version":"1.0.0","repository":{"url":"x"},"maintainers":[{"email":"a@b.com"}]}`)
-	f.Add(`{"enabled":false,"name":"pkg1","version":"1.0.0","repository":{"url":"x"}}`)
+	f.Add(`{"name":"pkg1","version":"1.0.0","repository":{"url":"x","ref":"origin/main"},"maintainers":[{"email":"a@b.com"}]}`)
+	f.Add(`{"enabled":false,"name":"pkg1","version":"1.0.0","repository":{"url":"x","ref":"origin/main"}}`)
 
 	f.Fuzz(func(t *testing.T, raw string) {
 		p := pkgWithContract(raw)
