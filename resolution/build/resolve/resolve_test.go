@@ -100,8 +100,11 @@ func TestResolveBuild_MinimalValid(t *testing.T) {
 	if resolved.Spec.ServiceAccount != nil {
 		t.Fatal("expected nil ServiceAccount when not declared")
 	}
-	if resolved.Spec.Policy != nil {
-		t.Fatal("expected nil Policy when not declared")
+	if resolved.Spec.Policy == nil {
+		t.Fatal("expected a non-nil Policy when none is declared")
+	}
+	if len(resolved.Spec.Policy.Triggers) != 0 || resolved.Spec.Policy.Retry != nil {
+		t.Fatalf("expected an empty Policy when none is declared, got %+v", resolved.Spec.Policy)
 	}
 	if resolved.Build != b {
 		t.Fatal("expected resolved.Build to reference the original CR")
@@ -167,6 +170,46 @@ func TestResolveBuild_PolicyTriggersAndRetry(t *testing.T) {
 	}
 	if resolved.Spec.Policy.Retry == nil || !resolved.Spec.Policy.Retry.OnFailure || resolved.Spec.Policy.Retry.MaxAttempts != 3 {
 		t.Fatalf("unexpected retry policy: %+v", resolved.Spec.Policy.Retry)
+	}
+}
+
+// TestResolveBuild_PolicyIsOptional covers every way a contract can leave
+// the policy or its allowedTriggers out. Each must resolve, and to a policy
+// consumers can read without a nil check.
+func TestResolveBuild_PolicyIsOptional(t *testing.T) {
+	tests := []struct {
+		name         string
+		policy       string
+		wantTriggers int
+		wantRetry    bool
+	}{
+		{name: "no policy key", policy: ""},
+		{name: "null policy", policy: `,"policy":null`},
+		{name: "policy of the wrong type", policy: `,"policy":"push"`},
+		{name: "empty policy", policy: `,"policy":{}`},
+		{name: "retry without allowedTriggers", policy: `,"policy":{"retry":{"onFailure":true,"maxAttempts":2}}`, wantRetry: true},
+		{name: "null allowedTriggers", policy: `,"policy":{"allowedTriggers":null}`},
+		{name: "empty allowedTriggers", policy: `,"policy":{"allowedTriggers":[]}`},
+		{name: "allowedTriggers without retry", policy: `,"policy":{"allowedTriggers":[{"type":"push"}]}`, wantTriggers: 1},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b := buildWithContract(t, `{"image":"foo","source":{"url":"x"}`+tt.policy+`}`)
+			resolved, err := ResolveBuild(b)
+			if err != nil {
+				t.Fatalf("ResolveBuild: %v", err)
+			}
+			if resolved.Spec.Policy == nil {
+				t.Fatal("Policy is nil")
+			}
+			if got := len(resolved.Spec.Policy.Triggers); got != tt.wantTriggers {
+				t.Errorf("triggers = %d, want %d", got, tt.wantTriggers)
+			}
+			if got := resolved.Spec.Policy.Retry != nil; got != tt.wantRetry {
+				t.Errorf("retry present = %v, want %v", got, tt.wantRetry)
+			}
+		})
 	}
 }
 
