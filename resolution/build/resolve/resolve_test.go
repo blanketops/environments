@@ -86,7 +86,7 @@ func TestResolveBuild_MissingImage(t *testing.T) {
 }
 
 func TestResolveBuild_MinimalValid(t *testing.T) {
-	b := buildWithContract(t, `{"image":"foo:latest","source":{"url":"git@github.com:x/y"}}`)
+	b := buildWithContract(t, `{"image":"foo:latest","source":{"url":"git@github.com:x/y"},"strategy":{"name":"kaniko","kind":"ClusterBuildStrategy"}}`)
 	resolved, err := ResolveBuild(b)
 	if err != nil {
 		t.Fatalf("ResolveBuild: %v", err)
@@ -123,7 +123,7 @@ func TestResolveBuild_StrategyKindClusterBuildStrategy(t *testing.T) {
 }
 
 func TestResolveBuild_StrategyKindNamespacedBuildStrategy(t *testing.T) {
-	b := buildWithContract(t, `{"image":"foo","source":{"url":"x"},"strategy":{"kind":"NamespacedBuildStrategy"}}`)
+	b := buildWithContract(t, `{"image":"foo","source":{"url":"x"},"strategy":{"name":"custom","kind":"NamespacedBuildStrategy"}}`)
 	resolved, err := ResolveBuild(b)
 	if err != nil {
 		t.Fatalf("ResolveBuild: %v", err)
@@ -134,15 +134,46 @@ func TestResolveBuild_StrategyKindNamespacedBuildStrategy(t *testing.T) {
 }
 
 func TestResolveBuild_StrategyKindUnsupported(t *testing.T) {
-	b := buildWithContract(t, `{"image":"foo","source":{"url":"x"},"strategy":{"kind":"BogusStrategy"}}`)
+	b := buildWithContract(t, `{"image":"foo","source":{"url":"x"},"strategy":{"name":"kaniko","kind":"BogusStrategy"}}`)
 	_, err := ResolveBuild(b)
 	if err == nil || !strings.Contains(err.Error(), "unsupported strategy.kind") {
 		t.Fatalf("expected unsupported strategy.kind error, got %v", err)
 	}
 }
 
+// TestResolveBuild_StrategyIsRequired covers every way a contract can fail
+// to name its strategy. None may resolve: nothing downstream chooses a
+// strategy on the Build's behalf.
+func TestResolveBuild_StrategyIsRequired(t *testing.T) {
+	tests := []struct {
+		name     string
+		strategy string
+		wantErr  string
+	}{
+		{name: "no strategy key", strategy: "", wantErr: "strategy is required"},
+		{name: "null strategy", strategy: `,"strategy":null`, wantErr: "strategy is required"},
+		{name: "strategy of the wrong type", strategy: `,"strategy":"kaniko"`, wantErr: "strategy is required"},
+		{name: "no name", strategy: `,"strategy":{"kind":"ClusterBuildStrategy"}`, wantErr: "strategy.name"},
+		{name: "empty name", strategy: `,"strategy":{"name":"","kind":"ClusterBuildStrategy"}`, wantErr: "strategy.name"},
+		{name: "name of the wrong type", strategy: `,"strategy":{"name":7,"kind":"ClusterBuildStrategy"}`, wantErr: "strategy.name"},
+		{name: "no kind", strategy: `,"strategy":{"name":"kaniko"}`, wantErr: "strategy.kind"},
+		{name: "empty kind", strategy: `,"strategy":{"name":"kaniko","kind":""}`, wantErr: "strategy.kind"},
+		{name: "unknown kind", strategy: `,"strategy":{"name":"kaniko","kind":"BuildStrategy"}`, wantErr: "unsupported strategy.kind"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b := buildWithContract(t, `{"image":"foo","source":{"url":"x"}`+tt.strategy+`}`)
+			_, err := ResolveBuild(b)
+			if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
+				t.Fatalf("ResolveBuild error = %v, want it to contain %q", err, tt.wantErr)
+			}
+		})
+	}
+}
+
 func TestResolveBuild_ServiceAccount(t *testing.T) {
-	b := buildWithContract(t, `{"image":"foo","source":{"url":"x"},"serviceAccount":{"name":"sa","secret":"sa-secret"}}`)
+	b := buildWithContract(t, `{"image":"foo","source":{"url":"x"},"strategy":{"name":"kaniko","kind":"ClusterBuildStrategy"},"serviceAccount":{"name":"sa","secret":"sa-secret"}}`)
 	resolved, err := ResolveBuild(b)
 	if err != nil {
 		t.Fatalf("ResolveBuild: %v", err)
@@ -154,7 +185,7 @@ func TestResolveBuild_ServiceAccount(t *testing.T) {
 
 func TestResolveBuild_PolicyTriggersAndRetry(t *testing.T) {
 	b := buildWithContract(t, `{
-		"image":"foo","source":{"url":"x"},
+		"image":"foo","source":{"url":"x"},"strategy":{"name":"kaniko","kind":"ClusterBuildStrategy"},
 		"policy":{
 			"allowedTriggers":[{"type":"push"},{"type":"pull_request"}, "not-an-object"],
 			"retry":{"onFailure":true,"maxAttempts":3}
@@ -195,7 +226,7 @@ func TestResolveBuild_PolicyIsOptional(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			b := buildWithContract(t, `{"image":"foo","source":{"url":"x"}`+tt.policy+`}`)
+			b := buildWithContract(t, `{"image":"foo","source":{"url":"x"},"strategy":{"name":"kaniko","kind":"ClusterBuildStrategy"}`+tt.policy+`}`)
 			resolved, err := ResolveBuild(b)
 			if err != nil {
 				t.Fatalf("ResolveBuild: %v", err)
@@ -214,7 +245,7 @@ func TestResolveBuild_PolicyIsOptional(t *testing.T) {
 }
 
 func TestResolveBuild_PolicyRetryOnFailureRequiresMaxAttempts(t *testing.T) {
-	b := buildWithContract(t, `{"image":"foo","source":{"url":"x"},"policy":{"retry":{"onFailure":true,"maxAttempts":0}}}`)
+	b := buildWithContract(t, `{"image":"foo","source":{"url":"x"},"strategy":{"name":"kaniko","kind":"ClusterBuildStrategy"},"policy":{"retry":{"onFailure":true,"maxAttempts":0}}}`)
 	_, err := ResolveBuild(b)
 	if err == nil || !strings.Contains(err.Error(), "maxAttempts must be > 0") {
 		t.Fatalf("expected maxAttempts error, got %v", err)
@@ -222,7 +253,7 @@ func TestResolveBuild_PolicyRetryOnFailureRequiresMaxAttempts(t *testing.T) {
 }
 
 func TestResolveBuild_PolicyRetryOnFailureFalseAllowsZeroMaxAttempts(t *testing.T) {
-	b := buildWithContract(t, `{"image":"foo","source":{"url":"x"},"policy":{"retry":{"onFailure":false,"maxAttempts":0}}}`)
+	b := buildWithContract(t, `{"image":"foo","source":{"url":"x"},"strategy":{"name":"kaniko","kind":"ClusterBuildStrategy"},"policy":{"retry":{"onFailure":false,"maxAttempts":0}}}`)
 	resolved, err := ResolveBuild(b)
 	if err != nil {
 		t.Fatalf("ResolveBuild: %v", err)
@@ -269,6 +300,8 @@ func FuzzResolveBuild(f *testing.F) {
 	f.Add(`{"image":"foo","source":{"url":"x"},"policy":{"retry":{"onFailure":true,"maxAttempts":0}}}`)
 	f.Add(`{"image":"foo","source":{"url":"x"},"serviceAccount":{"name":"sa","secret":"sa-secret"}}`)
 	f.Add(`{"image":"foo","source":{"url":"x"},"strategy":{"kind":"BogusStrategy"}}`)
+	f.Add(`{"image":"foo","source":{"url":"x"},"strategy":{"name":"kaniko","kind":"ClusterBuildStrategy"}}`)
+	f.Add(`{"image":"foo","source":{"url":"x"},"strategy":"kaniko"}`)
 
 	f.Fuzz(func(t *testing.T, raw string) {
 		b := buildWithContract(t, raw)

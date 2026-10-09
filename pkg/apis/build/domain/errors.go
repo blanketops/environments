@@ -27,3 +27,8 @@ import "errors"
 // ErrBuildFailed signals that a build execution completed with a failure
 // outcome. Use errors.Is(err, ErrBuildFailed) to match this error.
 var ErrBuildFailed = errors.New("build failed")
+
+// ErrInvalidBuild signals that a resolved Build is missing something the
+// build cannot run without, such as its source or strategy. Resolution
+// rejects such a Build first; seeing this error means it was bypassed.
+var ErrInvalidBuild = errors.New("invalid build")

@@ -17,12 +17,13 @@ limitations under the License.
 This file owns the Mapper — the translation layer between the resolved Build
 contract and the domain BuildSpec consumed by the provider layer.
 
-The Mapper enforces the resolution contract: it panics on fields the resolver
-guarantees to be present (Source.URL, Strategy.Name) so that resolver bugs
-surface loudly rather than silently producing empty Shipwright specs.
+The Mapper is declarative: it carries over what the contract declares and
+adds nothing. Fields resolution guarantees (Source.URL, Strategy.Name,
+Strategy.StrategyKind) are checked again and reported as errors, never as a
+panic, so a caller that bypasses resolution gets a failed build rather than a
+crashed controller.
 
-Optional fields (ServiceAccount, CloneSecret) are passed through verbatim —
-the Mapper never invents defaults or modifies intent.
+Optional fields (ServiceAccount, CloneSecret) are passed through verbatim.
 */
 package application
 
@@ -44,22 +45,35 @@ func NewMapper() *Mapper {
 // MapResolvedToDomain converts a fully resolved Build into a domain BuildSpec
 // for consumption by the provider layer.
 //
-// Panics on resolver invariant violations (empty SourceURL or StrategyName) —
-// these indicate a resolver bug, not a user error, and must not be silently
-// swallowed. All other fields are mapped verbatim.
+// It returns an error wrapping domain.ErrInvalidBuild when the resolved Build
+// is missing something resolution should have required. All other fields are
+// mapped verbatim.
 //
-// StrategyKind is hardcoded to "ClusterBuildStrategy" — BlanketOps platform
-// strategies are always cluster-scoped. Namespace-scoped strategies are not
-// currently supported.
-func (Mapper) MapResolvedToDomain(rb *bldResolution.ResolvedBuild) domain.BuildSpec {
+// StrategyKind is translated from the contract's spelling to the Shipwright
+// kind the providers write: a namespaced strategy is a Shipwright
+// "BuildStrategy".
+func (Mapper) MapResolvedToDomain(rb *bldResolution.ResolvedBuild) (domain.BuildSpec, error) {
+	if rb == nil || rb.Build == nil || rb.Spec == nil {
+		return domain.BuildSpec{}, fmt.Errorf("%w: no resolved build", domain.ErrInvalidBuild)
+	}
 	spec := rb.Spec
 
-	// Resolver invariants — panic loudly on violation.
 	if spec.Source.URL == "" {
-		panic(fmt.Sprintf("resolved build %q has empty Source.URL (resolver bug)", rb.Build.Name))
+		return domain.BuildSpec{}, fmt.Errorf("%w: build %q has no source url", domain.ErrInvalidBuild, rb.Build.Name)
 	}
 	if spec.Strategy.Name == "" {
-		panic(fmt.Sprintf("resolved build %q has empty Strategy.Name (resolver bug)", rb.Build.Name))
+		return domain.BuildSpec{}, fmt.Errorf("%w: build %q has no strategy name", domain.ErrInvalidBuild, rb.Build.Name)
+	}
+
+	var strategyKind string
+	switch spec.Strategy.StrategyKind {
+	case bldResolution.StrategyKindCluster:
+		strategyKind = "ClusterBuildStrategy"
+	case bldResolution.StrategyKindNamespaced:
+		strategyKind = "BuildStrategy"
+	default:
+		return domain.BuildSpec{}, fmt.Errorf("%w: build %q has unsupported strategy kind %q",
+			domain.ErrInvalidBuild, rb.Build.Name, spec.Strategy.StrategyKind)
 	}
 
 	// ServiceAccount is optional — zero values are valid and mean Shipwright
@@ -77,11 +91,11 @@ func (Mapper) MapResolvedToDomain(rb *bldResolution.ResolvedBuild) domain.BuildS
 		CloneSecret: spec.Source.CloneSecret,
 
 		StrategyName: spec.Strategy.Name,
-		StrategyKind: "ClusterBuildStrategy",
+		StrategyKind: strategyKind,
 
 		Image: spec.Image,
 
 		ServiceAccountName:   saName,
 		ServiceAccountSecret: saSecret,
-	}
+	}, nil
 }
