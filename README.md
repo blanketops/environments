@@ -39,15 +39,15 @@ Instead of ad-hoc pipelines and implicit state, BlanketOps Environments models d
 
 | Primitive | Responsibility | Reference |
 |-----------|---------------|-----------|
-| Environment | Root of the delivery chain; ClusterSecretStore authority | [docs](https://blanketops-environments.netlify.app/docs/Concepts/environment) |
-| Build | Image build lifecycle; BuildRun orchestration | [docs](https://blanketops-environments.netlify.app/docs/Concepts/build) |
-| Deployment | Workload rollout; ServiceUnit lifecycle | [docs](https://blanketops-environments.netlify.app/docs/Concepts/deployment) |
-| Package | Artifact promotion and supply chain attestation | [docs](https://blanketops-environments.netlify.app/docs/Concepts/build) |
-| GitRepository | Source binding; commit SHA resolution | [docs](https://blanketops-environments.netlify.app/docs/Concepts/gitrepository) |
-| GitHubEvent | Webhook-driven trigger pipeline | [docs](https://blanketops-environments.netlify.app/docs/Concepts/githubevent) |
-| ServiceUnit | Single workload declaration (image, port, size) | [docs](https://blanketops-environments.netlify.app/docs/Concepts/serviceunit) |
-| Route | Workload-to-host binding; runtime materialisation | [docs](https://blanketops-environments.netlify.app/docs/Concepts/route) |
-| Domain | TLS chain ownership; cert-manager + Knative bridge | [docs](https://blanketops-environments.netlify.app/docs/Concepts/domain) |
+| Environment | Root of the delivery chain; ClusterSecretStore authority | [docs](https://blanketops-environments.netlify.app/docs/concepts/environment/) |
+| Build | Image build lifecycle; BuildRun orchestration | [docs](https://blanketops-environments.netlify.app/docs/concepts/build/) |
+| Deployment | Workload rollout; ServiceUnit lifecycle | [docs](https://blanketops-environments.netlify.app/docs/concepts/deployment/) |
+| Package | Artifact promotion and supply chain attestation | [docs](https://blanketops-environments.netlify.app/docs/concepts/package/) |
+| GitRepository | Source binding; commit SHA resolution | [docs](https://blanketops-environments.netlify.app/docs/concepts/gitrepository/) |
+| GitHubEvent | Webhook-driven trigger pipeline | [docs](https://blanketops-environments.netlify.app/docs/concepts/githubevent/) |
+| ServiceUnit | Single workload declaration (image, port, size) | [docs](https://blanketops-environments.netlify.app/docs/concepts/serviceunit/) |
+| Route | Workload-to-host binding; runtime materialisation | [docs](https://blanketops-environments.netlify.app/docs/concepts/route/) |
+| Domain | TLS chain ownership; cert-manager + Knative bridge | [docs](https://blanketops-environments.netlify.app/docs/concepts/domain/) |
 
 ---
 
@@ -89,13 +89,13 @@ This ensures:
 
 The full BlanketOps Environments documentation is available at:
 
-[blanketopsenvironments.netlify.app](https://blanketops-environments.netlify.app)
+[blanketops-environments.netlify.app](https://blanketops-environments.netlify.app)
 
 | Reference | Link |
 |-----------|------|
-| CRD Definitions (Build API) | [docs](https://blanketops-environments.netlify.app/docs/Api/Environments/build) |
-| API Overview & State Transitions | [docs](https://blanketops-environments.netlify.app/docs/Api/overview) |
-| Delivery Lifecycle (State Machine Model) | [docs](https://blanketops-environments.netlify.app/docs/Model/state-machine) |
+| CRD Definitions (Build API) | [docs](https://blanketops-environments.netlify.app/docs/api/environments/build/) |
+| API Overview & State Transitions | [docs](https://blanketops-environments.netlify.app/docs/api/overview/) |
+| Delivery Lifecycle (State Machine Model) | [docs](https://blanketops-environments.netlify.app/docs/model/state-machine/) |
 
 ---
 
