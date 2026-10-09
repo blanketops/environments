@@ -9,7 +9,7 @@ decisions are made is described in [GOVERNANCE.md](GOVERNANCE.md).
 ## Where things live
 
 BlanketOps Environments spans several repositories; the list is in
-[GOVERNANCE.md](GOVERNANCE.md#scope). Open issues and pull requests in the
+[CODEBASES.md](CODEBASES.md). Open issues and pull requests in the
 repository whose code you want to change. If you are not sure which one,
 open an issue here.
 
@@ -20,7 +20,7 @@ Open an issue using one of the templates — **Bug**, **Feature** or
 and the smallest set of commands or Custom Resources that reproduces it.
 
 Do **not** report security vulnerabilities in a public issue. Follow
-[SECURITY.md](.github/SECURITY.md) instead.
+[SECURITY.md](SECURITY.md) instead.
 
 ## Proposing a larger change
 
