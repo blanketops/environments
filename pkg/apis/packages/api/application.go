@@ -110,18 +110,16 @@ func (p *ApplicationProvider) Execute(
 
 	// ------------------------------------------------------------
 	// 4. Build domain result
+	//
+	// The result says what the App reported at this moment. It is usually
+	// still pending right after the apply; the outcome that follows is
+	// recorded by whoever observes the App, reading it the same way.
 	// ------------------------------------------------------------
-	return &domain.PackageResult{
-		Success: false, // never final here
-		Phase:   packagePhaseFromApplicationPhase(state.Phase),
-		Message: state.Message,
-		Kapp: domain.KappResult{
-			Name:      state.Name,
-			Namespace: state.Namespace,
-		},
-		StartedAt:  start,
-		FinishedAt: time.Now(),
-	}, nil
+	result := PackageResultFromApplicationState(state)
+	result.StartedAt = start
+	result.FinishedAt = time.Now()
+
+	return result, nil
 }
 
 // ApplyApplication server-side applies the App with the blanketops-packages
@@ -277,25 +275,6 @@ func ApplicationStateFromApp(app *kappctrlv1alpha1.App) *domain.ApplicationState
 	}
 
 	return state
-}
-
-func packagePhaseFromApplicationPhase(
-	phase domain.ApplicationPhase,
-) domain.PackagePhase {
-
-	switch phase {
-	case domain.ApplicationPhaseReady:
-		return domain.PackagePhaseSucceeded
-
-	case domain.ApplicationPhaseFailed:
-		return domain.PackagePhaseFailed
-
-	case domain.ApplicationPhasePending:
-		return domain.PackagePhasePending
-
-	default:
-		return domain.PackagePhaseUnknown
-	}
 }
 
 // failedResult builds a failed PackageResult stamped with start and err's message.

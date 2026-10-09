@@ -186,9 +186,8 @@ func TestTeardown_NothingToRemove(t *testing.T) {
 }
 
 // TestExecute_ReportsTheAppPhase covers the phase reported at each stage of
-// the App's life. The application provider never reports success itself: it
-// only requests execution, and the outcome is recorded by whoever observes
-// the App. The package provider reports it directly.
+// the App's life. Both providers report what the App says, read the same way
+// an observer of the App reads it.
 func TestExecute_ReportsTheAppPhase(t *testing.T) {
 	scheme := newPackageScheme(t)
 	stages := []struct {
@@ -232,7 +231,7 @@ func TestExecute_ReportsTheAppPhase(t *testing.T) {
 				if res.Phase != stage.wantPhase || res.Message != stage.message {
 					t.Errorf("phase = %s message = %q, want %s %q", res.Phase, res.Message, stage.wantPhase, stage.message)
 				}
-				wantSuccess := name == "package" && stage.wantPhase == domain.PackagePhaseSucceeded
+				wantSuccess := stage.wantPhase == domain.PackagePhaseSucceeded
 				if res.Success != wantSuccess {
 					t.Errorf("success = %v, want %v", res.Success, wantSuccess)
 				}
