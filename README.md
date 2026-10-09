@@ -39,15 +39,15 @@ Instead of ad-hoc pipelines and implicit state, BlanketOps Environments models d
 
 | Primitive | Responsibility | Reference |
 |-----------|---------------|-----------|
-| Environment | Root of the delivery chain; ClusterSecretStore authority | [docs](https://blanketops-environments.netlify.app/docs/Concepts/environment) |
-| Build | Image build lifecycle; BuildRun orchestration | [docs](https://blanketops-environments.netlify.app/docs/Concepts/build) |
-| Deployment | Workload rollout; ServiceUnit lifecycle | [docs](https://blanketops-environments.netlify.app/docs/Concepts/deployment) |
-| Package | Artifact promotion and supply chain attestation | [docs](https://blanketops-environments.netlify.app/docs/Concepts/build) |
-| GitRepository | Source binding; commit SHA resolution | [docs](https://blanketops-environments.netlify.app/docs/Concepts/gitrepository) |
-| GitHubEvent | Webhook-driven trigger pipeline | [docs](https://blanketops-environments.netlify.app/docs/Concepts/githubevent) |
-| ServiceUnit | Single workload declaration (image, port, size) | [docs](https://blanketops-environments.netlify.app/docs/Concepts/serviceunit) |
-| Route | Workload-to-host binding; runtime materialisation | [docs](https://blanketops-environments.netlify.app/docs/Concepts/route) |
-| Domain | TLS chain ownership; cert-manager + Knative bridge | [docs](https://blanketops-environments.netlify.app/docs/Concepts/domain) |
+| Environment | Root of the delivery chain; ClusterSecretStore authority | [docs](https://blanketops-environments.netlify.app/docs/concepts/environment/) |
+| Build | Image build lifecycle; BuildRun orchestration | [docs](https://blanketops-environments.netlify.app/docs/concepts/build/) |
+| Deployment | Workload rollout; ServiceUnit lifecycle | [docs](https://blanketops-environments.netlify.app/docs/concepts/deployment/) |
+| Package | Artifact promotion and supply chain attestation | [docs](https://blanketops-environments.netlify.app/docs/concepts/package/) |
+| GitRepository | Source binding; commit SHA resolution | [docs](https://blanketops-environments.netlify.app/docs/concepts/gitrepository/) |
+| GitHubEvent | Webhook-driven trigger pipeline | [docs](https://blanketops-environments.netlify.app/docs/concepts/githubevent/) |
+| ServiceUnit | Single workload declaration (image, port, size) | [docs](https://blanketops-environments.netlify.app/docs/concepts/serviceunit/) |
+| Route | Workload-to-host binding; runtime materialisation | [docs](https://blanketops-environments.netlify.app/docs/concepts/route/) |
+| Domain | TLS chain ownership; cert-manager + Knative bridge | [docs](https://blanketops-environments.netlify.app/docs/concepts/domain/) |
 
 ---
 
@@ -89,13 +89,13 @@ This ensures:
 
 The full BlanketOps Environments documentation is available at:
 
-[blanketopsenvironments.netlify.app](https://blanketops-environments.netlify.app)
+[blanketops-environments.netlify.app](https://blanketops-environments.netlify.app)
 
 | Reference | Link |
 |-----------|------|
-| CRD Definitions (Build API) | [docs](https://blanketops-environments.netlify.app/docs/Api/Environments/build) |
-| API Overview & State Transitions | [docs](https://blanketops-environments.netlify.app/docs/Api/overview) |
-| Delivery Lifecycle (State Machine Model) | [docs](https://blanketops-environments.netlify.app/docs/Model/state-machine) |
+| CRD Definitions (Build API) | [docs](https://blanketops-environments.netlify.app/docs/api/environments/build/) |
+| API Overview & State Transitions | [docs](https://blanketops-environments.netlify.app/docs/api/overview/) |
+| Delivery Lifecycle (State Machine Model) | [docs](https://blanketops-environments.netlify.app/docs/model/state-machine/) |
 
 ---
 
@@ -190,26 +190,6 @@ If you are looking for the controller runtime, see the [BlanketOps Environments 
 
 ---
 
-## Repositories
-
-BlanketOps Environments is developed across these repositories. This one holds the resolution engine; the others build on it or feed it.
-
-| Repository | Purpose |
-|---|---|
-| [environments](https://github.com/blanketops/environments) | Resolution engine — turns Custom Resources into execution plans (this repository) |
-| [environments-api](https://github.com/blanketops/environments-api) | Kubernetes API types and CRD definitions |
-| [environments-contract](https://github.com/blanketops/environments-contract) | Canonical contracts shared by every component |
-| [environments-controller](https://github.com/blanketops/environments-controller) | Kubernetes controller that runs the reconciliation loops |
-| [environments-cli](https://github.com/blanketops/environments-cli) | Command-line client |
-| [environments-install](https://github.com/blanketops/environments-install) | Declarative installation (CRDs and controller manifests) |
-| [environments-tests](https://github.com/blanketops/environments-tests) | Conformance test suite for the API surface |
-| [environments-docs](https://github.com/blanketops/environments-docs) | Documentation website |
-| [secure-software-supplychain](https://github.com/blanketops/secure-software-supplychain) | Supply Chain plugin (Tekton, Kaniko, Trivy, Cosign, Grafeas) |
-
-[GOVERNANCE.md](GOVERNANCE.md#scope) applies to all of them, and [DEVELOPING.md](docs/DEVELOPING.md) describes how they depend on one another.
-
----
-
 ## Community
 
 BlanketOps Environments is developed in the open, and contributions are welcome.
@@ -219,7 +199,8 @@ BlanketOps Environments is developed in the open, and contributions are welcome.
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to report issues, set up a development environment and open pull requests |
 | [DEVELOPING.md](docs/DEVELOPING.md) | How the repositories relate, the patterns the code follows, and how to add or change a resource type |
 | [CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md) | The CNCF Code of Conduct, which applies in all project spaces |
-| [GOVERNANCE.md](GOVERNANCE.md) | How decisions are made, the repositories in scope, and how the project relates to BlanketOps' commercial products |
+| [CODEBASES.md](CODEBASES.md) | The repositories that make up the project and what each is for |
+| [GOVERNANCE.md](GOVERNANCE.md) | How decisions are made and how the project relates to BlanketOps' commercial products |
 | [MAINTAINERS.md](MAINTAINERS.md) | Who maintains the project |
 | [ROADMAP.md](ROADMAP.md) | What has shipped and what is planned |
 | [ADOPTERS.md](ADOPTERS.md) | Who uses it — add your organization |

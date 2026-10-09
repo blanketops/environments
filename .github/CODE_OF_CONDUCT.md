@@ -5,7 +5,7 @@ BlanketOps Environments follows the
 
 It applies to everyone taking part in the project, in every project space:
 the repositories under [github.com/blanketops](https://github.com/blanketops)
-that make up BlanketOps Environments (listed in [GOVERNANCE.md](../GOVERNANCE.md#scope)),
+that make up BlanketOps Environments (listed in [CODEBASES.md](../CODEBASES.md)),
 their issues, pull requests and discussions, and any chat, meeting or event
 held for the project.
 
