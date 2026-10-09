@@ -31,6 +31,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	environmentv1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
 	"github.com/blanketops/environments/pkg/apis/packages/domain"
 	"github.com/blanketops/environments/pkg/intent/package"
 )
@@ -151,8 +152,10 @@ func BuildKappApplication(
 			Kind:       "App",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      intent.ID.Name,
-			Namespace: intent.ID.Namespace,
+			Name:            intent.ID.Name,
+			Namespace:       intent.ID.Namespace,
+			Labels:          intent.Labels,
+			OwnerReferences: ownerReferences(intent),
 		},
 		Spec: kappctrlv1alpha1.AppSpec{
 			// Controller-driven reconciliation
@@ -287,25 +290,44 @@ func failedResult(start time.Time, err error) *domain.PackageResult {
 	}
 }
 
-// DeleteApplication deletes the kapp App this provider created for the
-// given package intent. Mandatory, not optional — BuildKappApplication
-// sets no ownerReference on the App it constructs, so Kubernetes GC will
-// not reclaim it when the parent Package CR is deleted.
-//
-// Idempotent — a missing App is not an error.
-func DeleteApplication(
-	ctx context.Context,
-	c client.Client,
-	intent *intent.PackageIntent,
-) error {
+// ownerReferences makes the Package CR the controlling owner of an object
+// created for it. Returns nil when the intent carries no owner UID.
+func ownerReferences(intent *intent.PackageIntent) []metav1.OwnerReference {
+	if intent.OwnerUID == "" {
+		return nil
+	}
+	return []metav1.OwnerReference{{
+		APIVersion:         environmentv1alpha1.GroupVersion.String(),
+		Kind:               "Package",
+		Name:               intent.ID.Name,
+		UID:                intent.OwnerUID,
+		Controller:         ptr.To(true),
+		BlockOwnerDeletion: ptr.To(true),
+	}}
+}
+
+// Teardown deletes the kapp App created for the Package. kapp-controller
+// then removes the resources the App deployed. Idempotent — a missing App is
+// not an error.
+func (p *ApplicationProvider) Teardown(ctx context.Context, id domain.PackageID) error {
+	if err := DeleteApplication(ctx, p.Client, id); err != nil {
+		return err
+	}
+	p.Log.Info("provider.teardown: complete", "package", id.Name, "namespace", id.Namespace)
+	return nil
+}
+
+// DeleteApplication deletes the kapp App named after the Package. A missing
+// App is not an error.
+func DeleteApplication(ctx context.Context, c client.Client, id domain.PackageID) error {
 	app := &kappctrlv1alpha1.App{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      intent.ID.Name,
-			Namespace: intent.ID.Namespace,
+			Name:      id.Name,
+			Namespace: id.Namespace,
 		},
 	}
 	if err := c.Delete(ctx, app); err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("delete kapp app %s/%s: %w", intent.ID.Namespace, intent.ID.Name, err)
+		return fmt.Errorf("delete kapp app %s/%s: %w", id.Namespace, id.Name, err)
 	}
 	return nil
 }

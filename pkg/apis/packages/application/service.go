@@ -18,6 +18,7 @@ package application
 import (
 	"context"
 
+	"github.com/blanketops/environments/pkg/apis/packages/domain"
 	pkgintent "github.com/blanketops/environments/pkg/intent/package"
 	pkgResolution "github.com/blanketops/environments/resolution/packages/resolve"
 )
@@ -69,4 +70,11 @@ func (s *PackageService) Reconcile(
 		result,
 		err,
 	)
+}
+
+// Teardown reverses Reconcile: it removes what the provider created for the
+// Package. It needs only the Package's identity, so a Package whose contract
+// does not resolve can still be deleted.
+func (s *PackageService) Teardown(ctx context.Context, id domain.PackageID) error {
+	return s.backend.ForIntent(nil).Teardown(ctx, id)
 }

@@ -29,6 +29,8 @@ immutable plan" shape used by pkg/intent/deployment.IntentBuilder.
 package intent
 
 import (
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/blanketops/environments/pkg/apis/packages/domain"
 )
 
@@ -36,6 +38,14 @@ import (
 type PackageIntent struct {
 	// Stable identity
 	ID domain.PackageID
+
+	// OwnerUID is the UID of the Package CR. Objects created for the
+	// Package are owned by it, so they are garbage-collected with it.
+	OwnerUID types.UID
+
+	// Labels are the environments.blanketops.dev/* labels of the Package
+	// CR, carried onto every object created for it.
+	Labels map[string]string
 
 	// Source of manifests
 	Source domain.PackageSource

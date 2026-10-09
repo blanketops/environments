@@ -16,12 +16,14 @@ limitations under the License.
 package application
 
 import (
+	"context"
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	environmentv1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
 	"github.com/blanketops/environments/pkg/apis/packages/domain"
+	pkgintent "github.com/blanketops/environments/pkg/intent/package"
 	pkgResolution "github.com/blanketops/environments/resolution/packages/resolve"
 )
 
@@ -45,5 +47,33 @@ func TestMapResolvedToDomain_NilStateRepository_DefaultsToPlainYAML(t *testing.T
 	}
 	if got.StateRepo != (domain.StateRepository{}) {
 		t.Fatalf("expected a zero-value StateRepo, got %+v", got.StateRepo)
+	}
+}
+
+// teardownRecorder is a Provider that records the identities it was asked to
+// tear down.
+type teardownRecorder struct {
+	tornDown []domain.PackageID
+}
+
+func (p *teardownRecorder) Execute(context.Context, *pkgintent.PackageIntent) (*domain.PackageResult, error) {
+	return &domain.PackageResult{}, nil
+}
+
+func (p *teardownRecorder) Teardown(_ context.Context, id domain.PackageID) error {
+	p.tornDown = append(p.tornDown, id)
+	return nil
+}
+
+func TestPackageService_TeardownReachesTheProvider(t *testing.T) {
+	provider := &teardownRecorder{}
+	svc := NewPackageService(NewMapper(), NewBackendSelector(provider), nil)
+
+	id := domain.PackageID{Namespace: "default", Name: "app-package"}
+	if err := svc.Teardown(context.Background(), id); err != nil {
+		t.Fatalf("Teardown: %v", err)
+	}
+	if len(provider.tornDown) != 1 || provider.tornDown[0] != id {
+		t.Errorf("provider was asked to tear down %v, want [%v]", provider.tornDown, id)
 	}
 }
