@@ -1,7 +1,7 @@
 # Security Policy
 
 This policy covers every repository of BlanketOps Environments, listed in
-[GOVERNANCE.md](../GOVERNANCE.md#scope).
+[GOVERNANCE.md](GOVERNANCE.md#scope).
 
 ## Supported Versions
 

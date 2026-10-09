@@ -223,7 +223,7 @@ BlanketOps Environments is developed in the open, and contributions are welcome.
 | [MAINTAINERS.md](MAINTAINERS.md) | Who maintains the project |
 | [ROADMAP.md](ROADMAP.md) | What has shipped and what is planned |
 | [ADOPTERS.md](ADOPTERS.md) | Who uses it — add your organization |
-| [SECURITY.md](.github/SECURITY.md) | Supported versions and how to report a vulnerability privately |
+| [SECURITY.md](SECURITY.md) | Supported versions and how to report a vulnerability privately |
 
 ---
 

@@ -28,7 +28,7 @@ each other.
 | `cache/` | Generation-scoped field-level object cache and typed helpers |
 | `hack/` | `vendor-snapshot.sh` (CI vendor snapshots) and `build-push.sh` |
 | `docs/` | `DEVELOPING.md`, `architecture/` (type system, contract boundary, engine design), and `README.md`, which says where each document lives |
-| `.github/` | Workflows, templates, `SECURITY.md`, `CODE_OF_CONDUCT.md` |
+| `.github/` | Workflows, templates, `CODE_OF_CONDUCT.md` |
 
 `vendor/` is gitignored; do not commit it. `docs/code/` is generated and
 committed by a workflow; do not edit it by hand.
@@ -94,7 +94,7 @@ returned error: `Reconcile` often returns the result of the status write.
 
 - Commit secrets, `.secrets`, `.vars`, `.env*`, keys or certificates.
 - Report or discuss a vulnerability in a public issue. Follow
-  [SECURITY.md](.github/SECURITY.md).
+  [SECURITY.md](SECURITY.md).
 - Edit `CHANGELOG.md` by hand, or bump versions outside the release
   workflows.
 - State facts in docs (versions, module paths, sibling repositories) without

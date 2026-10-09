@@ -20,7 +20,7 @@ Open an issue using one of the templates — **Bug**, **Feature** or
 and the smallest set of commands or Custom Resources that reproduces it.
 
 Do **not** report security vulnerabilities in a public issue. Follow
-[SECURITY.md](.github/SECURITY.md) instead.
+[SECURITY.md](SECURITY.md) instead.
 
 ## Proposing a larger change
 
