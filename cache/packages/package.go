@@ -97,20 +97,6 @@ func (p *PackageCache) GetKappDiff(ctx context.Context, nn types.NamespacedName,
 }
 
 // -----------------------------------------------------------------------------
-// Typed Helpers: Enabled
-// -----------------------------------------------------------------------------
-
-func (p *PackageCache) SetEnabled(ctx context.Context, nn types.NamespacedName, gen int64, enabled bool) error {
-	return p.SetField(ctx, nn, gen, "enabled", enabled)
-}
-
-func (p *PackageCache) GetEnabled(ctx context.Context, nn types.NamespacedName, gen int64) (bool, bool, error) {
-	var enabled bool
-	found, err := p.GetField(ctx, nn, gen, "enabled", &enabled)
-	return enabled, found, err
-}
-
-// -----------------------------------------------------------------------------
 // Typed Helpers: Checksum (derived — written by the service layer after
 // package content is fetched/verified, not by PublishResolved)
 // -----------------------------------------------------------------------------
@@ -141,7 +127,6 @@ func (p *PackageCache) PublishResolved(ctx context.Context, nn types.NamespacedN
 		}
 	}
 	record(p.SetVersion(ctx, nn, gen, r.Spec.Version))
-	record(p.SetEnabled(ctx, nn, gen, r.Spec.Enabled))
 	record(p.SetKappDiff(ctx, nn, gen, r.Spec.DiffEnabled))
 	var zeroRepo packagesResolution.ResolvedPackageRepository
 	if r.Spec.PackageRepository != zeroRepo {

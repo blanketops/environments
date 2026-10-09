@@ -16,6 +16,8 @@ limitations under the License.
 package application
 
 import (
+	"fmt"
+
 	packageapi "github.com/blanketops/environments/pkg/apis/packages/api"
 	"github.com/blanketops/environments/pkg/intent/package"
 )
@@ -38,13 +40,14 @@ func NewBackendSelector(
 
 // ForIntent always returns kapp.
 // Intent does NOT influence execution backend.
+// It returns an error when no kapp provider was configured.
 func (b *BackendSelector) ForIntent(
 	_ *intent.PackageIntent,
-) packageapi.Provider {
+) (packageapi.Provider, error) {
 
-	if b.Kapp == nil {
-		panic("kapp provider must be configured for PackageService")
+	if b == nil || b.Kapp == nil {
+		return nil, fmt.Errorf("kapp provider must be configured for PackageService")
 	}
 
-	return b.Kapp
+	return b.Kapp, nil
 }

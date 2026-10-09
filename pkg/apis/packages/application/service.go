@@ -51,10 +51,17 @@ func (s *PackageService) Reconcile(
 	intent *pkgintent.PackageIntent,
 ) error {
 
+	if resolved == nil || resolved.Package == nil || intent == nil {
+		return domain.InvalidSpecError{Msg: "nil ResolvedPackage or PackageIntent passed to PackageService"}
+	}
+
 	// ------------------------------------------------
 	// 1. Select backend (always kapp)
 	// ------------------------------------------------
-	provider := s.backend.ForIntent(intent)
+	provider, err := s.backend.ForIntent(intent)
+	if err != nil {
+		return err
+	}
 
 	// ------------------------------------------------
 	// 2. Execute package (INTENT → RESULT)
@@ -76,5 +83,9 @@ func (s *PackageService) Reconcile(
 // Package. It needs only the Package's identity, so a Package whose contract
 // does not resolve can still be deleted.
 func (s *PackageService) Teardown(ctx context.Context, id domain.PackageID) error {
-	return s.backend.ForIntent(nil).Teardown(ctx, id)
+	provider, err := s.backend.ForIntent(nil)
+	if err != nil {
+		return err
+	}
+	return provider.Teardown(ctx, id)
 }

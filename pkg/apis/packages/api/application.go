@@ -110,18 +110,16 @@ func (p *ApplicationProvider) Execute(
 
 	// ------------------------------------------------------------
 	// 4. Build domain result
+	//
+	// The result says what the App reported at this moment. It is usually
+	// still pending right after the apply; the outcome that follows is
+	// recorded by whoever observes the App, reading it the same way.
 	// ------------------------------------------------------------
-	return &domain.PackageResult{
-		Success: false, // never final here
-		Phase:   packagePhaseFromApplicationPhase(state.Phase),
-		Message: state.Message,
-		Kapp: domain.KappResult{
-			Name:      state.Name,
-			Namespace: state.Namespace,
-		},
-		StartedAt:  start,
-		FinishedAt: time.Now(),
-	}, nil
+	result := PackageResultFromApplicationState(state)
+	result.StartedAt = start
+	result.FinishedAt = time.Now()
+
+	return result, nil
 }
 
 // ApplyApplication server-side applies the App with the blanketops-packages
@@ -203,6 +201,17 @@ func (p *ApplicationProvider) ObserveApplication(
 		)
 	}
 
+	return ApplicationStateFromApp(&app), nil
+}
+
+// ApplicationStateFromApp derives an ApplicationState from what a kapp App
+// reports about itself. It is the one place the App's conditions are
+// interpreted, shared by the providers and by observers of the App.
+//
+// kapp-controller reports success as ReconcileSucceeded and failure as a
+// separate ReconcileFailed condition, with the detail in
+// status.usefulErrorMessage. An App that has reported neither is pending.
+func ApplicationStateFromApp(app *kappctrlv1alpha1.App) *domain.ApplicationState {
 	state := &domain.ApplicationState{
 		Name:      app.Name,
 		Namespace: app.Namespace,
@@ -210,23 +219,31 @@ func (p *ApplicationProvider) ObserveApplication(
 	}
 
 	// --------------------------------------------------------
-	// Phase resolution (ReconcileSucceeded is authoritative)
+	// Phase resolution (ReconcileSucceeded and ReconcileFailed)
 	// --------------------------------------------------------
 	for _, cond := range app.Status.Conditions {
-		if cond.Type != "ReconcileSucceeded" {
-			continue
-		}
+		switch cond.Type {
+		case kappctrlv1alpha1.ReconcileSucceeded:
+			switch cond.Status {
+			case corev1.ConditionTrue:
+				state.Phase = domain.ApplicationPhaseReady
 
-		switch cond.Status {
-		case corev1.ConditionTrue:
-			state.Phase = domain.ApplicationPhaseReady
+			case corev1.ConditionFalse:
+				state.Phase = domain.ApplicationPhaseFailed
+				state.Message = cond.Message
 
-		case corev1.ConditionFalse:
-			state.Phase = domain.ApplicationPhaseFailed
-			state.Message = cond.Message
+			case corev1.ConditionUnknown:
+				state.Phase = domain.ApplicationPhasePending
+			}
 
-		case corev1.ConditionUnknown:
-			state.Phase = domain.ApplicationPhasePending
+		case kappctrlv1alpha1.ReconcileFailed:
+			if cond.Status == corev1.ConditionTrue {
+				state.Phase = domain.ApplicationPhaseFailed
+				state.Message = cond.Message
+				if app.Status.UsefulErrorMessage != "" {
+					state.Message = app.Status.UsefulErrorMessage
+				}
+			}
 		}
 	}
 
@@ -257,26 +274,7 @@ func (p *ApplicationProvider) ObserveApplication(
 		}
 	}
 
-	return state, nil
-}
-
-func packagePhaseFromApplicationPhase(
-	phase domain.ApplicationPhase,
-) domain.PackagePhase {
-
-	switch phase {
-	case domain.ApplicationPhaseReady:
-		return domain.PackagePhaseSucceeded
-
-	case domain.ApplicationPhaseFailed:
-		return domain.PackagePhaseFailed
-
-	case domain.ApplicationPhasePending:
-		return domain.PackagePhasePending
-
-	default:
-		return domain.PackagePhaseUnknown
-	}
+	return state
 }
 
 // failedResult builds a failed PackageResult stamped with start and err's message.

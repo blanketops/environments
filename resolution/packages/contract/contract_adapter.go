@@ -49,7 +49,6 @@ func ToPackageContract(s *resolve.ResolvedPackageSpec) *contractv1.PackageSpec {
 	}
 
 	out := &contractv1.PackageSpec{
-		Enabled:     s.Enabled,
 		Name:        s.Name,
 		Version:     s.Version,
 		Description: s.Description,
