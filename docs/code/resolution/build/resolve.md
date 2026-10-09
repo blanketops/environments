@@ -49,7 +49,7 @@ ResolveBuild decodes and validates the raw JSON contract from the Build CR spec 
 <a name="ResolvedBuildPolicy"></a>
 ## type ResolvedBuildPolicy
 
-ResolvedBuildPolicy is the decoded trigger and retry policy for a Build.
+ResolvedBuildPolicy is the decoded trigger and retry policy for a Build. Both parts are optional: no Triggers means no event starts a build, and a nil Retry means a failed build is not retried.
 
 ```go
 type ResolvedBuildPolicy struct {
@@ -70,7 +70,9 @@ type ResolvedBuildSpec struct {
     Githubevent    string
     Strategy       ResolvedStrategy
     ServiceAccount *ResolvedServiceAccount
-    Policy         *ResolvedBuildPolicy
+    // Policy is never nil after ResolveBuild. It is empty when the contract
+    // declares no policy.
+    Policy *ResolvedBuildPolicy
 }
 ```
 
