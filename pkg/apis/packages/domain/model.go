@@ -84,6 +84,20 @@ type PackageID struct {
 	Name      string
 }
 
+// ServiceAccountName is the name of the ServiceAccount the Package's kapp
+// App deploys as. It is the one place the name is decided: whoever creates
+// the ServiceAccount and whoever references it both read it from here.
+func (id PackageID) ServiceAccountName() string {
+	return id.Name + "-package"
+}
+
+// DeployerBindingName is the name of the ClusterRoleBinding that grants the
+// Package's ServiceAccount what it may deploy. A ClusterRoleBinding is
+// cluster-scoped, so the name carries the namespace to stay unique.
+func (id PackageID) DeployerBindingName() string {
+	return "blanketops-package-" + id.Namespace + "-" + id.Name
+}
+
 // -----------------------------------------------------------------------------
 // Ownership
 // -----------------------------------------------------------------------------
@@ -105,6 +119,10 @@ type PackageSource struct {
 
 	// CredentialsSecret references auth material (opaque to domain).
 	CredentialsSecret string
+
+	// Path is the directory inside the repository that holds the package
+	// manifests. Empty means the repository root.
+	Path string
 }
 
 // -----------------------------------------------------------------------------
