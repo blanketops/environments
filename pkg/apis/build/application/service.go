@@ -62,7 +62,10 @@ func NewBuildService(mapper *Mapper, status *StatusWriter, backend *BackendSelec
 // any stage is forwarded to StatusWriter so the Build CR always reflects the
 // latest outcome, even on failure.
 func (s *BuildService) Reconcile(ctx context.Context, resolved *bldResolution.ResolvedBuild) error {
-	spec := s.mapper.MapResolvedToDomain(resolved)
+	spec, err := s.mapper.MapResolvedToDomain(resolved)
+	if err != nil {
+		return err
+	}
 	provider := s.backend.ForSpec(spec)
 	result, err := provider.Run(ctx, resolved, spec)
 
@@ -77,7 +80,13 @@ func (s *BuildService) Reconcile(ctx context.Context, resolved *bldResolution.Re
 // backend provider strategy would have used, and dispatches Teardown to
 // delete the owned BuildRun(s) and Build.
 func (s *BuildService) Teardown(ctx context.Context, resolved *bldResolution.ResolvedBuild) error {
-	spec := s.mapper.MapResolvedToDomain(resolved)
+	// A Build that cannot be mapped must still be removable. Every provider
+	// tears down the same Shipwright objects by name and label, so the
+	// selector's default is correct when the strategy is unknown.
+	spec, err := s.mapper.MapResolvedToDomain(resolved)
+	if err != nil {
+		spec = domain.BuildSpec{}
+	}
 	provider := s.backend.ForSpec(spec)
 	return provider.Teardown(ctx, resolved)
 }
