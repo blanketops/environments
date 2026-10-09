@@ -156,6 +156,10 @@ func BuildKappApplication(
 			OwnerReferences: ownerReferences(intent),
 		},
 		Spec: kappctrlv1alpha1.AppSpec{
+			// The identity kapp-controller deploys as. It is provisioned
+			// as a prerequisite of the Package, not here.
+			ServiceAccountName: intent.ID.ServiceAccountName(),
+
 			// Controller-driven reconciliation
 			SyncPeriod: &metav1.Duration{Duration: 0},
 
@@ -165,6 +169,7 @@ func BuildKappApplication(
 						URL:       intent.Source.RepositoryURL,
 						Ref:       intent.ResolvedRef,
 						SecretRef: fetchSecretRef(intent.Source.CredentialsSecret),
+						SubPath:   intent.Source.Path,
 					},
 				},
 			},
@@ -279,7 +284,10 @@ func ApplicationStateFromApp(app *kappctrlv1alpha1.App) *domain.ApplicationState
 			state.DeployExitCode = &code
 		}
 
-		if d.Error != "" {
+		// kapp-controller's deploy error is a pointer to the detail
+		// ("see .status.usefulErrorMessage") whenever it has one, so it
+		// is used only when there is no useful message to report.
+		if d.Error != "" && app.Status.UsefulErrorMessage == "" {
 			state.Message = d.Error
 		}
 	}

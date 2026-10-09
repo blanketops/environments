@@ -59,7 +59,8 @@ func newPackageIntent() *intent.PackageIntent {
 			"environments.blanketops.dev/name": "app",
 			"environments.blanketops.dev/type": "dev",
 		},
-		Source: domain.PackageSource{RepositoryURL: "git@github.com:example-org/packages.git"},
+		Source:      domain.PackageSource{RepositoryURL: "git@github.com:example-org/packages.git", Path: "manifests"},
+		ResolvedRef: "origin/main",
 	}
 }
 
@@ -287,7 +288,19 @@ func TestApplicationStateFromApp(t *testing.T) {
 			wantMessage: "Fetching resources: Error",
 		},
 		{
-			name: "deploy error overrides the message",
+			name: "deploy failed, with the useful message",
+			status: kappctrlv1alpha1.AppStatus{
+				GenericStatus: kappctrlv1alpha1.GenericStatus{
+					Conditions:         []kappctrlv1alpha1.Condition{cond(kappctrlv1alpha1.ReconcileFailed, corev1.ConditionTrue, "Deploying: Error (see .status.usefulErrorMessage for details)")},
+					UsefulErrorMessage: "kapp: Error: configmaps is forbidden",
+				},
+				Deploy: &kappctrlv1alpha1.AppStatusDeploy{Finished: true, ExitCode: 1, Error: "Deploying: Error (see .status.usefulErrorMessage for details)"},
+			},
+			wantPhase:   domain.ApplicationPhaseFailed,
+			wantMessage: "kapp: Error: configmaps is forbidden",
+		},
+		{
+			name: "deploy error is the message when there is no useful one",
 			status: kappctrlv1alpha1.AppStatus{
 				GenericStatus: kappctrlv1alpha1.GenericStatus{Conditions: []kappctrlv1alpha1.Condition{cond(kappctrlv1alpha1.ReconcileFailed, corev1.ConditionTrue, "Deploying: Error")}},
 				Deploy:        &kappctrlv1alpha1.AppStatusDeploy{Finished: true, ExitCode: 1, Error: "kapp: resource rejected"},
@@ -342,6 +355,9 @@ func TestBuildKappApplication_Fetch(t *testing.T) {
 			if git.URL != in.Source.RepositoryURL {
 				t.Errorf("url = %q, want %q", git.URL, in.Source.RepositoryURL)
 			}
+			if git.Ref != "origin/main" || git.SubPath != "manifests" {
+				t.Errorf("ref = %q subPath = %q, want origin/main and manifests", git.Ref, git.SubPath)
+			}
 			switch {
 			case tt.wantSecret == "" && git.SecretRef != nil:
 				t.Errorf("secretRef = %+v, want none", git.SecretRef)
@@ -349,6 +365,22 @@ func TestBuildKappApplication_Fetch(t *testing.T) {
 				t.Errorf("secretRef = %+v, want %q", git.SecretRef, tt.wantSecret)
 			}
 		})
+	}
+}
+
+// TestBuildKappApplication_ServiceAccount: kapp-controller does not deploy
+// without an identity, so the App always names the Package's ServiceAccount.
+func TestBuildKappApplication_ServiceAccount(t *testing.T) {
+	in := newPackageIntent()
+	app, err := BuildKappApplication(in)
+	if err != nil {
+		t.Fatalf("BuildKappApplication: %v", err)
+	}
+	if app.Spec.ServiceAccountName != "app-package-package" {
+		t.Errorf("serviceAccountName = %q, want app-package-package", app.Spec.ServiceAccountName)
+	}
+	if app.Spec.ServiceAccountName != in.ID.ServiceAccountName() {
+		t.Errorf("serviceAccountName = %q, want the name the domain decides, %q", app.Spec.ServiceAccountName, in.ID.ServiceAccountName())
 	}
 }
 

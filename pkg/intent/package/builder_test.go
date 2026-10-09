@@ -33,9 +33,12 @@ func newResolvedPackage(labels map[string]string) *resolve.ResolvedPackage {
 			ObjectMeta: metav1.ObjectMeta{Name: "app-package", Namespace: "default", UID: types.UID("uid-package"), Labels: labels},
 		},
 		Spec: &resolve.ResolvedPackageSpec{
-			Name:              "app",
-			Version:           "v1.2.3",
-			PackageRepository: resolve.ResolvedPackageRepository{URL: "git@github.com:example-org/packages.git", CredentialsSecret: "packages-creds"},
+			Name:    "app",
+			Version: "v1.2.3",
+			PackageRepository: resolve.ResolvedPackageRepository{
+				URL: "git@github.com:example-org/packages.git", CredentialsSecret: "packages-creds",
+				Ref: "origin/main", Path: "manifests",
+			},
 			StateRepository: &resolve.ResolvedStateRepository{
 				URL: "git@github.com:example-org/state.git", Ref: "master", CloneSecret: "state-creds", Strategy: "kustomization", Path: "./clusters/dev",
 			},
@@ -58,8 +61,12 @@ func TestBuildPackageIntent_CarriesIdentityOwnerAndLabels(t *testing.T) {
 	if len(in.Labels) != 2 || in.Labels["environments.blanketops.dev/name"] != "app" || in.Labels["environments.blanketops.dev/type"] != "dev" {
 		t.Errorf("labels = %v, want only the environments.blanketops.dev labels", in.Labels)
 	}
-	if in.Source.RepositoryURL != "git@github.com:example-org/packages.git" || in.Source.CredentialsSecret != "packages-creds" {
+	if in.Source.RepositoryURL != "git@github.com:example-org/packages.git" || in.Source.CredentialsSecret != "packages-creds" ||
+		in.Source.Path != "manifests" {
 		t.Errorf("source = %+v", in.Source)
+	}
+	if in.ResolvedRef != "origin/main" {
+		t.Errorf("ref = %q, want origin/main", in.ResolvedRef)
 	}
 	if in.StateRepo.URL != "git@github.com:example-org/state.git" || in.StateRepo.Ref != "master" || in.StateRepo.Path != "./clusters/dev" {
 		t.Errorf("state repo = %+v", in.StateRepo)
