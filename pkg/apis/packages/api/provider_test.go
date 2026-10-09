@@ -59,7 +59,8 @@ func newPackageIntent() *intent.PackageIntent {
 			"environments.blanketops.dev/name": "app",
 			"environments.blanketops.dev/type": "dev",
 		},
-		Source: domain.PackageSource{RepositoryURL: "git@github.com:example-org/packages.git"},
+		Source:      domain.PackageSource{RepositoryURL: "git@github.com:example-org/packages.git", Path: "manifests"},
+		ResolvedRef: "origin/main",
 	}
 }
 
@@ -341,6 +342,9 @@ func TestBuildKappApplication_Fetch(t *testing.T) {
 			git := app.Spec.Fetch[0].Git
 			if git.URL != in.Source.RepositoryURL {
 				t.Errorf("url = %q, want %q", git.URL, in.Source.RepositoryURL)
+			}
+			if git.Ref != "origin/main" || git.SubPath != "manifests" {
+				t.Errorf("ref = %q subPath = %q, want origin/main and manifests", git.Ref, git.SubPath)
 			}
 			switch {
 			case tt.wantSecret == "" && git.SecretRef != nil:

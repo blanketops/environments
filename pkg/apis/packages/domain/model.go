@@ -105,6 +105,10 @@ type PackageSource struct {
 
 	// CredentialsSecret references auth material (opaque to domain).
 	CredentialsSecret string
+
+	// Path is the directory inside the repository that holds the package
+	// manifests. Empty means the repository root.
+	Path string
 }
 
 // -----------------------------------------------------------------------------
