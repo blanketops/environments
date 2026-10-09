@@ -118,7 +118,7 @@ type StateRepository struct {
 	URL string
 
 	// Ref (branch, tag, or commit).
-	Ref Ref
+	Ref string
 
 	// CloneSecret used to authenticate.
 	CloneSecret string
@@ -128,19 +128,6 @@ type StateRepository struct {
 
 	// Path is the path of the kustomization file when kustomization strategy = true.
 	Path string
-}
-
-// Ref pins the state/manifests repository to a specific branch, tag, or commit.
-type Ref struct {
-
-	// Branch is the Git branch to use for the manifests repository.
-	Branch string
-
-	// Tag is the Git tag to use for the manifests repository.
-	Tag string
-
-	// Commit is the specific Git commit SHA to use for the manifests repository.
-	Commit string
 }
 
 // PackageStatus is the USER-FACING contract status.

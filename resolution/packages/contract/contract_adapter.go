@@ -71,11 +71,7 @@ func ToPackageContract(s *resolve.ResolvedPackageSpec) *contractv1.PackageSpec {
 			CloneSecret: s.StateRepository.CloneSecret,
 			Strategy:    s.StateRepository.Strategy,
 			Path:        s.StateRepository.Path,
-			// Ref: &contractv1.PackageRef{
-			// 	Branch: s.StateRepository.Ref.Branch,
-			// 	Tag:    s.StateRepository.Ref.Tag,
-			// 	Commit: s.StateRepository.Ref.Commit,
-			// },
+			Ref:         s.StateRepository.Ref,
 		}
 	}
 

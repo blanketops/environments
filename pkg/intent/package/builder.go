@@ -61,11 +61,7 @@ func BuildPackageIntent(
 		Path:        spec.StateRepository.Path,
 		Strategy:    spec.StateRepository.Strategy,
 		CloneSecret: spec.StateRepository.CloneSecret,
-		Ref: domain.Ref{
-			Branch: spec.StateRepository.Ref.Branch,
-			Tag:    spec.StateRepository.Ref.Tag,
-			Commit: spec.StateRepository.Ref.Commit,
-		},
+		Ref:         spec.StateRepository.Ref,
 	}
 
 	// ------------------------------------------------------------
