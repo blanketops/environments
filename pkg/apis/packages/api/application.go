@@ -284,7 +284,10 @@ func ApplicationStateFromApp(app *kappctrlv1alpha1.App) *domain.ApplicationState
 			state.DeployExitCode = &code
 		}
 
-		if d.Error != "" {
+		// kapp-controller's deploy error is a pointer to the detail
+		// ("see .status.usefulErrorMessage") whenever it has one, so it
+		// is used only when there is no useful message to report.
+		if d.Error != "" && app.Status.UsefulErrorMessage == "" {
 			state.Message = d.Error
 		}
 	}

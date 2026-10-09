@@ -288,7 +288,19 @@ func TestApplicationStateFromApp(t *testing.T) {
 			wantMessage: "Fetching resources: Error",
 		},
 		{
-			name: "deploy error overrides the message",
+			name: "deploy failed, with the useful message",
+			status: kappctrlv1alpha1.AppStatus{
+				GenericStatus: kappctrlv1alpha1.GenericStatus{
+					Conditions:         []kappctrlv1alpha1.Condition{cond(kappctrlv1alpha1.ReconcileFailed, corev1.ConditionTrue, "Deploying: Error (see .status.usefulErrorMessage for details)")},
+					UsefulErrorMessage: "kapp: Error: configmaps is forbidden",
+				},
+				Deploy: &kappctrlv1alpha1.AppStatusDeploy{Finished: true, ExitCode: 1, Error: "Deploying: Error (see .status.usefulErrorMessage for details)"},
+			},
+			wantPhase:   domain.ApplicationPhaseFailed,
+			wantMessage: "kapp: Error: configmaps is forbidden",
+		},
+		{
+			name: "deploy error is the message when there is no useful one",
 			status: kappctrlv1alpha1.AppStatus{
 				GenericStatus: kappctrlv1alpha1.GenericStatus{Conditions: []kappctrlv1alpha1.Condition{cond(kappctrlv1alpha1.ReconcileFailed, corev1.ConditionTrue, "Deploying: Error")}},
 				Deploy:        &kappctrlv1alpha1.AppStatusDeploy{Finished: true, ExitCode: 1, Error: "kapp: resource rejected"},
