@@ -156,6 +156,10 @@ func BuildKappApplication(
 			OwnerReferences: ownerReferences(intent),
 		},
 		Spec: kappctrlv1alpha1.AppSpec{
+			// The identity kapp-controller deploys as. It is provisioned
+			// as a prerequisite of the Package, not here.
+			ServiceAccountName: intent.ID.ServiceAccountName(),
+
 			// Controller-driven reconciliation
 			SyncPeriod: &metav1.Duration{Duration: 0},
 

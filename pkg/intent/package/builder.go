@@ -76,7 +76,7 @@ func BuildPackageIntent(
 	intent := &PackageIntent{
 		ID:          id,
 		OwnerUID:    rp.Package.UID,
-		Labels:      blanketOpsLabels(rp.Package.Labels),
+		Labels:      BlanketOpsLabels(rp.Package.Labels),
 		Source:      source,
 		StateRepo:   stateRepo,
 		DiffEnabled: spec.DiffEnabled,
@@ -91,9 +91,9 @@ func BuildPackageIntent(
 // labelPrefix marks the labels that tie an object to its Environment.
 const labelPrefix = "environments.blanketops.dev/"
 
-// blanketOpsLabels returns the environments.blanketops.dev/* labels from
+// BlanketOpsLabels returns the environments.blanketops.dev/* labels from
 // labels, or nil when there are none.
-func blanketOpsLabels(labels map[string]string) map[string]string {
+func BlanketOpsLabels(labels map[string]string) map[string]string {
 	var out map[string]string
 	for k, v := range labels {
 		if !strings.HasPrefix(k, labelPrefix) {
