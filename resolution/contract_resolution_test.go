@@ -32,7 +32,7 @@ func TestAdapter_Resolve_Build(t *testing.T) {
 	a := NewAdapter()
 	b := &environmentv1alpha1.Build{
 		Spec: environmentv1alpha1.BuildSpec{
-			Contract: runtime.RawExtension{Raw: []byte(`{"image":"foo","source":{"url":"x"}}`)},
+			Contract: runtime.RawExtension{Raw: []byte(`{"image":"foo","source":{"url":"x"},"strategy":{"name":"kaniko","kind":"ClusterBuildStrategy"}}`)},
 		},
 	}
 	if err := a.Resolve(context.Background(), b); err != nil {

@@ -21,7 +21,7 @@ than typed Kubernetes fields. ResolveBuild decodes this raw contract into a
 fully typed ResolvedBuild — the authoritative runtime representation consumed
 by all downstream domain and application logic.
 
-Resolution validates required fields, normalises strategy kind, and enforces
+Resolution validates required fields, including the strategy, and enforces
 policy invariants (e.g. maxAttempts must be > 0 when retry is enabled).
 All failures surface as errors — resolution never panics. A panic in the
 resolution layer would crash the controller process.
@@ -70,8 +70,17 @@ type ResolvedSource struct {
 	CloneSecret string
 }
 
+// Strategy kinds a Build contract may declare.
+const (
+	// StrategyKindCluster is a cluster-scoped build strategy.
+	StrategyKindCluster = "ClusterBuildStrategy"
+	// StrategyKindNamespaced is a build strategy in the Build's namespace.
+	StrategyKindNamespaced = "NamespacedBuildStrategy"
+)
+
 // ResolvedStrategy is the decoded build strategy (e.g. Buildah, Kaniko,
-// Buildpacks) selected for a Build.
+// Buildpacks) selected for a Build. Both fields are required by resolution:
+// Name is never empty and StrategyKind is one of the StrategyKind constants.
 type ResolvedStrategy struct {
 	Name         string
 	StrategyKind string
@@ -125,29 +134,6 @@ func ResolveBuild(build *environmentv1alpha1.Build) (*ResolvedBuild, error) {
 	}
 
 	// ------------------------------------------------
-	// Strategy (OPTIONAL — defaults to zero value).
-	//
-	// StrategyKind is stored as a raw string — the contract adapter converts
-	// it to *v1.BuildStrategyKind when projecting to the proto contract.
-	// Only ClusterBuildStrategy is currently supported.
-	// ------------------------------------------------
-	var strategyName string
-	var strategyKind string
-	if strat, ok := raw["strategy"].(map[string]any); ok {
-		if n, ok := strat["name"].(string); ok {
-			strategyName = n
-		}
-		if k, ok := strat["kind"].(string); ok {
-			switch k {
-			case "ClusterBuildStrategy", "NamespacedBuildStrategy":
-				strategyKind = k
-			default:
-				return nil, fmt.Errorf("unsupported strategy.kind %q", k)
-			}
-		}
-	}
-
-	// ------------------------------------------------
 	// Source (REQUIRED).
 	//
 	// cloneSecret is validated when declared — an empty secret name after
@@ -177,6 +163,34 @@ func ResolveBuild(build *environmentv1alpha1.Build) (*ResolvedBuild, error) {
 	image, err := mustString(raw, "image")
 	if err != nil {
 		return nil, fmt.Errorf("image: %w", err)
+	}
+
+	// ------------------------------------------------
+	// Strategy (REQUIRED).
+	//
+	// A Build always names the strategy that builds it, and its scope.
+	// Nothing downstream picks one on the Build's behalf. The kind is kept
+	// as the contract spells it; the mapper translates it to the Shipwright
+	// kind.
+	// ------------------------------------------------
+	stratRaw, ok := raw["strategy"].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("strategy is required")
+	}
+
+	strategyName, err := mustString(stratRaw, "name")
+	if err != nil {
+		return nil, fmt.Errorf("strategy.name: %w", err)
+	}
+
+	strategyKind, err := mustString(stratRaw, "kind")
+	if err != nil {
+		return nil, fmt.Errorf("strategy.kind: %w", err)
+	}
+	switch strategyKind {
+	case StrategyKindCluster, StrategyKindNamespaced:
+	default:
+		return nil, fmt.Errorf("unsupported strategy.kind %q", strategyKind)
 	}
 
 	githubevent := optionalString(raw, "githubevent")
