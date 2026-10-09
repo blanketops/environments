@@ -35,7 +35,7 @@ Maintainers are listed in [MAINTAINERS.md](MAINTAINERS.md). They:
 - triage issues and set priorities;
 - cut releases;
 - own the [roadmap](ROADMAP.md);
-- handle security reports ([SECURITY.md](.github/SECURITY.md)) and Code of Conduct
+- handle security reports ([SECURITY.md](SECURITY.md)) and Code of Conduct
   reports ([CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md)).
 
 Maintainers act in the interest of the project and its users, not of any
