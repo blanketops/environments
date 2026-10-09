@@ -103,9 +103,6 @@ func TestResolvePackage_MinimalValid(t *testing.T) {
 	if resolved.Spec.Name != "pkg1" || resolved.Spec.Version != "1.0.0" {
 		t.Fatalf("unexpected spec: %+v", resolved.Spec)
 	}
-	if !resolved.Spec.Enabled {
-		t.Fatal("expected Enabled to default to true")
-	}
 	if resolved.Spec.DiffEnabled {
 		t.Fatal("expected DiffEnabled to default to false")
 	}
@@ -117,14 +114,17 @@ func TestResolvePackage_MinimalValid(t *testing.T) {
 	}
 }
 
-func TestResolvePackage_EnabledExplicitFalse(t *testing.T) {
+// TestResolvePackage_NoEnabledSwitch covers a contract that still carries an
+// "enabled" key. There is no such switch: a Package that exists is
+// reconciled, and removing it is how it is stopped. The key is ignored.
+func TestResolvePackage_NoEnabledSwitch(t *testing.T) {
 	p := pkgWithContract(`{"enabled":false,"name":"pkg1","version":"1.0.0","repository":{"url":"x"}}`)
 	resolved, err := ResolvePackage(p)
 	if err != nil {
 		t.Fatalf("ResolvePackage: %v", err)
 	}
-	if resolved.Spec.Enabled {
-		t.Fatal("expected Enabled to be false")
+	if resolved.Spec.Name != "pkg1" {
+		t.Fatalf("unexpected spec: %+v", resolved.Spec)
 	}
 }
 
@@ -249,7 +249,7 @@ func TestResolvePackage_ContractKeysMatchTheProto(t *testing.T) {
 		t.Fatalf("ResolvePackage: %v", err)
 	}
 	spec := resolved.Spec
-	if !spec.Enabled || spec.Name != "for-kaniko-app" || spec.Version != "v1.2.3" || spec.Description != "manifests" || !spec.DiffEnabled {
+	if spec.Name != "for-kaniko-app" || spec.Version != "v1.2.3" || spec.Description != "manifests" || !spec.DiffEnabled {
 		t.Errorf("unexpected scalars: %+v", spec)
 	}
 	if len(spec.Maintainers) != 1 || spec.Maintainers[0].Email != "neo@example.com" {

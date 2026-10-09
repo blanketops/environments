@@ -15,7 +15,10 @@ limitations under the License.
 
 package domain
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // PackageSpec represents the domain-level truth of a Package.
 // It is independent of Kubernetes API machinery.
@@ -36,9 +39,6 @@ type PackageSpec struct {
 	// ---------------------------------------------------------------------
 	// Lifecycle & intent
 	// ---------------------------------------------------------------------
-
-	// Enabled determines whether reconciliation is active.
-	Enabled bool
 
 	// Description provides human context.
 	Description string
@@ -181,3 +181,18 @@ const (
 	StrategyKustomize ApplyStrategy = "kustomize"
 	StrategyPlainYAML ApplyStrategy = "plain"
 )
+
+// ParseApplyStrategy maps the strategy a Package contract declares on its
+// state repository to an ApplyStrategy. An empty strategy means plain
+// manifests. It is the one place the accepted spellings are listed; an
+// unknown one is an InvalidSpecError.
+func ParseApplyStrategy(strategy string) (ApplyStrategy, error) {
+	switch strategy {
+	case "kustomization", "kustomize":
+		return StrategyKustomize, nil
+	case "", "plain":
+		return StrategyPlainYAML, nil
+	default:
+		return "", InvalidSpecError{Msg: fmt.Sprintf("unsupported apply strategy %q", strategy)}
+	}
+}

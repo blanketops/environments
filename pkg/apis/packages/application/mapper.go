@@ -33,41 +33,35 @@ func NewMapper() *Mapper {
 // MapResolvedToDomain converts a fully resolved Package into a pure domain Package.
 //
 // CONTRACT:
-// - Resolver guarantees presence of mandatory fields
-// - Nil values indicate a resolver bug and MUST crash loudly
-// - Optional fields must be preserved verbatim
-// - Mapper must not invent defaults or hide intent
-func (Mapper) MapResolvedToDomain(rp *pkgResolution.ResolvedPackage) *domain.PackageSpec {
-	if rp == nil {
-		panic("nil ResolvedPackage passed to Package mapper (resolver bug)")
+//   - Resolver guarantees presence of mandatory fields
+//   - A missing one indicates a resolver bug and is returned as a
+//     domain.InvalidSpecError — never a panic, which would crash the controller
+//   - Optional fields must be preserved verbatim
+//   - Mapper must not invent defaults or hide intent
+func (Mapper) MapResolvedToDomain(rp *pkgResolution.ResolvedPackage) (*domain.PackageSpec, error) {
+	if rp == nil || rp.Package == nil || rp.Spec == nil {
+		return nil, domain.InvalidSpecError{Msg: "nil ResolvedPackage passed to Package mapper (resolver bug)"}
 	}
 
 	spec := rp.Spec
 	cr := rp.Package
-
-	if spec == nil {
-		panic(fmt.Sprintf(
-			"resolved package %q has nil Spec (resolver bug)",
-			cr.Name,
-		))
-	}
 
 	// ---------------------------------------------------------------------
 	// INVARIANTS (resolver-owned guarantees)
 	// ---------------------------------------------------------------------
 
 	if spec.Name == "" {
-		panic(fmt.Sprintf(
+		return nil, domain.InvalidSpecError{Msg: fmt.Sprintf(
 			"resolved package %q has empty Name (resolver bug)",
 			cr.Name,
-		))
+		)}
 	}
 
 	if spec.Version == "" {
-		panic(fmt.Sprintf(
+		return nil, domain.InvalidSpecError{Msg: fmt.Sprintf(
 			"resolved package %q has empty Version (resolver bug)",
 			cr.Name,
-		))
+		)}
 	}
 
 	// if spec.Repository.URL == "" {
@@ -84,15 +78,6 @@ func (Mapper) MapResolvedToDomain(rp *pkgResolution.ResolvedPackage) *domain.Pac
 	pkgID := domain.PackageID{
 		Namespace: cr.Namespace,
 		Name:      cr.Name,
-	}
-
-	// Disabled packages are valid but inert
-	if !spec.Enabled {
-		return &domain.PackageSpec{
-			ID:      pkgID,
-			Name:    spec.Name,
-			Enabled: false,
-		}
 	}
 
 	// ---------------------------------------------------------------------
@@ -127,7 +112,7 @@ func (Mapper) MapResolvedToDomain(rp *pkgResolution.ResolvedPackage) *domain.Pac
 			CloneSecret: spec.StateRepository.CloneSecret,
 			Strategy:    spec.StateRepository.Strategy,
 			Path:        spec.StateRepository.Path,
-			//Ref:         spec.StateRepository.Ref,
+			Ref:         spec.StateRepository.Ref,
 		}
 	}
 
@@ -135,18 +120,9 @@ func (Mapper) MapResolvedToDomain(rp *pkgResolution.ResolvedPackage) *domain.Pac
 	// Apply strategy (explicit mapping, no guessing)
 	// ---------------------------------------------------------------------
 
-	var applyStrategy domain.ApplyStrategy
-	switch stateRepo.Strategy {
-	case "kustomization", "kustomize":
-		applyStrategy = domain.StrategyKustomize
-	case "", "plain":
-		applyStrategy = domain.StrategyPlainYAML
-	default:
-		panic(fmt.Sprintf(
-			"resolved package %q has unsupported apply strategy %q (resolver bug)",
-			cr.Name,
-			stateRepo.Strategy,
-		))
+	applyStrategy, err := domain.ParseApplyStrategy(stateRepo.Strategy)
+	if err != nil {
+		return nil, err
 	}
 
 	// ---------------------------------------------------------------------
@@ -157,7 +133,6 @@ func (Mapper) MapResolvedToDomain(rp *pkgResolution.ResolvedPackage) *domain.Pac
 		ID:          pkgID,
 		Name:        spec.Name,
 		Version:     spec.Version,
-		Enabled:     true,
 		Description: spec.Description,
 
 		Maintainers: maintainers,
@@ -166,5 +141,5 @@ func (Mapper) MapResolvedToDomain(rp *pkgResolution.ResolvedPackage) *domain.Pac
 
 		DiffEnabled: spec.DiffEnabled,
 		Strategy:    applyStrategy,
-	}
+	}, nil
 }

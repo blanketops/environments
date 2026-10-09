@@ -53,8 +53,6 @@ type ResolvedPackage struct {
 // ResolvedPackageSpec is the decoded and validated Package spec, ready for
 // domain and application layer consumption.
 type ResolvedPackageSpec struct {
-	// Enabled controls whether the package is active. Defaults to true.
-	Enabled     bool
 	Name        string
 	Version     string
 	Description string
@@ -115,7 +113,6 @@ func ResolvePackage(pkg *environmentv1alpha1.Package) (*ResolvedPackage, error) 
 	}
 
 	spec := &ResolvedPackageSpec{
-		Enabled:     optionalBool(raw, "enabled", true),
 		DiffEnabled: optionalBool(raw, "diffEnabled", false),
 		Description: optionalString(raw, "description"),
 	}

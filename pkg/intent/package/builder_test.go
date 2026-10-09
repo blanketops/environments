@@ -16,12 +16,14 @@ limitations under the License.
 package intent
 
 import (
+	"errors"
 	"testing"
 
 	environmentv1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
+	"github.com/blanketops/environments/pkg/apis/packages/domain"
 	"github.com/blanketops/environments/resolution/packages/resolve"
 )
 
@@ -31,7 +33,6 @@ func newResolvedPackage(labels map[string]string) *resolve.ResolvedPackage {
 			ObjectMeta: metav1.ObjectMeta{Name: "app-package", Namespace: "default", UID: types.UID("uid-package"), Labels: labels},
 		},
 		Spec: &resolve.ResolvedPackageSpec{
-			Enabled:           true,
 			Name:              "app",
 			Version:           "v1.2.3",
 			PackageRepository: resolve.ResolvedPackageRepository{URL: "git@github.com:example-org/packages.git", CredentialsSecret: "packages-creds"},
@@ -82,9 +83,53 @@ func TestBuildPackageIntent_RejectsWhatItCannotPlan(t *testing.T) {
 	if _, err := BuildPackageIntent(&resolve.ResolvedPackage{}); err == nil {
 		t.Error("resolved package without a spec: want an error")
 	}
-	disabled := newResolvedPackage(nil)
-	disabled.Spec.Enabled = false
-	if _, err := BuildPackageIntent(disabled); err == nil {
-		t.Error("disabled package: want an error")
+}
+
+// TestBuildPackageIntent_WithoutStateRepository covers the optional state
+// repository: a Package that declares none still gets a plan.
+func TestBuildPackageIntent_WithoutStateRepository(t *testing.T) {
+	rp := newResolvedPackage(nil)
+	rp.Spec.StateRepository = nil
+
+	in, err := BuildPackageIntent(rp)
+	if err != nil {
+		t.Fatalf("BuildPackageIntent: %v", err)
+	}
+	if in.StateRepo != (domain.StateRepository{}) {
+		t.Errorf("state repo = %+v, want none", in.StateRepo)
+	}
+	if in.Strategy != domain.StrategyPlainYAML {
+		t.Errorf("strategy = %q, want %q", in.Strategy, domain.StrategyPlainYAML)
+	}
+}
+
+func TestBuildPackageIntent_Strategy(t *testing.T) {
+	tests := map[string]domain.ApplyStrategy{
+		"":              domain.StrategyPlainYAML,
+		"plain":         domain.StrategyPlainYAML,
+		"kustomization": domain.StrategyKustomize,
+		"kustomize":     domain.StrategyKustomize,
+	}
+	for declared, want := range tests {
+		rp := newResolvedPackage(nil)
+		rp.Spec.StateRepository.Strategy = declared
+		in, err := BuildPackageIntent(rp)
+		if err != nil {
+			t.Fatalf("BuildPackageIntent(%q): %v", declared, err)
+		}
+		if in.Strategy != want {
+			t.Errorf("strategy %q -> %q, want %q", declared, in.Strategy, want)
+		}
+	}
+}
+
+func TestBuildPackageIntent_UnknownStrategy(t *testing.T) {
+	rp := newResolvedPackage(nil)
+	rp.Spec.StateRepository.Strategy = "helm"
+
+	_, err := BuildPackageIntent(rp)
+	var invalid domain.InvalidSpecError
+	if !errors.As(err, &invalid) {
+		t.Fatalf("BuildPackageIntent error = %v, want an InvalidSpecError", err)
 	}
 }

@@ -21,6 +21,7 @@ import (
 
 	kappctrlv1alpha1 "carvel.dev/kapp-controller/pkg/apis/kappctrl/v1alpha1"
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -181,5 +182,61 @@ func TestTeardown_NothingToRemove(t *testing.T) {
 				t.Errorf("Teardown: %v", err)
 			}
 		})
+	}
+}
+
+// TestExecute_ReportsTheAppPhase covers the phase reported at each stage of
+// the App's life. The application provider never reports success itself: it
+// only requests execution, and the outcome is recorded by whoever observes
+// the App. The package provider reports it directly.
+func TestExecute_ReportsTheAppPhase(t *testing.T) {
+	scheme := newPackageScheme(t)
+	stages := []struct {
+		name      string
+		status    corev1.ConditionStatus
+		message   string
+		wantPhase domain.PackagePhase
+	}{
+		{name: "not reported yet", wantPhase: domain.PackagePhasePending},
+		{name: "reconcile failed", status: corev1.ConditionFalse, message: "fetch failed", wantPhase: domain.PackagePhaseFailed},
+		{name: "reconcile succeeded", status: corev1.ConditionTrue, wantPhase: domain.PackagePhaseSucceeded},
+	}
+
+	for name := range packageProviders(nil, scheme) {
+		for _, stage := range stages {
+			t.Run(name+"/"+stage.name, func(t *testing.T) {
+				c := fake.NewClientBuilder().WithScheme(scheme).WithStatusSubresource(&kappctrlv1alpha1.App{}).Build()
+				p := packageProviders(c, scheme)[name]
+				in := newPackageIntent()
+				if _, err := p.Execute(context.Background(), in); err != nil {
+					t.Fatalf("first Execute: %v", err)
+				}
+
+				if stage.status != "" {
+					app, err := getApp(t, c, in.ID)
+					if err != nil {
+						t.Fatalf("get app: %v", err)
+					}
+					app.Status.Conditions = []kappctrlv1alpha1.Condition{{
+						Type: kappctrlv1alpha1.ReconcileSucceeded, Status: stage.status, Message: stage.message,
+					}}
+					if err := c.Status().Update(context.Background(), app); err != nil {
+						t.Fatalf("update app status: %v", err)
+					}
+				}
+
+				res, err := p.Execute(context.Background(), in)
+				if err != nil {
+					t.Fatalf("Execute: %v", err)
+				}
+				if res.Phase != stage.wantPhase || res.Message != stage.message {
+					t.Errorf("phase = %s message = %q, want %s %q", res.Phase, res.Message, stage.wantPhase, stage.message)
+				}
+				wantSuccess := name == "package" && stage.wantPhase == domain.PackagePhaseSucceeded
+				if res.Success != wantSuccess {
+					t.Errorf("success = %v, want %v", res.Success, wantSuccess)
+				}
+			})
+		}
 	}
 }
