@@ -184,8 +184,13 @@ func (r *PackageServiceAccountReconciler) Delete(
 // packageServiceAccountName is the name of the ServiceAccount for a resolved
 // Package. The name itself is decided in one place, the domain.
 func packageServiceAccountName(pkg *packageResolution.ResolvedPackage) string {
+	return packageID(pkg).ServiceAccountName()
+}
+
+// packageID is the domain identity of a resolved Package.
+func packageID(pkg *packageResolution.ResolvedPackage) domain.PackageID {
 	return domain.PackageID{
 		Namespace: pkg.Package.Namespace,
 		Name:      pkg.Package.Name,
-	}.ServiceAccountName()
+	}
 }
