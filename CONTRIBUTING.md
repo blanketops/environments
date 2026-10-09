@@ -9,7 +9,7 @@ decisions are made is described in [GOVERNANCE.md](GOVERNANCE.md).
 ## Where things live
 
 BlanketOps Environments spans several repositories; the list is in
-[GOVERNANCE.md](GOVERNANCE.md#scope). Open issues and pull requests in the
+[CODEBASES.md](CODEBASES.md). Open issues and pull requests in the
 repository whose code you want to change. If you are not sure which one,
 open an issue here.
 

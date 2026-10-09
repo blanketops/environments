@@ -23,7 +23,7 @@ influence it, open an issue or comment on an existing one.
 
 - Resolution engine (this repository), API types, contracts, controller,
   CLI and declarative install, each in its own repository
-  ([list](GOVERNANCE.md#scope)).
+  ([list](CODEBASES.md)).
 - Route runtimes: Knative (`knative-service`, via DomainMapping) and
   Kubernetes Ingress (`kubernetes-container`, via nginx).
 - Domain TLS strategies: platform-wide DNS01 wildcard and per-domain HTTP01
