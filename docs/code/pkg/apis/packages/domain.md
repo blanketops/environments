@@ -11,6 +11,7 @@ import "github.com/blanketops/environments/pkg/apis/packages/domain"
 - [type ApplicationPhase](<#ApplicationPhase>)
 - [type ApplicationState](<#ApplicationState>)
 - [type ApplyStrategy](<#ApplyStrategy>)
+  - [func ParseApplyStrategy\(strategy string\) \(ApplyStrategy, error\)](<#ParseApplyStrategy>)
 - [type DiffRequiredError](<#DiffRequiredError>)
   - [func \(e DiffRequiredError\) Error\(\) string](<#DiffRequiredError.Error>)
   - [func \(e DiffRequiredError\) Reason\(\) string](<#DiffRequiredError.Reason>)
@@ -33,13 +34,14 @@ import "github.com/blanketops/environments/pkg/apis/packages/domain"
 - [type Maintainer](<#Maintainer>)
 - [type PackageError](<#PackageError>)
 - [type PackageID](<#PackageID>)
+  - [func \(id PackageID\) DeployerBindingName\(\) string](<#PackageID.DeployerBindingName>)
+  - [func \(id PackageID\) ServiceAccountName\(\) string](<#PackageID.ServiceAccountName>)
 - [type PackagePhase](<#PackagePhase>)
 - [type PackageResult](<#PackageResult>)
 - [type PackageSource](<#PackageSource>)
 - [type PackageSpec](<#PackageSpec>)
 - [type PackageState](<#PackageState>)
 - [type PackageStatus](<#PackageStatus>)
-- [type Ref](<#Ref>)
 - [type RepositoryError](<#RepositoryError>)
   - [func \(e RepositoryError\) Error\(\) string](<#RepositoryError.Error>)
   - [func \(e RepositoryError\) Reason\(\) string](<#RepositoryError.Reason>)
@@ -106,6 +108,15 @@ const (
     StrategyPlainYAML ApplyStrategy = "plain"
 )
 ```
+
+<a name="ParseApplyStrategy"></a>
+### func ParseApplyStrategy
+
+```go
+func ParseApplyStrategy(strategy string) (ApplyStrategy, error)
+```
+
+ParseApplyStrategy maps the strategy a Package contract declares on its state repository to an ApplyStrategy. An empty strategy means plain manifests. It is the one place the accepted spellings are listed; an unknown one is an InvalidSpecError.
 
 <a name="DiffRequiredError"></a>
 ## type DiffRequiredError
@@ -372,6 +383,24 @@ type PackageID struct {
 }
 ```
 
+<a name="PackageID.DeployerBindingName"></a>
+### func \(PackageID\) DeployerBindingName
+
+```go
+func (id PackageID) DeployerBindingName() string
+```
+
+DeployerBindingName is the name of the ClusterRoleBinding that grants the Package's ServiceAccount what it may deploy. A ClusterRoleBinding is cluster\-scoped, so the name carries the namespace to stay unique.
+
+<a name="PackageID.ServiceAccountName"></a>
+### func \(PackageID\) ServiceAccountName
+
+```go
+func (id PackageID) ServiceAccountName() string
+```
+
+ServiceAccountName is the name of the ServiceAccount the Package's kapp App deploys as. It is the one place the name is decided: whoever creates the ServiceAccount and whoever references it both read it from here.
+
 <a name="PackagePhase"></a>
 ## type PackagePhase
 
@@ -433,6 +462,10 @@ type PackageSource struct {
 
     // CredentialsSecret references auth material (opaque to domain).
     CredentialsSecret string
+
+    // Path is the directory inside the repository that holds the package
+    // manifests. Empty means the repository root.
+    Path string
 }
 ```
 
@@ -452,9 +485,6 @@ type PackageSpec struct {
 
     // Version is the declared package version.
     Version string
-
-    // Enabled determines whether reconciliation is active.
-    Enabled bool
 
     // Description provides human context.
     Description string
@@ -537,25 +567,6 @@ type PackageStatus struct {
 }
 ```
 
-<a name="Ref"></a>
-## type Ref
-
-Ref pins the state/manifests repository to a specific branch, tag, or commit.
-
-```go
-type Ref struct {
-
-    // Branch is the Git branch to use for the manifests repository.
-    Branch string
-
-    // Tag is the Git tag to use for the manifests repository.
-    Tag string
-
-    // Commit is the specific Git commit SHA to use for the manifests repository.
-    Commit string
-}
-```
-
 <a name="RepositoryError"></a>
 ## type RepositoryError
 
@@ -606,7 +617,7 @@ type StateRepository struct {
     URL string
 
     // Ref (branch, tag, or commit).
-    Ref Ref
+    Ref string
 
     // CloneSecret used to authenticate.
     CloneSecret string

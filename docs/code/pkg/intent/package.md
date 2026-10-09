@@ -12,9 +12,19 @@ BuildPackageIntent \(builder.go\) is the constructor, compiling a resolved Packa
 
 ## Index
 
+- [func BlanketOpsLabels\(labels map\[string\]string\) map\[string\]string](<#BlanketOpsLabels>)
 - [type PackageIntent](<#PackageIntent>)
   - [func BuildPackageIntent\(rp \*resolve.ResolvedPackage\) \(\*PackageIntent, error\)](<#BuildPackageIntent>)
 
+
+<a name="BlanketOpsLabels"></a>
+## func BlanketOpsLabels
+
+```go
+func BlanketOpsLabels(labels map[string]string) map[string]string
+```
+
+BlanketOpsLabels returns the environments.blanketops.dev/\* labels from labels, or nil when there are none.
 
 <a name="PackageIntent"></a>
 ## type PackageIntent
@@ -25,6 +35,14 @@ PackageIntent is the compiled, immutable execution plan.
 type PackageIntent struct {
     // Stable identity
     ID  domain.PackageID
+
+    // OwnerUID is the UID of the Package CR. Objects created for the
+    // Package are owned by it, so they are garbage-collected with it.
+    OwnerUID types.UID
+
+    // Labels are the environments.blanketops.dev/* labels of the Package
+    // CR, carried onto every object created for it.
+    Labels map[string]string
 
     // Source of manifests
     Source domain.PackageSource

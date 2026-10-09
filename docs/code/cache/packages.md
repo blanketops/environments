@@ -13,14 +13,12 @@ Package packages provides domain\-specific, field\-level caching for Package res
 - [type PackageCache](<#PackageCache>)
   - [func NewPackageCache\(c \*cache.Cache\) \*PackageCache](<#NewPackageCache>)
   - [func \(p \*PackageCache\) GetChecksum\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#PackageCache.GetChecksum>)
-  - [func \(p \*PackageCache\) GetEnabled\(ctx context.Context, nn types.NamespacedName, gen int64\) \(bool, bool, error\)](<#PackageCache.GetEnabled>)
   - [func \(p \*PackageCache\) GetKappDiff\(ctx context.Context, nn types.NamespacedName, gen int64\) \(bool, bool, error\)](<#PackageCache.GetKappDiff>)
   - [func \(p \*PackageCache\) GetPackageRepository\(ctx context.Context, nn types.NamespacedName, gen int64, into any\) \(bool, error\)](<#PackageCache.GetPackageRepository>)
   - [func \(p \*PackageCache\) GetStateRepo\(ctx context.Context, nn types.NamespacedName, gen int64, into any\) \(bool, error\)](<#PackageCache.GetStateRepo>)
   - [func \(p \*PackageCache\) GetVersion\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#PackageCache.GetVersion>)
   - [func \(p \*PackageCache\) PublishResolved\(ctx context.Context, nn types.NamespacedName, gen int64, r \*packagesResolution.ResolvedPackage\) error](<#PackageCache.PublishResolved>)
   - [func \(p \*PackageCache\) SetChecksum\(ctx context.Context, nn types.NamespacedName, gen int64, checksum string\) error](<#PackageCache.SetChecksum>)
-  - [func \(p \*PackageCache\) SetEnabled\(ctx context.Context, nn types.NamespacedName, gen int64, enabled bool\) error](<#PackageCache.SetEnabled>)
   - [func \(p \*PackageCache\) SetKappDiff\(ctx context.Context, nn types.NamespacedName, gen int64, enabled bool\) error](<#PackageCache.SetKappDiff>)
   - [func \(p \*PackageCache\) SetPackageRepository\(ctx context.Context, nn types.NamespacedName, gen int64, repo any\) error](<#PackageCache.SetPackageRepository>)
   - [func \(p \*PackageCache\) SetStateRepo\(ctx context.Context, nn types.NamespacedName, gen int64, stateRepo any\) error](<#PackageCache.SetStateRepo>)
@@ -52,15 +50,6 @@ NewPackageCache constructs a new PackageCache with the provided cache.Cache.
 
 ```go
 func (p *PackageCache) GetChecksum(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
-```
-
-
-
-<a name="PackageCache.GetEnabled"></a>
-### func \(\*PackageCache\) GetEnabled
-
-```go
-func (p *PackageCache) GetEnabled(ctx context.Context, nn types.NamespacedName, gen int64) (bool, bool, error)
 ```
 
 
@@ -115,15 +104,6 @@ PublishResolved writes the resolved package contract as a generation\-scoped, fi
 
 ```go
 func (p *PackageCache) SetChecksum(ctx context.Context, nn types.NamespacedName, gen int64, checksum string) error
-```
-
-
-
-<a name="PackageCache.SetEnabled"></a>
-### func \(\*PackageCache\) SetEnabled
-
-```go
-func (p *PackageCache) SetEnabled(ctx context.Context, nn types.NamespacedName, gen int64, enabled bool) error
 ```
 
 
