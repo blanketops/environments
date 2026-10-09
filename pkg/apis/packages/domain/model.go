@@ -84,6 +84,13 @@ type PackageID struct {
 	Name      string
 }
 
+// ServiceAccountName is the name of the ServiceAccount the Package's kapp
+// App deploys as. It is the one place the name is decided: whoever creates
+// the ServiceAccount and whoever references it both read it from here.
+func (id PackageID) ServiceAccountName() string {
+	return id.Name + "-package"
+}
+
 // -----------------------------------------------------------------------------
 // Ownership
 // -----------------------------------------------------------------------------

@@ -356,6 +356,22 @@ func TestBuildKappApplication_Fetch(t *testing.T) {
 	}
 }
 
+// TestBuildKappApplication_ServiceAccount: kapp-controller does not deploy
+// without an identity, so the App always names the Package's ServiceAccount.
+func TestBuildKappApplication_ServiceAccount(t *testing.T) {
+	in := newPackageIntent()
+	app, err := BuildKappApplication(in)
+	if err != nil {
+		t.Fatalf("BuildKappApplication: %v", err)
+	}
+	if app.Spec.ServiceAccountName != "app-package-package" {
+		t.Errorf("serviceAccountName = %q, want app-package-package", app.Spec.ServiceAccountName)
+	}
+	if app.Spec.ServiceAccountName != in.ID.ServiceAccountName() {
+		t.Errorf("serviceAccountName = %q, want the name the domain decides, %q", app.Spec.ServiceAccountName, in.ID.ServiceAccountName())
+	}
+}
+
 func TestBuildKappApplication_TemplatesWithYttAndDeploysWithKapp(t *testing.T) {
 	app, err := BuildKappApplication(newPackageIntent())
 	if err != nil {
