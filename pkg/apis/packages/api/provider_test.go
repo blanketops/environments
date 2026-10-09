@@ -312,3 +312,55 @@ func TestApplicationStateFromApp(t *testing.T) {
 		})
 	}
 }
+
+// TestBuildKappApplication_Fetch covers what the App is told about the
+// package repository. Credentials are referenced only when the contract
+// declares them.
+func TestBuildKappApplication_Fetch(t *testing.T) {
+	tests := []struct {
+		name        string
+		credentials string
+		wantSecret  string
+	}{
+		{name: "private repository", credentials: "packages-creds", wantSecret: "packages-creds"},
+		{name: "public repository"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			in := newPackageIntent()
+			in.Source.CredentialsSecret = tt.credentials
+
+			app, err := BuildKappApplication(in)
+			if err != nil {
+				t.Fatalf("BuildKappApplication: %v", err)
+			}
+			if len(app.Spec.Fetch) != 1 || app.Spec.Fetch[0].Git == nil {
+				t.Fatalf("fetch = %+v, want one git source", app.Spec.Fetch)
+			}
+			git := app.Spec.Fetch[0].Git
+			if git.URL != in.Source.RepositoryURL {
+				t.Errorf("url = %q, want %q", git.URL, in.Source.RepositoryURL)
+			}
+			switch {
+			case tt.wantSecret == "" && git.SecretRef != nil:
+				t.Errorf("secretRef = %+v, want none", git.SecretRef)
+			case tt.wantSecret != "" && (git.SecretRef == nil || git.SecretRef.Name != tt.wantSecret):
+				t.Errorf("secretRef = %+v, want %q", git.SecretRef, tt.wantSecret)
+			}
+		})
+	}
+}
+
+func TestBuildKappApplication_TemplatesWithYttAndDeploysWithKapp(t *testing.T) {
+	app, err := BuildKappApplication(newPackageIntent())
+	if err != nil {
+		t.Fatalf("BuildKappApplication: %v", err)
+	}
+	if len(app.Spec.Template) != 1 || app.Spec.Template[0].Ytt == nil {
+		t.Errorf("template = %+v, want one ytt stage", app.Spec.Template)
+	}
+	if len(app.Spec.Deploy) != 1 || app.Spec.Deploy[0].Kapp == nil {
+		t.Errorf("deploy = %+v, want one kapp stage", app.Spec.Deploy)
+	}
+}

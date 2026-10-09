@@ -162,9 +162,19 @@ func BuildKappApplication(
 			Fetch: []kappctrlv1alpha1.AppFetch{
 				{
 					Git: &kappctrlv1alpha1.AppFetchGit{
-						URL: intent.Source.RepositoryURL,
-						Ref: intent.ResolvedRef,
+						URL:       intent.Source.RepositoryURL,
+						Ref:       intent.ResolvedRef,
+						SecretRef: fetchSecretRef(intent.Source.CredentialsSecret),
 					},
+				},
+			},
+
+			// The package repository holds plain manifests. ytt passes
+			// them through and gives the repository a place to add
+			// overlays later.
+			Template: []kappctrlv1alpha1.AppTemplate{
+				{
+					Ytt: &kappctrlv1alpha1.AppTemplateYtt{},
 				},
 			},
 
@@ -286,6 +296,16 @@ func failedResult(start time.Time, err error) *domain.PackageResult {
 		StartedAt:  start,
 		FinishedAt: time.Now(),
 	}
+}
+
+// fetchSecretRef references the Secret kapp-controller authenticates the
+// fetch with. Returns nil when the contract declares no credentials, so a
+// public repository gets no reference at all.
+func fetchSecretRef(name string) *kappctrlv1alpha1.AppFetchLocalRef {
+	if name == "" {
+		return nil
+	}
+	return &kappctrlv1alpha1.AppFetchLocalRef{Name: name}
 }
 
 // ownerReferences makes the Package CR the controlling owner of an object
