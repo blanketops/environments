@@ -18,6 +18,7 @@ package query
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 
@@ -45,9 +46,17 @@ func newScheme(t *testing.T) *runtime.Scheme {
 	return scheme
 }
 
+const buildContract = `{
+	"image": "ghcr.io/example-org/app:main",
+	"strategy": {"name": "kaniko", "kind": "ClusterBuildStrategy"},
+	"source": {"url": "git@github.com:example-org/app.git"},
+	"serviceAccount": {"name": "build-bot", "secret": "registry-credentials"}
+}`
+
 func newBuild(t *testing.T, namespace, image string) *environmentsv1alpha1.Build {
 	t.Helper()
 	b := &environmentsv1alpha1.Build{ObjectMeta: metav1.ObjectMeta{Name: "app", Namespace: namespace}}
+	b.Spec.Contract.Raw = []byte(buildContract)
 	if image != "" {
 		raw, err := json.Marshal(builddomain.BuildStatus{Image: image})
 		if err != nil {
@@ -150,11 +159,51 @@ func TestInjectBuildImage(t *testing.T) {
 		if su.Spec.Image != pushedImage {
 			t.Errorf("image = %q, want %q", su.Spec.Image, pushedImage)
 		}
+		// The Build already declared how its image is pulled.
+		if su.Spec.ImagePullSecret != "registry-credentials" {
+			t.Errorf("pull secret = %q, want the one the Build declares", su.Spec.ImagePullSecret)
+		}
 	})
 
-	t.Run("follows the namespace the reference names", func(t *testing.T) {
+	t.Run("build that declares no registry secret", func(t *testing.T) {
+		b := newBuild(t, "default", pushedImage)
+		b.Spec.Contract.Raw = []byte(`{"image":"ghcr.io/example-org/app:main","strategy":{"name":"kaniko","kind":"ClusterBuildStrategy"},"source":{"url":"https://github.com/example-org/app.git"}}`)
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(b).Build()
+		su := buildUnit("")
+		if err := InjectBuildImage(ctx, c, su); err != nil {
+			t.Fatalf("InjectBuildImage: %v", err)
+		}
+		if su.Spec.Image != pushedImage || su.Spec.ImagePullSecret != "" {
+			t.Errorf("image = %q secret = %q, want the image and no secret", su.Spec.Image, su.Spec.ImagePullSecret)
+		}
+	})
+
+	t.Run("build whose contract no longer resolves", func(t *testing.T) {
+		b := newBuild(t, "default", pushedImage)
+		b.Spec.Contract.Raw = []byte(`{"image":"ghcr.io/example-org/app:main"}`)
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(b).Build()
+		if err := InjectBuildImage(ctx, c, buildUnit("")); err == nil || !strings.Contains(err.Error(), "resolve build default/app") {
+			t.Fatalf("InjectBuildImage = %v, want the build resolution error", err)
+		}
+	})
+
+	// The registry secret is referenced by name, and a workload can only use
+	// a secret in its own namespace.
+	t.Run("build in another namespace is refused", func(t *testing.T) {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(newBuild(t, "builds", pushedImage)).Build()
 		su := buildUnit("builds")
+		err := InjectBuildImage(ctx, c, su)
+		if !errors.Is(err, ErrBuildInOtherNamespace) {
+			t.Fatalf("InjectBuildImage = %v, want ErrBuildInOtherNamespace", err)
+		}
+		if su.Spec.Image != "" || su.Spec.ImagePullSecret != "" {
+			t.Errorf("image = %q secret = %q, want both empty", su.Spec.Image, su.Spec.ImagePullSecret)
+		}
+	})
+
+	t.Run("naming its own namespace is the same as naming none", func(t *testing.T) {
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(newBuild(t, "default", pushedImage)).Build()
+		su := buildUnit("default")
 		if err := InjectBuildImage(ctx, c, su); err != nil {
 			t.Fatalf("InjectBuildImage: %v", err)
 		}
@@ -170,8 +219,8 @@ func TestInjectBuildImage(t *testing.T) {
 		if err := InjectBuildImage(ctx, c, su); err != nil {
 			t.Fatalf("InjectBuildImage: %v", err)
 		}
-		if su.Spec.Image != "" {
-			t.Errorf("image = %q, want it empty", su.Spec.Image)
+		if su.Spec.Image != "" || su.Spec.ImagePullSecret != "" {
+			t.Errorf("image = %q secret = %q, want both empty", su.Spec.Image, su.Spec.ImagePullSecret)
 		}
 	})
 

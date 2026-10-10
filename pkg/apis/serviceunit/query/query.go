@@ -24,6 +24,7 @@ package query
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	environmentsv1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
@@ -32,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	builddomain "github.com/blanketops/environments/pkg/apis/build/domain"
+	buildresolution "github.com/blanketops/environments/resolution/build/resolve"
 	serviceunitresolution "github.com/blanketops/environments/resolution/serviceunit/resolve"
 )
 
@@ -66,8 +68,33 @@ func BuildImage(build *environmentsv1alpha1.Build) (string, error) {
 	return status.Image, nil
 }
 
-// InjectBuildImage sets the image of a resolved ServiceUnit of type BUILD to
-// the one its Build last pushed. Any other type is left as it is.
+// ErrBuildInOtherNamespace reports a ServiceUnit that names a Build outside
+// its own namespace. The image is pulled with the Build's registry secret,
+// and a workload can only use a secret in its own namespace.
+var ErrBuildInOtherNamespace = errors.New("build is in another namespace")
+
+// BuildPullSecret returns the name of the registry secret the Build declares
+// for its image (serviceAccount.secret). It is empty, with no error, for a
+// Build that declares none.
+func BuildPullSecret(build *environmentsv1alpha1.Build) (string, error) {
+	resolved, err := buildresolution.ResolveBuild(build)
+	if err != nil {
+		return "", fmt.Errorf("resolve build %s/%s: %w", build.Namespace, build.Name, err)
+	}
+	if resolved.Spec.ServiceAccount == nil {
+		return "", nil
+	}
+	return resolved.Spec.ServiceAccount.Secret, nil
+}
+
+// InjectBuildImage sets, on a resolved ServiceUnit of type BUILD, the image
+// its Build last pushed and the registry secret that Build declared for it.
+// Any other type is left as it is.
+//
+// The Build has already set up access to its image, so the ServiceUnit does
+// not declare credentials of its own and nothing is copied: the secret is
+// referenced by name. That is why the Build must be in the ServiceUnit's
+// namespace; one that is not is ErrBuildInOtherNamespace.
 //
 // The image stays empty, with no error, while the Build has not pushed one:
 // the ServiceUnit is then waiting for its Build, which is not a failure. A
@@ -76,6 +103,9 @@ func InjectBuildImage(ctx context.Context, c client.Reader, su *serviceunitresol
 	key, ok := BuildKey(su)
 	if !ok {
 		return nil
+	}
+	if key.Namespace != su.ServiceUnit.Namespace {
+		return fmt.Errorf("serviceunit %s/%s names build %s: %w", su.ServiceUnit.Namespace, su.ServiceUnit.Name, key, ErrBuildInOtherNamespace)
 	}
 
 	build := &environmentsv1alpha1.Build{}
@@ -88,5 +118,14 @@ func InjectBuildImage(ctx context.Context, c client.Reader, su *serviceunitresol
 		return err
 	}
 	su.Spec.Image = image
+	if image == "" {
+		return nil
+	}
+
+	secret, err := BuildPullSecret(build)
+	if err != nil {
+		return err
+	}
+	su.Spec.ImagePullSecret = secret
 	return nil
 }

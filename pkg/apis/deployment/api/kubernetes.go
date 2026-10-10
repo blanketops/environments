@@ -136,6 +136,7 @@ func (p *K8SProvider) applyDeployment(
 					},
 				},
 				Spec: corev1.PodSpec{
+					ImagePullSecrets: imagePullSecrets(su.ImagePullSecret),
 					Containers: []corev1.Container{
 						{
 							Name:  su.Name,
@@ -269,4 +270,14 @@ func (p *K8SProvider) Teardown(
 		return utilerrors.NewAggregate(errs)
 	}
 	return nil
+}
+
+// imagePullSecrets references the registry credential a ServiceUnit's image
+// is pulled with. Returns nil when there is none, so a public image gets no
+// reference at all.
+func imagePullSecrets(name string) []corev1.LocalObjectReference {
+	if name == "" {
+		return nil
+	}
+	return []corev1.LocalObjectReference{{Name: name}}
 }
