@@ -119,19 +119,21 @@ func (s *DeploymentService) Reconcile(
 	return execErr
 }
 
-// Teardown deletes whatever Reconcile applied for this Deployment. It takes
-// the same resolved inputs as Reconcile so the intent it builds — and tears
-// down — matches exactly what was applied. No status write: the CR is being
-// deleted, so there is nothing left to persist status onto once this
-// returns.
+// Teardown removes what Reconcile applied for the Deployment.
+//
+// It needs the resolved Deployment only. What was applied for each
+// ServiceUnit is named after it, and the names are in the Deployment's
+// contract, so teardown does not depend on the ServiceUnits still existing
+// or resolving. The serviceUnits argument is kept for callers written against
+// the earlier signature and is not used.
 func (s *DeploymentService) Teardown(
 	ctx context.Context,
 	resolved *deploymentResolution.ResolvedDeployment,
-	serviceUnits []serviceunitResolution.ResolvedServiceUnit,
+	_ []serviceunitResolution.ResolvedServiceUnit,
 	log logr.Logger,
 ) error {
 
-	intent, err := s.intentBuilder.Build(ctx, resolved, serviceUnits)
+	intent, err := s.intentBuilder.BuildTeardown(resolved)
 	if err != nil {
 		return err
 	}

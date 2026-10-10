@@ -68,6 +68,41 @@ func (b *IntentBuilder) Build(
 		}
 		units = append(units, *suIntent)
 	}
+
+	return newDeploymentIntent(depl, units), nil
+}
+
+// BuildTeardown constructs the DeploymentIntent needed to remove what a
+// Deployment applied. It takes the Deployment alone.
+//
+// What was applied for each ServiceUnit is named after it, and the names are
+// in the Deployment's own contract. Tearing down must not depend on the
+// ServiceUnits themselves: they may already be gone, or no longer resolve,
+// or name a Build that has no image, and none of that is a reason to leave
+// the workload running and the Deployment undeletable.
+func (b *IntentBuilder) BuildTeardown(
+	depl *deploymentResolution.ResolvedDeployment,
+) (*DeploymentIntent, error) {
+
+	if depl == nil || depl.Deployment == nil || depl.Spec == nil {
+		return nil, fmt.Errorf("nil ResolvedDeployment (resolver bug)")
+	}
+
+	units := make([]serviceunitIntent.ServiceUnitIntent, 0, len(depl.Spec.ServiceUnits))
+	for _, name := range depl.Spec.ServiceUnits {
+		units = append(units, serviceunitIntent.ServiceUnitIntent{Name: name})
+	}
+
+	return newDeploymentIntent(depl, units), nil
+}
+
+// newDeploymentIntent assembles the intent for a resolved Deployment and the
+// ServiceUnit intents it carries.
+func newDeploymentIntent(
+	depl *deploymentResolution.ResolvedDeployment,
+	units []serviceunitIntent.ServiceUnitIntent,
+) *DeploymentIntent {
+
 	var manifestsRepo *ManifestsRepo
 
 	if depl.Spec.ManifestsRepo != nil {
@@ -98,6 +133,5 @@ func (b *IntentBuilder) Build(
 		ServiceUnits: units,
 
 		GeneratedAt: time.Now(),
-	}, nil
-
+	}
 }
