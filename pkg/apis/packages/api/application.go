@@ -345,6 +345,11 @@ func (p *ApplicationProvider) Teardown(ctx context.Context, id domain.PackageID)
 
 // DeleteApplication deletes the kapp App named after the Package. A missing
 // App is not an error.
+//
+// Deleting an App is not immediate: kapp-controller first removes what the
+// App deployed, as the App's service account. While the App still exists
+// this returns domain.ErrTeardownInProgress, so the caller keeps that service
+// account until a later call finds the App gone.
 func DeleteApplication(ctx context.Context, c client.Client, id domain.PackageID) error {
 	app := &kappctrlv1alpha1.App{
 		ObjectMeta: metav1.ObjectMeta{
@@ -355,5 +360,13 @@ func DeleteApplication(ctx context.Context, c client.Client, id domain.PackageID
 	if err := c.Delete(ctx, app); err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("delete kapp app %s/%s: %w", id.Namespace, id.Name, err)
 	}
-	return nil
+
+	err := c.Get(ctx, types.NamespacedName{Namespace: id.Namespace, Name: id.Name}, app)
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("get kapp app %s/%s: %w", id.Namespace, id.Name, err)
+	}
+	return fmt.Errorf("kapp app %s/%s is still deleting: %w", id.Namespace, id.Name, domain.ErrTeardownInProgress)
 }
