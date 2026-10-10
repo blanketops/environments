@@ -1,15 +1,22 @@
 # =============================================================================
 # finalize-release.yml — Merge, Tag, and Sync a Release
 #
-# Manually triggered. Merges release/{version} into main, tags it, syncs
-# main back into develop, then deletes the release branch. Pushing the tag
-# triggers the Release workflow (changelog + GitHub Release).
+# Manually triggered. Merges release/{version} into main, regenerates the
+# code docs and the changelog there, tags the result, syncs main back into
+# develop, then deletes the release branch. Creating the tag triggers the
+# Release workflow (GitHub Release) and the release asset workflows.
 #
 # Auth:
 #   Uses the BlanketOps-Environments GitHub App instead of a personal-account
-#   PAT for merge/push/branch-delete — see ci.yml's header for the reasoning.
-#   GPG signing is unrelated and unchanged: the App token authenticates the
-#   push, GPG_PRIVATE_KEY is what makes the merge commits and tag "Verified".
+#   PAT — see ci.yml's header for the reasoning.
+#
+# Verified commits:
+#   main requires verified signatures. A commit made with `git commit` in a
+#   workflow is never verified, whatever key signs it: the CI key commits as
+#   an address no account can verify. So nothing here is committed or pushed
+#   with git. Merges go through the merges API (hack/api-merge.sh) and file
+#   changes through createCommitOnBranch (hack/api-commit.sh); GitHub makes
+#   and signs those commits itself. The tag is created through the API too.
 #
 # Docs regeneration:
 #   ci.yml's code-docs job also regenerates docs/code on every push to main,
@@ -21,23 +28,26 @@
 #   self-sufficient: docs are regenerated and committed to main
 #   synchronously, before merging back into develop, so develop is always
 #   caught up regardless of what ci.yml's code-docs job does on its own
-#   schedule. Unlike that job, this one commits with plain `git commit` —
-#   GPG signing is already configured globally by the Import GPG key step
-#   above, so no Git Data API workaround is needed here.
+#   schedule.
 #
 # Changelog generation:
 #   release.yml (triggered separately by the tag push below) used to
 #   generate CHANGELOG.md and commit it to main itself — the same async
 #   race as the docs one above, just for a different file. Generating and
-#   committing it here instead, after tagging and before merging back into
-#   develop, means develop is caught up on the changelog too, and
-#   release.yml no longer needs to touch main at all — it just reads the
-#   already-current CHANGELOG.md for its release notes.
+#   committing it here instead, before merging back into develop, means
+#   develop is caught up on the changelog too, and release.yml no longer
+#   needs to touch main at all — it just reads the already-current
+#   CHANGELOG.md for its release notes.
+#
+# Tag placement:
+#   The tag is created last on main, on the changelog commit. It used to be
+#   created on the code-docs commit, whose message carries [skip ci]; GitHub
+#   then skipped every workflow the tag should have started, and no GitHub
+#   Release or release asset was produced. The changelog is rendered for the
+#   version with `git-cliff --tag` before the tag exists.
 #
 # Secrets required:
 #   APP_ID, APP_PRIVATE_KEY — GitHub App credentials
-#   GPG_PRIVATE_KEY  — signs the merge commits and release tag
-#   GPG_PASSPHRASE   — passphrase for GPG_PRIVATE_KEY
 # =============================================================================
 
 name: Finalize Release
@@ -52,6 +62,8 @@ permissions:
 jobs:
   finalize:
     runs-on: self-hosted
+    env:
+      VERSION: ${{ github.event.inputs.version }}
     steps:
       - name: Generate GitHub App token
         id: app-token
@@ -68,29 +80,22 @@ jobs:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
 
-      # v6 targets Node 20, which Actions now force-runs under a Node 24
-      # shim — this intermittently broke gpg-agent's pinentry hand-off
-      # during signing ("Inappropriate ioctl for device"). v7 runs
-      # natively on Node 24, same inputs/outputs.
-      - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@v7
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.GPG_PASSPHRASE }}
-          git_user_signingkey: true
-          git_commit_gpgsign: true
-          git_tag_gpgsign: true
-          git_config_global: true
-          git_committer_name: github-actions
-          git_committer_email: actions@github.com
+      # The scripts come from the release branch, which is what is being
+      # released. They are copied out of the checkout because the steps below
+      # move it to main, and main does not carry them until this merge lands.
+      - name: Stage the API helpers
+        run: |
+          for script in api-commit.sh api-merge.sh; do
+            git show "origin/release/${VERSION}:hack/${script}" > "${RUNNER_TEMP}/${script}"
+            chmod +x "${RUNNER_TEMP}/${script}"
+          done
 
       - name: Merge release into main
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          git checkout main
-          git pull origin main
-          git merge --no-ff -S -m "release: merge release/${{ github.event.inputs.version }} into main" \
-            origin/release/${{ github.event.inputs.version }}
-          git push origin main
+          "${RUNNER_TEMP}/api-merge.sh" main "release/${VERSION}" \
+            "release: merge release/${VERSION} into main"
 
       - name: Set up Go
         uses: actions/setup-go@v7
@@ -120,20 +125,12 @@ jobs:
             ./resolution/... \
             ./runtime/...
 
-      - name: Commit and push code docs
+      - name: Commit code docs
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          git add docs/code/ -f
-          if ! git diff-index --quiet HEAD; then
-            git commit -S -m "docs: auto-generate code documentation [skip ci]"
-            git push origin main
-          else
-            echo "No documentation changes to commit"
-          fi
-
-      - name: Tag release
-        run: |
-          git tag -s ${{ github.event.inputs.version }} -m "Release ${{ github.event.inputs.version }}"
-          git push origin ${{ github.event.inputs.version }}
+          "${RUNNER_TEMP}/api-commit.sh" main \
+            "docs: auto-generate code documentation [skip ci]" docs/code
 
       - name: Install git-cliff
         run: |
@@ -144,30 +141,59 @@ jobs:
           rm -rf git-cliff.tar.gz "git-cliff-${GITCLIFF_VERSION}"
           git-cliff --version
 
+      # --tag renders the commits since the last release under this version:
+      # the tag itself is only created after this file is committed.
       - name: Generate CHANGELOG.md
-        run: git-cliff --config .cliff.toml --output CHANGELOG.md
+        run: git-cliff --config .cliff.toml --tag "${VERSION}" --output CHANGELOG.md
 
-      - name: Commit and push changelog
+      - name: Commit changelog
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          git add CHANGELOG.md
-          if ! git diff-index --quiet HEAD; then
-            git commit -S -m "chore(release): update changelog for ${{ github.event.inputs.version }}"
-            git push origin main
-          else
-            echo "No changelog changes to commit"
-          fi
+          "${RUNNER_TEMP}/api-commit.sh" main \
+            "chore(release): update changelog for ${VERSION}" CHANGELOG.md
+
+      # On the changelog commit, not the [skip ci] docs commit before it. See
+      # the header: a tag on a [skip ci] commit starts no workflow.
+      - name: Tag release
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          sha=$(git rev-parse HEAD)
+          jq -n --arg ref "refs/tags/${VERSION}" --arg sha "$sha" '{ref: $ref, sha: $sha}' \
+            | curl -sS --fail-with-body -X POST \
+                -H "Authorization: bearer ${GH_TOKEN}" \
+                -H "Accept: application/vnd.github+json" \
+                --data-binary @- \
+                "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/refs" >/dev/null
+          echo "Tagged ${sha} as ${VERSION}"
+          echo "tag_sha=${sha}" >> "$GITHUB_OUTPUT"
 
       - name: Merge main back into develop
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          git checkout develop
-          git pull origin develop
-          git merge --no-ff -S -m "chore: sync develop with main after release/${{ github.event.inputs.version }}" \
-            origin/main
-          git push origin develop
+          "${RUNNER_TEMP}/api-merge.sh" develop main \
+            "chore: sync develop with main after release/${VERSION}"
 
+      # A branch rule may forbid deleting release branches. The release is
+      # complete either way, so a refusal is reported, not failed on.
       - name: Delete release branch
+        id: delete-branch
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          git push origin --delete release/${{ github.event.inputs.version }}
+          status=$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE \
+            -H "Authorization: bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/refs/heads/release/${VERSION}")
+          if [ "$status" = 204 ]; then
+            echo "deleted=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::release/${VERSION} was not deleted (HTTP ${status}); a branch rule may protect it"
+            echo "deleted=no" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Release Summary
         run: |
           cat >> $GITHUB_STEP_SUMMARY <<EOF
@@ -178,9 +204,10 @@ jobs:
           ## Completed
 
           - Merged \`release/${{ github.event.inputs.version }}\` into \`main\`
-          - Created Git tag \`${{ github.event.inputs.version }}\`
+          - Regenerated the code docs and the changelog on \`main\`
+          - Created Git tag \`${{ github.event.inputs.version }}\` on the changelog commit
           - Synced \`main\` back into \`develop\`
-          - Deleted release branch
+          - Release branch deleted: ${{ steps.delete-branch.outputs.deleted }}
 
           ## Branch Flow
 
@@ -188,5 +215,5 @@ jobs:
 
           ## Next Steps
 
-          - Pushing the tag triggers the **Release** workflow which generates the changelog and GitHub Release.
+          - Creating the tag triggers the **Release** workflow, which publishes the GitHub Release, and the release asset workflows.
           EOF

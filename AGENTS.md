@@ -26,7 +26,7 @@ each other.
 | `pkg/secrets/`, `pkg/serviceaccounts/`, `pkg/providerconfig/`, `pkg/runtime/`, `pkg/utils/` | Shared platform pieces |
 | `core/` | Engine, commands, conditions, events, predicates, registry, cache factory |
 | `cache/` | Generation-scoped field-level object cache and typed helpers |
-| `hack/` | `vendor-snapshot.sh` (CI vendor snapshots) and `build-push.sh` |
+| `hack/` | `vendor-snapshot.sh` (CI vendor snapshots), `build-push.sh`, and `api-commit.sh` and `api-merge.sh` (the release workflows commit and merge through GitHub's API so the commits are verified) |
 | `docs/` | `DEVELOPING.md`, `architecture/` (type system, contract boundary, engine design), and `README.md`, which says where each document lives |
 | `.github/` | Workflows, templates, `CODE_OF_CONDUCT.md` |
 
