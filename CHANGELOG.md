@@ -1,3 +1,31 @@
+## [0.8.6] - 2026-10-10
+
+### 🚀 Features
+
+- *(serviceunit)* Give a build-type ServiceUnit the image its Build pushed
+- *(serviceunit)* Pull a build-type ServiceUnit's image with the Build's secret
+
+### 🐛 Bug Fixes
+
+- *(deployment)* Report a ServiceUnit that could not be applied as a failure
+- *(packages)* Report teardown as in progress until the kapp App is gone
+- *(deployment)* Tear a Deployment down without its ServiceUnits
+
+### 📚 Documentation
+
+- *(readme)* List the repositories that make up the project
+- Move SECURITY.md back to the repository root
+- *(readme)* Fix the documentation links
+- List the project's codebases in CODEBASES.md
+- Auto-generate code documentation [skip ci]
+- Bring the security policy move and the repository list to main
+- Bring CODEBASES.md and the README link fixes to main
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.8.5
+- Sync develop with main after release/v0.8.5
+
 ## [0.8.5] - 2026-10-09
 
 ### 🚀 Features
