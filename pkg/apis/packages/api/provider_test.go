@@ -17,6 +17,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	kappctrlv1alpha1 "carvel.dev/kapp-controller/pkg/apis/kappctrl/v1alpha1"
@@ -27,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	"github.com/blanketops/environments/pkg/apis/packages/domain"
 	intent "github.com/blanketops/environments/pkg/intent/package"
@@ -168,6 +170,68 @@ func TestTeardown_RemovesTheApp(t *testing.T) {
 
 			if _, err := getApp(t, c, in.ID); !apierrors.IsNotFound(err) {
 				t.Errorf("get app after teardown: err = %v, want not found", err)
+			}
+		})
+	}
+}
+
+// kapp-controller holds an App with a finalizer while it removes what the App
+// deployed. Until the App is gone Teardown reports that it is in progress, so
+// the caller does not take away the service account that removal runs as.
+func TestTeardown_InProgressWhileTheAppIsBeingDeleted(t *testing.T) {
+	scheme := newPackageScheme(t)
+	for name := range packageProviders(nil, scheme) {
+		t.Run(name, func(t *testing.T) {
+			in := newPackageIntent()
+			held := &kappctrlv1alpha1.App{}
+			held.Name, held.Namespace = in.ID.Name, in.ID.Namespace
+			held.Finalizers = []string{"finalizers.kapp-ctrl.k14s.io/delete"}
+			c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(held).Build()
+			p := packageProviders(c, scheme)[name]
+
+			// Asked twice: the App is still there both times.
+			for i := 0; i < 2; i++ {
+				if err := p.Teardown(context.Background(), in.ID); !errors.Is(err, domain.ErrTeardownInProgress) {
+					t.Fatalf("Teardown #%d = %v, want ErrTeardownInProgress", i+1, err)
+				}
+			}
+
+			// kapp-controller finishes and releases the App.
+			app, err := getApp(t, c, in.ID)
+			if err != nil {
+				t.Fatalf("get app: %v", err)
+			}
+			if app.DeletionTimestamp.IsZero() {
+				t.Fatal("the App should be marked for deletion")
+			}
+			app.Finalizers = nil
+			if err := c.Update(context.Background(), app); err != nil {
+				t.Fatalf("release the App: %v", err)
+			}
+
+			if err := p.Teardown(context.Background(), in.ID); err != nil {
+				t.Errorf("Teardown once the App is gone: %v", err)
+			}
+		})
+	}
+}
+
+// A failure to read the App back is reported as it is, not as progress.
+func TestTeardown_ErrorReadingTheApp(t *testing.T) {
+	scheme := newPackageScheme(t)
+	boom := errors.New("boom")
+	for name := range packageProviders(nil, scheme) {
+		t.Run(name, func(t *testing.T) {
+			c := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
+				Get: func(context.Context, client.WithWatch, client.ObjectKey, client.Object, ...client.GetOption) error {
+					return boom
+				},
+			}).Build()
+			p := packageProviders(c, scheme)[name]
+
+			err := p.Teardown(context.Background(), domain.PackageID{Namespace: "default", Name: "app-package"})
+			if !errors.Is(err, boom) || errors.Is(err, domain.ErrTeardownInProgress) {
+				t.Errorf("Teardown = %v, want the read error and not ErrTeardownInProgress", err)
 			}
 		})
 	}
