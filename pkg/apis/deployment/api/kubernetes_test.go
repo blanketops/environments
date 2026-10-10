@@ -94,6 +94,49 @@ func TestK8SProvider_ApplyServiceUnit(t *testing.T) {
 	}
 }
 
+// A ServiceUnit whose image needs a registry credential references it on the
+// pod. One that names none gets no reference, and a credential that is no
+// longer named is removed on the next apply.
+func TestK8SProvider_ApplyServiceUnit_ImagePullSecret(t *testing.T) {
+	scheme := newK8STestScheme(t)
+	c := fake.NewClientBuilder().WithScheme(scheme).Build()
+	p := NewK8SProvider(c, scheme, logr.Discard(), nil)
+	key := client.ObjectKey{Name: "api", Namespace: "default"}
+
+	pullSecrets := func(t *testing.T) []corev1.LocalObjectReference {
+		t.Helper()
+		var d appsv1.Deployment
+		if err := c.Get(context.Background(), key, &d); err != nil {
+			t.Fatalf("get deployment: %v", err)
+		}
+		return d.Spec.Template.Spec.ImagePullSecrets
+	}
+
+	su := &serviceunitIntent.ServiceUnitIntent{Name: "api", Image: "ghcr.io/example-org/api:v1", Port: 8080, Size: 1}
+	if _, err := p.ApplyServiceUnit(context.Background(), testDeploymentIntent(), su); err != nil {
+		t.Fatalf("ApplyServiceUnit: %v", err)
+	}
+	if got := pullSecrets(t); len(got) != 0 {
+		t.Errorf("imagePullSecrets = %v, want none for an image that names no credential", got)
+	}
+
+	su.ImagePullSecret = "registry-credentials"
+	if _, err := p.ApplyServiceUnit(context.Background(), testDeploymentIntent(), su); err != nil {
+		t.Fatalf("ApplyServiceUnit with a pull secret: %v", err)
+	}
+	if got := pullSecrets(t); len(got) != 1 || got[0].Name != "registry-credentials" {
+		t.Errorf("imagePullSecrets = %v, want only registry-credentials", got)
+	}
+
+	su.ImagePullSecret = ""
+	if _, err := p.ApplyServiceUnit(context.Background(), testDeploymentIntent(), su); err != nil {
+		t.Fatalf("ApplyServiceUnit without the pull secret again: %v", err)
+	}
+	if got := pullSecrets(t); len(got) != 0 {
+		t.Errorf("imagePullSecrets = %v, want the reference removed", got)
+	}
+}
+
 func TestK8SProvider_IsDeploymentReady(t *testing.T) {
 	tests := []struct {
 		name    string
