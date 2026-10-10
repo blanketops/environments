@@ -27,14 +27,20 @@
 # (verified against the slsa-github-generator repo directly) — the version
 # pinned in GitHub's own starter template for this workflow (v1.4.0) is
 # stale, do not copy it from there again.
+#
+# PAUSED (2026-10-10): the generator's reusable workflow only runs on
+# GitHub-hosted runners, and the organization cannot start those at the
+# moment ("account is locked due to a billing issue"). It failed on every
+# release, so the release trigger is removed and the workflow only runs when
+# started by hand. No release since v0.8.5 has provenance. When hosted runners
+# work again, put the `release: types: [created]` trigger back, and restore
+# the provenance line in SECURITY.md, README.md and ROADMAP.md.
 # =============================================================================
 
 name: SLSA generic generator
 
 on:
   workflow_dispatch:
-  release:
-    types: [created]
 
 env:
   GO_VERSION_FILE: go.mod

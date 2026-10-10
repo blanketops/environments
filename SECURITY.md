@@ -45,7 +45,6 @@ versions and the fix.
 
 ## Security practices
 
-- Release assets are published with SLSA provenance.
 - CodeQL, govulncheck and OpenSSF Scorecard run in CI.
 - Native Go fuzz targets cover the parsing of contract data taken from
   Custom Resources.
