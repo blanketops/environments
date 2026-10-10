@@ -17,21 +17,26 @@ package application
 
 import (
 	"context"
+	"errors"
+	"strings"
 	"testing"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	environmentv1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
 	commoncontractv1 "github.com/blanketops/environments-contract/blanketops/common/v1"
 
 	"github.com/blanketops/environments/pkg/apis/deployment/api"
+	"github.com/blanketops/environments/pkg/apis/deployment/domain"
 	"github.com/blanketops/environments/pkg/apis/deployment/reconcile"
 	"github.com/blanketops/environments/pkg/apis/deployment/strategy"
 	intent "github.com/blanketops/environments/pkg/intent/deployment"
@@ -187,6 +192,117 @@ func TestDeploymentService_Teardown_RemovesWhatReconcileApplied(t *testing.T) {
 	err = c.Get(context.Background(), client.ObjectKey{Name: "api", Namespace: "default"}, &corev1.Service{})
 	if !apierrors.IsNotFound(err) {
 		t.Fatalf("expected the Service applied by Reconcile to be deleted by Teardown, got err = %v", err)
+	}
+}
+
+// A deployment that could not be applied is a failed deployment. Reconcile
+// records the failure on the CR and also returns it: returning only the
+// result of the status write made the caller report success.
+func TestDeploymentService_Reconcile_ReturnsAndRecordsAFailedApply(t *testing.T) {
+	scheme := newServiceTestScheme(t)
+	depl := &environmentv1alpha1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: "web", Namespace: "default", Generation: 1},
+	}
+	denied := apierrors.NewForbidden(appsv1.Resource("deployments"), "api", errors.New("not allowed"))
+	c := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(depl).
+		WithStatusSubresource(&environmentv1alpha1.Deployment{}).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Patch: func(ctx context.Context, c client.WithWatch, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+				if _, ok := obj.(*appsv1.Deployment); ok {
+					return denied
+				}
+				return c.Patch(ctx, obj, patch, opts...)
+			},
+		}).
+		Build()
+
+	svc := newTestDeploymentService(t, c, scheme)
+	resolved := &deploymentResolution.ResolvedDeployment{
+		Deployment: depl,
+		Spec: &deploymentResolution.ResolvedDeploymentSpec{
+			ServiceUnits:           []string{"api"},
+			Runtime:                deploymentResolution.RuntimeKubernetes,
+			Strategy:               deploymentResolution.StrategyRolling,
+			ReconciliationStrategy: deploymentResolution.ReconciliationImperative,
+		},
+	}
+	serviceUnits := []serviceunitResolution.ResolvedServiceUnit{
+		{
+			ServiceUnit: &environmentv1alpha1.ServiceUnit{ObjectMeta: metav1.ObjectMeta{Name: "api", Namespace: "default"}},
+			Spec: &serviceunitResolution.ResolvedServiceUnitSpec{
+				Type:          commoncontractv1.ServiceUnitType_SERVICE_UNIT_TYPE_STATIC,
+				Image:         "docker.io/blanketops/api:v1",
+				ContainerPort: 8080,
+				Size:          2,
+			},
+		},
+	}
+
+	err := svc.Reconcile(context.Background(), resolved, serviceUnits, logr.Discard())
+	if !errors.Is(err, domain.ErrDeploymentFailed) || !strings.Contains(err.Error(), "serviceunit api") || !strings.Contains(err.Error(), "forbidden") {
+		t.Fatalf("Reconcile = %v, want ErrDeploymentFailed naming the serviceunit and why", err)
+	}
+
+	var got environmentv1alpha1.Deployment
+	if err := c.Get(context.Background(), client.ObjectKeyFromObject(depl), &got); err != nil {
+		t.Fatalf("Get Deployment CR: %v", err)
+	}
+	ready := apimeta.FindStatusCondition(got.Status.Conditions, "Ready")
+	if ready == nil || ready.Status != metav1.ConditionFalse || ready.Reason != "DeploymentFailed" || !strings.Contains(ready.Message, "forbidden") {
+		t.Errorf("Ready = %+v, want False with reason DeploymentFailed and the cause", ready)
+	}
+	if reconciling := apimeta.FindStatusCondition(got.Status.Conditions, "Reconciling"); reconciling != nil {
+		t.Errorf("Reconciling = %+v, a failed deployment must not be reported as reconciling", reconciling)
+	}
+}
+
+// When the failure cannot be recorded either, both errors are returned.
+func TestDeploymentService_Reconcile_FailedApplyAndFailedStatusWrite(t *testing.T) {
+	scheme := newServiceTestScheme(t)
+	depl := &environmentv1alpha1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: "web", Namespace: "default", Generation: 1},
+	}
+	denied := apierrors.NewForbidden(appsv1.Resource("deployments"), "api", errors.New("not allowed"))
+	statusDown := errors.New("status write failed")
+	c := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(depl).
+		WithStatusSubresource(&environmentv1alpha1.Deployment{}).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Patch: func(ctx context.Context, c client.WithWatch, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+				return denied
+			},
+			SubResourceUpdate: func(context.Context, client.Client, string, client.Object, ...client.SubResourceUpdateOption) error {
+				return statusDown
+			},
+		}).
+		Build()
+
+	svc := newTestDeploymentService(t, c, scheme)
+	resolved := &deploymentResolution.ResolvedDeployment{
+		Deployment: depl,
+		Spec: &deploymentResolution.ResolvedDeploymentSpec{
+			ServiceUnits:           []string{"api"},
+			Runtime:                deploymentResolution.RuntimeKubernetes,
+			Strategy:               deploymentResolution.StrategyRolling,
+			ReconciliationStrategy: deploymentResolution.ReconciliationImperative,
+		},
+	}
+	serviceUnits := []serviceunitResolution.ResolvedServiceUnit{
+		{
+			ServiceUnit: &environmentv1alpha1.ServiceUnit{ObjectMeta: metav1.ObjectMeta{Name: "api", Namespace: "default"}},
+			Spec: &serviceunitResolution.ResolvedServiceUnitSpec{
+				Type:  commoncontractv1.ServiceUnitType_SERVICE_UNIT_TYPE_STATIC,
+				Image: "docker.io/blanketops/api:v1",
+			},
+		},
+	}
+
+	err := svc.Reconcile(context.Background(), resolved, serviceUnits, logr.Discard())
+	if !errors.Is(err, domain.ErrDeploymentFailed) || !errors.Is(err, statusDown) {
+		t.Fatalf("Reconcile = %v, want both the deployment failure and the status error", err)
 	}
 }
 
