@@ -32,6 +32,8 @@ package application
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/go-logr/logr"
 
@@ -68,6 +70,10 @@ func NewDeploymentService(
 
 // Reconcile builds a DeploymentIntent from resolved, executes it via the
 // reconciliation executor, and writes the resulting status onto the CR.
+//
+// A failed execution is both recorded on the CR and returned. Returning only
+// the result of the status write would tell the caller a deployment that
+// could not be applied had succeeded.
 func (s *DeploymentService) Reconcile(
 	ctx context.Context,
 	resolved *deploymentResolution.ResolvedDeployment,
@@ -93,12 +99,24 @@ func (s *DeploymentService) Reconcile(
 	)
 
 	// 3. Write status
-	return s.status.WriteDeploymentResult(
+	// A ServiceUnit that cannot be applied does not abort the execution: it
+	// comes back in the result, not as an error. Either way it is a failure.
+	if execErr == nil {
+		execErr = result.Failure()
+	}
+
+	if err := s.status.WriteDeploymentResult(
 		ctx,
 		resolved.Deployment,
 		result,
 		execErr,
-	)
+	); err != nil {
+		if execErr != nil {
+			return errors.Join(execErr, fmt.Errorf("write deployment status: %w", err))
+		}
+		return err
+	}
+	return execErr
 }
 
 // Teardown deletes whatever Reconcile applied for this Deployment. It takes
