@@ -15,7 +15,16 @@ limitations under the License.
 
 package domain
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
+
+// ErrTeardownInProgress reports that a Package's teardown has been requested
+// but what the Package deployed is not gone yet. It is not a failure: the
+// caller waits and asks again, and keeps the Package's prerequisites until
+// then, because removing what was deployed still needs them.
+var ErrTeardownInProgress = errors.New("package teardown in progress")
 
 // -----------------------------------------------------------------------------
 // Base domain error
