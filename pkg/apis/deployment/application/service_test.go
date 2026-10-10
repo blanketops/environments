@@ -306,6 +306,89 @@ func TestDeploymentService_Reconcile_FailedApplyAndFailedStatusWrite(t *testing.
 	}
 }
 
+// Teardown must not depend on the ServiceUnits. What was applied is named
+// after them, and the names are in the Deployment's contract; the ServiceUnits
+// themselves may be gone by the time the Deployment is deleted, or may name a
+// Build that never pushed an image. Either used to fail the teardown and leave
+// the workload running behind a Deployment that could not be deleted.
+func TestDeploymentService_Teardown_NeedsOnlyTheDeployment(t *testing.T) {
+	scheme := newServiceTestScheme(t)
+	depl := &environmentv1alpha1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: "web", Namespace: "default", Generation: 1},
+	}
+	c := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(depl).
+		WithStatusSubresource(&environmentv1alpha1.Deployment{}).
+		Build()
+	svc := newTestDeploymentService(t, c, scheme)
+
+	resolved := &deploymentResolution.ResolvedDeployment{
+		Deployment: depl,
+		Spec: &deploymentResolution.ResolvedDeploymentSpec{
+			ServiceUnits:           []string{"api", "worker"},
+			Runtime:                deploymentResolution.RuntimeKubernetes,
+			Strategy:               deploymentResolution.StrategyRolling,
+			ReconciliationStrategy: deploymentResolution.ReconciliationImperative,
+		},
+	}
+	applied := []serviceunitResolution.ResolvedServiceUnit{
+		{
+			ServiceUnit: &environmentv1alpha1.ServiceUnit{ObjectMeta: metav1.ObjectMeta{Name: "api", Namespace: "default"}},
+			Spec:        &serviceunitResolution.ResolvedServiceUnitSpec{Type: commoncontractv1.ServiceUnitType_SERVICE_UNIT_TYPE_STATIC, Image: "docker.io/blanketops/api:v1", ContainerPort: 8080, Size: 1},
+		},
+		{
+			ServiceUnit: &environmentv1alpha1.ServiceUnit{ObjectMeta: metav1.ObjectMeta{Name: "worker", Namespace: "default"}},
+			Spec:        &serviceunitResolution.ResolvedServiceUnitSpec{Type: commoncontractv1.ServiceUnitType_SERVICE_UNIT_TYPE_STATIC, Image: "docker.io/blanketops/worker:v1", ContainerPort: 9000, Size: 1},
+		},
+	}
+	if err := svc.Reconcile(context.Background(), resolved, applied, logr.Discard()); err != nil {
+		t.Fatalf("Reconcile (setup): %v", err)
+	}
+
+	tests := map[string][]serviceunitResolution.ResolvedServiceUnit{
+		"serviceunits are gone": nil,
+		"a serviceunit names a build that has no image": {
+			{
+				ServiceUnit: &environmentv1alpha1.ServiceUnit{ObjectMeta: metav1.ObjectMeta{Name: "api", Namespace: "default"}},
+				Spec:        &serviceunitResolution.ResolvedServiceUnitSpec{Type: commoncontractv1.ServiceUnitType_SERVICE_UNIT_TYPE_BUILD},
+			},
+		},
+	}
+	for name, units := range tests {
+		t.Run(name, func(t *testing.T) {
+			// Idempotent: the second sub-test finds nothing left and still succeeds.
+			if err := svc.Teardown(context.Background(), resolved, units, logr.Discard()); err != nil {
+				t.Fatalf("Teardown: %v", err)
+			}
+			for _, unit := range []string{"api", "worker"} {
+				key := client.ObjectKey{Name: unit, Namespace: "default"}
+				if err := c.Get(context.Background(), key, &appsv1.Deployment{}); !apierrors.IsNotFound(err) {
+					t.Errorf("Deployment %s after Teardown: err = %v, want not found", unit, err)
+				}
+				if err := c.Get(context.Background(), key, &corev1.Service{}); !apierrors.IsNotFound(err) {
+					t.Errorf("Service %s after Teardown: err = %v, want not found", unit, err)
+				}
+			}
+		})
+	}
+}
+
+func TestDeploymentService_Teardown_NilResolvedDeployment(t *testing.T) {
+	scheme := newServiceTestScheme(t)
+	svc := newTestDeploymentService(t, fake.NewClientBuilder().WithScheme(scheme).Build(), scheme)
+
+	for name, resolved := range map[string]*deploymentResolution.ResolvedDeployment{
+		"nil":       nil,
+		"no object": {Spec: &deploymentResolution.ResolvedDeploymentSpec{}},
+		"no spec":   {Deployment: &environmentv1alpha1.Deployment{}},
+	} {
+		if err := svc.Teardown(context.Background(), resolved, nil, logr.Discard()); err == nil {
+			t.Errorf("Teardown(%s) = nil, want an error", name)
+		}
+	}
+}
+
 func TestDeploymentService_Reconcile_NilResolvedDeploymentSurfacesIntentBuilderError(t *testing.T) {
 	scheme := newServiceTestScheme(t)
 	c := fake.NewClientBuilder().WithScheme(scheme).Build()
