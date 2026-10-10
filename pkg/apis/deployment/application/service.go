@@ -32,6 +32,8 @@ package application
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/go-logr/logr"
 
@@ -68,6 +70,10 @@ func NewDeploymentService(
 
 // Reconcile builds a DeploymentIntent from resolved, executes it via the
 // reconciliation executor, and writes the resulting status onto the CR.
+//
+// A failed execution is both recorded on the CR and returned. Returning only
+// the result of the status write would tell the caller a deployment that
+// could not be applied had succeeded.
 func (s *DeploymentService) Reconcile(
 	ctx context.Context,
 	resolved *deploymentResolution.ResolvedDeployment,
@@ -93,27 +99,41 @@ func (s *DeploymentService) Reconcile(
 	)
 
 	// 3. Write status
-	return s.status.WriteDeploymentResult(
+	// A ServiceUnit that cannot be applied does not abort the execution: it
+	// comes back in the result, not as an error. Either way it is a failure.
+	if execErr == nil {
+		execErr = result.Failure()
+	}
+
+	if err := s.status.WriteDeploymentResult(
 		ctx,
 		resolved.Deployment,
 		result,
 		execErr,
-	)
+	); err != nil {
+		if execErr != nil {
+			return errors.Join(execErr, fmt.Errorf("write deployment status: %w", err))
+		}
+		return err
+	}
+	return execErr
 }
 
-// Teardown deletes whatever Reconcile applied for this Deployment. It takes
-// the same resolved inputs as Reconcile so the intent it builds — and tears
-// down — matches exactly what was applied. No status write: the CR is being
-// deleted, so there is nothing left to persist status onto once this
-// returns.
+// Teardown removes what Reconcile applied for the Deployment.
+//
+// It needs the resolved Deployment only. What was applied for each
+// ServiceUnit is named after it, and the names are in the Deployment's
+// contract, so teardown does not depend on the ServiceUnits still existing
+// or resolving. The serviceUnits argument is kept for callers written against
+// the earlier signature and is not used.
 func (s *DeploymentService) Teardown(
 	ctx context.Context,
 	resolved *deploymentResolution.ResolvedDeployment,
-	serviceUnits []serviceunitResolution.ResolvedServiceUnit,
+	_ []serviceunitResolution.ResolvedServiceUnit,
 	log logr.Logger,
 ) error {
 
-	intent, err := s.intentBuilder.Build(ctx, resolved, serviceUnits)
+	intent, err := s.intentBuilder.BuildTeardown(resolved)
 	if err != nil {
 		return err
 	}

@@ -67,6 +67,11 @@ type ResolvedServiceUnitSpec struct {
 	// Present only when Type is SERVICE_UNIT_TYPE_STATIC. Left empty for
 	// BUILD type — see package doc for why that injection is out of scope here.
 	Image string
+	// ImagePullSecret names the registry credential the image is pulled
+	// with. The contract does not declare it and resolution leaves it
+	// empty: for BUILD type it is the secret the source Build already
+	// declared, injected together with the image.
+	ImagePullSecret string
 	// BuildRef is the cross-CR reference to the source Build.
 	// Present only when Type is SERVICE_UNIT_TYPE_BUILD.
 	BuildRef      *ResolvedBuildRef

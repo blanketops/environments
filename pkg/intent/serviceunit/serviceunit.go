@@ -36,11 +36,14 @@ import (
 // ServiceUnitIntent is a ServiceUnit's fully resolved deployment intent
 // (image, port, size, routes), plus its Workload once resolution runs.
 type ServiceUnitIntent struct {
-	Name   string
-	Image  string
-	Port   int32
-	Size   int32
-	Routes []RouteIntent
+	Name  string
+	Image string
+	// ImagePullSecret names the registry credential the image is pulled
+	// with, in the workload's namespace. Empty for a public image.
+	ImagePullSecret string
+	Port            int32
+	Size            int32
+	Routes          []RouteIntent
 	// Filled after execution
 	Workload WorkloadIntent
 }
@@ -58,9 +61,10 @@ func ResolveServiceUnitIntent(
 	spec := su.Spec
 
 	intent := &ServiceUnitIntent{
-		Name: su.ServiceUnit.Name,
-		Port: spec.ContainerPort,
-		Size: spec.Size,
+		Name:            su.ServiceUnit.Name,
+		Port:            spec.ContainerPort,
+		Size:            spec.Size,
+		ImagePullSecret: spec.ImagePullSecret,
 	}
 
 	// ------------------------------------------------
