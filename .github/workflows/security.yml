@@ -23,7 +23,7 @@
 # build` resolves them via the public module proxy with no git auth needed —
 # none of these three jobs need secrets, which also means they run on
 # Dependabot PRs. codeql build-mode is manual rather than autobuild simply
-# because it was already set that way; no private-module reason to keep it.
+# because it was already set that way.
 #
 # scorecard's repo_token is GITHUB_TOKEN, not a GitHub App token — some
 # checks (e.g. Branch-Protection) are less complete this way, but running on
@@ -151,18 +151,16 @@ jobs:
 
           ${TABLE}
 
-          > Full SARIF uploaded as a build artifact (\`codeql-results-${{ github.sha }}\`). Security-tab upload is best-effort — this private repo has no GitHub Advanced Security license, so that step may show as failed without affecting this run's outcome.
+          > Full SARIF uploaded as a build artifact (\`codeql-results-${{ github.sha }}\`). Security-tab upload is best-effort, so that step may show as failed without affecting this run's outcome.
           EOF
 
   # ───────────────────────────────────────────────────────────────────────────
   # Job 2: Scorecard (from scorecard.yml)
   # Original scope: push to main, pull_request (any), Sun 06:00 UTC.
   #
-  # Private repo caveats:
-  #   - publish_results is false — the public Scorecard API/badge only
-  #     accepts results for public repositories.
-  #   - No SARIF upload — no GitHub Advanced Security/code-scanning on this
-  #     private repo. Results are JSON, rendered into the summary + artifact.
+  # publish_results is false and there is no SARIF upload: results are
+  #   JSON, rendered into the summary + artifact. Both were private-repo
+  #   limits; the repo is public now, so either can be turned on.
   # ───────────────────────────────────────────────────────────────────────────
   scorecard:
     name: OpenSSF Scorecard
@@ -245,7 +243,7 @@ jobs:
           **Overall score:** \`${OVERALL}/10\`
           **Tool:** [ossf/scorecard](https://github.com/ossf/scorecard) CLI \`$(scorecard version 2>/dev/null | awk '/GitVersion/ {print $2}')\`
 
-          > Private repo — results are not published to the public Scorecard API/badge.
+          > Results are not published to the public Scorecard API/badge (publish_results is false).
 
           ## Checks
 
@@ -327,15 +325,8 @@ jobs:
         if: steps.vendor-check.outcome == 'failure'
         run: |
           echo "::warning::Restored vendor snapshot (tag ${{ steps.tag.outputs.tag }}) is incomplete — rebuilding locally and pushing a corrected snapshot."
-          # This job's earlier GOPROXY=direct is fine for restore-only runs,
-          # but a full `go mod vendor` (needed here) can hit vanity import
-          # paths (e.g. honnef.co/go/tools) that time out under direct
-          # fetch. vendor-snapshot (ci.yml) — the job actually designed to
-          # run a full vendor — never sets GOPROXY at all; match its (more
-          # robust, proxy-first) default here instead of inheriting the
-          # override. Confirmed this was the real failure mode, not
-          # transient flakiness: honnef.co?go-get=1 TLS handshake timeout
-          # under GOPROXY=direct on the first live run of this step.
+          # Proxy first: vanity import paths (honnef.co/go/tools) time out
+          # under direct fetch during a full `go mod vendor`.
           go env -w GOPROXY=https://proxy.golang.org,direct
           go mod vendor
 
