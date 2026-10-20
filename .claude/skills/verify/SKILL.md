@@ -36,8 +36,8 @@ go test ./...
 against a restored snapshot; there is no `vendor/` locally and none should
 be committed.
 
-If `go build` fails resolving `github.com/blanketops/*`, that is private
-module access (`GOPRIVATE`, git credentials), not the change.
+Every `github.com/blanketops/*` module is public and resolves through the
+public module proxy; no `GOPRIVATE` or git credentials are needed.
 
 ## 3. Checks by what changed
 
