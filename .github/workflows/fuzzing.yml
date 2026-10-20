@@ -19,9 +19,7 @@
 # job (tagged snapshot → latest → inline `go mod vendor`) — this job runs
 # standalone, not gated behind ci.yml's vendor-snapshot job.
 #
-# Secrets required:
-#   APP_ID, APP_PRIVATE_KEY — GitHub App credentials, only actually needed
-#   if the vendor restore falls through to the inline rebuild fallback.
+# Secrets required: none.
 # =============================================================================
 
 name: Fuzzing
@@ -90,13 +88,6 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-
-      - name: Configure Git for private modules
-        run: |
-          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "https://github.com/"
-          go env -w GOPRIVATE=github.com/blanketops/*
-          go env -w GONOSUMDB=github.com/blanketops/*
-          go env -w GOPROXY=direct
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
