@@ -19,6 +19,7 @@ IntentBuilder.Build \(intent\_builder.go\) is the canonical, complete constructo
 - [type IntentBuilder](<#IntentBuilder>)
   - [func NewIntentBuilder\(\) \*IntentBuilder](<#NewIntentBuilder>)
   - [func \(b \*IntentBuilder\) Build\(ctx context.Context, depl \*deploymentResolution.ResolvedDeployment, serviceUnits \[\]serviceunitResolution.ResolvedServiceUnit\) \(\*DeploymentIntent, error\)](<#IntentBuilder.Build>)
+  - [func \(b \*IntentBuilder\) BuildTeardown\(depl \*deploymentResolution.ResolvedDeployment\) \(\*DeploymentIntent, error\)](<#IntentBuilder.BuildTeardown>)
 - [type ManifestsRepo](<#ManifestsRepo>)
 - [type ReconciliationStrategy](<#ReconciliationStrategy>)
 - [type Ref](<#Ref>)
@@ -109,6 +110,17 @@ func (b *IntentBuilder) Build(ctx context.Context, depl *deploymentResolution.Re
 Build constructs a DeploymentIntent from fully RESOLVED inputs.
 
 CONTRACT: \- Inputs are already validated and normalized \- No Kubernetes types allowed \- No string\-to\-enum logic allowed \- Any invalid state is a resolver bug
+
+<a name="IntentBuilder.BuildTeardown"></a>
+### func \(\*IntentBuilder\) BuildTeardown
+
+```go
+func (b *IntentBuilder) BuildTeardown(depl *deploymentResolution.ResolvedDeployment) (*DeploymentIntent, error)
+```
+
+BuildTeardown constructs the DeploymentIntent needed to remove what a Deployment applied. It takes the Deployment alone.
+
+What was applied for each ServiceUnit is named after it, and the names are in the Deployment's own contract. Tearing down must not depend on the ServiceUnits themselves: they may already be gone, or no longer resolve, or name a Build that has no image, and none of that is a reason to leave the workload running and the Deployment undeletable.
 
 <a name="ManifestsRepo"></a>
 ## type ManifestsRepo

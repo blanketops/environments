@@ -122,7 +122,7 @@ Reconcile executes a PackageIntent and writes authoritative status.
 func (s *PackageService) Teardown(ctx context.Context, id domain.PackageID) error
 ```
 
-Teardown reverses Reconcile: it removes what the provider created for the Package. It needs only the Package's identity, so a Package whose contract does not resolve can still be deleted.
+Teardown reverses Reconcile: it removes what the provider created for the Package. It needs only the Package's identity, so a Package whose contract does not resolve can still be deleted. It returns domain.ErrTeardownInProgress until what was created is gone; the caller keeps the Package's prerequisites until it returns nil.
 
 <a name="StatusWriter"></a>
 ## type StatusWriter
