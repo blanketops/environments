@@ -1,3 +1,31 @@
+## [0.8.7] - 2026-10-21
+
+### 🐛 Bug Fixes
+
+- Use the verbatim Apache-2.0 license text
+
+### 💼 Other
+
+- Merge release/v0.8.7 into main
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci]
+- Auto-generate code documentation [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.8.6
+- *(slsa)* Pause provenance and stop claiming it
+- *(ci)* Bump anthropics/claude-code-action
+- Turn off setup-go's cache on the self-hosted runners
+- Do not fail a job when the artifact upload is refused
+- Drop the private-module setup
+- *(ci)* Bump anthropics/claude-code-action
+- Sync develop with main
+- Sync develop with main
+- Land bot writes to main through pull requests
+- Sync develop with main
 ## [0.8.6] - 2026-10-10
 
 ### 🚀 Features
@@ -25,7 +53,7 @@
 
 - *(release)* Update changelog for v0.8.5
 - Sync develop with main after release/v0.8.5
-
+- *(release)* Make the release workflows' commits verified
 ## [0.8.5] - 2026-10-09
 
 ### 🚀 Features
