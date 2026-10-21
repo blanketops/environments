@@ -16,8 +16,11 @@ This package represents the \*intent\* and \*result\* of a Deployment, not how i
 
 ## Index
 
+- [Constants](<#constants>)
+- [Variables](<#variables>)
 - [type DeploymentPhase](<#DeploymentPhase>)
 - [type DeploymentResult](<#DeploymentResult>)
+  - [func \(r \*DeploymentResult\) Failure\(\) error](<#DeploymentResult.Failure>)
 - [type DeploymentSpec](<#DeploymentSpec>)
 - [type ManifestsRepo](<#ManifestsRepo>)
 - [type ReconciliationStrategy](<#ReconciliationStrategy>)
@@ -26,6 +29,22 @@ This package represents the \*intent\* and \*result\* of a Deployment, not how i
 - [type ServiceUnitResult](<#ServiceUnitResult>)
 - [type Strategy](<#Strategy>)
 
+
+## Constants
+
+<a name="PhaseFailed"></a>PhaseFailed is the phase of a Deployment, or of a ServiceUnit within it, that could not be applied.
+
+```go
+const PhaseFailed = "Failed"
+```
+
+## Variables
+
+<a name="ErrDeploymentFailed"></a>ErrDeploymentFailed reports that executing a Deployment ended with at least one ServiceUnit that could not be applied.
+
+```go
+var ErrDeploymentFailed = errors.New("deployment failed")
+```
 
 <a name="DeploymentPhase"></a>
 ## type DeploymentPhase
@@ -55,6 +74,17 @@ type DeploymentResult struct {
     LastUpdateTime time.Time
 }
 ```
+
+<a name="DeploymentResult.Failure"></a>
+### func \(\*DeploymentResult\) Failure
+
+```go
+func (r *DeploymentResult) Failure() error
+```
+
+Failure returns ErrDeploymentFailed, wrapped with what failed, for a result whose phase is Failed. It returns nil for any other result: the execution did not fail, even if it is not finished.
+
+A ServiceUnit that cannot be applied does not abort the others, so it is reported in the result and not as an error from the execution. Failure is how a caller turns that result back into an error.
 
 <a name="DeploymentSpec"></a>
 ## type DeploymentSpec

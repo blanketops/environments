@@ -64,6 +64,8 @@ func DeleteApplication(ctx context.Context, c client.Client, id domain.PackageID
 
 DeleteApplication deletes the kapp App named after the Package. A missing App is not an error.
 
+Deleting an App is not immediate: kapp\-controller first removes what the App deployed, as the App's service account. While the App still exists this returns domain.ErrTeardownInProgress, so the caller keeps that service account until a later call finds the App gone.
+
 <a name="PackageResultFromApplicationState"></a>
 ## func PackageResultFromApplicationState
 
@@ -185,7 +187,8 @@ type Provider interface {
     // Teardown removes what Execute created for the Package. It takes the
     // identity only, not an intent, so a Package whose contract no longer
     // resolves can still be removed. Idempotent — nothing to delete is not
-    // an error.
+    // an error. While what was created is still being removed it returns
+    // domain.ErrTeardownInProgress; nil means it is gone.
     Teardown(ctx context.Context, id domain.PackageID) error
 }
 ```

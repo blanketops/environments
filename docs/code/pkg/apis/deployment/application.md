@@ -15,7 +15,7 @@ This mirrors every other CR's application layer. mapper.go's Mapper / MapResolve
 - [type DeploymentService](<#DeploymentService>)
   - [func NewDeploymentService\(intentBuilder \*intent.IntentBuilder, status \*StatusWriter, reconciliationExecutor \*reconcile.ReconciliationExecutor, log logr.Logger\) \*DeploymentService](<#NewDeploymentService>)
   - [func \(s \*DeploymentService\) Reconcile\(ctx context.Context, resolved \*deploymentResolution.ResolvedDeployment, serviceUnits \[\]serviceunitResolution.ResolvedServiceUnit, log logr.Logger\) error](<#DeploymentService.Reconcile>)
-  - [func \(s \*DeploymentService\) Teardown\(ctx context.Context, resolved \*deploymentResolution.ResolvedDeployment, serviceUnits \[\]serviceunitResolution.ResolvedServiceUnit, log logr.Logger\) error](<#DeploymentService.Teardown>)
+  - [func \(s \*DeploymentService\) Teardown\(ctx context.Context, resolved \*deploymentResolution.ResolvedDeployment, \_ \[\]serviceunitResolution.ResolvedServiceUnit, log logr.Logger\) error](<#DeploymentService.Teardown>)
 - [type Mapper](<#Mapper>)
   - [func NewMapper\(\) \*Mapper](<#NewMapper>)
   - [func \(Mapper\) MapResolvedToDomain\(rd \*deploymentResolution.ResolvedDeployment\) domain.DeploymentSpec](<#Mapper.MapResolvedToDomain>)
@@ -53,14 +53,18 @@ func (s *DeploymentService) Reconcile(ctx context.Context, resolved *deploymentR
 
 Reconcile builds a DeploymentIntent from resolved, executes it via the reconciliation executor, and writes the resulting status onto the CR.
 
+A failed execution is both recorded on the CR and returned. Returning only the result of the status write would tell the caller a deployment that could not be applied had succeeded.
+
 <a name="DeploymentService.Teardown"></a>
 ### func \(\*DeploymentService\) Teardown
 
 ```go
-func (s *DeploymentService) Teardown(ctx context.Context, resolved *deploymentResolution.ResolvedDeployment, serviceUnits []serviceunitResolution.ResolvedServiceUnit, log logr.Logger) error
+func (s *DeploymentService) Teardown(ctx context.Context, resolved *deploymentResolution.ResolvedDeployment, _ []serviceunitResolution.ResolvedServiceUnit, log logr.Logger) error
 ```
 
-Teardown deletes whatever Reconcile applied for this Deployment. It takes the same resolved inputs as Reconcile so the intent it builds — and tears down — matches exactly what was applied. No status write: the CR is being deleted, so there is nothing left to persist status onto once this returns.
+Teardown removes what Reconcile applied for the Deployment.
+
+It needs the resolved Deployment only. What was applied for each ServiceUnit is named after it, and the names are in the Deployment's contract, so teardown does not depend on the ServiceUnits still existing or resolving. The serviceUnits argument is kept for callers written against the earlier signature and is not used.
 
 <a name="Mapper"></a>
 ## type Mapper

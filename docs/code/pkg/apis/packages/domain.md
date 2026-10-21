@@ -8,6 +8,7 @@ import "github.com/blanketops/environments/pkg/apis/packages/domain"
 
 ## Index
 
+- [Variables](<#variables>)
 - [type ApplicationPhase](<#ApplicationPhase>)
 - [type ApplicationState](<#ApplicationState>)
 - [type ApplyStrategy](<#ApplyStrategy>)
@@ -48,6 +49,14 @@ import "github.com/blanketops/environments/pkg/apis/packages/domain"
   - [func \(e RepositoryError\) Retryable\(\) bool](<#RepositoryError.Retryable>)
 - [type StateRepository](<#StateRepository>)
 
+
+## Variables
+
+<a name="ErrTeardownInProgress"></a>ErrTeardownInProgress reports that a Package's teardown has been requested but what the Package deployed is not gone yet. It is not a failure: the caller waits and asks again, and keeps the Package's prerequisites until then, because removing what was deployed still needs them.
+
+```go
+var ErrTeardownInProgress = errors.New("package teardown in progress")
+```
 
 <a name="ApplicationPhase"></a>
 ## type ApplicationPhase
