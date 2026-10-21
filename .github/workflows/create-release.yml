@@ -56,20 +56,32 @@ jobs:
           git checkout -b release/${{ github.event.inputs.version }}
           git push origin release/${{ github.event.inputs.version }}
 
+      # Through the API with curl: the runners have no gh.
       - name: Open PR to main
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ github.event.inputs.version }}
         run: |
-          gh pr create \
-            --base main \
-            --head release/${{ github.event.inputs.version }} \
-            --title "release: ${{ github.event.inputs.version }}" \
-            --body "## Release ${{ github.event.inputs.version }}
+          body="## Release ${VERSION}
 
           Release branch cut from \`develop\`. Merge fix PRs into this branch before finalizing.
 
-          **Next step:** once all fixes are merged, run the _Finalize Release_ workflow." \
-          || echo "::warning::PR creation failed — branch release/${{ github.event.inputs.version }} was created successfully. Open the PR manually."
+          **Next step:** once all fixes are merged, run the _Finalize Release_ workflow."
+          status=$(jq -n \
+              --arg title "release: ${VERSION}" \
+              --arg head "release/${VERSION}" \
+              --arg body "$body" \
+              '{title: $title, head: $head, base: "main", body: $body}' \
+            | curl -sS -o "${RUNNER_TEMP}/pr.json" -w '%{http_code}' -X POST \
+                -H "Authorization: bearer ${GH_TOKEN}" \
+                -H "Accept: application/vnd.github+json" \
+                --data-binary @- \
+                "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/pulls")
+          if [ "$status" = 201 ]; then
+            echo "Opened $(jq -r '.html_url' "${RUNNER_TEMP}/pr.json")"
+          else
+            echo "::warning::PR creation failed (HTTP ${status}: $(jq -r '.message // empty' "${RUNNER_TEMP}/pr.json")) — branch release/${VERSION} was created successfully. Open the PR manually."
+          fi
 
       - name: Release Summary
         run: |

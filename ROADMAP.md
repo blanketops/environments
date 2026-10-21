@@ -34,7 +34,6 @@ influence it, open an issue or comment on an existing one.
 
 **Project practice**
 
-- Releases with SLSA provenance for release assets.
 - CodeQL, govulncheck, OpenSSF Scorecard and native Go fuzzing in CI.
 
 ## In progress
@@ -55,6 +54,9 @@ influence it, open an issue or comment on an existing one.
   resources.
 - **API graduation.** Stabilise the `v1alpha1` APIs towards `v1beta1` and
   then `v1.0.0`.
+- **SLSA provenance for release assets.** The workflow exists and is paused:
+  it needs GitHub-hosted runners, which are not available to the
+  organization at the moment.
 
 ## Community
 

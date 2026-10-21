@@ -80,7 +80,7 @@ This ensures:
 - **`core/`** split into per-concern subpackages (cache, command, conditions, engine, events, predicates, registry).
 - **`pkg/secrets`** reconcilers brought up to convention and split per-reconciler, with full test coverage.
 - Build teardown now deletes the underlying `Secret`, not just the `ExternalSecret`.
-- CI: SLSA provenance generation for release assets, GitHub App auth (replacing an expiring PAT), advanced CodeQL scanning on every push.
+- CI: GitHub App auth (replacing an expiring PAT), advanced CodeQL scanning on every push.
 - Full test coverage added across `resolution/*` and `core/*`.
 
 ---
