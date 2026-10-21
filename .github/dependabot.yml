@@ -9,12 +9,6 @@
 #   gomod          — keeps go.mod dependencies current, including
 #                     github.com/blanketops/environments-api and
 #                     github.com/blanketops/environments-contract.
-#
-# Private modules: environments-api and environments-contract are private
-# GitHub repos under this same org. Dependabot needs org-level permission to
-# reach them — see Settings > Code security > Dependabot > "Dependabot can
-# access private repositories owned by this organization". Without it,
-# updates for those two modules will silently fail to open PRs.
 # =============================================================================
 
 version: 2
