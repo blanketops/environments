@@ -58,11 +58,14 @@ ServiceUnitIntent is a ServiceUnit's fully resolved deployment intent \(image, p
 
 ```go
 type ServiceUnitIntent struct {
-    Name   string
-    Image  string
-    Port   int32
-    Size   int32
-    Routes []RouteIntent
+    Name  string
+    Image string
+    // ImagePullSecret names the registry credential the image is pulled
+    // with, in the workload's namespace. Empty for a public image.
+    ImagePullSecret string
+    Port            int32
+    Size            int32
+    Routes          []RouteIntent
     // Filled after execution
     Workload WorkloadIntent
 }
