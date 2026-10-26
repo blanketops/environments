@@ -3,20 +3,20 @@ module github.com/blanketops/environments
 go 1.27.0
 
 require (
-	carvel.dev/kapp-controller v0.60.9
+	carvel.dev/kapp-controller v0.60.10
 	github.com/argoproj/argo-events v1.9.11
 	github.com/blanketops/environments-api v0.2.9
 	github.com/blanketops/environments-contract v0.5.6
 	github.com/bradfitz/gomemcache v0.0.0-20260422231931-4d751bb6e37c
-	github.com/cert-manager/cert-manager v1.21.2
+	github.com/cert-manager/cert-manager v1.21.3
 	github.com/fluxcd/kustomize-controller/api v1.9.6
-	github.com/fluxcd/pkg/apis/meta v1.36.0
+	github.com/fluxcd/pkg/apis/meta v1.37.0
 	github.com/fluxcd/source-controller/api v1.9.6
 	github.com/go-logr/logr v1.4.4
 	github.com/magefile/mage v1.17.2
 	github.com/princjef/gomarkdoc v1.1.0
 	github.com/redis/go-redis/v9 v9.23.0
-	github.com/shipwright-io/build v0.21.9
+	github.com/shipwright-io/build v0.21.11
 	golang.org/x/crypto v0.58.0
 	honnef.co/go/tools v0.8.2
 	k8s.io/api v0.37.1
