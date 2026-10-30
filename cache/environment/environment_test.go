@@ -45,7 +45,6 @@ func TestEnvironmentCache_FieldRoundTrips(t *testing.T) {
 		{"ApplicationName", c.SetApplicationName, c.GetApplicationName, "myapp"},
 		{"EnvironmentType", c.SetEnvironmentType, c.GetEnvironmentType, "dev"},
 		{"Version", c.SetVersion, c.GetVersion, "v1"},
-		{"SecretStoreProvider", c.SetSecretStoreProvider, c.GetSecretStoreProvider, "vault"},
 		{"Build", c.SetBuild, c.GetBuild, "build1"},
 		{"GitRepository", c.SetGitRepository, c.GetGitRepository, "repo1"},
 		{"GitHubEvent", c.SetGitHubEvent, c.GetGitHubEvent, "event1"},
@@ -122,7 +121,11 @@ func TestEnvironmentCache_PublishResolved(t *testing.T) {
 				ApplicationName: "myapp",
 				EnvironmentType: "dev",
 				Version:         "v1",
-				Contract:        &environmentResolution.ResolvedEnvironmentContract{SecretStoreProvider: "vault"},
+				Contract: &environmentResolution.ResolvedEnvironmentContract{
+					SecretStore: environmentResolution.ResolvedSecretStore{
+						Provider: "vault",
+					},
+				},
 				Build:           "build1",
 				GitRepository:   "repo1",
 				GitHubEvent:     "event1",
@@ -135,8 +138,9 @@ func TestEnvironmentCache_PublishResolved(t *testing.T) {
 		if err := c.PublishResolved(context.Background(), nn, 1, r); err != nil {
 			t.Fatalf("PublishResolved: %v", err)
 		}
-		if v, found, _ := c.GetSecretStoreProvider(context.Background(), nn, 1); !found || v != "vault" {
-			t.Errorf("GetSecretStoreProvider = %q, %v", v, found)
+		ss, found, _ := c.GetSecretStore(context.Background(), nn, 1)
+		if !found || ss.Provider != "vault" {
+			t.Errorf("GetSecretStore = %v, %v", ss, found)
 		}
 		if v, found, _ := c.GetBuild(context.Background(), nn, 1); !found || v != "build1" {
 			t.Errorf("GetBuild = %q, %v", v, found)

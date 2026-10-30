@@ -103,15 +103,15 @@ func (r *PackageStateRepositorySecretReconciler) Reconcile(ctx context.Context, 
 				"data": []any{
 					map[string]any{
 						"secretKey": "ssh_privatekey",
-						"remoteRef": map[string]any{"key": "/blanketops/git/ssh-privatekey"},
+						"remoteRef": map[string]any{"key": "/blanketops/environments/git/ssh-privatekey"},
 					},
 					map[string]any{
 						"secretKey": "ssh_publickey",
-						"remoteRef": map[string]any{"key": "/blanketops/git/ssh-publickey"},
+						"remoteRef": map[string]any{"key": "/blanketops/environments/git/ssh-publickey"},
 					},
 					map[string]any{
 						"secretKey": "known_hosts",
-						"remoteRef": map[string]any{"key": "/blanketops/git/known-hosts"},
+						"remoteRef": map[string]any{"key": "/blanketops/environments/git/known-hosts"},
 					},
 				},
 			},

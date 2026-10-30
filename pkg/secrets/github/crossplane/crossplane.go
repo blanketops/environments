@@ -95,7 +95,7 @@ func (r *GitHubProviderSecretReconciler) Reconcile(ctx context.Context) error {
 					map[string]any{
 						"secretKey": "token",
 						"remoteRef": map[string]any{
-							"key": "/blanketops/crossplane/github/token",
+							"key": "/blanketops/environments/crossplane/github/token",
 						},
 					},
 				},

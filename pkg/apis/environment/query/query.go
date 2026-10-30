@@ -93,7 +93,11 @@ func Lookup(ctx context.Context, c client.Client, namespace string, labels map[s
 	}
 	storeName := environmentapi.StoreFake
 	if resolved.Spec.Contract != nil {
-		storeName = environmentapi.ResolveStoreName(resolved.Spec.Contract.SecretStoreProvider)
+		if resolved.Spec.Contract.SecretStore.StoreName != "" {
+			storeName = resolved.Spec.Contract.SecretStore.StoreName
+		} else {
+			storeName = environmentapi.ResolveStoreName(resolved.Spec.Contract.SecretStore.Provider)
+		}
 	}
 	storeKind, err := resolveStoreKind(resolved)
 	if err != nil {

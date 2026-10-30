@@ -81,13 +81,15 @@ func storeExists(t *testing.T, c client.Client, kind, name, namespace string) bo
 
 func vaultContract() *environmentresolve.ResolvedEnvironmentContract {
 	return &environmentresolve.ResolvedEnvironmentContract{
-		SecretStoreProvider: "vault",
-		Vault: &environmentresolve.ResolvedVaultConfig{
-			Address:   "https://vault:8200",
-			Path:      "secret",
-			Role:      "environments",
-			MountPath: "kubernetes",
-			Version:   "v2",
+		SecretStore: environmentresolve.ResolvedSecretStore{
+			Provider: "vault",
+			Vault: &environmentresolve.ResolvedVaultConfig{
+				Address:   "https://vault:8200",
+				Path:      "secret",
+				Role:      "environments",
+				MountPath: "kubernetes",
+				Version:   "v2",
+			},
 		},
 	}
 }
@@ -172,7 +174,7 @@ func TestSecretStoreReconciler_Reconcile_SetsServiceAccountRefWhenDeclared(t *te
 	c := fake.NewClientBuilder().WithScheme(newScheme(t)).Build()
 	r := NewSecretStoreReconciler(c, logr.Discard())
 	contract := vaultContract()
-	contract.Vault.ServiceAccountName = "external-secrets"
+	contract.SecretStore.Vault.ServiceAccountName = "external-secrets"
 	env := newResolvedEnvironment("env1", "default", contract)
 
 	if err := r.Reconcile(context.Background(), env, "ClusterSecretStore"); err != nil {
@@ -201,7 +203,7 @@ func TestSecretStoreReconciler_Reconcile_ConvergesOnSubsequentCalls(t *testing.T
 	}
 
 	updated := vaultContract()
-	updated.Vault.Address = "https://different-vault:8200"
+	updated.SecretStore.Vault.Address = "https://different-vault:8200"
 	env2 := newResolvedEnvironment("env1", "default", updated)
 	if err := r.Reconcile(context.Background(), env2, "ClusterSecretStore"); err != nil {
 		t.Fatalf("second Reconcile: %v", err)
@@ -228,7 +230,9 @@ func TestSecretStoreReconciler_Reconcile_UnimplementedProvidersError(t *testing.
 			c := fake.NewClientBuilder().WithScheme(newScheme(t)).Build()
 			r := NewSecretStoreReconciler(c, logr.Discard())
 			env := newResolvedEnvironment("env1", "default", &environmentresolve.ResolvedEnvironmentContract{
-				SecretStoreProvider: tc.provider,
+				SecretStore: environmentresolve.ResolvedSecretStore{
+					Provider: tc.provider,
+				},
 			})
 
 			err := r.Reconcile(context.Background(), env, "ClusterSecretStore")
@@ -243,9 +247,11 @@ func TestSecretStoreReconciler_Reconcile_VaultProviderMissingConfigErrors(t *tes
 	c := fake.NewClientBuilder().WithScheme(newScheme(t)).Build()
 	r := NewSecretStoreReconciler(c, logr.Discard())
 	env := newResolvedEnvironment("env1", "default", &environmentresolve.ResolvedEnvironmentContract{
-		SecretStoreProvider: "vault",
-		// Vault left nil — resolve.go should never produce this, but the
-		// reconciler must not silently apply a broken store if it does.
+		SecretStore: environmentresolve.ResolvedSecretStore{
+			Provider: "vault",
+			// Vault left nil — resolve.go should never produce this, but the
+			// reconciler must not silently apply a broken store if it does.
+		},
 	})
 
 	if err := r.Reconcile(context.Background(), env, "ClusterSecretStore"); err == nil {

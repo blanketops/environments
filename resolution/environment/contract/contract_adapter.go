@@ -35,7 +35,6 @@ package contract
 import (
 	commoncontractv1 "github.com/blanketops/environments-contract/blanketops/common/v1"
 	environmentscontractv1alpha1 "github.com/blanketops/environments-contract/blanketops/environments/v1alpha1"
-
 	"github.com/blanketops/environments/resolution/environment/resolve"
 )
 
@@ -111,15 +110,13 @@ func ToEnvironmentContract(s *resolve.ResolvedEnvironmentSpec) *environmentscont
 	}
 
 	// ------------------------------------------------
-	// Platform contract: secret store provider only.
-	// SecretStoreProvider is a top-level enum — no wrapper message.
-	// Each CR manages its own credential secrets independently.
-	// Provider drives ESO ClusterSecretStore selection.
+	// Platform contract: secret store configuration.
 	// ------------------------------------------------
-	if s.Contract != nil && s.Contract.SecretStoreProvider != "" {
+	if s.Contract != nil && s.Contract.SecretStore.Provider != "" {
 		spec.Contract = &environmentscontractv1alpha1.EnvironmentContract{
 			SecretStore: &commoncontractv1.SecretStore{
-				Provider: toSecretStoreProvider(s.Contract.SecretStoreProvider),
+				Provider:  toSecretStoreProvider(s.Contract.SecretStore.Provider),
+				StoreName:  s.Contract.SecretStore.StoreName,
 			},
 		}
 	}

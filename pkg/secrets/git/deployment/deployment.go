@@ -32,32 +32,28 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	deploymentResolution "github.com/blanketops/environments/resolution/deployment/resolve"
+	environmentResolution "github.com/blanketops/environments/resolution/environment/resolve"
 )
 
 // DeploymentGitSSHSecretReconciler converges the ExternalSecret used to
 // clone a Deployment's manifests repository over SSH — the same lifecycle
 // as BuildGitSSHSecretReconciler, scoped to Deployment.
 type DeploymentGitSSHSecretReconciler struct {
-	Client    client.Client
-	Log       logr.Logger
-	StoreName string
-	StoreKind string
+	Client client.Client
+	Log    logr.Logger
 }
 
-// NewDeploymentGitSSHSecretReconciler constructs a
-// DeploymentGitSSHSecretReconciler targeting the given ESO store.
-func NewDeploymentGitSSHSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *DeploymentGitSSHSecretReconciler {
+// NewDeploymentGitSSHSecretReconciler constructs a DeploymentGitSSHSecretReconciler.
+func NewDeploymentGitSSHSecretReconciler(c client.Client, log logr.Logger) *DeploymentGitSSHSecretReconciler {
 	return &DeploymentGitSSHSecretReconciler{
-		Client:    c,
-		Log:       log,
-		StoreName: storeName,
-		StoreKind: storeKind,
+		Client: c,
+		Log:    log,
 	}
 }
 
 // Reconcile creates or updates the git-ssh clone ExternalSecret for
 // deployment's manifests repository.
-func (r *DeploymentGitSSHSecretReconciler) Reconcile(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) error {
+func (r *DeploymentGitSSHSecretReconciler) Reconcile(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment, ss environmentResolution.ResolvedSecretStore) error {
 	source := deployment.Spec.ManifestsRepo
 	secretName := source.CloneSecret
 	namespace := deployment.Deployment.Namespace
@@ -78,8 +74,8 @@ func (r *DeploymentGitSSHSecretReconciler) Reconcile(ctx context.Context, deploy
 			"spec": map[string]any{
 				"refreshInterval": "10s",
 				"secretStoreRef": map[string]any{
-					"name": r.StoreName,
-					"kind": r.StoreKind,
+					"name": ss.StoreName,
+					"kind": "ClusterSecretStore",
 				},
 				"target": map[string]any{
 					"name": secretName,
@@ -91,19 +87,19 @@ func (r *DeploymentGitSSHSecretReconciler) Reconcile(ctx context.Context, deploy
 					map[string]any{
 						"secretKey": "ssh-privatekey",
 						"remoteRef": map[string]any{
-							"key": "/blanketops/git/ssh-privatekey",
+							"key": "/blanketops/environments/git/ssh-privatekey",
 						},
 					},
 					map[string]any{
 						"secretKey": "ssh-publickey",
 						"remoteRef": map[string]any{
-							"key": "/blanketops/git/ssh-publickey",
+							"key": "/blanketops/environments/git/ssh-publickey",
 						},
 					},
 					map[string]any{
 						"secretKey": "known_hosts",
 						"remoteRef": map[string]any{
-							"key": "/blanketops/git/known-hosts",
+							"key": "/blanketops/environments/git/known-hosts",
 						},
 					},
 				},
@@ -128,7 +124,7 @@ func (r *DeploymentGitSSHSecretReconciler) Reconcile(ctx context.Context, deploy
 		r.Log.Info("creating ExternalSecret for Git SSH",
 			"deployment", deployment.Deployment.Name,
 			"secret", secretName,
-			"store", r.StoreName,
+			"store", ss.StoreName,
 		)
 		return r.Client.Create(ctx, desired)
 	}
@@ -141,7 +137,7 @@ func (r *DeploymentGitSSHSecretReconciler) Reconcile(ctx context.Context, deploy
 		r.Log.Info("updating ExternalSecret for Git SSH",
 			"deployment", deployment.Deployment.Name,
 			"secret", secretName,
-			"store", r.StoreName,
+			"store", ss.StoreName,
 		)
 		return r.Client.Update(ctx, &existing)
 	}

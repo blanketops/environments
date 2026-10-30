@@ -4,7 +4,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-	http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,7 +27,7 @@ func TestAdapter_Resolve(t *testing.T) {
 	a := NewAdapter()
 	e := &environmentv1alpha1.Environment{
 		Spec: environmentv1alpha1.EnvironmentSpec{
-			Contract: runtime.RawExtension{Raw: []byte(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0"}`)},
+			Contract: runtime.RawExtension{Raw: []byte(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0","secretStore":{"provider":"vault","vault":{"address":"https://vault:8200","path":"secret","role":"environments"}}}`)},
 		},
 	}
 	resolved, err := a.Resolve(context.Background(), e)

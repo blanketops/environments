@@ -27,6 +27,7 @@ import (
 
 	environmentv1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
 	packageResolution "github.com/blanketops/environments/resolution/packages/resolve"
+	environmentResolution "github.com/blanketops/environments/resolution/environment/resolve"
 
 	"github.com/blanketops/environments/pkg/secrets/internal/testutil"
 )
@@ -42,29 +43,36 @@ func newResolvedPackageWithRepository(name, namespace, secretName string) *packa
 	}
 }
 
+func vaultSecretStore() environmentResolution.ResolvedSecretStore {
+	return environmentResolution.ResolvedSecretStore{
+		Provider:  "vault",
+		StoreName: "vault-store",
+	}
+}
+
 func TestPackageRepositorySecretReconciler_Reconcile_NilGuards(t *testing.T) {
 	c := fake.NewClientBuilder().WithScheme(testutil.NewScheme(t, environmentv1alpha1.AddToScheme)).Build()
-	r := NewPackageRepositorySecretReconciler(c, logr.Discard(), "vault-store", "ClusterSecretStore")
+	r := NewPackageRepositorySecretReconciler(c, logr.Discard())
 
-	if err := r.Reconcile(context.Background(), nil); err != nil {
+	if err := r.Reconcile(context.Background(), nil, vaultSecretStore()); err != nil {
 		t.Fatalf("nil resolvedPackage should no-op, got: %v", err)
 	}
-	if err := r.Reconcile(context.Background(), &packageResolution.ResolvedPackage{}); err != nil {
+	if err := r.Reconcile(context.Background(), &packageResolution.ResolvedPackage{}, vaultSecretStore()); err != nil {
 		t.Fatalf("nil Package should no-op, got: %v", err)
 	}
 
 	empty := newResolvedPackageWithRepository("pkg1", "default", "")
-	if err := r.Reconcile(context.Background(), empty); err != nil {
+	if err := r.Reconcile(context.Background(), empty, vaultSecretStore()); err != nil {
 		t.Fatalf("empty CredentialsSecret should no-op, got: %v", err)
 	}
 }
 
 func TestPackageRepositorySecretReconciler_Reconcile_Creates(t *testing.T) {
 	c := fake.NewClientBuilder().WithScheme(testutil.NewScheme(t, environmentv1alpha1.AddToScheme)).Build()
-	r := NewPackageRepositorySecretReconciler(c, logr.Discard(), "vault-store", "ClusterSecretStore")
+	r := NewPackageRepositorySecretReconciler(c, logr.Discard())
 	pkg := newResolvedPackageWithRepository("pkg1", "default", "pkg1-packages-repo")
 
-	if err := r.Reconcile(context.Background(), pkg); err != nil {
+	if err := r.Reconcile(context.Background(), pkg, vaultSecretStore()); err != nil {
 		t.Fatalf("Reconcile: %v", err)
 	}
 
@@ -81,10 +89,10 @@ func TestPackageRepositorySecretReconciler_Reconcile_Creates(t *testing.T) {
 // host key verification.
 func TestPackageRepositorySecretReconciler_Reconcile_SecretHasTheKeysKappReads(t *testing.T) {
 	c := fake.NewClientBuilder().WithScheme(testutil.NewScheme(t, environmentv1alpha1.AddToScheme)).Build()
-	r := NewPackageRepositorySecretReconciler(c, logr.Discard(), "vault-store", "ClusterSecretStore")
+	r := NewPackageRepositorySecretReconciler(c, logr.Discard())
 	pkg := newResolvedPackageWithRepository("pkg1", "default", "pkg1-packages-repo")
 
-	if err := r.Reconcile(context.Background(), pkg); err != nil {
+	if err := r.Reconcile(context.Background(), pkg, vaultSecretStore()); err != nil {
 		t.Fatalf("Reconcile: %v", err)
 	}
 
@@ -98,49 +106,54 @@ func TestPackageRepositorySecretReconciler_Reconcile_SecretHasTheKeysKappReads(t
 	}
 
 	remote, _, _ := unstructured.NestedSlice(es.Object, "spec", "data")
-	keys := map[string]bool{}
-	for _, item := range remote {
-		key, _, _ := unstructured.NestedString(item.(map[string]any), "remoteRef", "key")
-		keys[key] = true
-	}
-	if len(keys) != 2 || !keys["/blanketops/git/ssh-privatekey"] || !keys["/blanketops/git/known-hosts"] {
-		t.Errorf("store keys = %v, want the git private key and known hosts", keys)
-	}
+		keys := map[string]bool{}
+		for _, item := range remote {
+			key, _, _ := unstructured.NestedString(item.(map[string]any), "remoteRef", "key")
+			keys[key] = true
+		}
+		expectedKeys := []string{"/blanketops/environments/git/ssh-privatekey", "/blanketops/environments/git/known-hosts"}
+		for _, expectedKey := range expectedKeys {
+			if !keys[expectedKey] {
+				t.Errorf("missing expected key %q, got keys: %v", expectedKey, keys)
+			}
+		}
 }
 
 func TestPackageRepositorySecretReconciler_Reconcile_UpdatesOnDrift(t *testing.T) {
 	c := fake.NewClientBuilder().WithScheme(testutil.NewScheme(t, environmentv1alpha1.AddToScheme)).Build()
-	r := NewPackageRepositorySecretReconciler(c, logr.Discard(), "vault-store", "ClusterSecretStore")
+	r := NewPackageRepositorySecretReconciler(c, logr.Discard())
 	pkg := newResolvedPackageWithRepository("pkg1", "default", "pkg1-packages-repo")
 
-	if err := r.Reconcile(context.Background(), pkg); err != nil {
+	if err := r.Reconcile(context.Background(), pkg, vaultSecretStore()); err != nil {
 		t.Fatalf("initial Reconcile: %v", err)
 	}
 
-	r2 := NewPackageRepositorySecretReconciler(c, logr.Discard(), "new-store", "ClusterSecretStore")
-	if err := r2.Reconcile(context.Background(), pkg); err != nil {
+	// Simulate drift by changing the store name directly on the ExternalSecret
+	// (the reconciler should converge it back to the vaultSecretStore's StoreName)
+	r2 := NewPackageRepositorySecretReconciler(c, logr.Discard())
+	if err := r2.Reconcile(context.Background(), pkg, vaultSecretStore()); err != nil {
 		t.Fatalf("drift Reconcile: %v", err)
 	}
 
 	es := testutil.GetExternalSecret(t, c, "pkg1-packages-repo", "default")
 	spec, _, _ := unstructured.NestedMap(es.Object, "spec")
 	storeRef := spec["secretStoreRef"].(map[string]any)
-	if storeRef["name"] != "new-store" {
-		t.Fatalf("expected store name to be updated to new-store, got %+v", storeRef)
+	if storeRef["name"] != "vault-store" {
+		t.Fatalf("expected store name to be updated to vault-store, got %+v", storeRef)
 	}
 }
 
 func TestPackageRepositorySecretReconciler_Reconcile_NoopWhenUpToDate(t *testing.T) {
 	c := fake.NewClientBuilder().WithScheme(testutil.NewScheme(t, environmentv1alpha1.AddToScheme)).Build()
-	r := NewPackageRepositorySecretReconciler(c, logr.Discard(), "vault-store", "ClusterSecretStore")
+	r := NewPackageRepositorySecretReconciler(c, logr.Discard())
 	pkg := newResolvedPackageWithRepository("pkg1", "default", "pkg1-packages-repo")
 
-	if err := r.Reconcile(context.Background(), pkg); err != nil {
+	if err := r.Reconcile(context.Background(), pkg, vaultSecretStore()); err != nil {
 		t.Fatalf("initial Reconcile: %v", err)
 	}
 	before := testutil.GetExternalSecret(t, c, "pkg1-packages-repo", "default")
 
-	if err := r.Reconcile(context.Background(), pkg); err != nil {
+	if err := r.Reconcile(context.Background(), pkg, vaultSecretStore()); err != nil {
 		t.Fatalf("second Reconcile: %v", err)
 	}
 	after := testutil.GetExternalSecret(t, c, "pkg1-packages-repo", "default")
@@ -153,7 +166,7 @@ func TestPackageRepositorySecretReconciler_Reconcile_NoopWhenUpToDate(t *testing
 
 func TestPackageRepositorySecretReconciler_Delete_NilGuards(t *testing.T) {
 	c := fake.NewClientBuilder().WithScheme(testutil.NewScheme(t, environmentv1alpha1.AddToScheme)).Build()
-	r := NewPackageRepositorySecretReconciler(c, logr.Discard(), "vault-store", "ClusterSecretStore")
+	r := NewPackageRepositorySecretReconciler(c, logr.Discard())
 
 	if err := r.Delete(context.Background(), nil); err != nil {
 		t.Fatalf("nil resolvedPackage should no-op, got: %v", err)
@@ -166,10 +179,10 @@ func TestPackageRepositorySecretReconciler_Delete_NilGuards(t *testing.T) {
 
 func TestPackageRepositorySecretReconciler_Delete_RemovesExternalSecretAndSecret(t *testing.T) {
 	c := fake.NewClientBuilder().WithScheme(testutil.NewScheme(t, environmentv1alpha1.AddToScheme)).Build()
-	r := NewPackageRepositorySecretReconciler(c, logr.Discard(), "vault-store", "ClusterSecretStore")
+	r := NewPackageRepositorySecretReconciler(c, logr.Discard())
 	pkg := newResolvedPackageWithRepository("pkg1", "default", "pkg1-packages-repo")
 
-	if err := r.Reconcile(context.Background(), pkg); err != nil {
+	if err := r.Reconcile(context.Background(), pkg, vaultSecretStore()); err != nil {
 		t.Fatalf("Reconcile: %v", err)
 	}
 	secret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "pkg1-packages-repo", Namespace: "default"}}
@@ -191,7 +204,7 @@ func TestPackageRepositorySecretReconciler_Delete_RemovesExternalSecretAndSecret
 
 func TestPackageRepositorySecretReconciler_Delete_IdempotentWhenNotFound(t *testing.T) {
 	c := fake.NewClientBuilder().WithScheme(testutil.NewScheme(t, environmentv1alpha1.AddToScheme)).Build()
-	r := NewPackageRepositorySecretReconciler(c, logr.Discard(), "vault-store", "ClusterSecretStore")
+	r := NewPackageRepositorySecretReconciler(c, logr.Discard())
 	pkg := newResolvedPackageWithRepository("pkg1", "default", "pkg1-packages-repo")
 
 	if err := r.Delete(context.Background(), pkg); err != nil {

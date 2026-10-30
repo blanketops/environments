@@ -27,6 +27,7 @@ import (
 
 	environmentv1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
 	deploymentResolution "github.com/blanketops/environments/resolution/deployment/resolve"
+	environmentResolution "github.com/blanketops/environments/resolution/environment/resolve"
 
 	"github.com/blanketops/environments/pkg/secrets/internal/testutil"
 )
@@ -42,12 +43,19 @@ func newResolvedDeployment(name, namespace, secretName string) *deploymentResolu
 	}
 }
 
+func vaultSecretStore() environmentResolution.ResolvedSecretStore {
+	return environmentResolution.ResolvedSecretStore{
+		Provider:  "vault",
+		StoreName: "vault-store",
+	}
+}
+
 func TestDeploymentGitSSHSecretReconciler_Reconcile_Creates(t *testing.T) {
 	c := fake.NewClientBuilder().WithScheme(testutil.NewScheme(t, environmentv1alpha1.AddToScheme)).Build()
-	r := NewDeploymentGitSSHSecretReconciler(c, logr.Discard(), "vault-store", "ClusterSecretStore")
+	r := NewDeploymentGitSSHSecretReconciler(c, logr.Discard())
 	depl := newResolvedDeployment("my-deployment", "default", "my-deployment-git-ssh")
 
-	if err := r.Reconcile(context.Background(), depl); err != nil {
+	if err := r.Reconcile(context.Background(), depl, vaultSecretStore()); err != nil {
 		t.Fatalf("Reconcile: %v", err)
 	}
 
@@ -60,37 +68,39 @@ func TestDeploymentGitSSHSecretReconciler_Reconcile_Creates(t *testing.T) {
 
 func TestDeploymentGitSSHSecretReconciler_Reconcile_UpdatesOnDrift(t *testing.T) {
 	c := fake.NewClientBuilder().WithScheme(testutil.NewScheme(t, environmentv1alpha1.AddToScheme)).Build()
-	r := NewDeploymentGitSSHSecretReconciler(c, logr.Discard(), "vault-store", "ClusterSecretStore")
+	r := NewDeploymentGitSSHSecretReconciler(c, logr.Discard())
 	depl := newResolvedDeployment("my-deployment", "default", "my-deployment-git-ssh")
 
-	if err := r.Reconcile(context.Background(), depl); err != nil {
+	if err := r.Reconcile(context.Background(), depl, vaultSecretStore()); err != nil {
 		t.Fatalf("initial Reconcile: %v", err)
 	}
 
-	r2 := NewDeploymentGitSSHSecretReconciler(c, logr.Discard(), "new-store", "ClusterSecretStore")
-	if err := r2.Reconcile(context.Background(), depl); err != nil {
+	// Simulate drift by changing the store name directly on the ExternalSecret
+	// (the reconciler should converge it back to the vaultSecretStore's StoreName)
+	r2 := NewDeploymentGitSSHSecretReconciler(c, logr.Discard())
+	if err := r2.Reconcile(context.Background(), depl, vaultSecretStore()); err != nil {
 		t.Fatalf("drift Reconcile: %v", err)
 	}
 
 	es := testutil.GetExternalSecret(t, c, "my-deployment-git-ssh", "default")
 	spec, _, _ := unstructured.NestedMap(es.Object, "spec")
 	storeRef := spec["secretStoreRef"].(map[string]any)
-	if storeRef["name"] != "new-store" {
-		t.Fatalf("expected store name to be updated to new-store, got %+v", storeRef)
+	if storeRef["name"] != "vault-store" {
+		t.Fatalf("expected store name to be updated to vault-store, got %+v", storeRef)
 	}
 }
 
 func TestDeploymentGitSSHSecretReconciler_Reconcile_NoopWhenUpToDate(t *testing.T) {
 	c := fake.NewClientBuilder().WithScheme(testutil.NewScheme(t, environmentv1alpha1.AddToScheme)).Build()
-	r := NewDeploymentGitSSHSecretReconciler(c, logr.Discard(), "vault-store", "ClusterSecretStore")
+	r := NewDeploymentGitSSHSecretReconciler(c, logr.Discard())
 	depl := newResolvedDeployment("my-deployment", "default", "my-deployment-git-ssh")
 
-	if err := r.Reconcile(context.Background(), depl); err != nil {
+	if err := r.Reconcile(context.Background(), depl, vaultSecretStore()); err != nil {
 		t.Fatalf("initial Reconcile: %v", err)
 	}
 	before := testutil.GetExternalSecret(t, c, "my-deployment-git-ssh", "default")
 
-	if err := r.Reconcile(context.Background(), depl); err != nil {
+	if err := r.Reconcile(context.Background(), depl, vaultSecretStore()); err != nil {
 		t.Fatalf("second Reconcile: %v", err)
 	}
 	after := testutil.GetExternalSecret(t, c, "my-deployment-git-ssh", "default")
@@ -103,10 +113,10 @@ func TestDeploymentGitSSHSecretReconciler_Reconcile_NoopWhenUpToDate(t *testing.
 
 func TestDeploymentGitSSHSecretReconciler_Delete_RemovesExternalSecretAndSecret(t *testing.T) {
 	c := fake.NewClientBuilder().WithScheme(testutil.NewScheme(t, environmentv1alpha1.AddToScheme)).Build()
-	r := NewDeploymentGitSSHSecretReconciler(c, logr.Discard(), "vault-store", "ClusterSecretStore")
+	r := NewDeploymentGitSSHSecretReconciler(c, logr.Discard())
 	depl := newResolvedDeployment("my-deployment", "default", "my-deployment-git-ssh")
 
-	if err := r.Reconcile(context.Background(), depl); err != nil {
+	if err := r.Reconcile(context.Background(), depl, vaultSecretStore()); err != nil {
 		t.Fatalf("Reconcile: %v", err)
 	}
 	secret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "my-deployment-git-ssh", Namespace: "default"}}
@@ -128,7 +138,7 @@ func TestDeploymentGitSSHSecretReconciler_Delete_RemovesExternalSecretAndSecret(
 
 func TestDeploymentGitSSHSecretReconciler_Delete_IdempotentWhenNotFound(t *testing.T) {
 	c := fake.NewClientBuilder().WithScheme(testutil.NewScheme(t, environmentv1alpha1.AddToScheme)).Build()
-	r := NewDeploymentGitSSHSecretReconciler(c, logr.Discard(), "vault-store", "ClusterSecretStore")
+	r := NewDeploymentGitSSHSecretReconciler(c, logr.Discard())
 	depl := newResolvedDeployment("my-deployment", "default", "my-deployment-git-ssh")
 
 	if err := r.Delete(context.Background(), depl); err != nil {

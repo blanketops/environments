@@ -37,6 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	packageResolution "github.com/blanketops/environments/resolution/packages/resolve"
+	environmentResolution "github.com/blanketops/environments/resolution/environment/resolve"
 )
 
 // PackageRepositorySecretReconciler converges the ExternalSecret used to
@@ -44,26 +45,22 @@ import (
 // PackageStateRepositorySecretReconciler, for the repository kapp-controller
 // fetches.
 type PackageRepositorySecretReconciler struct {
-	Client    client.Client
-	Log       logr.Logger
-	StoreName string
-	StoreKind string
+	Client client.Client
+	Log    logr.Logger
 }
 
 // NewPackageRepositorySecretReconciler constructs a
-// PackageRepositorySecretReconciler targeting the given ESO store.
-func NewPackageRepositorySecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *PackageRepositorySecretReconciler {
+// PackageRepositorySecretReconciler.
+func NewPackageRepositorySecretReconciler(c client.Client, log logr.Logger) *PackageRepositorySecretReconciler {
 	return &PackageRepositorySecretReconciler{
-		Client:    c,
-		Log:       log,
-		StoreName: storeName,
-		StoreKind: storeKind,
+		Client: c,
+		Log:    log,
 	}
 }
 
 // Reconcile creates or updates the git-ssh clone ExternalSecret for
 // resolvedPackage's package repository.
-func (r *PackageRepositorySecretReconciler) Reconcile(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage) error {
+func (r *PackageRepositorySecretReconciler) Reconcile(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage, ss environmentResolution.ResolvedSecretStore) error {
 	if resolvedPackage == nil || resolvedPackage.Package == nil {
 		return nil
 	}
@@ -90,8 +87,8 @@ func (r *PackageRepositorySecretReconciler) Reconcile(ctx context.Context, resol
 			"spec": map[string]any{
 				"refreshInterval": "10s",
 				"secretStoreRef": map[string]any{
-					"name": r.StoreName,
-					"kind": r.StoreKind,
+					"name": ss.StoreName,
+					"kind": "ClusterSecretStore",
 				},
 				"target": map[string]any{
 					"name": secretName,
@@ -106,11 +103,11 @@ func (r *PackageRepositorySecretReconciler) Reconcile(ctx context.Context, resol
 				"data": []any{
 					map[string]any{
 						"secretKey": "ssh_privatekey",
-						"remoteRef": map[string]any{"key": "/blanketops/git/ssh-privatekey"},
+						"remoteRef": map[string]any{"key": "/blanketops/environments/git/ssh-privatekey"},
 					},
 					map[string]any{
 						"secretKey": "known_hosts",
-						"remoteRef": map[string]any{"key": "/blanketops/git/known-hosts"},
+						"remoteRef": map[string]any{"key": "/blanketops/environments/git/known-hosts"},
 					},
 				},
 			},
@@ -128,7 +125,7 @@ func (r *PackageRepositorySecretReconciler) Reconcile(ctx context.Context, resol
 
 	if apierrors.IsNotFound(err) {
 		r.Log.Info("creating ExternalSecret for package repository",
-			"package", pkg.Name, "secret", secretName, "store", r.StoreName)
+			"package", pkg.Name, "secret", secretName, "store", ss.StoreName)
 		return r.Client.Create(ctx, desired)
 	}
 	if err != nil {
@@ -143,7 +140,7 @@ func (r *PackageRepositorySecretReconciler) Reconcile(ctx context.Context, resol
 			return err
 		}
 		r.Log.Info("updating ExternalSecret for package repository",
-			"package", pkg.Name, "secret", secretName, "store", r.StoreName)
+			"package", pkg.Name, "secret", secretName, "store", ss.StoreName)
 		return r.Client.Update(ctx, &existing)
 	}
 

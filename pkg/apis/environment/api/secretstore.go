@@ -122,7 +122,7 @@ func (r *SecretStoreReconciler) Reconcile(ctx context.Context, resolved *environ
 	}
 
 	r.Log.Info("applying secret store", "kind", storeKind, "name", storeName,
-		"provider", contract.SecretStoreProvider, "environment", env.Name)
+		"provider", contract.SecretStore.Provider, "environment", env.Name)
 
 	return r.Client.Patch(ctx, desired, client.Apply, //nolint:staticcheck
 		&client.PatchOptions{FieldManager: "blanketops-environment-api", Force: ptr.To(true)})
@@ -133,19 +133,35 @@ func (r *SecretStoreReconciler) Reconcile(ctx context.Context, resolved *environ
 // name to use. A nil, nil return means the provider is unrecognized/empty
 // and nothing should be provisioned.
 func buildProviderSpec(contract *environmentresolve.ResolvedEnvironmentContract) (block map[string]any, storeName string, err error) {
-	switch contract.SecretStoreProvider {
+	switch contract.SecretStore.Provider {
 	case "vault", "SECRET_STORE_PROVIDER_VAULT":
-		block, err := buildVaultProviderSpec(contract.Vault)
-		return block, StoreVault, err
+		block, err := buildVaultProviderSpec(contract.SecretStore.Vault)
+		storeName = StoreVault
+		if contract.SecretStore.StoreName != "" {
+			storeName = contract.SecretStore.StoreName
+		}
+		return block, storeName, err
 	case "aws", "SECRET_STORE_PROVIDER_AWS":
 		block, err := buildAWSProviderSpec(contract)
-		return block, StoreAWS, err
+		storeName = StoreAWS
+		if contract.SecretStore.StoreName != "" {
+			storeName = contract.SecretStore.StoreName
+		}
+		return block, storeName, err
 	case "azure", "SECRET_STORE_PROVIDER_AZURE":
 		block, err := buildAzureProviderSpec(contract)
-		return block, StoreAzure, err
+		storeName = StoreAzure
+		if contract.SecretStore.StoreName != "" {
+			storeName = contract.SecretStore.StoreName
+		}
+		return block, storeName, err
 	case "gcp", "SECRET_STORE_PROVIDER_GCP":
 		block, err := buildGCPProviderSpec(contract)
-		return block, StoreGCP, err
+		storeName = StoreGCP
+		if contract.SecretStore.StoreName != "" {
+			storeName = contract.SecretStore.StoreName
+		}
+		return block, storeName, err
 	default:
 		return nil, "", nil
 	}

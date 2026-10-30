@@ -101,7 +101,7 @@ func (r *PackageRegistrySecretReconciler) Reconcile(ctx context.Context, resolve
 					map[string]any{
 						"secretKey": "dockerconfigjson",
 						"remoteRef": map[string]any{
-							"key": "/blanketops/registry/config",
+							"key": "/blanketops/environments/registry/config",
 						},
 					},
 				},

@@ -29,6 +29,8 @@ require (
 	sigs.k8s.io/controller-runtime v0.25.2
 )
 
+replace github.com/blanketops/environments-contract => ../environments-contract
+
 require (
 	carvel.dev/vendir v0.46.2 // indirect
 	dario.cat/mergo v1.0.2 // indirect
