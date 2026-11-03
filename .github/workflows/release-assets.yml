@@ -1,5 +1,5 @@
 # =============================================================================
-# release-assets.yml
+# release-assets.yml — Bundle release assets (installer, CRDs, docs, CLI)
 #
 # Fires on GitHub Release published. Bleeds four asset bundles:
 #

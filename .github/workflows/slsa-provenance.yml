@@ -1,5 +1,5 @@
 # =============================================================================
-# slsa-provenance.yml
+# slsa-provenance.yml — SLSA level-3 provenance for the docs bundle
 #
 # Generates SLSA level-3 build provenance (slsa-framework/slsa-github-generator)
 # for the one artifact this repo actually builds: the gomarkdoc docs bundle

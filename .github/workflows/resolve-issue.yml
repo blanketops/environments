@@ -1,7 +1,17 @@
-name: Resolve tracking issue
-
+# =============================================================================
+# resolve-issue.yml — Close a PR's tracking issue on merge
+#
 # When a pull request merges, the developer bot closes the one-to-one tracking
 # issue it opened for the branch (see open-pr.yml). It acts only on merge.
+#
+# Trigger scope:
+#   pull_request closed, only when merged == true
+#
+# Secrets required:
+#   DEVELOPER_APP_ID, DEVELOPER_APP_PRIVATE_KEY — Developer App credentials
+# =============================================================================
+name: Resolve tracking issue
+
 on:
   pull_request:
     types: [closed]
