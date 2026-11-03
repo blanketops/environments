@@ -202,7 +202,7 @@ BlanketOps Environments is developed in the open, and contributions are welcome.
 | [CODEBASES.md](CODEBASES.md) | The repositories that make up the project and what each is for |
 | [GOVERNANCE.md](GOVERNANCE.md) | How decisions are made and how the project relates to BlanketOps' commercial products |
 | [MAINTAINERS.md](MAINTAINERS.md) | Who maintains the project |
-| [ROADMAP.md](ROADMAP.md) | What has shipped and what is planned |
+| [Roadmap](https://blanketops-environments.netlify.app/docs/Roadmap) | What has shipped and what is planned |
 | [ADOPTERS.md](ADOPTERS.md) | Who uses it — add your organization |
 | [SECURITY.md](SECURITY.md) | Supported versions and how to report a vulnerability privately |
 

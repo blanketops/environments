@@ -80,12 +80,13 @@ type ResolvedEnvironmentSpec struct {
 // connection config needed to provision the store itself (currently Vault
 // only; AWS/GCP/Azure still resolve to a pre-provisioned platform store).
 type ResolvedEnvironmentContract struct {
-	SecretStoreProvider string
-	// Vault is non-nil only when SecretStoreProvider is "vault" /
-	// "SECRET_STORE_PROVIDER_VAULT". Populated from
-	// contract.secretStore.vault — validated at resolution time so a
-	// malformed CR fails fast here rather than deep inside ESO reconciliation.
-	Vault *ResolvedVaultConfig
+	SecretStore ResolvedSecretStore
+}
+
+type ResolvedSecretStore struct {
+	Provider  string
+	StoreName string
+	Vault     *ResolvedVaultConfig
 }
 
 // ResolvedVaultConfig is the Environment-declared HashiCorp Vault connection
@@ -256,64 +257,64 @@ func ResolveEnvironment(environment *environmentv1alpha1.Environment) (*Resolved
 	}
 
 	// ------------------------------------------------
-	// Optional platform contract: secretStore provider.
-	// ------------------------------------------------
-	// ------------------------------------------------
 	// Platform contract: secretStore is required when contract is declared.
 	// ------------------------------------------------
-	if contractRaw, ok := raw["contract"].(map[string]any); ok {
-		ssRaw, ok := contractRaw["secretStore"].(map[string]any)
+	ssRaw, ok := raw["secretStore"].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("contract.secretStore is required")
+	}
+	provider, err := mustString(ssRaw, "provider")
+	if err != nil {
+		return nil, fmt.Errorf("contract.secretStore.provider: %w", err)
+	}
+	storeName := optionalString(ssRaw, "storeName")
+
+	spec.Contract = &ResolvedEnvironmentContract{
+		SecretStore: ResolvedSecretStore{
+			Provider:  provider,
+			StoreName: storeName,
+		},
+	}
+
+	// --------------------------------------------
+	// Vault connection config — required when provider is vault.
+	// Validated here so a malformed CR fails fast at resolution
+	// rather than deep inside ESO reconciliation.
+	// --------------------------------------------
+	if provider == "vault" || provider == "SECRET_STORE_PROVIDER_VAULT" {
+		vaultRaw, ok := ssRaw["vault"].(map[string]any)
 		if !ok {
-			return nil, fmt.Errorf("contract.secretStore is required")
+			return nil, fmt.Errorf("contract.secretStore.vault is required for provider %q", provider)
 		}
-		provider, err := mustString(ssRaw, "provider")
+		address, err := mustString(vaultRaw, "address")
 		if err != nil {
-			return nil, fmt.Errorf("contract.secretStore.provider: %w", err)
+			return nil, fmt.Errorf("contract.secretStore.vault.address: %w", err)
 		}
-		spec.Contract = &ResolvedEnvironmentContract{
-			SecretStoreProvider: provider,
+		path, err := mustString(vaultRaw, "path")
+		if err != nil {
+			return nil, fmt.Errorf("contract.secretStore.vault.path: %w", err)
+		}
+		role, err := mustString(vaultRaw, "role")
+		if err != nil {
+			return nil, fmt.Errorf("contract.secretStore.vault.role: %w", err)
 		}
 
-		// --------------------------------------------
-		// Vault connection config — required when provider is vault.
-		// Validated here so a malformed CR fails fast at resolution
-		// rather than deep inside ESO reconciliation.
-		// --------------------------------------------
-		if provider == "vault" || provider == "SECRET_STORE_PROVIDER_VAULT" {
-			vaultRaw, ok := ssRaw["vault"].(map[string]any)
-			if !ok {
-				return nil, fmt.Errorf("contract.secretStore.vault is required for provider %q", provider)
-			}
-			address, err := mustString(vaultRaw, "address")
-			if err != nil {
-				return nil, fmt.Errorf("contract.secretStore.vault.address: %w", err)
-			}
-			path, err := mustString(vaultRaw, "path")
-			if err != nil {
-				return nil, fmt.Errorf("contract.secretStore.vault.path: %w", err)
-			}
-			role, err := mustString(vaultRaw, "role")
-			if err != nil {
-				return nil, fmt.Errorf("contract.secretStore.vault.role: %w", err)
-			}
+		mountPath := optionalString(vaultRaw, "mountPath")
+		if mountPath == "" {
+			mountPath = "kubernetes"
+		}
+		version := optionalString(vaultRaw, "version")
+		if version == "" {
+			version = "v2"
+		}
 
-			mountPath := optionalString(vaultRaw, "mountPath")
-			if mountPath == "" {
-				mountPath = "kubernetes"
-			}
-			version := optionalString(vaultRaw, "version")
-			if version == "" {
-				version = "v2"
-			}
-
-			spec.Contract.Vault = &ResolvedVaultConfig{
-				Address:            address,
-				Path:               path,
-				Role:               role,
-				MountPath:          mountPath,
-				Version:            version,
-				ServiceAccountName: optionalString(vaultRaw, "serviceAccountName"),
-			}
+		spec.Contract.SecretStore.Vault = &ResolvedVaultConfig{
+			Address:            address,
+			Path:               path,
+			Role:               role,
+			MountPath:          mountPath,
+			Version:            version,
+			ServiceAccountName: optionalString(vaultRaw, "serviceAccountName"),
 		}
 	}
 

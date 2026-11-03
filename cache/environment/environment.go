@@ -28,6 +28,7 @@ package environment
 
 import (
 	"context"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/types"
 
@@ -89,17 +90,33 @@ func (e *EnvironmentCache) GetVersion(ctx context.Context, nn types.NamespacedNa
 }
 
 // -----------------------------------------------------------------------------
-// Typed Helpers: SecretStoreProvider
+// Typed Helpers: SecretStore
 // -----------------------------------------------------------------------------
 
-func (e *EnvironmentCache) SetSecretStoreProvider(ctx context.Context, nn types.NamespacedName, gen int64, provider string) error {
-	return e.SetField(ctx, nn, gen, "secretStoreProvider", provider)
+func (e *EnvironmentCache) SetSecretStore(ctx context.Context, nn types.NamespacedName, gen int64, ss environmentResolution.ResolvedSecretStore) error {
+	if err := e.SetField(ctx, nn, gen, "secretStoreProvider", ss.Provider); err != nil {
+		return err
+	}
+	return e.SetField(ctx, nn, gen, "secretStoreName", ss.StoreName)
 }
 
-func (e *EnvironmentCache) GetSecretStoreProvider(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error) {
-	var v string
-	found, err := e.GetField(ctx, nn, gen, "secretStoreProvider", &v)
-	return v, found, err
+func (e *EnvironmentCache) GetSecretStore(ctx context.Context, nn types.NamespacedName, gen int64) (environmentResolution.ResolvedSecretStore, bool, error) {
+	var p, s string
+	foundP, errP := e.GetField(ctx, nn, gen, "secretStoreProvider", &p)
+	foundS, errS := e.GetField(ctx, nn, gen, "secretStoreName", &s)
+
+	if errP != nil || errS != nil {
+		return environmentResolution.ResolvedSecretStore{}, false, fmt.Errorf("cache error: provider(%v), storeName(%v)", errP, errS)
+	}
+
+	if !foundP || !foundS {
+		return environmentResolution.ResolvedSecretStore{}, false, nil
+	}
+
+	return environmentResolution.ResolvedSecretStore{
+		Provider:  p,
+		StoreName: s,
+	}, true, nil
 }
 
 // -----------------------------------------------------------------------------
@@ -202,8 +219,8 @@ func (e *EnvironmentCache) PublishResolved(ctx context.Context, nn types.Namespa
 	record(e.SetVersion(ctx, nn, gen, r.Spec.Version))
 
 	// Conditional: publish only when resolved to something meaningful.
-	if r.Spec.Contract != nil && r.Spec.Contract.SecretStoreProvider != "" {
-		record(e.SetSecretStoreProvider(ctx, nn, gen, r.Spec.Contract.SecretStoreProvider))
+	if r.Spec.Contract != nil && r.Spec.Contract.SecretStore.Provider != "" {
+		record(e.SetSecretStore(ctx, nn, gen, r.Spec.Contract.SecretStore))
 	}
 	if r.Spec.Build != "" {
 		record(e.SetBuild(ctx, nn, gen, r.Spec.Build))

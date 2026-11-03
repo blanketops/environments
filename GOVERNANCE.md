@@ -23,7 +23,7 @@ Maintainers are listed in [MAINTAINERS.md](MAINTAINERS.md). They:
 - review and merge pull requests;
 - triage issues and set priorities;
 - cut releases;
-- own the [roadmap](ROADMAP.md);
+- own the [roadmap](https://blanketops-environments.netlify.app/docs/Roadmap);
 - handle security reports ([SECURITY.md](SECURITY.md)) and Code of Conduct
   reports ([CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md)).
 

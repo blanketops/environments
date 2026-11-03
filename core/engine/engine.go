@@ -38,6 +38,7 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -48,6 +49,15 @@ import (
 	registry "github.com/blanketops/environments/core/registry"
 )
 
+// ErrCircuitOpen is returned when a pre-emptive circuit breaker trips for a given GVK or command.
+var ErrCircuitOpen = errors.New("circuit breaker is open for target GVK")
+
+// CircuitBreaker defines the signature for pre-emptive circuit breaker checks.
+type CircuitBreaker interface {
+	// Allow returns true if the command execution is permitted, false if tripped.
+	Allow(cmd command.Command) bool
+}
+
 // Engine routes Commands to the correct Domain and supports both synchronous
 // and async execution modes. A single Engine instance is shared across all
 // controllers registered with the manager.
@@ -55,7 +65,7 @@ type Engine struct {
 	// registry is the source of Domain lookups by GVK.
 	registry *registry.Registry
 
-	// mu guards workers and related fields.
+	// mu guards workers, related fields, and circuit breakers.
 	mu sync.RWMutex
 
 	// queue is the buffered command channel drained by the worker pool.
@@ -75,6 +85,9 @@ type Engine struct {
 
 	// stopOnce guards workerStop against being closed more than once.
 	stopOnce sync.Once
+
+	// circuitBreaker is an optional pre-emptive guard checked prior to execution.
+	circuitBreaker CircuitBreaker
 }
 
 // NewEngine constructs an Engine bound to the given Registry and logger.
@@ -98,10 +111,26 @@ func (e *Engine) SetWorkers(n int) {
 	e.workers = n
 }
 
+// SetCircuitBreaker registers a pre-emptive circuit breaker implementation to protect dispatch paths.
+func (e *Engine) SetCircuitBreaker(cb CircuitBreaker) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.circuitBreaker = cb
+}
+
 // Execute dispatches a Command synchronously to the Domain registered for
-// cmd.GVK. Returns an error if no Domain is registered or if Handle fails.
-// The error propagates back to controller-runtime as a requeue signal.
+// cmd.GVK. Returns an error if no Domain is registered, if the circuit breaker is open,
+// or if Handle fails. The error propagates back to controller-runtime as a requeue signal.
 func (e *Engine) Execute(ctx context.Context, cmd command.Command) error {
+	e.mu.RLock()
+	cb := e.circuitBreaker
+	e.mu.RUnlock()
+
+	if cb != nil && !cb.Allow(cmd) {
+		e.logger.V(1).Info("circuit breaker pre-emptively blocked command", "gvk", cmd.GVK.String(), "type", cmd.Type, "name", cmd.Name())
+		return fmt.Errorf("%w: %s", ErrCircuitOpen, cmd.GVK.String())
+	}
+
 	d, ok := e.registry.GetDomain(cmd.GVK)
 	if !ok {
 		return fmt.Errorf("no domain registered for GVK %s", cmd.GVK.String())
@@ -116,7 +145,14 @@ func (e *Engine) Execute(ctx context.Context, cmd command.Command) error {
 func (e *Engine) Queue(ctx context.Context, cmd command.Command) error {
 	e.mu.RLock()
 	workers := e.workers
+	cb := e.circuitBreaker
 	e.mu.RUnlock()
+
+	// Pre-emptively check circuit breaker at queue ingestion point to preserve backpressure/resources
+	if cb != nil && !cb.Allow(cmd) {
+		e.logger.V(1).Info("circuit breaker pre-emptively blocked queued command", "gvk", cmd.GVK.String(), "type", cmd.Type, "name", cmd.Name())
+		return fmt.Errorf("%w: %s", ErrCircuitOpen, cmd.GVK.String())
+	}
 
 	if workers <= 0 {
 		return e.Execute(ctx, cmd)
