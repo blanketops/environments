@@ -18,6 +18,7 @@ Resolution is nil\-tolerant for the CR itself but strict on the contract payload
   - [func ResolveEnvironment\(environment \*environmentv1alpha1.Environment\) \(\*ResolvedEnvironment, error\)](<#ResolveEnvironment>)
 - [type ResolvedEnvironmentContract](<#ResolvedEnvironmentContract>)
 - [type ResolvedEnvironmentSpec](<#ResolvedEnvironmentSpec>)
+- [type ResolvedSecretStore](<#ResolvedSecretStore>)
 - [type ResolvedVaultConfig](<#ResolvedVaultConfig>)
 
 
@@ -49,12 +50,7 @@ ResolvedEnvironmentContract holds platform\-level bindings declared on the Envir
 
 ```go
 type ResolvedEnvironmentContract struct {
-    SecretStoreProvider string
-    // Vault is non-nil only when SecretStoreProvider is "vault" /
-    // "SECRET_STORE_PROVIDER_VAULT". Populated from
-    // contract.secretStore.vault — validated at resolution time so a
-    // malformed CR fails fast here rather than deep inside ESO reconciliation.
-    Vault *ResolvedVaultConfig
+    SecretStore ResolvedSecretStore
 }
 ```
 
@@ -89,6 +85,19 @@ type ResolvedEnvironmentSpec struct {
 
     // Platform-level bindings.
     Contract *ResolvedEnvironmentContract
+}
+```
+
+<a name="ResolvedSecretStore"></a>
+## type ResolvedSecretStore
+
+
+
+```go
+type ResolvedSecretStore struct {
+    Provider  string
+    StoreName string
+    Vault     *ResolvedVaultConfig
 }
 ```
 

@@ -18,14 +18,37 @@ When no workers are configured \(workers == 0\), Queue\(\) falls through to Exec
 
 ## Index
 
+- [Variables](<#variables>)
+- [type CircuitBreaker](<#CircuitBreaker>)
 - [type Engine](<#Engine>)
   - [func NewEngine\(registry \*registry.Registry, logger logr.Logger\) \*Engine](<#NewEngine>)
   - [func \(e \*Engine\) Execute\(ctx context.Context, cmd command.Command\) error](<#Engine.Execute>)
   - [func \(e \*Engine\) Queue\(ctx context.Context, cmd command.Command\) error](<#Engine.Queue>)
+  - [func \(e \*Engine\) SetCircuitBreaker\(cb CircuitBreaker\)](<#Engine.SetCircuitBreaker>)
   - [func \(e \*Engine\) SetWorkers\(n int\)](<#Engine.SetWorkers>)
   - [func \(e \*Engine\) StartWorkers\(\)](<#Engine.StartWorkers>)
   - [func \(e \*Engine\) StopWorkers\(timeout time.Duration\)](<#Engine.StopWorkers>)
 
+
+## Variables
+
+<a name="ErrCircuitOpen"></a>ErrCircuitOpen is returned when a pre\-emptive circuit breaker trips for a given GVK or command.
+
+```go
+var ErrCircuitOpen = errors.New("circuit breaker is open for target GVK")
+```
+
+<a name="CircuitBreaker"></a>
+## type CircuitBreaker
+
+CircuitBreaker defines the signature for pre\-emptive circuit breaker checks.
+
+```go
+type CircuitBreaker interface {
+    // Allow returns true if the command execution is permitted, false if tripped.
+    Allow(cmd command.Command) bool
+}
+```
 
 <a name="Engine"></a>
 ## type Engine
@@ -54,7 +77,7 @@ NewEngine constructs an Engine bound to the given Registry and logger. The engin
 func (e *Engine) Execute(ctx context.Context, cmd command.Command) error
 ```
 
-Execute dispatches a Command synchronously to the Domain registered for cmd.GVK. Returns an error if no Domain is registered or if Handle fails. The error propagates back to controller\-runtime as a requeue signal.
+Execute dispatches a Command synchronously to the Domain registered for cmd.GVK. Returns an error if no Domain is registered, if the circuit breaker is open, or if Handle fails. The error propagates back to controller\-runtime as a requeue signal.
 
 <a name="Engine.Queue"></a>
 ### func \(\*Engine\) Queue
@@ -64,6 +87,15 @@ func (e *Engine) Queue(ctx context.Context, cmd command.Command) error
 ```
 
 Queue enqueues a Command for async processing when workers \> 0, or falls through to Execute when in synchronous mode. Blocks if the queue is full and returns ctx.Err\(\) if the context is cancelled while waiting.
+
+<a name="Engine.SetCircuitBreaker"></a>
+### func \(\*Engine\) SetCircuitBreaker
+
+```go
+func (e *Engine) SetCircuitBreaker(cb CircuitBreaker)
+```
+
+SetCircuitBreaker registers a pre\-emptive circuit breaker implementation to protect dispatch paths.
 
 <a name="Engine.SetWorkers"></a>
 ### func \(\*Engine\) SetWorkers
