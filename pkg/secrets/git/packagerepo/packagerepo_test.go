@@ -26,8 +26,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	environmentv1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
-	packageResolution "github.com/blanketops/environments/resolution/packages/resolve"
 	environmentResolution "github.com/blanketops/environments/resolution/environment/resolve"
+	packageResolution "github.com/blanketops/environments/resolution/packages/resolve"
 
 	"github.com/blanketops/environments/pkg/secrets/internal/testutil"
 )
@@ -106,17 +106,17 @@ func TestPackageRepositorySecretReconciler_Reconcile_SecretHasTheKeysKappReads(t
 	}
 
 	remote, _, _ := unstructured.NestedSlice(es.Object, "spec", "data")
-		keys := map[string]bool{}
-		for _, item := range remote {
-			key, _, _ := unstructured.NestedString(item.(map[string]any), "remoteRef", "key")
-			keys[key] = true
+	keys := map[string]bool{}
+	for _, item := range remote {
+		key, _, _ := unstructured.NestedString(item.(map[string]any), "remoteRef", "key")
+		keys[key] = true
+	}
+	expectedKeys := []string{"/blanketops/environments/git/ssh-privatekey", "/blanketops/environments/git/known-hosts"}
+	for _, expectedKey := range expectedKeys {
+		if !keys[expectedKey] {
+			t.Errorf("missing expected key %q, got keys: %v", expectedKey, keys)
 		}
-		expectedKeys := []string{"/blanketops/environments/git/ssh-privatekey", "/blanketops/environments/git/known-hosts"}
-		for _, expectedKey := range expectedKeys {
-			if !keys[expectedKey] {
-				t.Errorf("missing expected key %q, got keys: %v", expectedKey, keys)
-			}
-		}
+	}
 }
 
 func TestPackageRepositorySecretReconciler_Reconcile_UpdatesOnDrift(t *testing.T) {
