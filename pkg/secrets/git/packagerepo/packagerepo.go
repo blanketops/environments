@@ -36,8 +36,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	packageResolution "github.com/blanketops/environments/resolution/packages/resolve"
 	environmentResolution "github.com/blanketops/environments/resolution/environment/resolve"
+	packageResolution "github.com/blanketops/environments/resolution/packages/resolve"
 )
 
 // PackageRepositorySecretReconciler converges the ExternalSecret used to
