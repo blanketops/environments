@@ -41,18 +41,18 @@ jobs:
         run: |
           set -euo pipefail
           gh release download "$VERSION" -R blanketops/environments-bots \
-            -p developer-linux-amd64 -p developer-linux-amd64.sigstore.json \
+            -p releaser-linux-amd64 -p releaser-linux-amd64.sigstore.json \
             -D "$RUNNER_TEMP"
           cosign verify-blob \
-            --bundle "$RUNNER_TEMP/developer-linux-amd64.sigstore.json" \
+            --bundle "$RUNNER_TEMP/releaser-linux-amd64.sigstore.json" \
             --certificate-identity "https://github.com/blanketops/environments-bots/.github/workflows/release.yml@refs/tags/$VERSION" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-            "$RUNNER_TEMP/developer-linux-amd64"
-          chmod +x "$RUNNER_TEMP/developer-linux-amd64"
+            "$RUNNER_TEMP/releaser-linux-amd64"
+          chmod +x "$RUNNER_TEMP/releaser-linux-amd64"
 
       - name: Resolve
         env:
           GH_TOKEN: ${{ steps.app.outputs.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          "$RUNNER_TEMP/developer-linux-amd64" resolve -pull "$PR_NUMBER"
+          "$RUNNER_TEMP/releaser-linux-amd64" resolve -pull "$PR_NUMBER"
