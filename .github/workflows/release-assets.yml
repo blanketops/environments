@@ -1,40 +1,18 @@
 # =============================================================================
-# release-assets.yml
+# release-assets.yml — Bundle release assets (installer, CRDs, docs, CLI, coverage)
 #
-# Fires on GitHub Release published. Bleeds four asset bundles:
+# Fires on GitHub Release published or via manual dispatch. Bundles five primary
+# release asset archives and attaches them directly to the GitHub Release via `gh`:
 #
-#   install-{version}.yaml     — single-file controller installer (THE one)
-#                                kubectl apply -f install-{version}.yaml = done.
+#   install-{version}.yaml    — single-file controller installer (kubectl apply -f)
+#   crds-{version}.tar.gz     — CRD YAML files from BlanketOps/environments-install
+#   godoc-{version}.tar.gz    — generated Go package documentation via gomarkdoc
+#   coverage-{version}.tar.gz — raw coverage profile, native HTML & beauty-report.html
+#   bops*                     — CLI binaries bundled from BlanketOps/environments-cli
 #
-#   crds-{version}.tar.gz      — CRD YAML files only, for consumers who manage
-#                                CRDs separately from the controller rollout
-#
-#   docs-{version}.tar.gz      — generated Go package docs via gomarkdoc
-#
-#   bops, bops-static, bops-static-arm64 — CLI binaries
-#
-# All assets are uploaded directly to the triggering GitHub Release.
-#
-# This repo has no cmd/ or config/ of its own — it is a pure domain/caching
-# library. The controller install manifests (kustomize config/, CRDs) live in
-# BlanketOps/environments-install, and the CLI lives in
-# BlanketOps/environments-cli. Both are versioned independently; every job
-# below always bundles whatever is newest in the relevant repo at release time.
-#
-# Asset ownership:
-#   install → bundled in the install job from environments-install's latest release
-#   CRDs    → bundled in the crds job from environments-install's config/crd/bases/
-#   Docs    → built in the docs job; generated via gomarkdoc
-#   CLI     → bundled in the cli job from environments-cli's latest release
-#
-# Image convention:
-#   ghcr.io/blanketops/environments-controller:{version}
-#   Stamped into config/manager/kustomization.yaml in environments-install
-#   before that repo's kustomize build. The image must already exist in
-#   GHCR — pushed by the image CI workflow.
-#
-# Permissions:
-#   contents: write — required for gh release upload
+# All assets are uploaded directly to the triggering GitHub Release, bypassing
+# internal GitHub Actions artifact storage quota constraints and self-hosted runner
+# upload failures.
 # =============================================================================
 
 name: Release Assets
@@ -45,7 +23,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release tag to attach assets to (e.g. v0.7.1)"
+        description: "Release tag to attach assets to (e.g. v0.8.6)"
         required: true
 
 permissions:
@@ -53,29 +31,10 @@ permissions:
 
 env:
   GO_VERSION_FILE: go.mod
+  REGISTRY: ghcr.io
+  VENDOR_IMAGE: ghcr.io/blanketops/environments/tools
 
 jobs:
-
-  # ---------------------------------------------------------------------------
-  # Install manifest (THE asset)
-  #
-  # Produces the single-file controller installer: install-{version}.yaml
-  #
-  # What it contains (built by BlanketOps/environments-install via kustomize
-  # build config/default, published there as a release asset):
-  #   - Namespace
-  #   - CRDs
-  #   - ServiceAccount + ClusterRole + ClusterRoleBinding
-  #   - Controller Deployment
-  #   - Any platform ConfigMaps or webhooks declared in that repo's config/default
-  #
-  # Consumer install:
-  #   kubectl apply -f install-{version}.yaml
-  #
-  # This repo has no config/ of its own — the kustomize base, CRDs, and RBAC
-  # all live in BlanketOps/environments-install, versioned independently.
-  # This job always bundles whatever is newest there at release time.
-  # ---------------------------------------------------------------------------
   install:
     name: Bundle Install Manifest
     runs-on: self-hosted
@@ -84,7 +43,7 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ secrets.APP_ID }}
+          client-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: blanketops
           repositories: environments
@@ -96,7 +55,7 @@ jobs:
       - name: Resolve latest environments-install release
         id: install_version
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           INSTALL_TAG=$(gh release list --repo BlanketOps/environments-install --limit 1 | awk '{print $1}')
           echo "tag=${INSTALL_TAG}" >> "$GITHUB_OUTPUT"
@@ -104,7 +63,7 @@ jobs:
 
       - name: Download install manifest
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           mkdir -p .install-assets
           gh release download "${{ steps.install_version.outputs.tag }}" \
@@ -136,38 +95,30 @@ jobs:
             --clobber
 
       - name: Summary
+        if: always()
         run: |
           VERSION=${{ steps.version.outputs.tag }}
           LINES=$(wc -l < "${{ steps.manifest.outputs.manifest }}")
-          echo "### 🚀 Install Manifest" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Asset | Version | Lines |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|-------|---------|-------|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| \`${{ steps.manifest.outputs.manifest }}\` | \`${VERSION}\` | \`${LINES}\` |" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Bundled from:** \`BlanketOps/environments-install@${{ steps.install_version.outputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Install:**" >> "$GITHUB_STEP_SUMMARY"
-          echo "\`\`\`bash" >> "$GITHUB_STEP_SUMMARY"
-          echo "kubectl apply -f ${{ steps.manifest.outputs.manifest }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Resource kinds in manifest:**" >> "$GITHUB_STEP_SUMMARY"
-          grep "^kind:" "${{ steps.manifest.outputs.manifest }}" | sort | uniq -c | sort -rn | \
-            awk '{print "- `" $2 "` × " $1}' >> "$GITHUB_STEP_SUMMARY"
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          # 🚀 Install Manifest Attached
 
-  # ---------------------------------------------------------------------------
-  # CRDs
-  # Packages the CRD YAML files from BlanketOps/environments-install's
-  # config/crd/bases/ (at its latest release tag) into a single tarball and
-  # uploads it to this release. Consumers apply with:
-  #   kubectl apply -f crds-{version}.tar.gz
-  # or extract and apply individually.
-  # ---------------------------------------------------------------------------
+          - **Asset:** \`${{ steps.manifest.outputs.manifest }}\`
+          - **Lines:** \`${LINES}\`
+          - **Source:** \`BlanketOps/environments-install@${{ steps.install_version.outputs.tag }}\`
+          EOF
   crds:
     name: Package CRDs
     runs-on: self-hosted
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments
+
       - name: Resolve version
         id: version
         run: echo "tag=${{ github.event.inputs.version || github.ref_name }}" >> "$GITHUB_OUTPUT"
@@ -175,11 +126,10 @@ jobs:
       - name: Resolve latest environments-install release
         id: install_version
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           INSTALL_TAG=$(gh release list --repo BlanketOps/environments-install --limit 1 | awk '{print $1}')
           echo "tag=${INSTALL_TAG}" >> "$GITHUB_OUTPUT"
-          echo "Bundling CRDs from environments-install ${INSTALL_TAG}"
 
       - name: Checkout environments-install CRDs
         uses: actions/checkout@v7
@@ -190,166 +140,154 @@ jobs:
           sparse-checkout: config/crd/bases
           sparse-checkout-cone-mode: false
 
-      - name: Package CRD bundle
+      - name: Package & upload CRD bundle
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           VERSION=${{ steps.version.outputs.tag }}
           BUNDLE="crds-${VERSION}.tar.gz"
           tar -czf "${BUNDLE}" -C environments-install/config/crd/bases .
-          echo "bundle=${BUNDLE}" >> "$GITHUB_OUTPUT"
-        id: bundle
-
-      - name: Upload CRD bundle to release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload "${{ steps.version.outputs.tag }}" \
-            "${{ steps.bundle.outputs.bundle }}" \
-            --repo "${{ github.repository }}" \
-            --clobber
-
-      - name: Summary
-        run: |
-          echo "### 📦 CRD Bundle" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Asset | Version |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|-------|---------|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| \`${{ steps.bundle.outputs.bundle }}\` | \`${{ steps.version.outputs.tag }}\` |" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Bundled from:** \`BlanketOps/environments-install@${{ steps.install_version.outputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Contents:**" >> "$GITHUB_STEP_SUMMARY"
-          tar -tzf "${{ steps.bundle.outputs.bundle }}" | sed 's/^/- `/' | sed 's/$/`/' >> "$GITHUB_STEP_SUMMARY"
-
-  # ---------------------------------------------------------------------------
-  # Docs
-  # Generates Go package documentation via gomarkdoc and packages it as a
-  # tarball. Each package gets its own markdown file under docs/.
-  # ---------------------------------------------------------------------------
+          gh release upload "${VERSION}" "${BUNDLE}" --repo "${{ github.repository }}" --clobber
   docs:
-    name: Generate and Package Docs
+    name: Build & Package Code Docs
     runs-on: self-hosted
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Go
-        uses: actions/setup-go@v7
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
         with:
-          go-version-file: ${{ env.GO_VERSION_FILE }}
-          # The self-hosted runners keep Go's module and build caches on a
-          # persistent volume. setup-go's own cache would upload them again
-          # after every job, which on these runners hangs "Post Setup Go" for
-          # up to an hour and holds the runner.
-          cache: false
-
-      - name: Install gomarkdoc
-        run: go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+          client-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments
 
       - name: Resolve version
         id: version
         run: echo "tag=${{ github.event.inputs.version || github.ref_name }}" >> "$GITHUB_OUTPUT"
 
-      - name: Generate docs
-        run: |
-          mkdir -p .release-docs
-          # Core packages
-          gomarkdoc --output .release-docs/cache.md              ./cache/...                  || true
-          gomarkdoc --output .release-docs/core.md               ./core/...                   || true
-          # Domain packages (pkg/apis/<domain>)
-          gomarkdoc --output .release-docs/pkg-build.md          ./pkg/apis/build/...          || true
-          gomarkdoc --output .release-docs/pkg-deployment.md     ./pkg/apis/deployment/...     || true
-          gomarkdoc --output .release-docs/pkg-domain.md         ./pkg/apis/domain/...         || true
-          gomarkdoc --output .release-docs/pkg-environment.md    ./pkg/apis/environment/...    || true
-          gomarkdoc --output .release-docs/pkg-route.md          ./pkg/apis/route/...          || true
-          gomarkdoc --output .release-docs/pkg-packages.md       ./pkg/apis/packages/...       || true
-          gomarkdoc --output .release-docs/pkg-gitrepository.md  ./pkg/apis/gitrepository/...  || true
-          gomarkdoc --output .release-docs/pkg-githubevent.md    ./pkg/apis/githubevent/...    || true
-          # Shared pkg utilities
-          gomarkdoc --output .release-docs/pkg-utils.md          ./pkg/utils/...               || true
-          gomarkdoc --output .release-docs/pkg-secrets.md        ./pkg/secrets/...             || true
-          gomarkdoc --output .release-docs/pkg-intent.md         ./pkg/intent/...              || true
-          # Resolution packages
-          gomarkdoc --output .release-docs/resolution.md         ./resolution/...              || true
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
 
-      - name: Package docs bundle
-        id: bundle
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Install gomarkdoc and package docs bundle
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+          mkdir -p .release-docs
+          
+          # Generate package-level Go documentation
+          gomarkdoc --output '.release-docs/{{.Dir}}.md' \
+            ./core/... \
+            ./cache/... \
+            ./logging/... \
+            ./pkg/... \
+            ./resolution/... \
+            ./runtime/... || true
+
+          VERSION=${{ steps.version.outputs.tag }}
+          BUNDLE="godoc-${VERSION}.tar.gz"
+          tar -czf "${BUNDLE}" -C .release-docs .
+          
+          echo "Uploading ${BUNDLE} to release ${VERSION}..."
+          gh release upload "${VERSION}" "${BUNDLE}" --repo "${{ github.repository }}" --clobber
+
+  coverage:
+    name: Build & Package Beautified Coverage
+    runs-on: self-hosted
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments
+
+      - name: Resolve version
+        id: version
+        run: echo "tag=${{ github.event.inputs.version || github.ref_name }}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Restore vendor from snapshot
+        run: |
+          TAG=$(sha256sum go.sum | cut -d' ' -f1 | cut -c1-12)
+          hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${TAG}" || go mod vendor
+
+      - name: Run tests and generate coverage profile
+        run: |
+          go test -mod=vendor -v -coverprofile=coverage.out -covermode=atomic ./...
+          go tool cover -html=coverage.out -o coverage.html
+
+      - name: Build patched gocov & install gocov-html
+        run: |
+          git clone --depth 1 --branch v1.2.1 https://github.com/axw/gocov.git /tmp/gocov-src
+          cd /tmp/gocov-src
+          go mod edit -replace golang.org/x/tools=golang.org/x/tools@v0.48.0
+          go mod tidy
+          go build -o "$(go env GOPATH)/bin/gocov" ./gocov
+          
+          go install github.com/matm/gocov-html/cmd/gocov-html@latest
+
+      - name: Generate beauty-report.html
+        run: |
+          gocov convert coverage.out | gocov-html > beauty-report.html
+
+      - name: Package & upload coverage bundle
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           VERSION=${{ steps.version.outputs.tag }}
-          BUNDLE="docs-${VERSION}.tar.gz"
-          tar -czf "${BUNDLE}" -C .release-docs .
-          echo "bundle=${BUNDLE}" >> "$GITHUB_OUTPUT"
+          BUNDLE="coverage-${VERSION}.tar.gz"
+          
+          tar -czf "${BUNDLE}" coverage.out coverage.html beauty-report.html
+          echo "Uploading ${BUNDLE} to release ${VERSION}..."
+          gh release upload "${VERSION}" "${BUNDLE}" --repo "${{ github.repository }}" --clobber
 
-      - name: Upload docs bundle to release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload "${{ steps.version.outputs.tag }}" \
-            "${{ steps.bundle.outputs.bundle }}" \
-            --repo "${{ github.repository }}" \
-            --clobber
-
-      - name: Summary
-        run: |
-          echo "### 📚 Docs Bundle" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Asset | Version |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|-------|---------|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| \`${{ steps.bundle.outputs.bundle }}\` | \`${{ steps.version.outputs.tag }}\` |" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Packages documented:**" >> "$GITHUB_STEP_SUMMARY"
-          ls .release-docs/ | sed 's/^/- `/' | sed 's/$/`/' >> "$GITHUB_STEP_SUMMARY"
-
-  # ---------------------------------------------------------------------------
-  # CLI
-  # The `bops` CLI is developed and released independently in
-  # BlanketOps/environments-cli. This job always bundles whatever is newest
-  # there into this release, rather than building a CLI from this repo
-  # (there is no cmd/ entrypoint here).
-  # ---------------------------------------------------------------------------
   cli:
     name: Bundle CLI Binaries
     runs-on: self-hosted
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments
+
       - name: Resolve version
         id: version
         run: echo "tag=${{ github.event.inputs.version || github.ref_name }}" >> "$GITHUB_OUTPUT"
 
-      - name: Resolve latest environments-cli release
-        id: cli_version
+      - name: Download & upload CLI binaries
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
+          VERSION=${{ steps.version.outputs.tag }}
           CLI_TAG=$(gh release list --repo BlanketOps/environments-cli --limit 1 | awk '{print $1}')
-          echo "tag=${CLI_TAG}" >> "$GITHUB_OUTPUT"
-          echo "Bundling environments-cli ${CLI_TAG}"
-
-      - name: Download CLI binaries
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          mkdir -p .cli-assets
-          gh release download "${{ steps.cli_version.outputs.tag }}" \
+          mkdir -p .cli-binaries
+          gh release download "${CLI_TAG}" \
             --repo BlanketOps/environments-cli \
-            --dir .cli-assets
+            --dir .cli-binaries
 
-      - name: Upload CLI binaries to release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload "${{ steps.version.outputs.tag }}" \
-            .cli-assets/* \
-            --repo "${{ github.repository }}" \
-            --clobber
-
-      - name: Summary
-        run: |
-          echo "### 💻 CLI Binaries" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Bundled from \`BlanketOps/environments-cli@${{ steps.cli_version.outputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Asset | Size |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|-------|------|" >> "$GITHUB_STEP_SUMMARY"
-          for f in .cli-assets/*; do
-            SIZE=$(ls -lh "$f" | awk '{print $5}')
-            echo "| \`$(basename "$f")\` | \`${SIZE}\` |" >> "$GITHUB_STEP_SUMMARY"
-          done
+          gh release upload "${VERSION}" .cli-binaries/* --repo "${{ github.repository }}" --clobber

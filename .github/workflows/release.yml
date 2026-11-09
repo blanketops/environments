@@ -11,14 +11,17 @@
 # after finalize-release.yml had already synced develop, leaving develop
 # permanently missing that commit.
 #
+# Tag-triggered release pipeline for self-hosted runners. Uses direct binaries
+# (Syft for SBOMs, Cosign for signatures) instead of container actions, bypassing
+# Docker daemon constraints while preserving full Sigstore keyless OIDC signing
+# and GitHub artifact attestation.
+#
 # Secrets required:
 #   APP_ID, APP_PRIVATE_KEY — GitHub App credentials, exchanged for a
 #   short-lived installation token, used to check out main and publish
 #   the release.
 # =============================================================================
-
 name: Release
-
 on:
   push:
     tags:
@@ -26,6 +29,9 @@ on:
 
 permissions:
   contents: write
+  packages: write
+  id-token: write     # Required for Sigstore keyless OIDC signing
+  attestations: write # Required for GitHub native build provenance attestations
 
 jobs:
   release:
@@ -35,76 +41,104 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_ID_PRIVATE_KEY }}
           owner: blanketops
-          repositories: environments
+          repositories: environments-api
 
-      - name: Checkout tag
+      - name: Checkout
         uses: actions/checkout@v7
         with:
-          fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
 
-      - name: Install git-cliff
-        run: |
-          GITCLIFF_VERSION="2.13.0"
-          curl -L "https://github.com/orhun/git-cliff/releases/download/v${GITCLIFF_VERSION}/git-cliff-${GITCLIFF_VERSION}-x86_64-unknown-linux-gnu.tar.gz" -o git-cliff.tar.gz
-          tar xzf git-cliff.tar.gz
-          sudo mv "git-cliff-${GITCLIFF_VERSION}/git-cliff" /usr/local/bin/git-cliff
-          rm -rf git-cliff.tar.gz "git-cliff-${GITCLIFF_VERSION}"
-          git-cliff --version
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: false
 
-      # finalize-release.yml already generated and committed CHANGELOG.md
-      # to main before tagging -- this just gets onto that tip.
-      - name: Checkout main
+      - name: Generate & package CRDs
         run: |
-          git checkout main
-          git pull origin main
+          mage manifests
+          tar -czf "crds-${{ github.ref_name }}.tar.gz" -C config/crd/bases .
+
+      - name: Generate SBOM via Direct Syft Binary (Self-Hosted Safe)
+        run: |
+          echo "Installing Syft CLI binary..."
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          
+          echo "Generating SPDX JSON SBOM..."
+          syft dir:. -o spdx-json=sbom-crds-${{ github.ref_name }}.spdx.json
+
+      - name: Sign Artifacts with Cosign (Keyless - using runner binary)
+        env:
+          # Explicitly pass GitHub Actions OIDC token environment variables for self-hosted runners
+          ACTIONS_RUNTIME_TOKEN: ${{ env.ACTIONS_RUNTIME_TOKEN }}
+          ACTIONS_ID_TOKEN_REQUEST_URL: ${{ env.ACTIONS_ID_TOKEN_REQUEST_URL }}
+          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ env.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}
+        run: |
+          cosign sign-blob --yes \
+            --output-signature crds-${{ github.ref_name }}.tar.gz.sig \
+            crds-${{ github.ref_name }}.tar.gz
+
+          cosign sign-blob --yes \
+            --output-signature sbom-crds-${{ github.ref_name }}.spdx.json.sig \
+            sbom-crds-${{ github.ref_name }}.spdx.json
+
+      - name: Generate GitHub Native Artifact Attestation
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            crds-${{ github.ref_name }}.tar.gz
+            sbom-crds-${{ github.ref_name }}.spdx.json
 
       - name: Generate release notes
         run: git-cliff --config .cliff.toml --latest --output RELEASE_NOTES.md
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
-        with:
-          body_path: RELEASE_NOTES.md
+      - name: Create GitHub Release & Attach Assets via GitHub CLI (`gh`)
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            --notes-file RELEASE_NOTES.md \
+            crds-${{ github.ref_name }}.tar.gz \
+            crds-${{ github.ref_name }}.tar.gz.sig \
+            sbom-crds-${{ github.ref_name }}.spdx.json \
+            sbom-crds-${{ github.ref_name }}.spdx.json.sig \
+            RELEASE_NOTES.md
 
       - name: Release Summary
         run: |
-          cat >> $GITHUB_STEP_SUMMARY <<EOF
-          # 📦 GitHub Release Published
-
-          **Version:** \`${{ github.ref_name }}\`
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          # 📦 Secure CRD Release Published: ${{ github.ref_name }}
 
           ## Completed
+          - Generated CRD manifests via `mage manifests`
+          - Packaged CRDs into `crds-${{ github.ref_name }}.tar.gz`
+          - Generated SPDX SBOM via direct Syft binary (`sbom-crds-${{ github.ref_name }}.spdx.json`)
+          - Signed all artifacts with runner-baked Cosign keyless OIDC
+          - Generated GitHub build-provenance attestations
+          - Published GitHub Release with archives, signatures, and release notes attached via `gh`
 
-          - Generated release notes from the already-current CHANGELOG.md
-          - Published GitHub Release
+          ## Attached Assets
+          - `crds-${{ github.ref_name }}.tar.gz` (+ `.sig`)
+          - `sbom-crds-${{ github.ref_name }}.spdx.json` (+ `.sig`)
+          - `RELEASE_NOTES.md`
 
-          ## Artifacts
-
-          - CHANGELOG.md
-          - RELEASE_NOTES.md
-          - GitHub Release
-
-          ## Source Tag
-
-          \`${{ github.ref_name }}\`
+          ## Verification Commands
+          - **Sig Verification:** 
+            `cosign verify-blob --certificate-identity-regexp ".*" --cert-oidc-issuer "https://token.actions.githubusercontent.com" --signature crds-${{ github.ref_name }}.tar.gz.sig crds-${{ github.ref_name }}.tar.gz`
+          - **Attestation Verification:** 
+            `gh attest verify crds-${{ github.ref_name }}.tar.gz --owner ${{ github.repository_owner }}`
           EOF
 
-      # The releaser (blanketops/environments-bots, as the Releaser App)
-      # attaches the tag and the published release to the Release issue,
-      # closes it and sets it to Done. It runs even when a step above
-      # failed: it then finds no published release, says so on the issue,
-      # and leaves it open.
       - name: Releaser complete
         if: always()
-        uses: blanketops/environments-bots/.github/actions/releaser@v0.0.3
+        uses: blanketops/environments-bots/.github/actions/releaser@v0.1.0
         with:
           command: complete
           release: ${{ github.ref_name }}
-          app-id: ${{ secrets.RELEASER_APP_ID }}
-          private-key: ${{ secrets.RELEASER_APP_PRIVATE_KEY }}
+          app-id: ${{ vars.DEVELOPER_CLIENT_ID }}
+          private-key: ${{ secrets.DEVELOPER_APP_PRIVATE_KEY }}

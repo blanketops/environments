@@ -115,8 +115,7 @@ func ToEnvironmentContract(s *resolve.ResolvedEnvironmentSpec) *environmentscont
 	if s.Contract != nil && s.Contract.SecretStore.Provider != "" {
 		spec.Contract = &environmentscontractv1alpha1.EnvironmentContract{
 			SecretStore: &commoncontractv1.SecretStore{
-				Provider:  toSecretStoreProvider(s.Contract.SecretStore.Provider),
-				StoreName:  s.Contract.SecretStore.StoreName,
+				Provider: toSecretStoreProvider(s.Contract.SecretStore.Provider),
 			},
 		}
 	}

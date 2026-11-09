@@ -21,14 +21,13 @@ on it. The controller runs that logic.
 | [environments-cli](https://github.com/blanketops/environments-cli) | The `bops` command-line client | Not a Go dependency. Shipped alongside in releases. |
 | [environments-tests](https://github.com/blanketops/environments-tests) | Conformance test suite for the API surface | Not a Go dependency. |
 | [environments-docs](https://github.com/blanketops/environments-docs) | The documentation website | Describes the Kinds and their state transitions. |
+| [environments-bots](https://github.com/blanketops/environments-bots) | GitHub Apps and CLI bots: releaser, developer, test-helper, cleaner, pr-reviewer | Runs the project's automation: release workflows, PR hygiene, test bookkeeping, PR review. Imports this module for Go types; ships its own binaries. |
 
 Go dependencies point one way:
 
-```
-environments-contract ─┐
+```environments-contract ─┐
                        ├─→ environments ─→ environments-controller
-environments-api ──────┘
-```
+environments-api ──────┘```
 
 A change that crosses repositories lands in that order, and each step is a
 tagged release that the next one picks up through `go.mod`. Dependabot opens
@@ -36,6 +35,36 @@ the bump pull requests here for environments-api and environments-contract.
 
 Pinned versions are in [go.mod](../go.mod). Check them before assuming a
 contract field or a CRD Kind is available.
+
+## Bots
+
+The `environments-bots` repository holds the GitHub Apps and CLI bots that
+automate the BlanketOps family's repositories: release workflows, PR hygiene,
+test bookkeeping, and PR review. Each bot is its own Go command under `cmd/`,
+released on its own single-digit version scheme (`vX.Y.Z`), and run from
+repository workflows through composite actions.
+
+| Bot | What it does | Commands |
+|-----|-------------|----------|
+| `releaser` | Drives every release through its Release issue: plans the next release when develop has unreleased changes, cuts the release branch and its pull request, and attaches the tag and GitHub release after a person finalizes | `plan`, `cut`, `prepare`, `verify`, `complete` |
+| `developer` | PR and `develop` hygiene: syncs `develop` with `main`, opens a pull request and tracking issue on a branch's first push, closes that issue when the pull request merges, commits gofmt/go mod tidy fixes | `sync`, `open`, `resolve`, `tidy` |
+| `test-helper` | Keeps one GitHub issue per test file under `tests/` and posts every test run's results to it | `sync`, `report` |
+| `cleaner` | Keeps a repository's Actions footprint small: prunes old workflow runs | `runs` |
+| `pr-reviewer` | Reviews pull requests against the repository's pull request template and issue templates, posts review comments and labels | `review` |
+
+Every command takes `-dry-run` (read only) and `-repo <owner/name>`. The token
+comes from `GH_TOKEN` (or `GITHUB_TOKEN`); in a workflow, mint one for the
+bot's GitHub App with `actions/create-github-app-token`. Commit subjects and
+other untrusted text shown in comments are written inside code spans.
+
+### Using a bot from another repository
+
+Every BlanketOps repository runs bots through composite actions in
+`blanketops/environments-bots/.github/actions/<bot>@vX.Y.Z`. The action mints
+a bot token for the calling repository, downloads the bot binary of that same
+environments-bots release, verifies its Sigstore bundle against
+`release.yml@refs/tags/vX.Y.Z` of this repository with cosign (a binary that
+does not verify is never run), and runs one command.
 
 ## Path of a reconcile
 
@@ -231,3 +260,26 @@ is not reconciled. Route and Domain are in that state today.
 
 A change to what a contract means, as opposed to adding to it, may need an
 amendment to ESP-0001. Open an issue first.
+
+## Workflow comment standard
+
+Every workflow file in `.github/workflows/` starts with a box header:
+
+```
+# =============================================================================
+# <filename>.yml — <one-line purpose>
+#
+# <description paragraph(s)>
+#
+# Trigger scope:
+#   <what triggers it>
+#
+# Secrets required:
+#   <secret names> — <what they're for>
+# =============================================================================
+```
+
+Files that merge several former workflows (`ci.yml`, `security.yml`)
+additionally use `─────────────` separators with per-job scope notes
+(`# Job N: Name (from original.yml)`). Jobs that keep their original
+trigger scope use an `if:` gate rather than broadening the top-level trigger.

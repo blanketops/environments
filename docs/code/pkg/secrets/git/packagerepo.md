@@ -13,9 +13,9 @@ The package repository is fetched by kapp\-controller, so the Secret carries the
 ## Index
 
 - [type PackageRepositorySecretReconciler](<#PackageRepositorySecretReconciler>)
-  - [func NewPackageRepositorySecretReconciler\(c client.Client, log logr.Logger, storeName string, storeKind string\) \*PackageRepositorySecretReconciler](<#NewPackageRepositorySecretReconciler>)
+  - [func NewPackageRepositorySecretReconciler\(c client.Client, log logr.Logger\) \*PackageRepositorySecretReconciler](<#NewPackageRepositorySecretReconciler>)
   - [func \(r \*PackageRepositorySecretReconciler\) Delete\(ctx context.Context, resolvedPackage \*packageResolution.ResolvedPackage\) error](<#PackageRepositorySecretReconciler.Delete>)
-  - [func \(r \*PackageRepositorySecretReconciler\) Reconcile\(ctx context.Context, resolvedPackage \*packageResolution.ResolvedPackage\) error](<#PackageRepositorySecretReconciler.Reconcile>)
+  - [func \(r \*PackageRepositorySecretReconciler\) Reconcile\(ctx context.Context, resolvedPackage \*packageResolution.ResolvedPackage, ss environmentResolution.ResolvedSecretStore\) error](<#PackageRepositorySecretReconciler.Reconcile>)
 
 
 <a name="PackageRepositorySecretReconciler"></a>
@@ -25,10 +25,8 @@ PackageRepositorySecretReconciler converges the ExternalSecret used to clone a P
 
 ```go
 type PackageRepositorySecretReconciler struct {
-    Client    client.Client
-    Log       logr.Logger
-    StoreName string
-    StoreKind string
+    Client client.Client
+    Log    logr.Logger
 }
 ```
 
@@ -36,10 +34,10 @@ type PackageRepositorySecretReconciler struct {
 ### func NewPackageRepositorySecretReconciler
 
 ```go
-func NewPackageRepositorySecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *PackageRepositorySecretReconciler
+func NewPackageRepositorySecretReconciler(c client.Client, log logr.Logger) *PackageRepositorySecretReconciler
 ```
 
-NewPackageRepositorySecretReconciler constructs a PackageRepositorySecretReconciler targeting the given ESO store.
+NewPackageRepositorySecretReconciler constructs a PackageRepositorySecretReconciler.
 
 <a name="PackageRepositorySecretReconciler.Delete"></a>
 ### func \(\*PackageRepositorySecretReconciler\) Delete
@@ -54,7 +52,7 @@ Delete removes both the ExternalSecret and the Secret ESO materialized from it. 
 ### func \(\*PackageRepositorySecretReconciler\) Reconcile
 
 ```go
-func (r *PackageRepositorySecretReconciler) Reconcile(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage) error
+func (r *PackageRepositorySecretReconciler) Reconcile(ctx context.Context, resolvedPackage *packageResolution.ResolvedPackage, ss environmentResolution.ResolvedSecretStore) error
 ```
 
 Reconcile creates or updates the git\-ssh clone ExternalSecret for resolvedPackage's package repository.

@@ -15,6 +15,7 @@ under the Apache License 2.0. Together they are the project: its
 | [environments-install](https://github.com/blanketops/environments-install) | Declarative installation (CRDs and controller manifests) |
 | [environments-tests](https://github.com/blanketops/environments-tests) | Conformance test suite for the API surface |
 | [environments-docs](https://github.com/blanketops/environments-docs) | Documentation website |
+| [environments-bots](https://github.com/blanketops/environments-bots) | GitHub Apps and CLI bots: releaser, developer, test-helper, cleaner, pr-reviewer |
 | [secure-software-supplychain](https://github.com/blanketops/secure-software-supplychain) | Supply Chain plugin (Tekton, Kaniko, Trivy, Cosign, Grafeas) |
 
 How the repositories depend on one another, and which one a change belongs

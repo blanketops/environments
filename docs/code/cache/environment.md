@@ -20,7 +20,7 @@ Package environment provides domain\-specific, field\-level caching for Environm
   - [func \(e \*EnvironmentCache\) GetGitRepository\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#EnvironmentCache.GetGitRepository>)
   - [func \(e \*EnvironmentCache\) GetPackage\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#EnvironmentCache.GetPackage>)
   - [func \(e \*EnvironmentCache\) GetRoute\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#EnvironmentCache.GetRoute>)
-  - [func \(e \*EnvironmentCache\) GetSecretStoreProvider\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#EnvironmentCache.GetSecretStoreProvider>)
+  - [func \(e \*EnvironmentCache\) GetSecretStore\(ctx context.Context, nn types.NamespacedName, gen int64\) \(environmentResolution.ResolvedSecretStore, bool, error\)](<#EnvironmentCache.GetSecretStore>)
   - [func \(e \*EnvironmentCache\) GetServiceUnits\(ctx context.Context, nn types.NamespacedName, gen int64\) \(\[\]string, bool, error\)](<#EnvironmentCache.GetServiceUnits>)
   - [func \(e \*EnvironmentCache\) GetVersion\(ctx context.Context, nn types.NamespacedName, gen int64\) \(string, bool, error\)](<#EnvironmentCache.GetVersion>)
   - [func \(e \*EnvironmentCache\) PublishResolved\(ctx context.Context, nn types.NamespacedName, gen int64, r \*environmentResolution.ResolvedEnvironment\) error](<#EnvironmentCache.PublishResolved>)
@@ -32,7 +32,7 @@ Package environment provides domain\-specific, field\-level caching for Environm
   - [func \(e \*EnvironmentCache\) SetGitRepository\(ctx context.Context, nn types.NamespacedName, gen int64, name string\) error](<#EnvironmentCache.SetGitRepository>)
   - [func \(e \*EnvironmentCache\) SetPackage\(ctx context.Context, nn types.NamespacedName, gen int64, name string\) error](<#EnvironmentCache.SetPackage>)
   - [func \(e \*EnvironmentCache\) SetRoute\(ctx context.Context, nn types.NamespacedName, gen int64, name string\) error](<#EnvironmentCache.SetRoute>)
-  - [func \(e \*EnvironmentCache\) SetSecretStoreProvider\(ctx context.Context, nn types.NamespacedName, gen int64, provider string\) error](<#EnvironmentCache.SetSecretStoreProvider>)
+  - [func \(e \*EnvironmentCache\) SetSecretStore\(ctx context.Context, nn types.NamespacedName, gen int64, ss environmentResolution.ResolvedSecretStore\) error](<#EnvironmentCache.SetSecretStore>)
   - [func \(e \*EnvironmentCache\) SetServiceUnits\(ctx context.Context, nn types.NamespacedName, gen int64, units \[\]string\) error](<#EnvironmentCache.SetServiceUnits>)
   - [func \(e \*EnvironmentCache\) SetVersion\(ctx context.Context, nn types.NamespacedName, gen int64, version string\) error](<#EnvironmentCache.SetVersion>)
 
@@ -129,11 +129,11 @@ func (e *EnvironmentCache) GetRoute(ctx context.Context, nn types.NamespacedName
 
 
 
-<a name="EnvironmentCache.GetSecretStoreProvider"></a>
-### func \(\*EnvironmentCache\) GetSecretStoreProvider
+<a name="EnvironmentCache.GetSecretStore"></a>
+### func \(\*EnvironmentCache\) GetSecretStore
 
 ```go
-func (e *EnvironmentCache) GetSecretStoreProvider(ctx context.Context, nn types.NamespacedName, gen int64) (string, bool, error)
+func (e *EnvironmentCache) GetSecretStore(ctx context.Context, nn types.NamespacedName, gen int64) (environmentResolution.ResolvedSecretStore, bool, error)
 ```
 
 
@@ -237,11 +237,11 @@ func (e *EnvironmentCache) SetRoute(ctx context.Context, nn types.NamespacedName
 
 
 
-<a name="EnvironmentCache.SetSecretStoreProvider"></a>
-### func \(\*EnvironmentCache\) SetSecretStoreProvider
+<a name="EnvironmentCache.SetSecretStore"></a>
+### func \(\*EnvironmentCache\) SetSecretStore
 
 ```go
-func (e *EnvironmentCache) SetSecretStoreProvider(ctx context.Context, nn types.NamespacedName, gen int64, provider string) error
+func (e *EnvironmentCache) SetSecretStore(ctx context.Context, nn types.NamespacedName, gen int64, ss environmentResolution.ResolvedSecretStore) error
 ```
 
 

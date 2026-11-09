@@ -56,12 +56,6 @@ func (f *benchDomain) CanCreate(client.Object) bool                { return true
 func (f *benchDomain) CanUpdate(client.Object, client.Object) bool { return true }
 func (f *benchDomain) CanDelete(client.Object) bool                { return true }
 
-func (f *benchDomain) handledCount() int {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	return f.handled
-}
-
 // BenchmarkEngine_Execute_Sync - baseline synchronous execution
 func BenchmarkEngine_Execute_Sync(b *testing.B) {
 	reg := registry.NewRegistry()

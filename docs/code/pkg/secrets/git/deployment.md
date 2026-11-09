@@ -11,9 +11,9 @@ Package deployment reconciles the Deployment git\-ssh clone secret — the same 
 ## Index
 
 - [type DeploymentGitSSHSecretReconciler](<#DeploymentGitSSHSecretReconciler>)
-  - [func NewDeploymentGitSSHSecretReconciler\(c client.Client, log logr.Logger, storeName string, storeKind string\) \*DeploymentGitSSHSecretReconciler](<#NewDeploymentGitSSHSecretReconciler>)
+  - [func NewDeploymentGitSSHSecretReconciler\(c client.Client, log logr.Logger\) \*DeploymentGitSSHSecretReconciler](<#NewDeploymentGitSSHSecretReconciler>)
   - [func \(r \*DeploymentGitSSHSecretReconciler\) Delete\(ctx context.Context, deployment \*deploymentResolution.ResolvedDeployment\) error](<#DeploymentGitSSHSecretReconciler.Delete>)
-  - [func \(r \*DeploymentGitSSHSecretReconciler\) Reconcile\(ctx context.Context, deployment \*deploymentResolution.ResolvedDeployment\) error](<#DeploymentGitSSHSecretReconciler.Reconcile>)
+  - [func \(r \*DeploymentGitSSHSecretReconciler\) Reconcile\(ctx context.Context, deployment \*deploymentResolution.ResolvedDeployment, ss environmentResolution.ResolvedSecretStore\) error](<#DeploymentGitSSHSecretReconciler.Reconcile>)
 
 
 <a name="DeploymentGitSSHSecretReconciler"></a>
@@ -23,10 +23,8 @@ DeploymentGitSSHSecretReconciler converges the ExternalSecret used to clone a De
 
 ```go
 type DeploymentGitSSHSecretReconciler struct {
-    Client    client.Client
-    Log       logr.Logger
-    StoreName string
-    StoreKind string
+    Client client.Client
+    Log    logr.Logger
 }
 ```
 
@@ -34,10 +32,10 @@ type DeploymentGitSSHSecretReconciler struct {
 ### func NewDeploymentGitSSHSecretReconciler
 
 ```go
-func NewDeploymentGitSSHSecretReconciler(c client.Client, log logr.Logger, storeName string, storeKind string) *DeploymentGitSSHSecretReconciler
+func NewDeploymentGitSSHSecretReconciler(c client.Client, log logr.Logger) *DeploymentGitSSHSecretReconciler
 ```
 
-NewDeploymentGitSSHSecretReconciler constructs a DeploymentGitSSHSecretReconciler targeting the given ESO store.
+NewDeploymentGitSSHSecretReconciler constructs a DeploymentGitSSHSecretReconciler.
 
 <a name="DeploymentGitSSHSecretReconciler.Delete"></a>
 ### func \(\*DeploymentGitSSHSecretReconciler\) Delete
@@ -52,7 +50,7 @@ Delete removes both the ExternalSecret and the Secret ESO materialized from it. 
 ### func \(\*DeploymentGitSSHSecretReconciler\) Reconcile
 
 ```go
-func (r *DeploymentGitSSHSecretReconciler) Reconcile(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment) error
+func (r *DeploymentGitSSHSecretReconciler) Reconcile(ctx context.Context, deployment *deploymentResolution.ResolvedDeployment, ss environmentResolution.ResolvedSecretStore) error
 ```
 
 Reconcile creates or updates the git\-ssh clone ExternalSecret for deployment's manifests repository.
