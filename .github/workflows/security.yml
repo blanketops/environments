@@ -5,11 +5,11 @@
 # each keeping its original trigger scope via a job-level `if:` gate against
 # the combined top-level trigger:
 #
-#   codeql       — CodeQL static analysis (Go). Was: push (any branch) +
-#                  pull_request + Wed 07:00 UTC.
-#   scorecard    — OpenSSF Scorecard supply-chain posture check. Was: push
-#                  to main + pull_request + Sun 06:00 UTC.
-#   govulncheck  — reachable-vulnerability scan against the vendored
+#    codeql     — CodeQL static analysis (Go). Was: push (any branch) +
+#                 pull_request + Wed 07:00 UTC.
+#    scorecard  — OpenSSF Scorecard supply-chain posture check. Was: push
+#                 to main + pull_request + Sun 06:00 UTC.
+#    govulncheck — reachable-vulnerability scan against the vendored
 #                  dependency tree. Was: push to main + pull_request +
 #                  Mon 08:00 UTC.
 #
@@ -21,29 +21,12 @@
 #
 # environments-api and environments-contract are public modules, so `go
 # build` resolves them via the public module proxy with no git auth needed —
-# none of these three jobs need secrets, which also means they run on
-# Dependabot PRs. codeql build-mode is manual rather than autobuild simply
-# because it was already set that way.
-#
-# scorecard's repo_token is GITHUB_TOKEN, not a GitHub App token — some
-# checks (e.g. Branch-Protection) are less complete this way, but running on
-# Dependabot PRs (which get no secrets) matters more here since Scorecard is
-# report-only, not a merge gate.
-#
-# govulncheck's GHCR pull uses GITHUB_TOKEN too — an App token is denied
-# package writes/some pulls against this org-scoped package regardless of
-# permission granted; GITHUB_TOKEN is scoped to this repo, which is all a
-# same-repo pull needs.
+# govulncheck and codeql use a GitHub App token for checkout, while scorecard
+# uses GITHUB_TOKEN to ensure execution on Dependabot PRs.
 # =============================================================================
 
 name: Security
 
-# TEMPORARY: push and pull_request triggers are removed. These jobs are
-# CPU-heavy and the self-hosted pool has three slots on one 6-core machine —
-# running them on every push starved the required CI checks. They still run
-# on their weekly schedules and on manual dispatch. GitHub-hosted runners are
-# not an option while the account is billing-locked. Restore the two triggers
-# once there is capacity for them.
 on:
   workflow_dispatch:
   schedule:
@@ -59,11 +42,6 @@ env:
   VENDOR_IMAGE: ghcr.io/blanketops/environments/tools
 
 jobs:
-
-  # ───────────────────────────────────────────────────────────────────────────
-  # Job 1: CodeQL (from codeql.yml)
-  # Original scope: push (any branch), pull_request (any), Wed 07:00 UTC.
-  # ───────────────────────────────────────────────────────────────────────────
   codeql:
     name: CodeQL (Go)
     runs-on: self-hosted
@@ -76,16 +54,24 @@ jobs:
       security-events: write
       actions: read
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments,environments-api,environments-contract
+
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-          # The self-hosted runners keep Go's module and build caches on a
-          # persistent volume. setup-go's own cache would upload and download
-          # the same data through GitHub's cache service on every job.
           cache: false
 
       - name: Initialize CodeQL
@@ -113,7 +99,6 @@ jobs:
       - name: Upload SARIF artifact
         uses: actions/upload-artifact@v7
         if: always()
-        # Report-only: an artifact-storage problem must not turn a clean scan red.
         continue-on-error: true
         with:
           name: codeql-results-${{ github.sha }}
@@ -154,14 +139,6 @@ jobs:
           > Full SARIF uploaded as a build artifact (\`codeql-results-${{ github.sha }}\`). Security-tab upload is best-effort, so that step may show as failed without affecting this run's outcome.
           EOF
 
-  # ───────────────────────────────────────────────────────────────────────────
-  # Job 2: Scorecard (from scorecard.yml)
-  # Original scope: push to main, pull_request (any), Sun 06:00 UTC.
-  #
-  # publish_results is false and there is no SARIF upload: results are
-  #   JSON, rendered into the summary + artifact. Both were private-repo
-  #   limits; the repo is public now, so either can be turned on.
-  # ───────────────────────────────────────────────────────────────────────────
   scorecard:
     name: OpenSSF Scorecard
     runs-on: self-hosted
@@ -179,22 +156,9 @@ jobs:
         with:
           persist-credentials: false
 
-      # Runs the scorecard CLI baked into the self-hosted runner image.
-      # ossf/scorecard-action is a Docker container action, and the runner
-      # pods have no Docker daemon, so the action cannot start there. The CLI
-      # scores the repository's default branch through the GitHub API; its
-      # JSON has the same shape the Summary step below reads.
-      # The token is GITHUB_TOKEN rather than a GitHub App token so this
-      # job still runs on Dependabot PRs, which get no repo secrets — some
-      # checks (e.g. Branch-Protection) are less complete this way, but
-      # Scorecard is report-only here, not a merge gate.
       - name: Run Scorecard analysis
         env:
           GITHUB_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # The CLI writes its JSON and then exits 1 if any single check errored.
-        # Branch-Protection always does with GITHUB_TOKEN, which cannot read
-        # classic branch protection rules. That check is reported as an error
-        # (score -1) in the results; only a run with no results at all fails.
         run: |
           set +e
           scorecard --repo="github.com/${{ github.repository }}" --format=json > results.json
@@ -211,7 +175,6 @@ jobs:
       - name: Upload results artifact
         uses: actions/upload-artifact@v7
         if: always()
-        # Report-only: an artifact-storage problem must not turn a clean scan red.
         continue-on-error: true
         with:
           name: scorecard-results-${{ github.sha }}
@@ -252,13 +215,6 @@ jobs:
           > Full JSON results uploaded as a build artifact (\`scorecard-results-${{ github.sha }}\`).
           EOF
 
-  # ───────────────────────────────────────────────────────────────────────────
-  # Job 3: govulncheck (from security-scan.yml)
-  # Original scope: push to main, pull_request (any), Mon 08:00 UTC.
-  #
-  # vendor restore: three-tier fallback — tagged snapshot → latest →
-  # inline go mod vendor.
-  # ───────────────────────────────────────────────────────────────────────────
   govulncheck:
     name: govulncheck
     runs-on: self-hosted
@@ -271,10 +227,21 @@ jobs:
       contents: read
       packages: write # to push a corrected vendor snapshot when the restored one is stale
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments,environments-api,environments-contract
+
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
 
-      - name: Setup Go
+      - name: Set up Go
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
@@ -301,19 +268,6 @@ jobs:
             go mod vendor
           fi
 
-      # go.sum only changes when a required module's version changes — a
-      # test newly importing an already-required module's not-yet-vendored
-      # subpackage (e.g. .../client/fake) leaves go.sum untouched, so the
-      # sha256(go.sum) tag never busts and a snapshot built before that
-      # import existed keeps getting restored as if it were current. Catch
-      # that here instead of govulncheck failing deep with an opaque
-      # "import lookup disabled by -mod=vendor" error.
-      #
-      # Must include `go vet`, not just `go build` — build does not
-      # type-check _test.go files, and this class of staleness is exactly a
-      # missing test-only import. Build-only would report "complete" while
-      # govulncheck (which also walks test files) still fails on the same
-      # stale vendor.
       - name: Verify vendor completeness
         id: vendor-check
         continue-on-error: true
@@ -325,8 +279,6 @@ jobs:
         if: steps.vendor-check.outcome == 'failure'
         run: |
           echo "::warning::Restored vendor snapshot (tag ${{ steps.tag.outputs.tag }}) is incomplete — rebuilding locally and pushing a corrected snapshot."
-          # Proxy first: vanity import paths (honnef.co/go/tools) time out
-          # under direct fetch during a full `go mod vendor`.
           go env -w GOPROXY=https://proxy.golang.org,direct
           go mod vendor
 
@@ -361,7 +313,6 @@ jobs:
       - name: Upload scan artifacts
         uses: actions/upload-artifact@v7
         if: always()
-        # Report-only: an artifact-storage problem must not turn a clean scan red.
         continue-on-error: true
         with:
           name: govulncheck-${{ github.sha }}
@@ -376,9 +327,6 @@ jobs:
         run: |
           STATUS="${{ steps.govulncheck.outputs.exit_code == '0' && '✅ No vulnerabilities found' || '⚠️ Vulnerabilities detected' }}"
 
-          # govulncheck streams an `osv` record for every DB match against a
-          # required/imported module, but only `finding` records are ones it
-          # determined are actually reachable — join on those, not raw osv.
           ROWS=$(jq -s -r '
             ( [ .[] | select(.finding) | .finding ] ) as $findings
             | ( $findings | map(.osv) | unique ) as $ids
