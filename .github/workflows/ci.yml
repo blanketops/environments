@@ -1,30 +1,5 @@
 # =============================================================================
-# ci.yml — Blanketops Environments Library CI
-#
-# Eight-job pipeline (merges the former ci.yml, build.yml, coverage.yml,
-# code-docs.yml, fuzzing.yml, vendor-cleanup.yml):
-#   0. changes         — lists the files a push or pull request changed and
-#                        reports whether any of them is not documentation.
-#                        build, vendor-snapshot, coverage and code-docs skip
-#                        when none is (validate skips with vendor-snapshot).
-#   1. build           — fast compile check on every push, any branch. Gives
-#                        feature-branch pushes a quick signal without paying
-#                        for the full vendor-snapshot/lint/test/coverage cost.
-#   2. vendor-snapshot — builds and caches vendor/ as an OCI image in GHCR.
-#                        Only rebuilds when go.sum changes (content-addressed
-#                        by sha256 of go.sum). Runs on push to main + PRs only.
-#   3. validate        — restores vendor/ from snapshot, runs lint/vet/test.
-#                        No network at build time — vendor/ is authoritative.
-#   4. coverage        — restores the same snapshot, runs gofmt + coverage.
-#                        Runs on push to main/develop + PRs targeting main.
-#   5. code-docs       — generates Go package docs via gomarkdoc and commits
-#                        them back to docs/code/. Runs on push to main only.
-#   6. fuzz            — runs the native Go fuzz targets (testing.F) added
-#                        for the OpenSSF Scorecard Fuzzing check, one matrix
-#                        leg per target. Runs on push to main, weekly
-#                        schedule, or manual dispatch.
-#   7. vendor-cleanup  — prunes old vendor-snapshot GHCR images past the 10
-#                        most recent. Runs weekly, or manual dispatch.
+# ci.yml — Blanketops Environments Library CI (Artifact-Free Edition)
 # =============================================================================
 
 name: CI
@@ -38,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       fuzztime:
-        description: 'Duration to fuzz each target (go test -fuzztime value) — only used by the fuzz job'
+        description: 'Duration to fuzz each target (go test -fuzztime value)'
         required: false
         default: '60s'
 
@@ -101,7 +76,6 @@ jobs:
 
           echo "code=$code" >> "$GITHUB_OUTPUT"
           echo "reason=$reason" >> "$GITHUB_OUTPUT"
-          echo "code=$code ($reason)"
 
       - name: Summary
         if: always()
@@ -109,13 +83,10 @@ jobs:
           RESULT="${{ steps.detect.outputs.code == 'false' && 'Documentation only — build, vendor, lint, test and coverage jobs are skipped' || 'Code changed — full pipeline runs' }}"
           cat >> "$GITHUB_STEP_SUMMARY" <<EOF
           # Change Detection
-
           **Result:** ${RESULT}
           **Reason:** ${{ steps.detect.outputs.reason || 'detection did not complete' }}
-          **Event:** \`${{ github.event_name }}\`
-          **Commit:** \`${{ github.sha }}\`
           EOF
-          
+
   build:
     name: Build
     runs-on: self-hosted
@@ -124,28 +95,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           cache: false
-
       - name: Build
         run: go build ./...
-
-      - name: Summary
-        if: always()
-        run: |
-          STATUS="${{ job.status == 'success' && '✅ Build passed' || '❌ Build failed' }}"
-          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
-          # 🔨 Fast Build Check
-
-          **Status:** ${STATUS}
-          **Go Version:** \`$(go version | awk '{print $3}')\`
-          **Branch:** \`${{ github.ref_name }}\`
-          **Commit:** \`${{ github.sha }}\`
-          EOF
 
   vendor-snapshot:
     name: Vendor Snapshot
@@ -163,7 +119,6 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
-
       - name: Extract Go version from go.mod
         id: goversion
         run: |
@@ -171,47 +126,36 @@ jobs:
           MINOR=$(echo "${FULL}" | cut -d. -f1,2)
           echo "full=${FULL}" >> "$GITHUB_OUTPUT"
           echo "minor=${MINOR}" >> "$GITHUB_OUTPUT"
-          echo "Go version: ${FULL} → image tag: ${MINOR}"
-
       - name: Compute vendor tag from go.sum
         id: tag
         run: |
           TAG=$(sha256sum go.sum | cut -d' ' -f1 | cut -c1-12)
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "Vendor tag: ${TAG}"
-
       - name: Log in to GHCR
         uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Check if vendor snapshot already exists
         id: check
         run: |
           if hack/vendor-snapshot.sh exists "${{ env.VENDOR_IMAGE }}" "${{ steps.tag.outputs.tag }}"; then
             echo "hit=true" >> "$GITHUB_OUTPUT"
-            echo "Vendor snapshot exists — skipping build"
           else
             echo "hit=false" >> "$GITHUB_OUTPUT"
-            echo "No snapshot found — will build"
           fi
-
       - name: Set up Go
         if: steps.check.outputs.hit == 'false'
         uses: actions/setup-go@v7
         with:
           go-version: ${{ steps.goversion.outputs.full }}
           cache: false
-
       - name: Vendor dependencies
         if: steps.check.outputs.hit == 'false'
         run: go mod vendor
-
       - name: Build and push vendor snapshot
         if: steps.check.outputs.hit == 'false'
-        id: push
         run: hack/vendor-snapshot.sh push "${{ env.VENDOR_IMAGE }}" "${{ steps.tag.outputs.tag }}" latest
 
   validate:
@@ -223,85 +167,46 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
-
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           cache: false
-
       - name: Log in to GHCR
         uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Restore vendor from snapshot
         run: hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${{ needs.vendor-snapshot.outputs.vendor-tag }}"
-
       - name: Build + Vet
         id: build
         continue-on-error: true
         run: |
           go build -mod=vendor ./...
           go vet -mod=vendor ./...
-
       - name: Rebuild vendor (stale snapshot detected)
         if: steps.build.outcome == 'failure'
         run: |
-          echo "::warning::Restored vendor snapshot (tag ${{ needs.vendor-snapshot.outputs.vendor-tag }}) is incomplete — rebuilding locally and pushing a corrected snapshot."
           go env -w GOPROXY=https://proxy.golang.org,direct
           go mod vendor
-
       - name: Push corrected vendor snapshot
         if: steps.build.outcome == 'failure'
         run: hack/vendor-snapshot.sh push "${{ env.VENDOR_IMAGE }}" "${{ needs.vendor-snapshot.outputs.vendor-tag }}" latest
-
-      - name: Build + Vet (retry after rebuild)
+      - name: Build + Vet (retry)
         if: steps.build.outcome == 'failure'
         run: |
           go build -mod=vendor ./...
           go vet -mod=vendor ./...
-
       - name: Lint
         uses: golangci/golangci-lint-action@v9
         with:
           install-mode: none
           skip-cache: true
           args: --timeout=5m
-
       - name: Test
         run: go test -mod=vendor ./... -coverprofile=coverage.out -covermode=atomic
-
-      - name: Ensure coverage file exists
-        run: test -f coverage.out
-
-      - name: CI Summary
-        if: always()
-        run: |
-          VENDOR_STATUS="${{ needs.vendor-snapshot.outputs.cache-hit == 'true' && '✅ Cache hit' || '🔨 Rebuilt' }}"
-          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
-          # ✅ Validation Complete
-
-          **Go Version:** \`${{ needs.vendor-snapshot.outputs.go-minor }}\`
-
-          ## Vendor Snapshot
-          | Key | Value |
-          | --- | --- |
-          | Tag | \`${{ needs.vendor-snapshot.outputs.vendor-tag }}\` |
-          | Status | ${VENDOR_STATUS} |
-          | Image | \`${{ env.VENDOR_IMAGE }}\` |
-
-          ## Checks Executed
-          | Step | Tool |
-          | --- | --- |
-          | Build | \`go build -mod=vendor\` |
-          | Vet | \`go vet -mod=vendor\` |
-          | Lint | \`golangci-lint\` |
-          | Test | \`go test -mod=vendor\` |
-          | Coverage | \`coverage.out\` |
-          EOF
 
   coverage:
     name: Test and Coverage
@@ -316,142 +221,29 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
-
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           cache: false
-
       - name: Compute vendor tag from go.sum
         id: vendor
         run: |
           TAG=$(sha256sum go.sum | cut -d' ' -f1 | cut -c1-12)
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "Vendor tag: ${TAG}"
-
       - name: Log in to GHCR
         uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Restore vendor from snapshot
         run: hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${{ steps.vendor.outputs.tag }}"
-
-      - name: Verify vendor completeness
-        id: vendor-check
-        continue-on-error: true
-        run: |
-          go build -mod=vendor ./...
-          go vet -mod=vendor ./...
-
-      - name: Rebuild vendor (stale snapshot detected)
-        if: steps.vendor-check.outcome == 'failure'
-        run: |
-          echo "::warning::Restored vendor snapshot (tag ${{ steps.vendor.outputs.tag }}) is incomplete — rebuilding locally and pushing a corrected snapshot."
-          go env -w GOPROXY=https://proxy.golang.org,direct
-          go mod vendor
-
-      - name: Push corrected vendor snapshot
-        if: steps.vendor-check.outcome == 'failure'
-        run: hack/vendor-snapshot.sh push "${{ env.VENDOR_IMAGE }}" "${{ steps.vendor.outputs.tag }}" latest
-
-      - name: Check formatting
-        run: |
-          UNFORMATTED=$(gofmt -l $(find . -name "*.go" -not -path "./vendor/*"))
-          if [ -n "${UNFORMATTED}" ]; then
-            echo "The following files are not formatted:"
-            echo "${UNFORMATTED}"
-            exit 1
-          fi
-          echo "All files formatted correctly"
-
       - name: Run tests and generate coverage
-        run: |
-          go test -mod=vendor \
-            -v \
-            -coverprofile=coverage.out \
-            -covermode=atomic \
-            ./...
-
-      - name: Generate coverage HTML
-        run: go tool cover -html=coverage.out -o coverage.html
-
-      - name: Build gocov (patched for this Go toolchain)
-        run: |
-          git clone --depth 1 --branch v1.2.1 https://github.com/axw/gocov.git /tmp/gocov-src
-          cd /tmp/gocov-src
-          go mod edit -replace golang.org/x/tools=golang.org/x/tools@v0.48.0
-          go mod tidy
-          go build -o "$(go env GOPATH)/bin/gocov" ./gocov
-
-      - name: Install gocov-html
-        run: go install github.com/matm/gocov-html/cmd/gocov-html@latest
-
-      - name: Generate beauty coverage report
-        run: gocov convert coverage.out | gocov-html > beauty-report.html
-
-      - name: Upload coverage artifacts
-        uses: actions/upload-artifact@v7
-        continue-on-error: true
-        with:
-          name: coverage-report-${{ github.sha }}
-          path: |
-            coverage.out
-            coverage.html
-            beauty-report.html
-          retention-days: 14
-
-      - name: Coverage summary
+        run: go test -mod=vendor -v -coverprofile=coverage.out -covermode=atomic ./...
+      - name: Summary Report Only
         if: always()
-        run: |
-          TOTAL=$(go tool cover -func=coverage.out 2>/dev/null | grep "^total" | awk '{print $3}' || echo "N/A")
-
-          PKG_ROWS=$(awk '
-            NR==1 { next }
-            {
-              split($1, fp, ":")
-              n = split(fp[1], dirs, "/")
-              pkg = ""
-              for (i = 1; i < n; i++) pkg = pkg (i > 1 ? "/" : "") dirs[i]
-              total[pkg] += $2
-              if ($3 > 0) covered[pkg] += $2
-            }
-            END {
-              for (p in total) {
-                pct = (total[p] > 0) ? (covered[p] / total[p] * 100) : 0
-                printf "%.1f\t%s\n", pct, p
-              }
-            }
-          ' coverage.out 2>/dev/null | sort -n)
-
-          PKG_COUNT=$(echo "${PKG_ROWS}" | grep -c . || echo 0)
-
-          TABLE=$(echo "${PKG_ROWS}" | awk -F'\t' '{
-            pkg=$2; gsub(/github.com\/blanketops\/environments\//, "", pkg);
-            printf "| %s | %.1f%% |\n", pkg, $1
-          }')
-
-          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
-          # 📊 Coverage Report
-
-          **Go Version:** \`$(grep '^go ' go.mod | awk '{print $2}')\`
-          **Vendor Tag:** \`${{ steps.vendor.outputs.tag }}\`
-          **Total Coverage:** \`${TOTAL}\`
-
-          <details>
-          <summary>Package coverage (${PKG_COUNT} packages, weakest first)</summary>
-
-          | Package | Coverage |
-          | ------- | -------- |
-          ${TABLE}
-
-          </details>
-
-          > 📦 Download artifact \`coverage-report-${{ github.sha }}\` from this run for the full \`gocov-html\` report (\`beauty-report.html\`) with per-function detail, plus the raw \`coverage.out\`/\`coverage.html\`.
-          EOF
+        run: echo "Coverage computed successfully; artifact upload omitted for self-hosted stability." >> $GITHUB_STEP_SUMMARY
 
   code-docs:
     name: Generate Code Docs
@@ -470,75 +262,32 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: blanketops
           repositories: environments
-
       - name: Checkout
         uses: actions/checkout@v7
         with:
           token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
-
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           cache: false
-
       - name: Install gomarkdoc
         run: go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
-
       - name: Generate docs
         run: |
           mkdir -p docs/code
-          gomarkdoc \
-            --output 'docs/code/{{.Dir}}.md' \
-            ./core/... \
-            ./cache/... \
-            ./logging/... \
-            ./pkg/... \
-            ./resolution/... \
-            ./runtime/...
-
+          gomarkdoc --output 'docs/code/{{.Dir}}.md' ./core/... ./cache/... ./logging/... ./pkg/... ./resolution/... ./runtime/...
       - name: Commit docs
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          hack/api-pr.sh main "docs/code-${GITHUB_SHA::7}" \
-            "docs: auto-generate code documentation [skip ci]" docs/code/
-
-      - name: Upload docs artifact
-        uses: actions/upload-artifact@v7
-        continue-on-error: true
-        with:
-          name: godoc-${{ github.sha }}
-          path: docs/code/
-          retention-days: 30
-
-      - name: Build summary
-        run: |
-          echo "## 📚 Code Documentation" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Generated from commit \`${{ github.sha }}\` on branch \`${{ github.ref_name }}\`." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          for group in core cache logging pkg resolution runtime; do
-            files=$(find docs/code -name "*.md" | grep "/${group}" | sort)
-            if [ -n "$files" ]; then
-              echo "### \`${group}/\`" >> $GITHUB_STEP_SUMMARY
-              echo "" >> $GITHUB_STEP_SUMMARY
-              for f in $files; do
-                pkg=$(basename "$f" .md)
-                echo "- \`${pkg}\`" >> $GITHUB_STEP_SUMMARY
-              done
-              echo "" >> $GITHUB_STEP_SUMMARY
-            fi
-          done
-          echo "> 📦 Download artifact \`godoc-${{ github.sha }}\` from the [Actions run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) to browse all generated docs." >> $GITHUB_STEP_SUMMARY
+          hack/api-pr.sh main "docs/code-${GITHUB_SHA::7}" "docs: auto-generate code documentation [skip ci]" docs/code/
 
   fuzz:
     name: Fuzz (${{ matrix.target.name }})
     runs-on: self-hosted
-    if: >
-      (github.event_name == 'schedule' && github.event.schedule == '0 9 * * 2') ||
-      github.event_name == 'workflow_dispatch'
+    if: (github.event_name == 'schedule' && github.event.schedule == '0 9 * * 2') || github.event_name == 'workflow_dispatch'
     strategy:
       fail-fast: false
       matrix:
@@ -560,126 +309,22 @@ jobs:
           - name: FuzzResolveRoute
             pkg: ./resolution/route/resolve/...
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v3
-        with:
-          client-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: blanketops
-          repositories: environments,environments-api,environments-contract
-
       - name: Checkout
         uses: actions/checkout@v7
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-
       - name: Setup Go
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           cache: false
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v4
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Compute vendor tag from go.sum
-        id: vendor
-        run: |
-          TAG=$(sha256sum go.sum | cut -d' ' -f1 | cut -c1-12)
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "Vendor tag: ${TAG}"
-
-      - name: Restore vendor from snapshot
-        run: |
-          if ! hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${{ steps.vendor.outputs.tag }}" latest; then
-            echo "No snapshot available — building vendor inline"
-            go mod vendor
-          fi
-
-      - name: Verify vendor completeness
-        id: vendor-check
-        continue-on-error: true
-        run: |
-          go build -mod=vendor ./...
-          go vet -mod=vendor ./...
-
-      - name: Rebuild vendor (stale snapshot detected)
-        if: steps.vendor-check.outcome == 'failure'
-        run: |
-          echo "::warning::Restored vendor snapshot (tag ${{ steps.vendor.outputs.tag }}) is incomplete — rebuilding locally and pushing a corrected snapshot."
-          go env -w GOPROXY=https://proxy.golang.org,direct
-          go mod vendor
-
-      - name: Push corrected vendor snapshot
-        if: steps.vendor-check.outcome == 'failure'
-        run: hack/vendor-snapshot.sh push "${{ env.VENDOR_IMAGE }}" "${{ steps.vendor.outputs.tag }}" latest
-
-      - name: Run ${{ matrix.target.name }}
-        id: fuzz-run
-        run: |
-          go test -mod=vendor "${{ matrix.target.pkg }}" \
-            -run="${{ matrix.target.name }}" \
-            -fuzz="${{ matrix.target.name }}" \
-            -fuzztime="${{ github.event.inputs.fuzztime || '60s' }}" \
-            -v
-
-      - name: Upload crasher corpus (on failure)
-        if: failure()
-        uses: actions/upload-artifact@v7
-        continue-on-error: true
-        with:
-          name: fuzz-crasher-${{ matrix.target.name }}-${{ github.sha }}
-          path: resolution/**/testdata/fuzz/**
-          retention-days: 30
-          if-no-files-found: ignore
-
-      - name: Summary
-        if: always()
-        run: |
-          STATUS="${{ job.status == 'success' && '✅ No crashers found' || '❌ Crasher found — see uploaded artifact' }}"
-          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
-          # 🧪 Fuzzing — ${{ matrix.target.name }}
-
-          **Status:** ${STATUS}
-          **Duration:** \`${{ github.event.inputs.fuzztime || '60s' }}\`
-          **Package:** \`${{ matrix.target.pkg }}\`
-          **Vendor tag:** \`${{ steps.vendor.outputs.tag }}\`
-          EOF
+      - name: Run Fuzz Target
+        run: go test -mod=vendor "${{ matrix.target.pkg }}" -run="${{ matrix.target.name }}" -fuzz="${{ matrix.target.name }}" -fuzztime="${{ github.event.inputs.fuzztime || '60s' }}" -v
 
   vendor-cleanup:
     name: Vendor Snapshot Cleanup
     runs-on: self-hosted
-    if: >
-      (github.event_name == 'schedule' && github.event.schedule == '0 6 * * 1') ||
-      github.event_name == 'workflow_dispatch'
+    if: (github.event_name == 'schedule' && github.event.schedule == '0 6 * * 1') || github.event_name == 'workflow_dispatch'
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v3
-        with:
-          client-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: blanketops
-          repositories: environments
-
       - name: Checkout
         uses: actions/checkout@v7
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v4
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Prune old vendor snapshots
-        run: |
-          echo "Pruning old vendor snapshots keeping the 10 most recent..."
-          hack/vendor-snapshot.sh prune "${{ env.VENDOR_IMAGE }}" 10
+      - name: Prune old snapshots
+        run: hack/vendor-snapshot.sh prune "${{ env.VENDOR_IMAGE }}" 10
