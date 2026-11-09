@@ -1,3 +1,8 @@
+## [0.8.9] - 2026-11-09
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.8.8
 ## [0.8.8] - 2026-11-09
 
 ### 🚀 Features
@@ -54,6 +59,7 @@
 - *(developer)* Sanitize resolve-issue input
 - *(ci)* Bump the github-actions group across 1 directory with 2 updates
 - *(ci)* Bump the github-actions group with 2 updates
+- *(release)* Update changelog for v0.8.8 (#461)
 ## [0.8.7] - 2026-10-21
 
 ### 🐛 Bug Fixes
