@@ -37,9 +37,7 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Generate Releaser App token
-        id: releaser-token
-        uses: actions/create-github-app-token@v3
+      - uses: blanketops/environments-bots/.github/actions/releaser@v0.1.0
         with:
           client-id: ${{ vars.DEVELOPER_CLIENT_ID }}
           private-key: ${{ secrets.DEVELOPER_APP_PRIVATE_KEY }}
