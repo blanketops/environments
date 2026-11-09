@@ -39,7 +39,7 @@ jobs:
     name: releaser cut
     runs-on: self-hosted
     steps:
-      - uses: blanketops/environments-bots/.github/actions/releaser@v0.0.7
+      - uses: blanketops/environments-bots/.github/actions/releaser@v0.1.0
         with:
           command: cut
           release: ${{ github.event.inputs.version }}
