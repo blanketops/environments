@@ -73,18 +73,6 @@ This ensures:
 
 ---
 
-## Since v0.6.0 → v0.7.4
-
-- **ServiceUnit** now has its own resolution and domain floor, rather than inheriting Deployment's.
-- **Deployment** strategy/reconcile dispatch split out of `api` into its own layer.
-- **`core/`** split into per-concern subpackages (cache, command, conditions, engine, events, predicates, registry).
-- **`pkg/secrets`** reconcilers brought up to convention and split per-reconciler, with full test coverage.
-- Build teardown now deletes the underlying `Secret`, not just the `ExternalSecret`.
-- CI: GitHub App auth (replacing an expiring PAT), advanced CodeQL scanning on every push.
-- Full test coverage added across `resolution/*` and `core/*`.
-
----
-
 ## Documentation
 
 The full BlanketOps Environments documentation is available at:
@@ -96,58 +84,6 @@ The full BlanketOps Environments documentation is available at:
 | CRD Definitions (Build API) | [docs](https://blanketops-environments.netlify.app/docs/api/environments/build/) |
 | API Overview & State Transitions | [docs](https://blanketops-environments.netlify.app/docs/api/overview/) |
 | Delivery Lifecycle (State Machine Model) | [docs](https://blanketops-environments.netlify.app/docs/model/state-machine/) |
-
----
-
-## Installation
-
-```bash
-go get github.com/blanketops/environments@v0.8.2
-```
-
----
-
-## Project Structure
-
-```
-cache/                → Generation-scoped field-level cache (ObjectCache, typed per-CR helpers)
-core/
-  cache/              → core.Cache factory
-  command/            → Command type handed to the engine
-  conditions/         → Condition helpers (SetCondition)
-  domain/             → Domain interface the engine dispatches to
-  engine/             → Engine and orchestration
-  events/             → EventRecorder
-  predicates/         → Reconcile predicates
-  registry/           → Domain registry
-pkg/
-  apis/
-    build/            → Build domain (application, api, domain layers)
-    deployment/       → Deployment domain
-    domain/           → Domain CR domain (TLS chain, cert-manager, Knative)
-    environment/      → Environment domain
-    githubevent/      → GitHubEvent trigger domain
-    gitrepository/    → GitRepository source binding domain
-    packages/         → Package and artifact promotion domain
-    route/            → Route domain (Knative DomainMapping, Kubernetes Ingress)
-    serviceunit/      → ServiceUnit workload domain
-  intent/             → Declared intent per resource
-  providerconfig/     → GitHub ProviderConfig reconciler
-  runtime/            → Runtime context read from the process environment
-  secrets/            → Platform secrets used by resources (git, github, registry)
-  serviceaccounts/    → Build and Package service account reconcilers, Package deployer binding
-  utils/              → Shared helpers
-resolution/
-  build/              → Build resolution and contract adapter
-  deployment/         → Deployment resolution and contract adapter
-  domain/             → Domain resolution and contract adapter
-  environment/        → Environment resolution and contract adapter
-  githubevent/        → GitHubEvent resolution and contract adapter
-  gitrepository/      → GitRepository resolution and contract adapter
-  packages/           → Package resolution and contract adapter
-  route/              → Route resolution and contract adapter
-  serviceunit/        → ServiceUnit resolution and contract adapter
-```
 
 ---
 
@@ -171,22 +107,10 @@ The goal is to reduce delivery entropy through structured reconciliation.
 
 | | |
 |---|---|
-| **Current Version** | `v0.8.2` |
+| **Current Version** | `v0.8.8` |
 | **API Status** | Evolving — breaking changes possible before `v1.0.0` |
 | **Intended Use** | Integration with BlanketOps Environments controllers |
 | **Versioning** | Semantic Versioning — `v1.0.0` will signal a stable public contract |
-
----
-
-## Intended Consumers
-
-This module powers:
-
-- BlanketOps Environments Controllers.
-- Delivery orchestration layers.
-- Reconciliation engines.
-
-If you are looking for the controller runtime, see the [BlanketOps Environments Controller](https://github.com/blanketops/environments-controller) repository.
 
 ---
 
