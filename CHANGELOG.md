@@ -1,3 +1,59 @@
+## [0.8.8] - 2026-11-09
+
+### 🚀 Features
+
+- *(core/engine)* Add async worker pool and circuit breaker
+
+### 🐛 Bug Fixes
+
+- Remove StoreName from contract adapter after environments-contract v0.5.8
+
+### 💼 Other
+
+- *(deps)* Bump environments-contract to v0.5.8
+- *(deps)* Bump environments-bots releaser to v0.0.7
+- *(deps)* Bump developer binary to v0.1.0
+- *(deps)* Bump developer binary to v0.1.0
+
+### 📚 Documentation
+
+- Move roadmap to docs site as source of truth
+- Sync architecture doc version pins to go.mod
+- Standardize workflow header comments
+- Document environments-bots and pr-reviewer bot in DEVELOPING.md
+- Standardize open-pr.yml header comments
+- Auto-generate code documentation [skip ci] (#426)
+- Standardize workflow headers
+- Update create-github-app-token to use client-id
+- Add architecting and developing sections
+- Auto-generate code documentation [skip ci] (#460)
+
+### 🎨 Styling
+
+- Gofmt the tree
+
+### 🧪 Testing
+
+- *(engine)* Remove unused benchDomain.handledCount
+- Confirm open creates the tracking issue too
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.8.7
+- *(finalize)* Continue when the release pull request is already merged
+- Run the releaser in the release workflows
+- Sync develop with main
+- Deploy the developer bot (open + resolve)
+- *(hack)* Update build-push
+- *(ci)* Bump the github-actions group with 2 updates
+- *(ci)* Bump anthropics/claude-code-action
+- *(errors)* Eliminate build ci errors
+- *(ci)* Update bots versions
+- *(errors)* Eliminate build ci errors
+- *(developer)* Pin the developer bot to v0.0.8
+- *(developer)* Sanitize resolve-issue input
+- *(ci)* Bump the github-actions group across 1 directory with 2 updates
+- *(ci)* Bump the github-actions group with 2 updates
 ## [0.8.7] - 2026-10-21
 
 ### 🐛 Bug Fixes
@@ -26,6 +82,7 @@
 - Sync develop with main
 - Land bot writes to main through pull requests
 - Sync develop with main
+- *(release)* Update changelog for v0.8.7 (#398)
 ## [0.8.6] - 2026-10-10
 
 ### 🚀 Features
