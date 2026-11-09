@@ -58,11 +58,6 @@ jobs:
           go-version-file: go.mod
           cache: false
 
-      - name: Generate & package CRDs
-        run: |
-          mage manifests
-          tar -czf "crds-${{ github.ref_name }}.tar.gz" -C config/crd/bases .
-
       - name: Generate SBOM via Direct Syft Binary (Self-Hosted Safe)
         run: |
           echo "Installing Syft CLI binary..."
@@ -73,7 +68,6 @@ jobs:
 
       - name: Sign Artifacts with Cosign (Keyless - using runner binary)
         env:
-          # Explicitly pass GitHub Actions OIDC token environment variables for self-hosted runners
           ACTIONS_RUNTIME_TOKEN: ${{ env.ACTIONS_RUNTIME_TOKEN }}
           ACTIONS_ID_TOKEN_REQUEST_URL: ${{ env.ACTIONS_ID_TOKEN_REQUEST_URL }}
           ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ env.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}
