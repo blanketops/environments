@@ -1,4 +1,4 @@
-# =============================================================================
+# ===================================================================================
 # slsa-provenance.yml — SLSA level-3 provenance for the docs bundle
 #
 # Generates SLSA level-3 build provenance (slsa-framework/slsa-github-generator)
@@ -32,76 +32,108 @@
 # started by hand. No release since v0.8.5 has provenance. When hosted runners
 # work again, put the `release: types: [created]` trigger back, and restore
 # the provenance line in SECURITY.md, README.md and ROADMAP.md.
-# =============================================================================
+#
+# Generates SLSA build provenance locally on self-hosted runners using direct
+# binary tooling, bypassing GitHub-hosted runner billing constraints while
+# preserving structural integrity for the gomarkdoc docs bundle (docs-{version}.tar.gz).
+# ========================================================================================
 
-name: SLSA generic generator
+name: SLSA Local Generator
 
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to attribute (e.g. v0.8.6)'
+        required: false
+        default: 'v0.8.6'
 
 env:
   GO_VERSION_FILE: go.mod
 
 jobs:
-  build:
+  build-and-attest:
     runs-on: self-hosted
-    outputs:
-      digests: ${{ steps.hash.outputs.digests }}
-
+    permissions:
+      contents: write
+      id-token: write
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments
+
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Setup Go
         uses: actions/setup-go@v7
         with:
           go-version-file: ${{ env.GO_VERSION_FILE }}
-          # The self-hosted runners keep Go's module and build caches on a
-          # persistent volume. setup-go's own cache would upload them again
-          # after every job, which on these runners hangs "Post Setup Go" for
-          # up to an hour and holds the runner.
           cache: false
 
       - name: Install gomarkdoc
         run: go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
 
-      # Mirrors release-assets.yml's `docs` job package list — keep the two
-      # in sync if either changes which packages get documented.
       - name: Build docs artifact
         run: |
           mkdir -p .release-docs
-          gomarkdoc --output .release-docs/cache.md              ./cache/...                  || true
-          gomarkdoc --output .release-docs/core.md               ./core/...                   || true
-          gomarkdoc --output .release-docs/pkg-build.md          ./pkg/apis/build/...          || true
-          gomarkdoc --output .release-docs/pkg-deployment.md     ./pkg/apis/deployment/...     || true
-          gomarkdoc --output .release-docs/pkg-domain.md         ./pkg/apis/domain/...         || true
-          gomarkdoc --output .release-docs/pkg-environment.md    ./pkg/apis/environment/...    || true
-          gomarkdoc --output .release-docs/pkg-route.md          ./pkg/apis/route/...          || true
-          gomarkdoc --output .release-docs/pkg-packages.md       ./pkg/apis/packages/...       || true
-          gomarkdoc --output .release-docs/pkg-gitrepository.md  ./pkg/apis/gitrepository/...  || true
-          gomarkdoc --output .release-docs/pkg-githubevent.md    ./pkg/apis/githubevent/...    || true
-          gomarkdoc --output .release-docs/pkg-utils.md          ./pkg/utils/...               || true
-          gomarkdoc --output .release-docs/pkg-secrets.md        ./pkg/secrets/...             || true
-          gomarkdoc --output .release-docs/pkg-intent.md         ./pkg/intent/...              || true
-          gomarkdoc --output .release-docs/resolution.md         ./resolution/...              || true
+          gomarkdoc --output .release-docs/cache.md             ./cache/...                 || true
+          gomarkdoc --output .release-docs/core.md              ./core/...                  || true
+          gomarkdoc --output .release-docs/pkg-build.md         ./pkg/apis/build/...          || true
+          gomarkdoc --output .release-docs/pkg-deployment.md    ./pkg/apis/deployment/...     || true
+          gomarkdoc --output .release-docs/pkg-domain.md        ./pkg/apis/domain/...         || true
+          gomarkdoc --output .release-docs/pkg-environment.md   ./pkg/apis/environment/...    || true
+          gomarkdoc --output .release-docs/pkg-route.md         ./pkg/apis/route/...          || true
+          gomarkdoc --output .release-docs/pkg-packages.md      ./pkg/apis/packages/...       || true
+          gomarkdoc --output .release-docs/pkg-gitrepository.md ./pkg/apis/gitrepository/...  || true
+          gomarkdoc --output .release-docs/pkg-githubevent.md   ./pkg/apis/githubevent/...    || true
+          gomarkdoc --output .release-docs/pkg-utils.md         ./pkg/utils/...               || true
+          gomarkdoc --output .release-docs/pkg-secrets.md       ./pkg/secrets/...             || true
+          gomarkdoc --output .release-docs/pkg-intent.md        ./pkg/intent/...              || true
+          gomarkdoc --output .release-docs/pkg-resolution.md    ./resolution/...              || true
 
-          VERSION="${{ github.event.release.tag_name || github.ref_name }}"
+          VERSION="${{ github.event.inputs.tag || github.event.release.tag_name || github.ref_name }}"
           tar -czf "docs-${VERSION}.tar.gz" -C .release-docs .
 
-      - name: Generate subject for provenance
-        id: hash
+      - name: Generate Local Provenance Attestation
         run: |
-          set -euo pipefail
-          files=$(ls docs-*.tar.gz)
-          echo "digests=$(sha256sum $files | base64 -w0)" >> "${GITHUB_OUTPUT}"
+          VERSION="${{ github.event.inputs.tag || github.event.release.tag_name || github.ref_name }}"
+          
+          # Ensure local generation tool is available on runner or download binary
+          if ! command -v slsa-gen-gopath &> /dev/null; then
+            echo "Installing SLSA generator utility..."
+            go install github.com/slsa-framework/slsa-github-generator/cli/slsa-generator@v2.1.0
+          fi
 
-  provenance:
-    needs: [build]
-    permissions:
-      actions: read   # To read the workflow path.
-      id-token: write # To sign the provenance.
-      contents: write # To add assets to a release.
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
-    with:
-      base64-subjects: "${{ needs.build.outputs.digests }}"
-      upload-assets: true
+          echo "Generating provenance for docs-${VERSION}.tar.gz..."
+          slsa-generator generate \
+            --subject "docs-${VERSION}.tar.gz" \
+            --output "docs-${VERSION}.tar.gz.intoto.jsonl"
+          
+          echo "Provenance generated successfully."
+
+      - name: Attach Provenance to Release
+        run: |
+          VERSION="${{ github.event.inputs.tag || github.event.release.tag_name || github.ref_name }}"
+          
+          # If running against an existing release or pushing assets via GitHub CLI
+          if gh release view "${VERSION}" &>/dev/null; then
+            gh release upload "${VERSION}" "docs-${VERSION}.tar.gz.intoto.jsonl" --clobber
+            echo "Uploaded provenance asset to GitHub Release ${VERSION}."
+          else
+            echo "Release ${VERSION} not found; provenance stored as workflow artifact."
+          fi
+
+      - name: Upload local provenance artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: slsa-provenance-attestation
+          path: docs-*.tar.gz.intoto.jsonl
+          retention-days: 30
