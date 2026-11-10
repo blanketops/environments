@@ -61,10 +61,11 @@ jobs:
       - name: Generate SBOM via Direct Syft Binary (Self-Hosted Safe)
         run: |
           echo "Installing Syft CLI binary..."
-          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
-          
+          mkdir -p "${RUNNER_TEMP}/bin"
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b "${RUNNER_TEMP}/bin"
+
           echo "Generating SPDX JSON SBOM..."
-          syft dir:. -o spdx-json=sbom-crds-${{ github.ref_name }}.spdx.json
+          "${RUNNER_TEMP}/bin/syft" dir:. -o spdx-json=sbom-crds-${{ github.ref_name }}.spdx.json
 
       - name: Sign Artifacts with Cosign (Keyless - using runner binary)
         env:
