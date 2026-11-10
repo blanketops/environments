@@ -1,7 +1,7 @@
 # Architecture 02: The CQRS Delegated Domain Engine
 
 > Phase 2 of the BlanketOps Environments architecture series. Verified against source as
-> of 2026-07-20 across both `blanketops/environments` (`core/command`,
+> of 2026-11-10 across both `blanketops/environments` (`core/command`,
 > `core/domain`, `core/registry`, `core/engine`) and
 > `blanketops/environments-controller` (`internal/runtime`,
 > `internal/domains/*`, `internal/mediators/*`,
