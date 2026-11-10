@@ -62,8 +62,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          client-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_ID_PRIVATE_KEY }}
           owner: blanketops
           repositories: environments
 
@@ -131,9 +131,16 @@ jobs:
             echo "Release ${VERSION} not found; provenance stored as workflow artifact."
           fi
 
-      - name: Upload local provenance artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: slsa-provenance-attestation
-          path: docs-*.tar.gz.intoto.jsonl
-          retention-days: 30
+      - name: Upload local provenance artifact to GitHub Release
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          VERSION="${{ steps.version.outputs.tag }}"
+          
+          # Upload all generated in-toto provenance files directly to the release
+          for prov in docs-*.tar.gz.intoto.jsonl; do
+            if [ -f "$prov" ]; then
+              echo "Attaching provenance $prov to release $VERSION..."
+              gh release upload "$VERSION" "$prov" --repo "${{ github.repository }}" --clobber
+            fi
+          done
