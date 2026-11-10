@@ -25,7 +25,8 @@ on it. The controller runs that logic.
 
 Go dependencies point one way:
 
-```environments-contract ─┐
+```
+   environments-contract ─┐
                           ├─→ environments ─→ environments-controller
    environments-api ──────┘
 ```
