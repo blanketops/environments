@@ -432,7 +432,7 @@ jobs:
         uses: actions/create-github-app-token@v3
         with:
           client-id: ${{ vars.APP_CLIENT_ID }}
-          private-key: ${{ secrets.APP_CLIENT_PRIVATE_KEY }}
+          private-key: ${{ secrets.APP_ID_PRIVATE_KEY }}
           owner: blanketops
           repositories: environments
 
