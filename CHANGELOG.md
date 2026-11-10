@@ -1,8 +1,29 @@
+## [0.9.0] - 2026-11-10
+
+### 🐛 Bug Fixes
+
+- *(release)* Install Syft to writable RUNNER_TEMP, not /usr/local/bin
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.8.9
+- Fix create-github-app-token credential references
+- Run bots from the baked toolchain, not internet downloads
+- Sign and attest every release asset (SLSA v1)
+- Run pr-reviewer from the baked toolchain binary
+- Label the release token steps as the Developer App
+- Consolidate fuzzing into ci.yml, drop the duplicate workflow
+- *(security)* Drop dead push/pull_request conditions
+
+### 💼 Other
+
+- Merge release/v0.9.0 into main
 ## [0.8.9] - 2026-11-09
 
 ### ⚙️ Miscellaneous Tasks
 
 - Sync develop with main after release/v0.8.8
+- *(release)* Update changelog for v0.8.9 (#464)
 ## [0.8.8] - 2026-11-09
 
 ### 🚀 Features
@@ -12,13 +33,6 @@
 ### 🐛 Bug Fixes
 
 - Remove StoreName from contract adapter after environments-contract v0.5.8
-
-### 💼 Other
-
-- *(deps)* Bump environments-contract to v0.5.8
-- *(deps)* Bump environments-bots releaser to v0.0.7
-- *(deps)* Bump developer binary to v0.1.0
-- *(deps)* Bump developer binary to v0.1.0
 
 ### 📚 Documentation
 
@@ -60,15 +74,18 @@
 - *(ci)* Bump the github-actions group across 1 directory with 2 updates
 - *(ci)* Bump the github-actions group with 2 updates
 - *(release)* Update changelog for v0.8.8 (#461)
+
+### 💼 Other
+
+- *(deps)* Bump environments-contract to v0.5.8
+- *(deps)* Bump environments-bots releaser to v0.0.7
+- *(deps)* Bump developer binary to v0.1.0
+- *(deps)* Bump developer binary to v0.1.0
 ## [0.8.7] - 2026-10-21
 
 ### 🐛 Bug Fixes
 
 - Use the verbatim Apache-2.0 license text
-
-### 💼 Other
-
-- Merge release/v0.8.7 into main
 
 ### 📚 Documentation
 
@@ -77,6 +94,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- *(release)* Make the release workflows' commits verified
 - *(release)* Update changelog for v0.8.6
 - *(slsa)* Pause provenance and stop claiming it
 - *(ci)* Bump anthropics/claude-code-action
@@ -89,6 +107,10 @@
 - Land bot writes to main through pull requests
 - Sync develop with main
 - *(release)* Update changelog for v0.8.7 (#398)
+
+### 💼 Other
+
+- Merge release/v0.8.7 into main
 ## [0.8.6] - 2026-10-10
 
 ### 🚀 Features
@@ -116,7 +138,6 @@
 
 - *(release)* Update changelog for v0.8.5
 - Sync develop with main after release/v0.8.5
-- *(release)* Make the release workflows' commits verified
 ## [0.8.5] - 2026-10-09
 
 ### 🚀 Features
@@ -139,10 +160,6 @@
 - *(packages)* Report the App's state from the wired provider
 - *(packages)* Report kapp's useful error, not the pointer to it
 
-### 💼 Other
-
-- Merge release/v0.8.5 into main
-
 ### 📚 Documentation
 
 - *(readme)* List the Package reconcilers under serviceaccounts
@@ -154,15 +171,15 @@
 
 - *(release)* Update changelog for v0.8.4
 - Sync develop with main after release/v0.8.4
+
+### 💼 Other
+
+- Merge release/v0.8.5 into main
 ## [0.8.4] - 2026-10-08
 
 ### 🚀 Features
 
 - *(build)* Add the pushed image to the Build status
-
-### 💼 Other
-
-- Merge release/v0.8.4 into main
 
 ### 📚 Documentation
 
@@ -172,6 +189,10 @@
 
 - *(release)* Update changelog for v0.8.3
 - Sync develop with main after release/v0.8.3
+
+### 💼 Other
+
+- Merge release/v0.8.4 into main
 ## [0.8.3] - 2026-10-08
 
 ### 🐛 Bug Fixes
@@ -179,10 +200,6 @@
 - Resolve Build.spec.contract.policy.allowedTriggers correctly
 - StatusWriter.Write now persists Status.Contract, not just conditions
 - *(build)* Build the triggered commit in the Buildah and Buildpacks providers
-
-### 💼 Other
-
-- Merge release/v0.8.3 into main
 
 ### 📚 Documentation
 
@@ -215,6 +232,10 @@
 - Add sync-docs workflow stub
 - Add shared Claude Code settings and ignore personal ones
 - Skip build, vendor, test and coverage jobs for docs-only changes
+
+### 💼 Other
+
+- Merge release/v0.8.3 into main
 ## [0.8.2] - 2026-08-22
 
 ### 🐛 Bug Fixes
@@ -222,14 +243,15 @@
 - Correct SLSA provenance output key mismatch
 - Close the release.yml changelog race too
 
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.9.0
+- *(release)* Update changelog for v0.8.1
+- Sync develop with main after manual v0.8.1 changelog fix
+
 ### 💼 Other
 
 - Merge release/v0.8.2 into main
-
-### ⚙️ Miscellaneous Tasks
-
-- *(release)* Update changelog for v0.8.1
-- Sync develop with main after manual v0.8.1 changelog fix
 ## [0.8.1] - 2026-08-22
 
 ### 🚀 Features
@@ -239,10 +261,6 @@
 ### 🐛 Bug Fixes
 
 - Regenerate docs synchronously in Finalize Release
-
-### 💼 Other
-
-- Merge release/v0.9.0 into main
 
 ### 📚 Documentation
 
@@ -255,17 +273,16 @@
 
 - *(release)* Update changelog for v0.8.0
 - Sync develop with main after release/v0.8.0
-- Sync develop with main after release/v0.9.0
 - *(release)* Update changelog for v0.9.0
+
+### 💼 Other
+
+- Merge release/v0.9.0 into main
 ## [0.8.0] - 2026-08-22
 
 ### 🐛 Bug Fixes
 
 - Add Route Teardown -- Provider interface, RouteService
-
-### 💼 Other
-
-- Merge release/v0.8.0 into main
 
 ### 📚 Documentation
 
@@ -276,6 +293,10 @@
 
 - *(release)* Update changelog for v0.7.9
 - Sync develop with main after release/v0.7.9
+
+### 💼 Other
+
+- Merge release/v0.8.0 into main
 ## [0.7.9] - 2026-08-22
 
 ### 🐛 Bug Fixes
@@ -288,10 +309,6 @@
 - Wire DeploymentService.Teardown through the dispatch chain
 - Split Flux CR teardown from manifests-repo file removal
 - Git commit calls had no identity, failing outright in CI/prod pods
-
-### 💼 Other
-
-- Merge release/v0.7.9 into main
 
 ### 📚 Documentation
 
@@ -306,16 +323,16 @@
 - Sync develop with main after release/v0.7.8
 - *(release)* Update changelog for v0.7.8
 - Sync develop with main (auto-docs + changelog commits from v0.7.8)
+
+### 💼 Other
+
+- Merge release/v0.7.9 into main
 ## [0.7.8] - 2026-08-20
 
 ### 🐛 Bug Fixes
 
 - *(templates)* Move issue templates to the path GitHub actually reads
 - *(templates)* Remove Contract Change issue type -- doesn't belong here
-
-### 💼 Other
-
-- Merge release/v0.7.8 into main
 
 ### 📚 Documentation
 
@@ -328,14 +345,22 @@
 - Drop unnecessary App-token auth from read-only build/scan/coverage jobs
 - *(ci)* Bump the github-actions group across 1 directory with 6 updates (#295)
 - Bring issue/PR template fixes into main
+
+### 💼 Other
+
+- Merge release/v0.7.8 into main
 ## [0.7.7] - 2026-08-20
 
 ### 📚 Documentation
 
+- Fix stale self-hosted comment in ci.yml's folded-in fuzz job
 - Fix stale README references
 
 ### ⚙️ Miscellaneous Tasks
 
+- Sync develop with main after release/v0.7.6
+- Run workflows on ubuntu-latest instead of self-hosted runners (redo)
+- Sync develop with main (release.yml App token + Teardown stub)
 - *(release)* Update changelog for v0.7.6
 - Sync develop with main (dependency bump)
 ## [0.7.6] - 2026-08-19
@@ -352,16 +377,6 @@
 - *(deployment)* Untangle execution + domain layers, fix strategy bug (#281)
 - *(deployment)* Stub out DeploymentService.Teardown pending reconcile support
 
-### 💼 Other
-
-- Bring release/v0.7.5 into develop (resolves PR #282)
-- Bring main into develop (main wins on conflict)
-- Merge release/v0.7.6 into main
-
-### 🚜 Refactor
-
-- *(deployment)* Split strategy/reconcile dispatch out of api (#289)
-
 ### 📚 Documentation
 
 - Auto-generate code documentation [skip ci]
@@ -370,7 +385,10 @@
 - Regenerate code documentation (#284)
 - Auto-generate code documentation [skip ci]
 - Fix stale self-hosted comment in ci.yml's folded-in fuzz job
-- Fix stale self-hosted comment in ci.yml's folded-in fuzz job
+
+### 🚜 Refactor
+
+- *(deployment)* Split strategy/reconcile dispatch out of api (#289)
 
 ### 🧪 Testing
 
@@ -388,23 +406,19 @@
 - *(code-docs)* Commit generated docs via the Git Data API, drop GPG (#285)
 - Sync develop with main after release/v0.7.5
 - Consolidate 10 workflows to 7; close self-hosted-runner gap on develop
-- Sync develop with main after release/v0.7.6
-- Run workflows on ubuntu-latest instead of self-hosted runners (redo)
 - Run workflows on ubuntu-latest instead of self-hosted runners (redo)
 - Use GitHub App token for release.yml's changelog push
-- Sync develop with main (release.yml App token + Teardown stub)
+
+### 💼 Other
+
+- Bring release/v0.7.5 into develop (resolves PR #282)
+- Bring main into develop (main wins on conflict)
+- Merge release/v0.7.6 into main
 ## [0.7.5] - 2026-07-19
 
 ### 🚀 Features
 
 - *(serviceunit)* Give ServiceUnit its own resolution + domain floor (#265)
-
-### 💼 Other
-
-- V0.7.5 (#273)
-- Resolve release/v0.7.4 into develop
-- Bring main into release/v0.7.5 (resolves PR #286)
-- Merge release/v0.7.5 into main
 
 ### 🚜 Refactor
 
@@ -422,19 +436,26 @@
 - Sync develop with main after release/v0.7.4
 - Move SLSA provenance to its own standalone workflow (#272) (#274)
 - Move SLSA provenance to its own standalone workflow (#278)
-## [0.7.4] - 2026-07-17
 
 ### 💼 Other
 
-- V0.7.4 (#261)
-- Resolve main into release/v0.7.4
-- Merge release/v0.7.4 into main
+- V0.7.5 (#273)
+- Resolve release/v0.7.4 into develop
+- Bring main into release/v0.7.5 (resolves PR #286)
+- Merge release/v0.7.5 into main
+## [0.7.4] - 2026-07-17
 
 ### ⚙️ Miscellaneous Tasks
 
 - *(release)* Update changelog for v0.7.3
 - Prune old vendor-snapshot GHCR images on a schedule (#256)
 - Sync develop with main after release/v0.7.3
+
+### 💼 Other
+
+- V0.7.4 (#261)
+- Resolve main into release/v0.7.4
+- Merge release/v0.7.4 into main
 ## [0.7.3] - 2026-07-17
 
 ### 🐛 Bug Fixes
@@ -442,9 +463,9 @@
 - Delete the underlying Secret, not just the ExternalSecret, on Build teardown (#248)
 - Bring pkg/secrets reconcilers up to convention (#250)
 
-### 💼 Other
+### 📚 Documentation
 
-- Merge release/v0.7.3 into main
+- Auto-generate code documentation [skip ci]
 
 ### 🚜 Refactor
 
@@ -462,6 +483,10 @@
 - Reconcile main with develop history
 - Prune old vendor-snapshot GHCR images on a schedule (#257)
 - Prune old vendor-snapshot GHCR images on a schedule (#256) (#258)
+
+### 💼 Other
+
+- Merge release/v0.7.3 into main
 ## [0.7.2] - 2026-07-13
 
 ### 🚀 Features
@@ -476,10 +501,6 @@
 - Tighten workflow token permissions (#241)
 - Run CodeQL on every push, not just main (#242)
 
-### 💼 Other
-
-- Merge release/v0.7.2 into main
-
 ### 📚 Documentation
 
 - Add SECURITY.md (#238)
@@ -493,6 +514,10 @@
 - *(ci)* Bump the github-actions group with 8 updates (#239)
 - Lowercase github.com/BlanketOps org in imports and go.mod (#233)
 - Complete environments-api rename, add build.yml summary (#234)
+
+### 💼 Other
+
+- Merge release/v0.7.2 into main
 ## [0.7.1] - 2026-07-12
 
 ### 🚀 Features
@@ -514,15 +539,15 @@
 - Pin Scorecard action to exact release tag
 - Render govulncheck findings as a markdown table in the job summary
 
-### 💼 Other
-
-- Merge release/v0.7.1 into main
-
 ### ⚙️ Miscellaneous Tasks
 
 - Sync develop with main after release/v0.7.0
 - Add temporary GPG secret diagnostic workflow (#229)
 - Remove temporary GPG secret diagnostic workflow
+
+### 💼 Other
+
+- Merge release/v0.7.1 into main
 ## [0.7.0] - 2026-07-11
 
 ### 📚 Documentation
@@ -571,10 +596,6 @@
 - Sync develop with main after release/v0.6.5
 ## [0.6.5] - 2026-07-01
 
-### 💼 Other
-
-- Merge release/v0.6.5 into main
-
 ### 📚 Documentation
 
 - Auto-generate code documentation [skip ci]
@@ -585,26 +606,26 @@
 - Sync develop with main after release/v0.6.4
 - Sync develop with main after release/v0.6.4
 - Sync develop with main after release/v0.6.4
-## [0.6.4] - 2026-07-01
 
 ### 💼 Other
 
-- Merge release/v0.6.4 into main
+- Merge release/v0.6.5 into main
+## [0.6.4] - 2026-07-01
 
 ### ⚙️ Miscellaneous Tasks
 
 - Sync develop with main after release/v0.6.3
 - *(release)* Update changelog for v0.6.3
+
+### 💼 Other
+
+- Merge release/v0.6.4 into main
 ## [0.6.3] - 2026-07-01
 
 ### ⚙️ Miscellaneous Tasks
 
 - Sync develop with main after release/v0.6.2
 ## [0.6.2] - 2026-07-01
-
-### 💼 Other
-
-- *(release)* Add deletes and teardowns
 
 ### 📚 Documentation
 
@@ -613,19 +634,11 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Sync develop with main after release/v0.6.1
-## [0.6.1] - 2026-06-29
 
 ### 💼 Other
 
-- *(structure)* Update to pkg/apis
-- *(structure)* Update to pkg/apis
-- *(structure)* Update to pkg/apis
-- *(structure)* Update to pkg/apis
-- *(structure)* Update to pkg/apis
-- *(structure)* Update to pkg/apis
-- *(structure)* Update to pkg/apis
-- *(structure)* Update to pkg/apis
-- *(structure)* Update to pkg/apis
+- *(release)* Add deletes and teardowns
+## [0.6.1] - 2026-06-29
 
 ### 📚 Documentation
 
@@ -635,7 +648,24 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Sync develop with main after release/v0.6.0
+
+### 💼 Other
+
+- *(structure)* Update to pkg/apis
+- *(structure)* Update to pkg/apis
+- *(structure)* Update to pkg/apis
+- *(structure)* Update to pkg/apis
+- *(structure)* Update to pkg/apis
+- *(structure)* Update to pkg/apis
+- *(structure)* Update to pkg/apis
+- *(structure)* Update to pkg/apis
+- *(structure)* Update to pkg/apis
 ## [0.6.0] - 2026-06-28
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.5.9
+- *(release)* Update changelog for v0.5.9
 
 ### 💼 Other
 
@@ -645,11 +675,6 @@
 - *(release)* Update domain pkg/
 - *(release)* Update readme
 - *(release)* Update vulnerability scan ci
-
-### ⚙️ Miscellaneous Tasks
-
-- Sync develop with main after release/v0.5.9
-- *(release)* Update changelog for v0.5.9
 ## [0.5.9] - 2026-06-27
 
 ### 📚 Documentation
@@ -662,10 +687,6 @@
 - Sync develop with main after release/v0.5.8
 ## [0.5.8] - 2026-06-27
 
-### 💼 Other
-
-- *(release)* Apply cache for environment
-
 ### 📚 Documentation
 
 - Auto-generate code documentation [skip ci]
@@ -673,31 +694,27 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Sync develop with main after release/v0.5.7
-## [0.5.7] - 2026-06-27
 
 ### 💼 Other
 
-- *(release)* Update fixes for all secrets to storename
-- Merge release/v0.5.7 into main
+- *(release)* Apply cache for environment
+## [0.5.7] - 2026-06-27
 
 ### 🎨 Styling
 
+- Auto-format and tidy [skip ci]
 - Auto-format and tidy [skip ci]
 
 ### ⚙️ Miscellaneous Tasks
 
 - Sync develop with main after release/v0.5.6
 - *(release)* Update changelog for v0.5.6
-## [0.5.6] - 2026-06-27
 
 ### 💼 Other
 
-- *(gitrepository)* Align with pattern upstream controller
-- *(gitrepository)* Sanitize pkg/secrets reconciler secrets
-- *(release)* Update route
-- *(release)* Construction of environment, resolution updated
-- *(release)* Construction of environment, resolution updated
-- Merge release/v0.5.6 into main
+- *(release)* Update fixes for all secrets to storename
+- Merge release/v0.5.7 into main
+## [0.5.6] - 2026-06-27
 
 ### 📚 Documentation
 
@@ -706,22 +723,24 @@
 - Auto-generate code documentation [skip ci]
 - Auto-generate code documentation [skip ci]
 
-### 🎨 Styling
-
-- Auto-format and tidy [skip ci]
-
 ### ⚙️ Miscellaneous Tasks
 
 - Sync develop with main after release/v0.5.5
+
+### 💼 Other
+
+- *(route)* Rebase for release, pkg/route, sanitize for build selector
+- *(gitrepository)* Align with pattern upstream controller
+- *(gitrepository)* Sanitize pkg/secrets reconciler secrets
+- *(release)* Update route
+- *(release)* Construction of environment, resolution updated
+- *(release)* Construction of environment, resolution updated
+- Merge release/v0.5.6 into main
 ## [0.5.5] - 2026-06-26
 
 ### 🚀 Features
 
 - *(cache)* Add cache layers init for route and domain types
-
-### 💼 Other
-
-- *(route)* Rebase for release, pkg/route, sanitize for build selector
 
 ### 📚 Documentation
 
@@ -768,37 +787,32 @@
 
 - *(githubevent)* Update to consume and own githubpayload
 
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.5.0
+- Sync develop with main after release/v0.5.0
+
 ### 💼 Other
 
 - *(tidy)* Mod tidy, space finalzie release ci, no buildtrigger contract-adapter
 - *(buildtrigger)* Remove
 - Merge release/v0.5.1 into main
-
-### ⚙️ Miscellaneous Tasks
-
-- *(release)* Update changelog for v0.5.0
-- Sync develop with main after release/v0.5.0
 ## [0.5.0] - 2026-06-18
-
-### 💼 Other
-
-- *(debt)* Remove runtime/events
-- Merge release/v0.5.0 into main
 
 ### ⚙️ Miscellaneous Tasks
 
 - *(release)* Update changelog for v0.4.9
 - Sync develop with main after release/v0.4.9
+
+### 💼 Other
+
+- *(debt)* Remove runtime/events
+- Merge release/v0.5.0 into main
 ## [0.4.9] - 2026-06-18
 
 ### 🚀 Features
 
 - *(githubpaylod)* Add resolution
-
-### 💼 Other
-
-- *(githubevent)* Githubpayload construction
-- Merge release/v0.4.9 into main
 
 ### 📚 Documentation
 
@@ -808,35 +822,34 @@
 
 - *(release)* Update changelog for v0.4.8
 - Sync develop with main after release/v0.4.8
-## [0.4.8] - 2026-06-18
 
 ### 💼 Other
 
-- *(githubevent)* Replace datakeys for github index deps
-- Merge release/v0.4.8 into main
+- *(githubevent)* Githubpayload construction
+- Merge release/v0.4.9 into main
+## [0.4.8] - 2026-06-18
 
 ### ⚙️ Miscellaneous Tasks
 
 - *(release)* Update changelog for v0.4.7
 - Sync develop with main after release/v0.4.6
 - Sync develop with main after release/v0.4.7
+
+### 💼 Other
+
+- *(githubevent)* Replace datakeys for github index deps
+- Merge release/v0.4.8 into main
 ## [0.4.7] - 2026-06-18
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.4.6
 
 ### 💼 Other
 
 - *(githubevent)* Add repository as required upstream
 - Merge release/v0.4.7 into main
-
-### ⚙️ Miscellaneous Tasks
-
-- *(release)* Update changelog for v0.4.6
 ## [0.4.6] - 2026-06-18
-
-### 💼 Other
-
-- Merge release/v0.4.6 into main
-- Merge release/v0.4.6 into main
-- Merge release/v0.4.6 into main
 
 ### 📚 Documentation
 
@@ -848,18 +861,18 @@
 - Sync develop with main after release/v0.4.5
 - Sync develop with main after release/v0.4.6
 - Sync develop with main after release/v0.4.6
+
+### 💼 Other
+
+- Merge release/v0.4.6 into main
+- Merge release/v0.4.6 into main
+- Merge release/v0.4.6 into main
 ## [0.4.5] - 2026-06-17
 
 ### 🚀 Features
 
 - *(githubevent)* Rewrite to use core argo-events apis,mod tidy,
 - *(githubevent)* Minor
-
-### 💼 Other
-
-- *(githubevent)* Type to be removed, in triage, init no resolution
-- *(housekeeping)* Rebase for 0.4.5
-- Merge release/v0.4.5 into main
 
 ### 📚 Documentation
 
@@ -869,20 +882,23 @@
 
 - *(release)* Update changelog for v0.4.4
 - Sync develop with main after release/v0.4.4
+
+### 💼 Other
+
+- *(githubevent)* Type to be removed, in triage, init no resolution
+- *(housekeeping)* Rebase for 0.4.5
+- Merge release/v0.4.5 into main
 ## [0.4.4] - 2026-06-17
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.4.2
+- Sync develop with main after release/v0.4.3
 
 ### 💼 Other
 
 - Merge release/v0.4.4 into main
-
-### ⚙️ Miscellaneous Tasks
-
-- Sync develop with main after release/v0.4.3
 ## [0.4.3] - 2026-06-17
-
-### 💼 Other
-
-- *(githubevent)* Api broken call payload in payload consumed
 
 ### 📚 Documentation
 
@@ -891,14 +907,12 @@
 
 ### ⚙️ Miscellaneous Tasks
 
-- Sync develop with main after release/v0.4.2
 - *(release)* Update changelog for v0.4.2
-## [0.4.2] - 2026-06-17
 
 ### 💼 Other
 
 - *(githubevent)* Api broken call payload in payload consumed
-- Merge release/v0.4.2 into main
+## [0.4.2] - 2026-06-17
 
 ### 📚 Documentation
 
@@ -908,12 +922,12 @@
 
 - *(release)* Update changelog for v0.4.1
 - Sync develop with main after release/v0.4.1
-## [0.4.1] - 2026-06-17
 
 ### 💼 Other
 
-- *(githubevent)* Api broken call v1 fix
-- Merge release/v0.4.1 into main
+- *(githubevent)* Api broken call payload in payload consumed
+- Merge release/v0.4.2 into main
+## [0.4.1] - 2026-06-17
 
 ### 📚 Documentation
 
@@ -922,30 +936,27 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Sync develop with main after release/v0.4.0
-## [0.4.0] - 2026-06-17
 
 ### 💼 Other
 
-- *(pkg/githubevent)* Eventsensor at cr ns
-- Merge release/v0.4.0 into main
+- *(githubevent)* Api broken call v1 fix
+- Merge release/v0.4.1 into main
+## [0.4.0] - 2026-06-17
 
 ### ⚙️ Miscellaneous Tasks
 
 - *(release)* Update changelog for v0.3.9
 - Sync develop with main after release/v0.3.9
+
+### 💼 Other
+
+- *(pkg/githubevent)* Eventsensor at cr ns
+- Merge release/v0.4.0 into main
 ## [0.3.9] - 2026-06-17
 
 ### 🚀 Features
 
 - *(ci)* Update codedocs
-
-### 💼 Other
-
-- Merge release/v0.3.9 into main
-- Merge release/v0.3.9 into main
-- Merge release/v0.3.9 into main
-- *(ci/pkg)* Fix ci release, eventsensor at cr ns
-- Merge release/v0.3.9 into main
 
 ### 📚 Documentation
 
@@ -958,6 +969,14 @@
 - Sync develop with main after release/v0.3.9
 - Sync develop with main after release/v0.3.9
 - Sync develop with main after release/v0.3.9
+
+### 💼 Other
+
+- Merge release/v0.3.9 into main
+- Merge release/v0.3.9 into main
+- Merge release/v0.3.9 into main
+- *(ci/pkg)* Fix ci release, eventsensor at cr ns
+- Merge release/v0.3.9 into main
 ## [0.3.8] - 2026-06-16
 
 ### 🚀 Features
@@ -986,12 +1005,6 @@
 - *(vendor)* Vendor mod, update ci to vendor, intent out to roo
 - *(vendor)* Vendor mod, update ci to vendor, intent out to roo
 
-### 💼 Other
-
-- *(rebase)* Add codedocs to ignore, add comments
-- *(rebase)* Add comments
-- Merge release/v0.3.8 into main
-
 ### 🎨 Styling
 
 - Auto-format and tidy [skip ci]
@@ -1000,6 +1013,12 @@
 
 - *(release)* Update changelog for v0.3.7
 - Sync develop with main after release/v0.3.7
+
+### 💼 Other
+
+- *(rebase)* Add codedocs to ignore, add comments
+- *(rebase)* Add comments
+- Merge release/v0.3.8 into main
 ## [0.3.7] - 2026-06-15
 
 ### 🚀 Features
@@ -1007,31 +1026,31 @@
 - *(resolution)* Update resolution to match latest
 - *(ci)* Update go mod
 
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.3.6
+- *(release)* Update changelog for v0.3.6
+
 ### 💼 Other
 
 - *(ci)* Update add code docs
 - *(mod)* Pin golang version, ci
 - *(mod)* Update go mod toolchain
 - Merge release/v0.3.7 into main
-
-### ⚙️ Miscellaneous Tasks
-
-- Sync develop with main after release/v0.3.6
-- *(release)* Update changelog for v0.3.6
 ## [0.3.6] - 2026-06-14
 
 ### 🚀 Features
 
 - *(ci)* Add docs,. type issue templates,. update pr template to domain specific
 
-### 💼 Other
-
-- Merge release/v0.3.6 into main
-
 ### ⚙️ Miscellaneous Tasks
 
 - Sync develop with main after release/v0.3.5
 - *(release)* Update changelog for v0.3.5
+
+### 💼 Other
+
+- Merge release/v0.3.6 into main
 ## [0.3.5] - 2026-06-14
 
 ### 🚀 Features
@@ -1039,102 +1058,98 @@
 - *(rebase)* Init rebase for v0.3.5
 - *(rebase)* Init rebase for v0.3.5, update spelling filename, ci pinned version test only with for now, TODO, support multiple images with differnt golang versions,
 
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.2.6
+
 ### 💼 Other
 
 - Merge release/v0.3.5 into main
 ## [0.2.6] - 2026-06-14
 
-### 💼 Other
-
-- *(docs)* Add roadmap stubs
-
 ### ⚙️ Miscellaneous Tasks
 
 - *(release)* Update changelog for v0.3.4
-- *(release)* Update changelog for v0.2.6
 - Sync develop with main after release/v0.3.4
-## [0.3.4] - 2026-06-11
 
 ### 💼 Other
 
-- Merge release/v0.3.4 into main
+- *(docs)* Add roadmap stubs
+## [0.3.4] - 2026-06-11
 
 ### ⚙️ Miscellaneous Tasks
 
 - Sync develop with main after release/v0.3.3
 - *(release)* Update changelog for v0.3.3
-## [0.3.3] - 2026-06-11
 
 ### 💼 Other
 
-- *(ci)* Format fight on display
-- Merge release/v0.3.3 into main
+- Merge release/v0.3.4 into main
+## [0.3.3] - 2026-06-11
 
 ### ⚙️ Miscellaneous Tasks
 
 - *(release)* Update changelog for v0.3.2
 - Sync develop with main after release/v0.3.2
-## [0.3.2] - 2026-06-11
 
 ### 💼 Other
 
-- Merge release/v0.3.2 into main
+- *(ci)* Format fight on display
+- Merge release/v0.3.3 into main
+## [0.3.2] - 2026-06-11
 
 ### ⚙️ Miscellaneous Tasks
 
 - *(release)* Update changelog for v0.3.1
 - *(release)* Update changelog for v0.3.1
 - Sync develop with main after release/v0.3.1
-## [0.3.1] - 2026-06-11
 
 ### 💼 Other
 
-- Merge release/v0.3.1 into main
+- Merge release/v0.3.2 into main
+## [0.3.1] - 2026-06-11
 
 ### ⚙️ Miscellaneous Tasks
 
 - *(release)* Update changelog for v0.3.0
 - Sync develop with main after release/v0.3.0
-## [0.3.0] - 2026-06-11
 
 ### 💼 Other
 
-- Merge release/v0.3.0 into main
+- Merge release/v0.3.1 into main
+## [0.3.0] - 2026-06-11
 
 ### ⚙️ Miscellaneous Tasks
 
 - *(release)* Update changelog for v0.2.9
 - Sync develop with main after release/v0.2.9
-## [0.2.9] - 2026-06-11
 
 ### 💼 Other
 
-- Merge release/v0.2.9 into main
+- Merge release/v0.3.0 into main
+## [0.2.9] - 2026-06-11
 
 ### ⚙️ Miscellaneous Tasks
 
 - *(release)* Update changelog for v0.2.8
 - Sync develop with main after release/v0.2.8
+
+### 💼 Other
+
+- Merge release/v0.2.9 into main
 ## [0.2.8] - 2026-06-11
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.2.7
+- *(release)* Update changelog for v0.2.7
 
 ### 💼 Other
 
 - *(ci)* Create release minor
 - *(ci)* Update to 1.25.8 as per mod
 - Merge release/v0.2.8 into main
-
-### ⚙️ Miscellaneous Tasks
-
-- Sync develop with main after release/v0.2.7
-- *(release)* Update changelog for v0.2.7
 ## [0.2.7] - 2026-06-11
-
-### 💼 Other
-
-- *(cache)* # - cache/provider - housekeeping, sanitize
-- Merge release/v0.2.6 into main
-- *(ci)* Update workflows, include summary always
-- Merge release/v0.2.7 into main
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -1142,18 +1157,29 @@
 - *(release)* Update changelog for v0.2.5
 - Sync develop with main after release/v0.2.6
 - *(release)* Update changelog for v0.2.6
-## [0.2.5] - 2026-06-11
 
 ### 💼 Other
 
-- *(cache)* # cache add published
-- Merge release/v0.2.5 into main
+- *(cache)* # - cache/provider - housekeeping, sanitize
+- Merge release/v0.2.6 into main
+- *(ci)* Update workflows, include summary always
+- Merge release/v0.2.7 into main
+## [0.2.5] - 2026-06-11
 
 ### ⚙️ Miscellaneous Tasks
 
 - Sync develop with main after release/v0.2.4
 - *(release)* Update changelog for v0.2.4
+
+### 💼 Other
+
+- *(cache)* # cache add published
+- Merge release/v0.2.5 into main
 ## [0.2.4] - 2026-06-11
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.2.3
 
 ### 💼 Other
 
@@ -1161,16 +1187,7 @@
 - *(cache)* Realign, stub as factory
 - *(cache)* Realign, stub as factory
 - Merge release/v0.2.4 into main
-
-### ⚙️ Miscellaneous Tasks
-
-- *(release)* Update changelog for v0.2.3
 ## [0.2.3] - 2026-06-11
-
-### ⚙️ Miscellaneous Tasks
-
-- *(release)* Update changelog for v0.2.2
-## [0.2.2] - 2026-06-10
 
 ### 🚀 Features
 
@@ -1179,45 +1196,44 @@
 - *(cache)* Enabled across
 - *(cache)* Enabled across
 
-### 💼 Other
-
-- *(housekeeping)* License and package to stubs
-- Merge release/v0.2.2 into main
-
 ### ⚙️ Miscellaneous Tasks
 
-- *(release)* Update changelog for v0.2.1
-## [0.2.1] - 2026-04-17
+- *(release)* Update changelog for v0.2.2
+## [0.2.2] - 2026-06-10
 
 ### 🚀 Features
 
 - *(environments)* Rebase
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.2.1
+
+### 💼 Other
+
+- *(housekeeping)* License and package to stubs
+- Merge release/v0.2.2 into main
+## [0.2.1] - 2026-04-17
+
+### 🚀 Features
+
+- *(gov)* Add license oos to all files
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.2.0
 
 ### 💼 Other
 
 - *(docs)* Readme
 - *(workflows)* Add for release managment
 - *(docs)* Remove license-headers
-
-### ⚙️ Miscellaneous Tasks
-
-- *(release)* Update changelog for v0.2.0
 ## [0.2.0] - 2026-04-05
 
 ### ⚙️ Miscellaneous Tasks
 
 - *(release)* Update changelog for v0.1.9
 ## [0.1.9] - 2026-03-22
-
-### 🚀 Features
-
-- *(gov)* Add license oos to all files
-
-### 💼 Other
-
-- *(v0.1.8)* Merge release/v0.1.8 to develop
-- *(staickcheck)* , update static check, add config, add ptr as required, staticheck through
-- *(ci)* Resolve staticcheck lint errors and update CI pipeline
 
 ### 🎨 Styling
 
@@ -1227,7 +1243,26 @@
 ### ⚙️ Miscellaneous Tasks
 
 - *(release)* Update changelog for v0.1.8
+
+### 💼 Other
+
+- *(v0.1.8)* Merge release/v0.1.8 to develop
+- *(staickcheck)* , update static check, add config, add ptr as required, staticheck through
+- *(ci)* Resolve staticcheck lint errors and update CI pipeline
 ## [0.1.8] - 2026-03-22
+
+### 🚀 Features
+
+- *(deployment)* Update to latest
+
+### 🎨 Styling
+
+- Auto-format and tidy [skip ci]
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.1.7
+- *(release)* Update changelog for v0.1.7
 
 ### 💼 Other
 
@@ -1239,37 +1274,27 @@
 - *(staic)* Static checks fixes, client apply deprecated
 - *(workflows)* Update ci workflow, auto commit gofmt -l
 - *(v0.1.8)* Merge release/v0.1.8 to develop
-
-### 🎨 Styling
-
-- Auto-format and tidy [skip ci]
 ## [0.1.7] - 2026-03-22
 
-### 🚀 Features
+### ⚙️ Miscellaneous Tasks
 
-- *(deployment)* Update to latest
+- *(release)* Update changelog for v0.1.6
 
 ### 💼 Other
 
 - *(actions)* , update actions, runs-on self-hosted
 - *(staic)* Static checks fixes
-
-### ⚙️ Miscellaneous Tasks
-
-- *(release)* Update changelog for v0.1.6
-- *(release)* Update changelog for v0.1.7
-- *(release)* Update changelog for v0.1.7
 ## [0.1.6] - 2026-03-07
-
-### ⚙️ Miscellaneous Tasks
-
-- *(release)* Update changelog for v0.1.5
-## [0.1.5] - 2026-03-07
 
 ### 🐛 Bug Fixes
 
 - *(core/events)* Add compatibility for new Kubernetes structured event recorder
 - *(core/events)* Add compatibility for new Kubernetes structured event recorder
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for v0.1.5
+## [0.1.5] - 2026-03-07
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -1289,13 +1314,13 @@
 
 - *(update)* Update pk deployment, events core normal
 
-### 💼 Other
-
-- *(eventing)* Fix eventing core to use latest GetRecorder on call in controller
-
 ### ⚙️ Miscellaneous Tasks
 
 - *(release)* Update changelog for v0.1.2
+
+### 💼 Other
+
+- *(eventing)* Fix eventing core to use latest GetRecorder on call in controller
 ## [0.1.2] - 2026-03-07
 
 ### ⚙️ Miscellaneous Tasks
@@ -1326,7 +1351,3 @@
 
 - *(release)* Update changelog for v0.0.7
 ## [0.0.1] - 2026-03-01
-
-### 📚 Documentation
-
-- Auto-generate code documentation [skip ci]
