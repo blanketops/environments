@@ -8,7 +8,7 @@
 
 ## Summary
 
-BlanketOps does not model its own resources as Kubernetes API types.
+BlanketOps Environments does not model its own resources as Kubernetes API types.
 Kubernetes is one materialization target among several. The actual source
 of truth for what a resource *means* — a Route, a Build, a Domain — is a
 versioned protobuf contract. Everything else in the stack exists to carry
