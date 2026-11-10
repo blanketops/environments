@@ -28,10 +28,7 @@ on:
       - "v*"
 
 permissions:
-  contents: write
-  packages: write
-  id-token: write     # Required for Sigstore keyless OIDC signing
-  attestations: write # Required for GitHub native build provenance attestations
+  contents: write     # create the GitHub Release
 
 jobs:
   release:
@@ -44,7 +41,7 @@ jobs:
           client-id: ${{ vars.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_ID_PRIVATE_KEY }}
           owner: blanketops
-          repositories: environments-api
+          repositories: environments
 
       - name: Checkout
         uses: actions/checkout@v7
@@ -52,88 +49,31 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
 
-      - name: Set up Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
-          cache: false
-
-      - name: Generate SBOM via Direct Syft Binary (Self-Hosted Safe)
-        run: |
-          echo "Installing Syft CLI binary..."
-          mkdir -p "${RUNNER_TEMP}/bin"
-          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b "${RUNNER_TEMP}/bin"
-
-          echo "Generating SPDX JSON SBOM..."
-          "${RUNNER_TEMP}/bin/syft" dir:. -o spdx-json=sbom-crds-${{ github.ref_name }}.spdx.json
-
-      - name: Sign Artifacts with Cosign (Keyless - using runner binary)
-        env:
-          ACTIONS_RUNTIME_TOKEN: ${{ env.ACTIONS_RUNTIME_TOKEN }}
-          ACTIONS_ID_TOKEN_REQUEST_URL: ${{ env.ACTIONS_ID_TOKEN_REQUEST_URL }}
-          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ env.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}
-        run: |
-          cosign sign-blob --yes \
-            --output-signature crds-${{ github.ref_name }}.tar.gz.sig \
-            crds-${{ github.ref_name }}.tar.gz
-
-          cosign sign-blob --yes \
-            --output-signature sbom-crds-${{ github.ref_name }}.spdx.json.sig \
-            sbom-crds-${{ github.ref_name }}.spdx.json
-
-      - name: Generate GitHub Native Artifact Attestation
-        uses: actions/attest-build-provenance@v4
-        with:
-          subject-path: |
-            crds-${{ github.ref_name }}.tar.gz
-            sbom-crds-${{ github.ref_name }}.spdx.json
-
       - name: Generate release notes
         run: git-cliff --config .cliff.toml --latest --output RELEASE_NOTES.md
 
-      - name: Create GitHub Release & Attach Assets via GitHub CLI (`gh`)
+      - name: Create the GitHub Release
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
+          # Publishing this release fires release-assets.yml, which bundles
+          # every asset and then signs and attests all of them (sign-and-attest
+          # job) before the releaser closes the Release issue (complete job).
           gh release create "${{ github.ref_name }}" \
             --title "${{ github.ref_name }}" \
-            --notes-file RELEASE_NOTES.md \
-            crds-${{ github.ref_name }}.tar.gz \
-            crds-${{ github.ref_name }}.tar.gz.sig \
-            sbom-crds-${{ github.ref_name }}.spdx.json \
-            sbom-crds-${{ github.ref_name }}.spdx.json.sig \
-            RELEASE_NOTES.md
+            --notes-file RELEASE_NOTES.md
 
       - name: Release Summary
         run: |
           cat >> $GITHUB_STEP_SUMMARY << 'EOF'
-          # 📦 Secure CRD Release Published: ${{ github.ref_name }}
+          # 📦 Release Published: ${{ github.ref_name }}
 
-          ## Completed
-          - Generated CRD manifests via `mage manifests`
-          - Packaged CRDs into `crds-${{ github.ref_name }}.tar.gz`
-          - Generated SPDX SBOM via direct Syft binary (`sbom-crds-${{ github.ref_name }}.spdx.json`)
-          - Signed all artifacts with runner-baked Cosign keyless OIDC
-          - Generated GitHub build-provenance attestations
-          - Published GitHub Release with archives, signatures, and release notes attached via `gh`
+          Assets, SBOM, Cosign signatures and SLSA build-provenance attestations
+          are attached by `release-assets.yml` (the `sign-and-attest` job), which
+          fires on this release being published. The `complete` job then closes
+          the Release issue once every asset is signed and attested.
 
-          ## Attached Assets
-          - `crds-${{ github.ref_name }}.tar.gz` (+ `.sig`)
-          - `sbom-crds-${{ github.ref_name }}.spdx.json` (+ `.sig`)
-          - `RELEASE_NOTES.md`
-
-          ## Verification Commands
-          - **Sig Verification:** 
-            `cosign verify-blob --certificate-identity-regexp ".*" --cert-oidc-issuer "https://token.actions.githubusercontent.com" --signature crds-${{ github.ref_name }}.tar.gz.sig crds-${{ github.ref_name }}.tar.gz`
-          - **Attestation Verification:** 
-            `gh attest verify crds-${{ github.ref_name }}.tar.gz --owner ${{ github.repository_owner }}`
+          ## Verification
+          - **Signature:** `cosign verify-blob --bundle <asset>.sigstore.json --certificate-identity-regexp ".*" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" <asset>`
+          - **Provenance:** `gh attest verify <asset> --owner ${{ github.repository_owner }}`
           EOF
-
-      - name: Releaser complete
-        if: always()
-        uses: blanketops/environments-bots/.github/actions/releaser@v0.1.0
-        with:
-          command: complete
-          release: ${{ github.ref_name }}
-          app-id: ${{ vars.DEVELOPER_CLIENT_ID }}
-          private-key: ${{ secrets.DEVELOPER_APP_PRIVATE_KEY }}

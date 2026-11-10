@@ -46,7 +46,6 @@ jobs:
     name: CodeQL (Go)
     runs-on: self-hosted
     if: >
-      github.event_name == 'push' || github.event_name == 'pull_request' ||
       github.event_name == 'workflow_dispatch' ||
       github.event.schedule == '0 7 * * 3'
     permissions:
@@ -58,8 +57,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          client-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_ID_PRIVATE_KEY }}
           owner: blanketops
           repositories: environments,environments-api,environments-contract
 
@@ -143,8 +142,6 @@ jobs:
     name: OpenSSF Scorecard
     runs-on: self-hosted
     if: >
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      github.event_name == 'pull_request' ||
       github.event_name == 'workflow_dispatch' ||
       github.event.schedule == '0 6 * * 0'
     permissions:
@@ -219,8 +216,6 @@ jobs:
     name: govulncheck
     runs-on: self-hosted
     if: >
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      github.event_name == 'pull_request' ||
       github.event_name == 'workflow_dispatch' ||
       github.event.schedule == '0 8 * * 1'
     permissions:
@@ -231,8 +226,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          client-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_ID_PRIVATE_KEY }}
           owner: blanketops
           repositories: environments,environments-api,environments-contract
 
