@@ -360,7 +360,7 @@ jobs:
     needs: [sign-and-attest]
     if: github.event_name == 'release'
     steps:
-      - name: Generate Releaser App token
+      - name: Generate Developer App token
         id: releaser-token
         uses: actions/create-github-app-token@v3
         with:
