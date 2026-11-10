@@ -1,6 +1,6 @@
 # Architecture 01: Type System & Contract Boundary
 
-> Phase 1 of the BlanketOps architecture series. Everything below is verified
+> Phase 1 of the BlanketOps Enviornments architecture series. Everything below is verified
 > against source as of 2026-11-02 (`environments-api v0.3.2`,
 > `environments-contract v0.5.6`, pinned in `environments/go.mod`), not
 > inferred from READMEs. Where a README disagrees with the code, the code
