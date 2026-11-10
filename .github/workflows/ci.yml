@@ -432,7 +432,7 @@ jobs:
         uses: actions/create-github-app-token@v3
         with:
           client-id: ${{ vars.APP_CLIENT_ID }}
-          private-key: ${{ secrets.APP_CLIENT_PRIVATE_KEY }}
+          private-key: ${{ secrets.APP_ID_PRIVATE_KEY }}
           owner: blanketops
           repositories: environments
 
@@ -519,6 +519,21 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Restore vendor from snapshot
+        run: |
+          # fuzz runs on schedule/dispatch, when the vendor-snapshot job does
+          # not run, so restore the snapshot self-contained (tag = sha256 of
+          # go.sum), falling back to `go mod vendor` if it is missing.
+          TAG=$(sha256sum go.sum | cut -d' ' -f1 | cut -c1-12)
+          hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${TAG}" || go mod vendor
 
       - name: Run Fuzz Target
         run: go test -mod=vendor "${{ matrix.target.pkg }}" -run="${{ matrix.target.name }}" -fuzz="${{ matrix.target.name }}" -fuzztime="${{ github.event.inputs.fuzztime || '60s' }}" -v

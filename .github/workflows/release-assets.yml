@@ -291,3 +291,85 @@ jobs:
             --dir .cli-binaries
 
           gh release upload "${VERSION}" .cli-binaries/* --repo "${{ github.repository }}" --clobber
+
+  sign-and-attest:
+    name: Sign & attest all release assets
+    runs-on: self-hosted
+    needs: [install, crds, docs, coverage, cli]
+    permissions:
+      contents: write      # upload signatures and SBOM to the release
+      id-token: write      # Sigstore keyless OIDC (cosign) + attestation OIDC
+      attestations: write  # GitHub build-provenance attestations (SLSA v1)
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_ID_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments
+
+      - name: Resolve version
+        id: version
+        run: echo "tag=${{ github.event.inputs.version || github.ref_name }}" >> "$GITHUB_OUTPUT"
+
+      - name: Download every release asset
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          VERSION=${{ steps.version.outputs.tag }}
+          mkdir -p .assets .sigs
+          gh release download "${VERSION}" --repo "${{ github.repository }}" --dir .assets
+          # Drop any signatures/SBOM from a previous run so re-signing is clean.
+          rm -f .assets/*.sigstore.json .assets/sbom-*.spdx.json
+          ls -l .assets
+
+      - name: Generate SPDX SBOM of the release assets
+        run: |
+          VERSION=${{ steps.version.outputs.tag }}
+          # SBOM lives in .assets so it is itself signed and attested below.
+          syft dir:.assets -o spdx-json=".assets/sbom-${VERSION}.spdx.json"
+
+      - name: Sign every asset with Cosign (keyless OIDC)
+        run: |
+          for f in .assets/*; do
+            [ -f "$f" ] || continue
+            cosign sign-blob --yes --bundle ".sigs/$(basename "$f").sigstore.json" "$f"
+          done
+          ls -l .sigs
+
+      - name: Attest SLSA build provenance for every asset
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: ".assets/*"
+
+      - name: Upload SBOM and signature bundles to the release
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          VERSION=${{ steps.version.outputs.tag }}
+          gh release upload "${VERSION}" \
+            ".assets/sbom-${VERSION}.spdx.json" \
+            .sigs/*.sigstore.json \
+            --repo "${{ github.repository }}" --clobber
+
+  complete:
+    name: Close the Release issue
+    runs-on: self-hosted
+    needs: [sign-and-attest]
+    if: github.event_name == 'release'
+    steps:
+      - name: Generate Developer App token
+        id: releaser-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.DEVELOPER_CLIENT_ID }}
+          private-key: ${{ secrets.DEVELOPER_APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: ${{ github.event.repository.name }}
+
+      - name: Releaser complete
+        env:
+          GH_TOKEN: ${{ steps.releaser-token.outputs.token }}
+        run: releaser complete -release "${{ github.event.release.tag_name }}" -project blanketops/1
