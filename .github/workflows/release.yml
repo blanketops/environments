@@ -1,34 +1,50 @@
 # =============================================================================
-# release.yml — Publish GitHub Release
+# release.yml — Build, Sign, Attest and Publish a Release (environments)
 #
-# Fires on push of a v* tag. Reads the already-current CHANGELOG.md for
-# release notes and publishes a GitHub Release.
+# One atomic job on a v* tag (or manual dispatch for a re-sign): build the
+# artifacts this repo owns (godoc + coverage), generate an SPDX SBOM, sign
+# everything with Cosign (keyless OIDC), generate SLSA build-provenance
+# attestations, then publish the GitHub Release with the artifacts, their
+# signatures and the SBOM attached. Signing happens BEFORE publish in the
+# same job, so a published release can never exist without signatures — the
+# split "publish now, sign later" design is gone.
 #
-# CHANGELOG.md itself is generated and committed by finalize-release.yml,
-# synchronously, before it merges main back into develop -- doing it there
-# instead of here closes a race where this workflow (triggered
-# asynchronously by the tag push) used to commit the changelog to main
-# after finalize-release.yml had already synced develop, leaving develop
-# permanently missing that commit.
+# Scope (this repo signs only what it builds):
+#   godoc-{version}.tar.gz     — Go package docs via gomarkdoc        (signed)
+#   coverage-{version}.tar.gz  — coverage profile + HTML reports      (signed)
+#   sbom-{version}.spdx.json   — SPDX SBOM of the module              (signed)
 #
-# Tag-triggered release pipeline for self-hosted runners. Uses direct binaries
-# (Syft for SBOMs, Cosign for signatures) instead of container actions, bypassing
-# Docker daemon constraints while preserving full Sigstore keyless OIDC signing
-# and GitHub artifact attestation.
+# install.yaml / crds are environments-install's artifacts. They are left
+# COMMENTED OUT below until environments-install signs its own release; once
+# it does, re-enable those steps to download them WITH their .sig and attach
+# as-is (never re-signed here). CLI binaries are environments-cli's own signed
+# release — not bundled here.
 #
-# Secrets required:
-#   APP_ID, APP_PRIVATE_KEY — GitHub App credentials, exchanged for a
-#   short-lived installation token, used to check out main and publish
-#   the release.
+# Secrets/vars: vars.APP_CLIENT_ID + secrets.APP_ID_PRIVATE_KEY (main App),
+#   vars.DEVELOPER_CLIENT_ID + secrets.DEVELOPER_APP_PRIVATE_KEY (releaser).
+# Tools (releaser, syft, cosign, gh, git-cliff, gomarkdoc deps) are baked into
+# the runner toolchain image.
 # =============================================================================
 name: Release
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag to build, sign and (re)publish (e.g. v0.9.1)"
+        required: true
 
 permissions:
-  contents: write     # create the GitHub Release
+  contents: write     # create/update the GitHub Release
+  packages: read      # pull the vendor snapshot from GHCR
+  id-token: write     # Sigstore keyless OIDC (cosign) + attestation OIDC
+  attestations: write # GitHub build-provenance attestations (SLSA v1)
+
+env:
+  REGISTRY: ghcr.io
+  VENDOR_IMAGE: ghcr.io/blanketops/environments/tools
 
 jobs:
   release:
@@ -43,37 +59,160 @@ jobs:
           owner: blanketops
           repositories: environments
 
+      - name: Resolve version
+        id: version
+        run: echo "tag=${{ github.event.inputs.version || github.ref_name }}" >> "$GITHUB_OUTPUT"
+
       - name: Checkout
         uses: actions/checkout@v7
         with:
+          ref: ${{ steps.version.outputs.tag }}
           token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Restore vendor from snapshot
+        run: |
+          TAG=$(sha256sum go.sum | cut -d' ' -f1 | cut -c1-12)
+          hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${TAG}" || go mod vendor
+
+      - name: Build godoc bundle
+        run: |
+          VERSION=${{ steps.version.outputs.tag }}
+          go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+          mkdir -p .release-docs
+          gomarkdoc --output '.release-docs/{{.Dir}}.md' \
+            ./core/... \
+            ./cache/... \
+            ./logging/... \
+            ./pkg/... \
+            ./resolution/... \
+            ./runtime/... || true
+          tar -czf "godoc-${VERSION}.tar.gz" -C .release-docs .
+
+      - name: Build coverage bundle
+        run: |
+          VERSION=${{ steps.version.outputs.tag }}
+          go test -mod=vendor -v -coverprofile=coverage.out -covermode=atomic ./...
+          go tool cover -html=coverage.out -o coverage.html
+          git clone --depth 1 --branch v1.2.1 https://github.com/axw/gocov.git /tmp/gocov-src
+          ( cd /tmp/gocov-src \
+            && go mod edit -replace golang.org/x/tools=golang.org/x/tools@v0.48.0 \
+            && go mod tidy \
+            && go build -o "$(go env GOPATH)/bin/gocov" ./gocov )
+          go install github.com/matm/gocov-html/cmd/gocov-html@latest
+          gocov convert coverage.out | gocov-html > beauty-report.html
+          tar -czf "coverage-${VERSION}.tar.gz" coverage.out coverage.html beauty-report.html
+
+      # ---------------------------------------------------------------------
+      # install.yaml + crds — DISABLED until environments-install signs its own
+      # release. Its current release ships install.yaml with NO signature and
+      # no crds asset, so bundling them here would ship unsigned artifacts.
+      # Re-enable once environments-install self-signs; download each WITH its
+      # .sig and attach as-is (do not re-sign here), and add them to FILES below.
+      #
+      # - name: Download signed install manifest from environments-install
+      #   env:
+      #     GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      #   run: |
+      #     VERSION=${{ steps.version.outputs.tag }}
+      #     INSTALL_TAG=$(gh release list --repo blanketops/environments-install --limit 1 | awk '{print $1}')
+      #     gh release download "${INSTALL_TAG}" --repo blanketops/environments-install \
+      #       --pattern "install.yaml" --pattern "install.yaml.sig" --dir .
+      #     mv install.yaml "install-${VERSION}.yaml"
+      #     mv install.yaml.sig "install-${VERSION}.yaml.sig"
+      #
+      # - name: Download signed CRDs from environments-install
+      #   env:
+      #     GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      #   run: |
+      #     VERSION=${{ steps.version.outputs.tag }}
+      #     INSTALL_TAG=$(gh release list --repo blanketops/environments-install --limit 1 | awk '{print $1}')
+      #     gh release download "${INSTALL_TAG}" --repo blanketops/environments-install \
+      #       --pattern "crds-*.tar.gz" --pattern "crds-*.tar.gz.sig" --dir .
+      # ---------------------------------------------------------------------
+
+      - name: Generate SPDX SBOM
+        run: |
+          VERSION=${{ steps.version.outputs.tag }}
+          syft dir:. -o spdx-json="sbom-${VERSION}.spdx.json"
+
+      - name: Sign artifacts with Cosign (keyless OIDC)
+        run: |
+          VERSION=${{ steps.version.outputs.tag }}
+          for f in "godoc-${VERSION}.tar.gz" "coverage-${VERSION}.tar.gz" "sbom-${VERSION}.spdx.json"; do
+            cosign sign-blob --yes --output-signature "${f}.sig" "$f"
+          done
+
+      - name: Attest SLSA build provenance
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            godoc-${{ steps.version.outputs.tag }}.tar.gz
+            coverage-${{ steps.version.outputs.tag }}.tar.gz
+            sbom-${{ steps.version.outputs.tag }}.spdx.json
 
       - name: Generate release notes
         run: git-cliff --config .cliff.toml --latest --output RELEASE_NOTES.md
 
-      - name: Create the GitHub Release
+      - name: Create or update the GitHub Release
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          # Publishing this release fires release-assets.yml, which bundles
-          # every asset and then signs and attests all of them (sign-and-attest
-          # job) before the releaser closes the Release issue (complete job).
-          gh release create "${{ github.ref_name }}" \
-            --title "${{ github.ref_name }}" \
-            --notes-file RELEASE_NOTES.md
+          VERSION=${{ steps.version.outputs.tag }}
+          FILES=(
+            "godoc-${VERSION}.tar.gz" "godoc-${VERSION}.tar.gz.sig"
+            "coverage-${VERSION}.tar.gz" "coverage-${VERSION}.tar.gz.sig"
+            "sbom-${VERSION}.spdx.json" "sbom-${VERSION}.spdx.json.sig"
+            RELEASE_NOTES.md
+          )
+          if gh release view "${VERSION}" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release upload "${VERSION}" "${FILES[@]}" --repo "${{ github.repository }}" --clobber
+          else
+            gh release create "${VERSION}" --repo "${{ github.repository }}" \
+              --title "${VERSION}" --notes-file RELEASE_NOTES.md "${FILES[@]}"
+          fi
 
       - name: Release Summary
         run: |
-          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
-          # 📦 Release Published: ${{ github.ref_name }}
+          cat >> "$GITHUB_STEP_SUMMARY" << 'EOF'
+          # 📦 Secure Release Published: ${{ steps.version.outputs.tag }}
 
-          Assets, SBOM, Cosign signatures and SLSA build-provenance attestations
-          are attached by `release-assets.yml` (the `sign-and-attest` job), which
-          fires on this release being published. The `complete` job then closes
-          the Release issue once every asset is signed and attested.
+          Built, SBOM'd, signed and attested in one atomic job — the release is
+          published only after every artifact is signed.
+
+          ## Signed assets
+          - `godoc-${{ steps.version.outputs.tag }}.tar.gz` (+ `.sig`)
+          - `coverage-${{ steps.version.outputs.tag }}.tar.gz` (+ `.sig`)
+          - `sbom-${{ steps.version.outputs.tag }}.spdx.json` (+ `.sig`)
 
           ## Verification
-          - **Signature:** `cosign verify-blob --bundle <asset>.sigstore.json --certificate-identity-regexp ".*" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" <asset>`
+          - **Signature:** `cosign verify-blob --certificate-identity-regexp ".*" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" --signature <asset>.sig <asset>`
           - **Provenance:** `gh attest verify <asset> --owner ${{ github.repository_owner }}`
           EOF
+
+      - name: Generate Developer App token
+        id: releaser-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.DEVELOPER_CLIENT_ID }}
+          private-key: ${{ secrets.DEVELOPER_APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments
+
+      - name: Releaser complete
+        env:
+          GH_TOKEN: ${{ steps.releaser-token.outputs.token }}
+        run: releaser complete -release "${{ steps.version.outputs.tag }}" -project blanketops/1
