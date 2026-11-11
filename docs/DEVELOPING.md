@@ -25,9 +25,11 @@ on it. The controller runs that logic.
 
 Go dependencies point one way:
 
-```environments-contract ─┐
-                       ├─→ environments ─→ environments-controller
-environments-api ──────┘```
+```
+   environments-contract ─┐
+                          ├─→ environments ─→ environments-controller
+   environments-api ──────┘
+```
 
 A change that crosses repositories lands in that order, and each step is a
 tagged release that the next one picks up through `go.mod`. Dependabot opens
