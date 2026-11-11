@@ -1,6 +1,6 @@
 # Architecture 01: Type System & Contract Boundary
 
-> Phase 1 of the BlanketOps architecture series. Everything below is verified
+> Phase 1 of the BlanketOps Enviornments architecture series. Everything below is verified
 > against source as of 2026-11-02 (`environments-api v0.3.2`,
 > `environments-contract v0.5.6`, pinned in `environments/go.mod`), not
 > inferred from READMEs. Where a README disagrees with the code, the code
@@ -8,7 +8,7 @@
 
 ## Summary
 
-BlanketOps does not model its own resources as Kubernetes API types.
+BlanketOps Environments does not model its own resources as Kubernetes API types.
 Kubernetes is one materialization target among several. The actual source
 of truth for what a resource *means* — a Route, a Build, a Domain — is a
 versioned protobuf contract. Everything else in the stack exists to carry
