@@ -1,3 +1,11 @@
+## [0.9.1] - 2026-11-11
+
+### ⚙️ Miscellaneous Tasks
+
+- Make release.yml self-signing and atomic; retire release-assets.yml
+- *(release)* Sign with verifiable Sigstore bundles
+- Open a tracking issue per test file and post results (test-helper)
+- Sync develop with main after release/v0.9.0
 ## [0.9.0] - 2026-11-10
 
 ### 🐛 Bug Fixes
@@ -14,6 +22,7 @@
 - Label the release token steps as the Developer App
 - Consolidate fuzzing into ci.yml, drop the duplicate workflow
 - *(security)* Drop dead push/pull_request conditions
+- *(release)* Update changelog for v0.9.0 (#478)
 
 ### 💼 Other
 
