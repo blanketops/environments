@@ -49,6 +49,10 @@ permissions:
 env:
   REGISTRY: ghcr.io
   VENDOR_IMAGE: ghcr.io/blanketops/environments/tools
+  # test-helper (environments-bots) opens one tracking issue per test file and
+  # posts each run's results. Pinned to the environments-bots commit that adds
+  # the -tests-dir/-exclude flags (so it can track tests beside the source).
+  TEST_HELPER_REF: 0a0a2216c78ac8d6458aa5d76d6c7570fc1c2a10
 
 jobs:
 
@@ -331,6 +335,10 @@ jobs:
   coverage:
     name: Test and Coverage
     runs-on: self-hosted
+    permissions:
+      contents: read
+      packages: read      # restore the vendor snapshot from GHCR
+      issues: write       # test-helper fallback (GITHUB_TOKEN) can open issues
     needs: changes
     if: >-
       ${{ !cancelled() && needs.changes.outputs.code != 'false' &&
@@ -364,8 +372,15 @@ jobs:
       - name: Restore vendor from snapshot
         run: hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${{ steps.vendor.outputs.tag }}"
 
-      - name: Run tests and generate coverage
-        run: go test -mod=vendor -v -coverprofile=coverage.out -covermode=atomic ./...
+      - name: Run tests, coverage and JSON log
+        id: test
+        run: |
+          set +e
+          go test -mod=vendor -json -coverprofile=coverage.out -covermode=atomic ./... \
+            > "${RUNNER_TEMP}/go-test.json"
+          echo "exit=$?" >> "$GITHUB_OUTPUT"
+          echo "failed test events: $(grep -c '\"Action\":\"fail\"' "${RUNNER_TEMP}/go-test.json" 2>/dev/null || echo 0)"
+          exit 0
 
       - name: Coverage Summary
         if: always()
@@ -413,6 +428,55 @@ jobs:
 
           </details>
           EOF
+
+      # One tracking issue per test file, then this run's per-file results
+      # posted to them — the same flow environments-tests uses, so every unit
+      # test is visible on the board as we drive to 100% before 1.0.0. All
+      # best-effort: a fork PR has no bot token, and this must never fail CI.
+      - name: Install test-helper
+        id: test-helper
+        if: always()
+        continue-on-error: true
+        run: |
+          GOBIN="${RUNNER_TEMP}/bin" go install "github.com/blanketops/environments-bots/cmd/test-helper@${TEST_HELPER_REF}"
+          echo "${RUNNER_TEMP}/bin" >> "$GITHUB_PATH"
+
+      - name: Mint the developer bot's token
+        id: bot-token
+        if: always() && steps.test-helper.outcome == 'success'
+        continue-on-error: true
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.DEVELOPER_CLIENT_ID }}
+          private-key: ${{ secrets.DEVELOPER_APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments
+
+      - name: Open an issue per test file
+        if: always() && steps.test-helper.outcome == 'success'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ steps.bot-token.outputs.token || secrets.GITHUB_TOKEN }}
+          PROJECT: ${{ steps.bot-token.outputs.token && 'blanketops/1' || '' }}
+          SOURCE: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}
+        run: test-helper sync -tests-dir . -exclude vendor -source "$SOURCE" ${PROJECT:+-project "$PROJECT"}
+
+      - name: Post test results to the issues
+        if: always() && steps.test-helper.outcome == 'success'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ steps.bot-token.outputs.token || secrets.GITHUB_TOKEN }}
+          REF: "${{ github.event.pull_request.number && format('PR #{0}', github.event.pull_request.number) || github.ref_name }}"
+        run: test-helper report -tests-dir . -exclude vendor -go-json "${RUNNER_TEMP}/go-test.json" -ref "$REF"
+
+      - name: Fail the job if tests failed
+        if: always()
+        run: |
+          code='${{ steps.test.outputs.exit }}'
+          if [ "$code" != "0" ]; then
+            echo "::error::go test failed (exit ${code})"
+            exit 1
+          fi
 
   # ───────────────────────────────────────────────────────────────────────────
   # Job 5: Code Docs

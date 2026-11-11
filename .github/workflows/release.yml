@@ -153,7 +153,7 @@ jobs:
         run: |
           VERSION=${{ steps.version.outputs.tag }}
           for f in "godoc-${VERSION}.tar.gz" "coverage-${VERSION}.tar.gz" "sbom-${VERSION}.spdx.json"; do
-            cosign sign-blob --yes --output-signature "${f}.sig" "$f"
+            cosign sign-blob --yes --bundle "${f}.sigstore.json" "$f"
           done
 
       - name: Attest SLSA build provenance
@@ -173,9 +173,9 @@ jobs:
         run: |
           VERSION=${{ steps.version.outputs.tag }}
           FILES=(
-            "godoc-${VERSION}.tar.gz" "godoc-${VERSION}.tar.gz.sig"
-            "coverage-${VERSION}.tar.gz" "coverage-${VERSION}.tar.gz.sig"
-            "sbom-${VERSION}.spdx.json" "sbom-${VERSION}.spdx.json.sig"
+            "godoc-${VERSION}.tar.gz" "godoc-${VERSION}.tar.gz.sigstore.json"
+            "coverage-${VERSION}.tar.gz" "coverage-${VERSION}.tar.gz.sigstore.json"
+            "sbom-${VERSION}.spdx.json" "sbom-${VERSION}.spdx.json.sigstore.json"
             RELEASE_NOTES.md
           )
           if gh release view "${VERSION}" --repo "${{ github.repository }}" >/dev/null 2>&1; then
@@ -194,12 +194,12 @@ jobs:
           published only after every artifact is signed.
 
           ## Signed assets
-          - `godoc-${{ steps.version.outputs.tag }}.tar.gz` (+ `.sig`)
-          - `coverage-${{ steps.version.outputs.tag }}.tar.gz` (+ `.sig`)
-          - `sbom-${{ steps.version.outputs.tag }}.spdx.json` (+ `.sig`)
+          - `godoc-${{ steps.version.outputs.tag }}.tar.gz` (+ `.sigstore.json`)
+          - `coverage-${{ steps.version.outputs.tag }}.tar.gz` (+ `.sigstore.json`)
+          - `sbom-${{ steps.version.outputs.tag }}.spdx.json` (+ `.sigstore.json`)
 
           ## Verification
-          - **Signature:** `cosign verify-blob --certificate-identity-regexp ".*" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" --signature <asset>.sig <asset>`
+          - **Signature:** `cosign verify-blob --certificate-identity-regexp ".*" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" --bundle <asset>.sigstore.json <asset>`
           - **Provenance:** `gh attest verify <asset> --owner ${{ github.repository_owner }}`
           EOF
 
