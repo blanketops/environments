@@ -59,6 +59,15 @@ func MeaningfulChangePredicate() predicate.Funcs {
 	return predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
 
+			// Entering deletion is a metadata-only transition — the spec is
+			// unchanged when deletionTimestamp is set — but teardown is
+			// finalizer-gated and must run. The spec-only diffs below would
+			// drop this event, stranding the object with its finalizer, so
+			// always reconcile when an object transitions into deletion.
+			if e.ObjectOld.GetDeletionTimestamp().IsZero() && !e.ObjectNew.GetDeletionTimestamp().IsZero() {
+				return true
+			}
+
 			switch old := e.ObjectOld.(type) {
 
 			case *environmentsv1alpha1.Build:
