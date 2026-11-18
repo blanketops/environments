@@ -28,6 +28,7 @@ import (
 
 	sourcesv1alpha1 "github.com/blanketops/environments-api/api/sources/v1alpha1"
 	"github.com/blanketops/environments/pkg/apis/gitrepository/domain"
+	"github.com/blanketops/environments/pkg/secrets/github/hookurl"
 )
 
 // Compile-time assertion — GitHubProvider must satisfy Provider.
@@ -124,9 +125,9 @@ func buildRepositoryWebhook(
 				Configuration: []RepositoryWebhookConfigurationParameters{
 					{
 						URLSecretRef: SecretKeyRef{
-							Name:      "hookurl",
+							Name:      hookurl.HookURLSecretName(cr.Name),
 							Namespace: cr.Namespace,
-							Key:       "url",
+							Key:       hookurl.HookURLSecretKey,
 						},
 					},
 				},
