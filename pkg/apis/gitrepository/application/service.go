@@ -61,3 +61,13 @@ func (s *GitRepositoryService) Reconcile(ctx context.Context, resolved *gitrepoR
 	// ------------------------------------------------
 	return s.status.Write(ctx, resolved.Repository, result, err)
 }
+
+// Teardown removes the external resources backing a resolved GitRepository.
+// Selects the backend and delegates to the provider's Teardown. Idempotent —
+// a missing Repository or webhook is not an error. Invoked from the domain's
+// CmdDelete branch, finalizer-gated at the controller level.
+func (s *GitRepositoryService) Teardown(ctx context.Context, resolved *gitrepoResolution.ResolvedGitRepository) error {
+	domainRepo := s.mapper.MapResolvedToDomain(resolved)
+	provider := s.backend.ForRepository(domainRepo)
+	return provider.Teardown(ctx, resolved.Repository, domainRepo)
+}
