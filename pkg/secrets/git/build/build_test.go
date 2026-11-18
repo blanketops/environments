@@ -140,3 +140,47 @@ func TestBuildGitSSHSecretReconciler_Delete_IdempotentWhenNotFound(t *testing.T)
 		t.Fatalf("expected Delete on nonexistent objects to be a no-op, got: %v", err)
 	}
 }
+
+func TestBuildGitSSHSecretReconciler_Reconcile_SetsRemoteRefProperty(t *testing.T) {
+	c := fake.NewClientBuilder().WithScheme(testutil.NewScheme(t, environmentv1alpha1.AddToScheme)).Build()
+	r := NewBuildGitSSHSecretReconciler(c, logr.Discard(), "vault-store", "ClusterSecretStore")
+	build := newResolvedBuild("my-build", "default", "my-build-git-ssh")
+
+	if err := r.Reconcile(context.Background(), build); err != nil {
+		t.Fatalf("Reconcile: %v", err)
+	}
+
+	es := testutil.GetExternalSecret(t, c, "my-build-git-ssh", "default")
+	data, _, _ := unstructured.NestedSlice(es.Object, "spec", "data")
+	if len(data) == 0 {
+		t.Fatal("expected data entries")
+	}
+	// Every git-ssh entry MUST set remoteRef.property so ESO extracts the bare
+	// value; without it the Vault KV secret syncs as a {"value":"..."} JSON
+	// blob and the SSH key is unusable (git clone fails at step-source-default).
+	for _, d := range data {
+		entry := d.(map[string]any)
+		rr := entry["remoteRef"].(map[string]any)
+		if rr["property"] != "value" {
+			t.Fatalf("secretKey %v: remoteRef.property = %v, want \"value\"", entry["secretKey"], rr["property"])
+		}
+	}
+}
+
+func TestBuildGitSSHSecretReconciler_EmptyCloneSecret_Skips(t *testing.T) {
+	c := fake.NewClientBuilder().WithScheme(testutil.NewScheme(t, environmentv1alpha1.AddToScheme)).Build()
+	r := NewBuildGitSSHSecretReconciler(c, logr.Discard(), "vault-store", "ClusterSecretStore")
+	// A public clone declares no CloneSecret. Reconcile and Delete must be
+	// no-ops, not error with "resource name may not be empty".
+	build := newResolvedBuild("public-build", "default", "")
+
+	if err := r.Reconcile(context.Background(), build); err != nil {
+		t.Fatalf("Reconcile with empty CloneSecret must be a no-op, got: %v", err)
+	}
+	if testutil.ExternalSecretExists(t, c, "", "default") {
+		t.Fatal("no ExternalSecret should be created for an empty CloneSecret")
+	}
+	if err := r.Delete(context.Background(), build); err != nil {
+		t.Fatalf("Delete with empty CloneSecret must be a no-op, got: %v", err)
+	}
+}
