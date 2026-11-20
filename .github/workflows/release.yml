@@ -168,25 +168,18 @@ jobs:
         run: git-cliff --config .cliff.toml --latest --output RELEASE_NOTES.md
 
       - name: Create or update the GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          VERSION=${{ steps.version.outputs.tag }}
-          FILES=(
-            "godoc-${VERSION}.tar.gz" "godoc-${VERSION}.tar.gz.sigstore.json"
-            "coverage-${VERSION}.tar.gz" "coverage-${VERSION}.tar.gz.sigstore.json"
-            "sbom-${VERSION}.spdx.json" "sbom-${VERSION}.spdx.json.sigstore.json"
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          body_path: RELEASE_NOTES.md
+          files: |
+            godoc-${{ steps.version.outputs.tag }}.tar.gz
+            godoc-${{ steps.version.outputs.tag }}.tar.gz.sigstore.json
+            coverage-${{ steps.version.outputs.tag }}.tar.gz
+            coverage-${{ steps.version.outputs.tag }}.tar.gz.sigstore.json
+            sbom-${{ steps.version.outputs.tag }}.spdx.json
+            sbom-${{ steps.version.outputs.tag }}.spdx.json.sigstore.json
             RELEASE_NOTES.md
-          )
-          # gh release view returns non-zero if release doesn't exist; capture exit code
-          gh release view "${VERSION}" --repo "${{ github.repository }}" >/dev/null 2>&1
-          RC=$?
-          if [ $RC -eq 0 ]; then
-            gh release upload "${VERSION}" "${FILES[@]}" --repo "${{ github.repository }}" --clobber
-          else
-            gh release create "${VERSION}" --repo "${{ github.repository }}" \
-              --title "${VERSION}" --notes-file RELEASE_NOTES.md "${FILES[@]}"
-          fi
 
       - name: Release Summary
         run: |
