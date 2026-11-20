@@ -15,6 +15,7 @@ import "github.com/blanketops/environments/pkg/apis/gitrepository/application"
 - [type GitRepositoryService](<#GitRepositoryService>)
   - [func NewGitRepositoryService\(mapper \*Mapper, status \*StatusWriter, backend \*BackendSelector\) \*GitRepositoryService](<#NewGitRepositoryService>)
   - [func \(s \*GitRepositoryService\) Reconcile\(ctx context.Context, resolved \*gitrepoResolution.ResolvedGitRepository\) error](<#GitRepositoryService.Reconcile>)
+  - [func \(s \*GitRepositoryService\) Teardown\(ctx context.Context, resolved \*gitrepoResolution.ResolvedGitRepository\) error](<#GitRepositoryService.Teardown>)
 - [type Mapper](<#Mapper>)
   - [func NewMapper\(\) \*Mapper](<#NewMapper>)
   - [func \(Mapper\) MapResolvedToDomain\(r \*gitrepoResolution.ResolvedGitRepository\) domain.GitRepository](<#Mapper.MapResolvedToDomain>)
@@ -90,6 +91,15 @@ func (s *GitRepositoryService) Reconcile(ctx context.Context, resolved *gitrepoR
 ```
 
 Reconcile reconciles a resolved GitRepository declaratively.
+
+<a name="GitRepositoryService.Teardown"></a>
+### func \(\*GitRepositoryService\) Teardown
+
+```go
+func (s *GitRepositoryService) Teardown(ctx context.Context, resolved *gitrepoResolution.ResolvedGitRepository) error
+```
+
+Teardown removes the external resources backing a resolved GitRepository. Selects the backend and delegates to the provider's Teardown. Idempotent — a missing Repository or webhook is not an error. Invoked from the domain's CmdDelete branch, finalizer\-gated at the controller level.
 
 <a name="Mapper"></a>
 ## type Mapper

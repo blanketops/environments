@@ -1,3 +1,32 @@
+## [0.9.2] - 2026-11-20
+
+### 🚀 Features
+
+- *(gitrepository)* Expose Provider.Teardown via the service
+
+### 🐛 Bug Fixes
+
+- *(secrets/github)* Set ESO remoteRef.property for upjet token
+- *(predicates)* Reconcile on deletion transition
+- *(gitrepository)* Point webhook at the per-repo hookurl secret
+- *(secrets/git)* Set remoteRef.property and guard empty cloneSecret
+
+### 📚 Documentation
+
+- Auto-generate code documentation [skip ci] (#610)
+
+### 🧪 Testing
+
+- *(query)* Cover Environment lookup and context resolution
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.9.1
+- *(develop)* Update resolution for environment to map latest secretstore contract changes
+
+### 💼 Other
+
+- Merge release/v0.9.2 into main
 ## [0.9.1] - 2026-11-11
 
 ### ⚙️ Miscellaneous Tasks
@@ -6,6 +35,7 @@
 - *(release)* Sign with verifiable Sigstore bundles
 - Open a tracking issue per test file and post results (test-helper)
 - Sync develop with main after release/v0.9.0
+- *(release)* Update changelog for v0.9.1 (#574)
 ## [0.9.0] - 2026-11-10
 
 ### 🐛 Bug Fixes
