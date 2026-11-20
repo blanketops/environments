@@ -12,39 +12,32 @@ limitations under the License.
 */
 
 /*
-This file owns KnativeProvider — the implementation of the domain Provider
-interface that handles both TLS strategies via Knative networking and
-cert-manager.
+This file owns KnativeProvider — the Provider implementation for the domain
+API that provisions Knative networking and cert-manager resources across TLS
+strategies.
 
 Strategy dispatch:
 
-	platform → ensurePlatform: ClusterDomainClaim only.
-	           The platform DNS01 wildcard cert (*.<zone>) already covers this
-	           host via a ClusterIssuer. No Certificate resource is created.
+  - platform → ensurePlatform: ClusterDomainClaim only. The platform
+    wildcard certificate already covers the host; no Issuer or
+    Certificate resource is created.
+  - custom   → ensureCustom: Issuer + ClusterDomainClaim + Certificate.
+    Provisions a per-namespace HTTP01 Issuer and per-host
+    Certificate, requeuing (ErrCertProvisioning) until Ready.
 
-	custom   → ensureCustom: Issuer + ClusterDomainClaim + Certificate.
-	           A namespaced HTTP01 Issuer is created per tenant namespace.
-	           An ACME Certificate is issued via the nginx solver. The controller
-	           requeues (ErrCertProvisioning) until the Certificate reaches Ready.
+Resource & naming conventions:
 
-ClusterDomainClaim:
-
-	Knative's networking.internal.knative.dev/v1alpha1 ClusterDomainClaim is
-	cluster-scoped (no namespace). It delegates domain ownership to a specific
-	namespace via spec.namespace. Created for both TLS strategies.
-
-TLS Secret naming:
-
-	The cert-manager Certificate writes its secret as blanketops-tls-{host}
-	(sanitized). The Route provider (pkg/routes/api/knative.go) references this
-	same name in DomainMapping.Spec.TLS.SecretName — a shared naming convention
-	avoids any cross-package coupling.
+  - ClusterDomainClaim is cluster-scoped and named after d.Host, with
+    spec.namespace delegating ownership to the target namespace.
+  - Certificate and TLS Secret names derive from sanitizeHost(d.Host)
+    (blanketops-cert-{host} and blanketops-tls-{host}) so route wiring
+    can reference the Secret without cross-package coupling.
 
 See also:
-  - pkg/domain/api/provider.go         — Provider interface
-  - pkg/domain/domain/model.go         — TLSStrategy constants
-  - pkg/routes/api/knative.go          — references certSecretName(host) for TLS wiring
-  - pkg/domain/application/backend_selector.go — wires this provider
+  - pkg/domain/api/provider.go               — Provider interface
+  - pkg/domain/domain/model.go               — TLSStrategy constants & errors
+  - pkg/routes/api/knative.go                — consumes TLS Secret name
+  - pkg/domain/application/backend_selector.go — selects backend provider
 */
 package api
 
@@ -68,32 +61,29 @@ import (
 	domainResolution "github.com/blanketops/environments/resolution/domain/resolve"
 )
 
-// ACMEConfig carries the HTTP01 ACME issuer configuration injected at
-// construction time. Keeps provider logic free of hardcoded platform values.
+// ACMEConfig holds HTTP01 ACME issuer settings injected at construction time
+// so provider logic stays free of hardcoded environment values[cite: 2].
 type ACMEConfig struct {
-	// Server is the ACME directory URL (e.g. Let's Encrypt production endpoint).
-	Server string
-	// Email is the ACME account email for cert expiry notifications.
-	Email string
-	// PrivateKeySecretName is the name of the Secret storing the ACME account
-	// private key. Created in the target namespace by cert-manager.
+	Server               string
+	Email                string
 	PrivateKeySecretName string
 }
 
-// KnativeProvider implements Provider for the Knative + cert-manager stack.
+// KnativeProvider reconciles and tears down Knative ClusterDomainClaim and
+// cert-manager Issuer/Certificate resources for a Domain[cite: 2].
 type KnativeProvider struct {
 	client client.Client
 	log    logr.Logger
 	acme   ACMEConfig
 }
 
-// NewKnativeProvider constructs a KnativeProvider with the given dependencies.
+// NewKnativeProvider constructs a KnativeProvider[cite: 2].
 func NewKnativeProvider(c client.Client, log logr.Logger, acme ACMEConfig) *KnativeProvider {
 	return &KnativeProvider{client: c, log: log, acme: acme}
 }
 
-// Ensure provisions the cert/mapping chain for the given Domain.
-// Dispatches to ensurePlatform or ensureCustom based on TLSStrategy.
+// Ensure provisions or reconciles the domain's networking and certificate
+// resources according to d.TLSStrategy[cite: 2].
 func (p *KnativeProvider) Ensure(
 	ctx context.Context,
 	resolved *domainResolution.ResolvedDomain,
@@ -112,11 +102,6 @@ func (p *KnativeProvider) Ensure(
 	}
 }
 
-// ── platform strategy ─────────────────────────────────────────────────────────
-
-// ensurePlatform handles the platform wildcard cert path.
-// Emits ClusterDomainClaim only — the DNS01 ClusterIssuer wildcard already
-// covers this host. No Certificate resource is needed.
 func (p *KnativeProvider) ensurePlatform(ctx context.Context, d domain.Domain) (domain.DomainResult, error) {
 	if err := p.ensureClusterDomainClaim(ctx, d); err != nil {
 		return domain.DomainResult{
@@ -128,15 +113,10 @@ func (p *KnativeProvider) ensurePlatform(ctx context.Context, d domain.Domain) (
 	p.log.Info("platform domain provisioned", "host", d.Host, "namespace", d.Namespace)
 	return domain.DomainResult{
 		Phase:      domain.PhaseReady,
-		CertIssued: true, // platform wildcard already covers this host
+		CertIssued: true,
 	}, nil
 }
 
-// ── custom strategy ───────────────────────────────────────────────────────────
-
-// ensureCustom handles the client-owned zone path.
-// Emits Issuer + ClusterDomainClaim + Certificate. The controller requeues
-// (ErrCertProvisioning) until the Certificate reaches Ready.
 func (p *KnativeProvider) ensureCustom(
 	ctx context.Context,
 	resolved *domainResolution.ResolvedDomain,
@@ -165,7 +145,7 @@ func (p *KnativeProvider) ensureCustom(
 	}
 
 	if !certReady {
-		// ACME challenge or cert issuance still in progress — requeue.
+		// ACME issuance is asynchronous; requeue until Ready is True[cite: 2].
 		return domain.DomainResult{
 			Phase:   domain.PhaseProvisioning,
 			Message: "certificate provisioning in progress",
@@ -179,15 +159,10 @@ func (p *KnativeProvider) ensureCustom(
 	}, nil
 }
 
-// ── resource reconciliation ───────────────────────────────────────────────────
-
-// ensureClusterDomainClaim creates or reconciles the Knative ClusterDomainClaim
-// for this host. ClusterDomainClaim is cluster-scoped — spec.namespace delegates
-// ownership of the domain to the tenant namespace.
 func (p *KnativeProvider) ensureClusterDomainClaim(ctx context.Context, d domain.Domain) error {
 	cdc := &knnetworkingv1alpha1.ClusterDomainClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			// ClusterDomainClaim is cluster-scoped — no Namespace in ObjectMeta.
+			// Cluster-scoped resource; ownership is delegated via Spec.Namespace[cite: 2].
 			Name: d.Host,
 		},
 	}
@@ -204,8 +179,6 @@ func (p *KnativeProvider) ensureClusterDomainClaim(ctx context.Context, d domain
 	return nil
 }
 
-// ensureIssuer creates or reconciles a namespaced cert-manager HTTP01 Issuer
-// in the tenant namespace. One Issuer per namespace covers all custom domains.
 func (p *KnativeProvider) ensureIssuer(ctx context.Context, d domain.Domain) error {
 	issuer := &certmanagerv1.Issuer{
 		ObjectMeta: metav1.ObjectMeta{
@@ -245,14 +218,12 @@ func (p *KnativeProvider) ensureIssuer(ctx context.Context, d domain.Domain) err
 	return nil
 }
 
-// ensureCertificate creates or reconciles the cert-manager Certificate for
-// this host. Returns (true, nil) when the cert is Ready, (false, nil) when
-// provisioning is still in progress, or (false, err) on failure.
 func (p *KnativeProvider) ensureCertificate(
 	ctx context.Context,
 	resolved *domainResolution.ResolvedDomain,
 	d domain.Domain,
 ) (bool, error) {
+	_ = resolved
 	cert := &certmanagerv1.Certificate{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      certName(d.Host),
@@ -282,46 +253,23 @@ func (p *KnativeProvider) ensureCertificate(
 	}
 	p.log.V(1).Info("Certificate reconciled", "host", d.Host, "operation", op)
 
-	// Check cert readiness from the status conditions.
 	for _, cond := range cert.Status.Conditions {
 		if cond.Type == certmanagerv1.CertificateConditionReady {
 			return cond.Status == cmmeta.ConditionTrue, nil
 		}
 	}
-	// No Ready condition yet — still provisioning.
 	return false, nil
 }
 
-// ── helpers ───────────────────────────────────────────────────────────────────
-
-// issuerName returns the shared HTTP01 Issuer name for a namespace.
-func issuerName(namespace string) string {
-	return fmt.Sprintf("blanketops-http01-%s", namespace)
-}
-
-// certName returns the cert-manager Certificate CR name for a host.
-func certName(host string) string {
-	return fmt.Sprintf("blanketops-cert-%s", sanitizeHost(host))
-}
-
-// certSecretName returns the TLS Secret name cert-manager writes into.
-// Shared convention with pkg/routes/api/knative.go certSecretName().
-func certSecretName(host string) string {
-	return fmt.Sprintf("blanketops-tls-%s", sanitizeHost(host))
-}
-
-// sanitizeHost replaces dots with dashes to produce a valid Kubernetes name.
-func sanitizeHost(host string) string {
-	return strings.ReplaceAll(host, ".", "-")
-}
-
-func stringPtr(s string) *string { return &s }
-
-// Teardown releases the ClusterDomainClaim for the domain's host, and for
-// custom-strategy domains also deletes the per-host Certificate (the shared
-// Issuer is left alone; see the comment below).
+// Teardown deletes the per-host ClusterDomainClaim and, for custom-strategy
+// domains, the per-host Certificate. The per-namespace Issuer is shared
+// across custom domains in that namespace and is intentionally left intact.
+// Idempotent — a missing ClusterDomainClaim or Certificate is not an error[cite: 2].
 func (p *KnativeProvider) Teardown(ctx context.Context, d domain.Domain) error {
-	// ClusterDomainClaim is per-host, always safe to release regardless of strategy.
+	if d.Host == "" {
+		return fmt.Errorf("domain host is required for teardown")
+	}
+
 	cdc := &knnetworkingv1alpha1.ClusterDomainClaim{
 		ObjectMeta: metav1.ObjectMeta{Name: d.Host},
 	}
@@ -329,26 +277,36 @@ func (p *KnativeProvider) Teardown(ctx context.Context, d domain.Domain) error {
 		return fmt.Errorf("delete clusterdomainclaim %q: %w", d.Host, err)
 	}
 
-	if d.TLSStrategy != domain.TLSStrategyCustom {
-		p.log.Info("domain teardown complete (platform strategy)", "host", d.Host)
-		return nil
+	if d.TLSStrategy == domain.TLSStrategyCustom && d.Namespace != "" {
+		cert := &certmanagerv1.Certificate{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      certName(d.Host),
+				Namespace: d.Namespace,
+			},
+		}
+		if err := p.client.Delete(ctx, cert); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("delete certificate %q: %w", d.Host, err)
+		}
 	}
 
-	// Certificate is per-host, safe to delete.
-	// The Issuer is deliberately NOT deleted here — it is shared per-namespace
-	// (issuerName(d.Namespace)) across every custom-strategy Domain in that
-	// namespace. Deleting it on a single Domain's teardown would break ACME
-	// renewal for every other Domain still relying on it.
-	cert := &certmanagerv1.Certificate{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      certName(d.Host),
-			Namespace: d.Namespace,
-		},
-	}
-	if err := p.client.Delete(ctx, cert); err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("delete certificate %q: %w", d.Host, err)
-	}
-
-	p.log.Info("domain teardown complete (custom strategy)", "host", d.Host)
+	p.log.Info("domain teardown complete", "host", d.Host, "strategy", d.TLSStrategy)
 	return nil
 }
+
+func issuerName(namespace string) string {
+	return fmt.Sprintf("blanketops-http01-%s", namespace)
+}
+
+func certName(host string) string {
+	return fmt.Sprintf("blanketops-cert-%s", sanitizeHost(host))
+}
+
+func certSecretName(host string) string {
+	return fmt.Sprintf("blanketops-tls-%s", sanitizeHost(host))
+}
+
+func sanitizeHost(host string) string {
+	return strings.ReplaceAll(host, ".", "-")
+}
+
+func stringPtr(s string) *string { return &s }
