@@ -18,6 +18,7 @@
 - Use go test ./... for tests, coverage on single package
 - Skip known failing tests in release workflow
 - Capture gh release view exit code properly
+- Use GITHUB_TOKEN for release creation
 
 ### 📚 Documentation
 
@@ -47,9 +48,12 @@
 - Sync develop with main after release/v0.9.2
 - *(release)* Update changelog for v0.9.2 (#626)
 - Sync develop with main after release/v0.9.2
+- *(release)* Update changelog for v0.9.2 (#628)
+- Sync develop with main after release/v0.9.2
 
 ### 💼 Other
 
+- Merge release/v0.9.2 into main
 - Merge release/v0.9.2 into main
 - Merge release/v0.9.2 into main
 - Merge release/v0.9.2 into main
