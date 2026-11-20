@@ -102,7 +102,7 @@ jobs:
         run: |
           VERSION=${{ steps.version.outputs.tag }}
           # Only test packages that have test files to avoid "no test files" failure
-          PACKAGES=$(go list -mod=vendor -f '{{if len .TestGoFiles}}{{.ImportPath}}{{end}}' ./...)
+          PACKAGES=$(go list -mod=vendor -f '{{if len .TestGoFiles}}{{.ImportPath}}{{end}}' ./... | grep -v '^$')
           if [ -n "$PACKAGES" ]; then
             go test -mod=vendor -v -coverprofile=coverage.out -covermode=atomic $PACKAGES
           else
