@@ -14,6 +14,7 @@
 - Filter empty lines from go list output in coverage bundle
 - Use xargs for coverage bundle package list
 - Use command substitution for coverage package list
+- Run tests without coverage first, then generate coverage on single package
 
 ### 📚 Documentation
 
@@ -35,9 +36,12 @@
 - Sync develop with main after release/v0.9.2
 - *(release)* Update changelog for v0.9.2 (#618)
 - Sync develop with main after release/v0.9.2
+- *(release)* Update changelog for v0.9.2 (#620)
+- Sync develop with main after release/v0.9.2
 
 ### 💼 Other
 
+- Merge release/v0.9.2 into main
 - Merge release/v0.9.2 into main
 - Merge release/v0.9.2 into main
 - Merge release/v0.9.2 into main
