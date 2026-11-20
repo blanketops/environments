@@ -47,12 +47,7 @@ type K8SProvider struct {
 }
 
 // NewK8SProvider constructs a K8SProvider.
-func NewK8SProvider(
-	c client.Client,
-	scheme *runtime.Scheme,
-	log logr.Logger,
-	rec events.EventRecorder,
-) *K8SProvider {
+func NewK8SProvider(c client.Client, scheme *runtime.Scheme, log logr.Logger, rec events.EventRecorder) *K8SProvider {
 	return &K8SProvider{
 		Client:   c,
 		Scheme:   scheme,
@@ -71,11 +66,7 @@ func NewK8SProvider(
 
 // ApplyServiceUnit applies the Deployment and Service objects for a single
 // ServiceUnit and reports the resulting observed state.
-func (p *K8SProvider) ApplyServiceUnit(
-	ctx context.Context,
-	intent *intent.DeploymentIntent,
-	su *serviceunitIntent.ServiceUnitIntent,
-) (*domain.ServiceUnitResult, error) {
+func (p *K8SProvider) ApplyServiceUnit(ctx context.Context, intent *intent.DeploymentIntent, su *serviceunitIntent.ServiceUnitIntent) (*domain.ServiceUnitResult, error) {
 
 	if err := p.applyDeployment(ctx, intent, su); err != nil {
 		return nil, err
@@ -104,11 +95,7 @@ func (p *K8SProvider) ApplyServiceUnit(
 	}, nil
 }
 
-func (p *K8SProvider) applyDeployment(
-	ctx context.Context,
-	intent *intent.DeploymentIntent,
-	su *serviceunitIntent.ServiceUnitIntent,
-) error {
+func (p *K8SProvider) applyDeployment(ctx context.Context, intent *intent.DeploymentIntent, su *serviceunitIntent.ServiceUnitIntent) error {
 
 	deploy := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -161,11 +148,7 @@ func (p *K8SProvider) applyDeployment(
 	)
 }
 
-func (p *K8SProvider) applyService(
-	ctx context.Context,
-	intent *intent.DeploymentIntent,
-	su *serviceunitIntent.ServiceUnitIntent,
-) error {
+func (p *K8SProvider) applyService(ctx context.Context, intent *intent.DeploymentIntent, su *serviceunitIntent.ServiceUnitIntent) error {
 
 	svc := &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -199,11 +182,7 @@ func (p *K8SProvider) applyService(
 	)
 }
 
-func (p *K8SProvider) isDeploymentReady(
-	ctx context.Context,
-	intent *intent.DeploymentIntent,
-	su *serviceunitIntent.ServiceUnitIntent,
-) (bool, error) {
+func (p *K8SProvider) isDeploymentReady(ctx context.Context, intent *intent.DeploymentIntent, su *serviceunitIntent.ServiceUnitIntent) (bool, error) {
 
 	var deploy appsv1.Deployment
 	if err := p.Client.Get(
@@ -234,11 +213,15 @@ func (p *K8SProvider) isDeploymentReady(
 // Idempotent — a missing Deployment or Service is not an error. Attempts
 // both objects for every ServiceUnit regardless of individual failures and
 // aggregates errors, so one stuck object doesn't block cleanup of the rest.
-func (p *K8SProvider) Teardown(
-	ctx context.Context,
-	deploymentIntent *intent.DeploymentIntent,
-) error {
+func (p *K8SProvider) Teardown(ctx context.Context, deploymentIntent *intent.DeploymentIntent) error {
+	if deploymentIntent == nil {
+		return nil
+	}
+
 	var errs []error
+	deleteOpts := &client.DeleteOptions{
+		PropagationPolicy: ptr.To(metav1.DeletePropagationBackground),
+	}
 
 	for i := range deploymentIntent.ServiceUnits {
 		su := &deploymentIntent.ServiceUnits[i]
@@ -249,9 +232,9 @@ func (p *K8SProvider) Teardown(
 				Namespace: deploymentIntent.Namespace,
 			},
 		}
-		p.Log.Info("provider.teardown: deleting deployment", "name", su.Name)
-		if err := p.Client.Delete(ctx, deploy); err != nil && !apierrors.IsNotFound(err) {
-			errs = append(errs, fmt.Errorf("delete deployment %s: %w", su.Name, err))
+		p.Log.Info("provider.teardown: deleting deployment", "namespace", deploymentIntent.Namespace, "name", su.Name)
+		if err := p.Client.Delete(ctx, deploy, deleteOpts); err != nil && !apierrors.IsNotFound(err) {
+			errs = append(errs, fmt.Errorf("delete deployment %s/%s: %w", deploymentIntent.Namespace, su.Name, err))
 		}
 
 		svc := &corev1.Service{
@@ -260,9 +243,9 @@ func (p *K8SProvider) Teardown(
 				Namespace: deploymentIntent.Namespace,
 			},
 		}
-		p.Log.Info("provider.teardown: deleting service", "name", su.Name)
-		if err := p.Client.Delete(ctx, svc); err != nil && !apierrors.IsNotFound(err) {
-			errs = append(errs, fmt.Errorf("delete service %s: %w", su.Name, err))
+		p.Log.Info("provider.teardown: deleting service", "namespace", deploymentIntent.Namespace, "name", su.Name)
+		if err := p.Client.Delete(ctx, svc, deleteOpts); err != nil && !apierrors.IsNotFound(err) {
+			errs = append(errs, fmt.Errorf("delete service %s/%s: %w", deploymentIntent.Namespace, su.Name, err))
 		}
 	}
 
