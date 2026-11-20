@@ -62,11 +62,11 @@ Ensure does NOT wait for a webhook delivery. Infrastructure provisioning complet
 func (p *GitHubProvider) Teardown(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent) error
 ```
 
-Teardown deletes the Sensor this GitHubEvent CR owns.
+Teardown deletes the per\-CR Sensor associated with this GitHubEvent.
 
-EventBus, EventSource, the Sensor ServiceAccount, and its RBAC are shared cluster singletons — provisioned once and reused across every GitHubEvent CR — so they are NOT deleted here. Only the Sensor is genuinely per\-CR \(named "github\-sensor\-" \+ crName\); deleting the shared objects would break every other GitHubEvent still depending on them.
+EventBus, EventSource, the Sensor ServiceAccount, and its RBAC are shared across GitHubEvent CRs and are intentionally left intact so deleting one GitHubEvent does not break active triggers for others.
 
-Idempotent — a missing Sensor is not an error.
+Teardown is idempotent: a missing Sensor is treated as success.
 
 <a name="Provider"></a>
 ## type Provider

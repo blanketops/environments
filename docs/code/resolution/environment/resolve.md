@@ -8,19 +8,68 @@ import "github.com/blanketops/environments/resolution/environment/resolve"
 
 Package resolve implements resolution for the Environment CR.
 
-The Environment CR stores its spec as a raw JSON contract \(spec.contract\). ResolveEnvironment decodes this into a fully typed ResolvedEnvironment — the authoritative runtime representation consumed by all downstream domain and application logic.
+The Environment CR stores its spec as a raw JSON contract \(spec.contract\). ResolveEnvironment decodes this into a fully typed ResolvedEnvironment — the authoritative runtime representation consumed by all downstream domain, contract projection, and application logic.
 
-Resolution is nil\-tolerant for the CR itself but strict on the contract payload — a missing or malformed contract is always an error. All failures surface as errors. Resolution never panics.
+Resolution is nil\-tolerant for the CR itself but strict on the contract payload — a missing or malformed contract, or an unsupported/malformed secretStore provider configuration, is always an error. All failures surface as errors. Resolution never panics.
 
 ## Index
 
+- [type ResolvedAWSConfig](<#ResolvedAWSConfig>)
+- [type ResolvedAzureConfig](<#ResolvedAzureConfig>)
 - [type ResolvedEnvironment](<#ResolvedEnvironment>)
   - [func ResolveEnvironment\(environment \*environmentv1alpha1.Environment\) \(\*ResolvedEnvironment, error\)](<#ResolveEnvironment>)
 - [type ResolvedEnvironmentContract](<#ResolvedEnvironmentContract>)
 - [type ResolvedEnvironmentSpec](<#ResolvedEnvironmentSpec>)
+- [type ResolvedGCPConfig](<#ResolvedGCPConfig>)
 - [type ResolvedSecretStore](<#ResolvedSecretStore>)
 - [type ResolvedVaultConfig](<#ResolvedVaultConfig>)
 
+
+<a name="ResolvedAWSConfig"></a>
+## type ResolvedAWSConfig
+
+ResolvedAWSConfig is the Environment\-declared AWS Secrets Manager / Parameter Store configuration for the backing secret store.
+
+```go
+type ResolvedAWSConfig struct {
+    // Region is the AWS region (e.g. "af-south-1", "us-east-1"). Required.
+    Region string
+    // Service is the AWS service name. Defaults to "SecretsManager" when
+    // not declared.
+    Service string
+    // Role optionally specifies an IAM role ARN to assume.
+    Role string
+    // ServiceAccountName optionally names the ServiceAccount used for
+    // workload/JWT authentication.
+    ServiceAccountName string
+    // ServiceAccountNamespace optionally specifies the namespace of the
+    // ServiceAccount referenced above.
+    ServiceAccountNamespace string
+}
+```
+
+<a name="ResolvedAzureConfig"></a>
+## type ResolvedAzureConfig
+
+ResolvedAzureConfig is the Environment\-declared Azure Key Vault configuration for the backing secret store.
+
+```go
+type ResolvedAzureConfig struct {
+    // VaultURL is the Azure Key Vault URI (e.g. "https://my-vault.vault.azure.net"). Required.
+    VaultURL string
+    // TenantID optionally specifies the Azure AD / Entra ID tenant ID.
+    TenantID string
+    // EnvironmentType optionally specifies the Azure cloud environment
+    // (e.g. "PublicCloud").
+    EnvironmentType string
+    // ServiceAccountName optionally names the ServiceAccount used for
+    // workload identity / JWT authentication.
+    ServiceAccountName string
+    // ServiceAccountNamespace optionally specifies the namespace of the
+    // ServiceAccount referenced above.
+    ServiceAccountNamespace string
+}
+```
 
 <a name="ResolvedEnvironment"></a>
 ## type ResolvedEnvironment
@@ -46,7 +95,7 @@ ResolveEnvironment decodes and validates the raw JSON contract from the Environm
 <a name="ResolvedEnvironmentContract"></a>
 ## type ResolvedEnvironmentContract
 
-ResolvedEnvironmentContract holds platform\-level bindings declared on the Environment — the ESO secret store provider, plus provider\-specific connection config needed to provision the store itself \(currently Vault only; AWS/GCP/Azure still resolve to a pre\-provisioned platform store\).
+ResolvedEnvironmentContract holds platform\-level bindings declared on the Environment — the secret store provider selection and provider\-specific configuration for the selected backend.
 
 ```go
 type ResolvedEnvironmentContract struct {
@@ -74,11 +123,8 @@ type ResolvedEnvironmentSpec struct {
     GitHubEvent   string
     Deployment    string
     Route         string
-    // Domain is resolved and validated here but not yet projected to the
-    // contract or cached — Domain CR support is still a stub elsewhere in
-    // the platform. Kept as its own field so it no longer clobbers Route.
-    Domain  string
-    Package string
+    Domain        string
+    Package       string
 
     // Slices are nil when not declared; empty slice is never returned.
     ServiceUnits []string
@@ -88,16 +134,37 @@ type ResolvedEnvironmentSpec struct {
 }
 ```
 
+<a name="ResolvedGCPConfig"></a>
+## type ResolvedGCPConfig
+
+ResolvedGCPConfig is the Environment\-declared GCP Secret Manager configuration for the backing secret store.
+
+```go
+type ResolvedGCPConfig struct {
+    // ProjectID is the GCP project ID owning the secrets. Required.
+    ProjectID string
+    // ServiceAccountName optionally names the ServiceAccount used for
+    // workload identity authentication.
+    ServiceAccountName string
+    // ServiceAccountNamespace optionally specifies the namespace of the
+    // ServiceAccount referenced above.
+    ServiceAccountNamespace string
+}
+```
+
 <a name="ResolvedSecretStore"></a>
 ## type ResolvedSecretStore
 
-
+ResolvedSecretStore holds the selected secret store provider, optional store override name, and the resolved configuration for that provider. At most one provider config pointer is non\-nil for a valid resolved store.
 
 ```go
 type ResolvedSecretStore struct {
     Provider  string
     StoreName string
     Vault     *ResolvedVaultConfig
+    AWS       *ResolvedAWSConfig
+    Azure     *ResolvedAzureConfig
+    GCP       *ResolvedGCPConfig
 }
 ```
 

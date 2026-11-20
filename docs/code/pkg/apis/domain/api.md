@@ -6,44 +6,24 @@
 import "github.com/blanketops/environments/pkg/apis/domain/api"
 ```
 
-This file owns KnativeProvider — the implementation of the domain Provider interface that handles both TLS strategies via Knative networking and cert\-manager.
+This file owns KnativeProvider — the Provider implementation for the domain API that provisions Knative networking and cert\-manager resources across TLS strategies.
 
 Strategy dispatch:
 
-```
-platform → ensurePlatform: ClusterDomainClaim only.
-           The platform DNS01 wildcard cert (*.<zone>) already covers this
-           host via a ClusterIssuer. No Certificate resource is created.
+- platform → ensurePlatform: ClusterDomainClaim only. The platform wildcard certificate already covers the host; no Issuer or Certificate resource is created.
+- custom → ensureCustom: Issuer \+ ClusterDomainClaim \+ Certificate. Provisions a per\-namespace HTTP01 Issuer and per\-host Certificate, requeuing \(ErrCertProvisioning\) until Ready.
 
-custom   → ensureCustom: Issuer + ClusterDomainClaim + Certificate.
-           A namespaced HTTP01 Issuer is created per tenant namespace.
-           An ACME Certificate is issued via the nginx solver. The controller
-           requeues (ErrCertProvisioning) until the Certificate reaches Ready.
-```
+Resource & naming conventions:
 
-ClusterDomainClaim:
-
-```
-Knative's networking.internal.knative.dev/v1alpha1 ClusterDomainClaim is
-cluster-scoped (no namespace). It delegates domain ownership to a specific
-namespace via spec.namespace. Created for both TLS strategies.
-```
-
-TLS Secret naming:
-
-```
-The cert-manager Certificate writes its secret as blanketops-tls-{host}
-(sanitized). The Route provider (pkg/routes/api/knative.go) references this
-same name in DomainMapping.Spec.TLS.SecretName — a shared naming convention
-avoids any cross-package coupling.
-```
+- ClusterDomainClaim is cluster\-scoped and named after d.Host, with spec.namespace delegating ownership to the target namespace.
+- Certificate and TLS Secret names derive from sanitizeHost\(d.Host\) \(blanketops\-cert\-\{host\} and blanketops\-tls\-\{host\}\) so route wiring can reference the Secret without cross\-package coupling.
 
 See also:
 
 - pkg/domain/api/provider.go — Provider interface
-- pkg/domain/domain/model.go — TLSStrategy constants
-- pkg/routes/api/knative.go — references certSecretName\(host\) for TLS wiring
-- pkg/domain/application/backend\_selector.go — wires this provider
+- pkg/domain/domain/model.go — TLSStrategy constants & errors
+- pkg/routes/api/knative.go — consumes TLS Secret name
+- pkg/domain/application/backend\_selector.go — selects backend provider
 
 This file owns the Provider interface for the domain package — the contract that all Domain backend implementations must satisfy.
 
@@ -79,16 +59,12 @@ See also:
 <a name="ACMEConfig"></a>
 ## type ACMEConfig
 
-ACMEConfig carries the HTTP01 ACME issuer configuration injected at construction time. Keeps provider logic free of hardcoded platform values.
+ACMEConfig holds HTTP01 ACME issuer settings injected at construction time so provider logic stays free of hardcoded environment values\[cite: 2\].
 
 ```go
 type ACMEConfig struct {
-    // Server is the ACME directory URL (e.g. Let's Encrypt production endpoint).
-    Server string
-    // Email is the ACME account email for cert expiry notifications.
-    Email string
-    // PrivateKeySecretName is the name of the Secret storing the ACME account
-    // private key. Created in the target namespace by cert-manager.
+    Server               string
+    Email                string
     PrivateKeySecretName string
 }
 ```
@@ -96,7 +72,7 @@ type ACMEConfig struct {
 <a name="KnativeProvider"></a>
 ## type KnativeProvider
 
-KnativeProvider implements Provider for the Knative \+ cert\-manager stack.
+KnativeProvider reconciles and tears down Knative ClusterDomainClaim and cert\-manager Issuer/Certificate resources for a Domain\[cite: 2\].
 
 ```go
 type KnativeProvider struct {
@@ -111,7 +87,7 @@ type KnativeProvider struct {
 func NewKnativeProvider(c client.Client, log logr.Logger, acme ACMEConfig) *KnativeProvider
 ```
 
-NewKnativeProvider constructs a KnativeProvider with the given dependencies.
+NewKnativeProvider constructs a KnativeProvider\[cite: 2\].
 
 <a name="KnativeProvider.Ensure"></a>
 ### func \(\*KnativeProvider\) Ensure
@@ -120,7 +96,7 @@ NewKnativeProvider constructs a KnativeProvider with the given dependencies.
 func (p *KnativeProvider) Ensure(ctx context.Context, resolved *domainResolution.ResolvedDomain, d domain.Domain) (domain.DomainResult, error)
 ```
 
-Ensure provisions the cert/mapping chain for the given Domain. Dispatches to ensurePlatform or ensureCustom based on TLSStrategy.
+Ensure provisions or reconciles the domain's networking and certificate resources according to d.TLSStrategy\[cite: 2\].
 
 <a name="KnativeProvider.Teardown"></a>
 ### func \(\*KnativeProvider\) Teardown
@@ -129,7 +105,7 @@ Ensure provisions the cert/mapping chain for the given Domain. Dispatches to ens
 func (p *KnativeProvider) Teardown(ctx context.Context, d domain.Domain) error
 ```
 
-Teardown releases the ClusterDomainClaim for the domain's host, and for custom\-strategy domains also deletes the per\-host Certificate \(the shared Issuer is left alone; see the comment below\).
+Teardown deletes the per\-host ClusterDomainClaim and, for custom\-strategy domains, the per\-host Certificate. The per\-namespace Issuer is shared across custom domains in that namespace and is intentionally left intact. Idempotent — a missing ClusterDomainClaim or Certificate is not an error\[cite: 2\].
 
 <a name="Provider"></a>
 ## type Provider
