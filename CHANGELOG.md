@@ -10,6 +10,7 @@
 - *(predicates)* Reconcile on deletion transition
 - *(gitrepository)* Point webhook at the per-repo hookurl secret
 - *(secrets/git)* Set remoteRef.property and guard empty cloneSecret
+- Skip packages without tests in coverage bundle
 
 ### 📚 Documentation
 
@@ -23,9 +24,12 @@
 
 - Sync develop with main after release/v0.9.1
 - *(develop)* Update resolution for environment to map latest secretstore contract changes
+- *(release)* Update changelog for v0.9.2 (#611)
+- Sync develop with main after release/v0.9.2
 
 ### 💼 Other
 
+- Merge release/v0.9.2 into main
 - Merge release/v0.9.2 into main
 ## [0.9.1] - 2026-11-11
 
