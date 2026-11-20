@@ -101,7 +101,13 @@ jobs:
       - name: Build coverage bundle
         run: |
           VERSION=${{ steps.version.outputs.tag }}
-          go test -mod=vendor -v -coverprofile=coverage.out -covermode=atomic ./...
+          # Only test packages that have test files to avoid "no test files" failure
+          PACKAGES=$(go list -mod=vendor -f '{{if len .TestGoFiles}}{{.ImportPath}}{{end}}' ./...)
+          if [ -n "$PACKAGES" ]; then
+            go test -mod=vendor -v -coverprofile=coverage.out -covermode=atomic $PACKAGES
+          else
+            echo "No packages with tests found" > coverage.out
+          fi
           go tool cover -html=coverage.out -o coverage.html
           git clone --depth 1 --branch v1.2.1 https://github.com/axw/gocov.git /tmp/gocov-src
           ( cd /tmp/gocov-src \
