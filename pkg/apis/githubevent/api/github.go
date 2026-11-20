@@ -326,30 +326,53 @@ func (p *GitHubProvider) apply(ctx context.Context, obj client.Object) error {
 	return p.Client.Update(ctx, obj)
 }
 
-// Teardown deletes the Sensor this GitHubEvent CR owns.
+// Teardown deletes the per-CR Sensor associated with this GitHubEvent.
 //
 // EventBus, EventSource, the Sensor ServiceAccount, and its RBAC are shared
-// cluster singletons — provisioned once and reused across every GitHubEvent
-// CR — so they are NOT deleted here. Only the Sensor is genuinely per-CR
-// (named "github-sensor-" + crName); deleting the shared objects would break
-// every other GitHubEvent still depending on them.
+// across GitHubEvent CRs and are intentionally left intact so deleting one
+// GitHubEvent does not break active triggers for others.
 //
-// Idempotent — a missing Sensor is not an error.
+// Teardown is idempotent: a missing Sensor is treated as success.
 func (p *GitHubProvider) Teardown(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent) error {
+	if resolved == nil || resolved.Event == nil {
+		return fmt.Errorf("teardown sensor: resolved GitHubEvent is nil")
+	}
+	if resolved.Event.Name == "" {
+		return fmt.Errorf("teardown sensor: GitHubEvent name is empty")
+	}
+
 	cr := resolved.Event
+	sensorName := "github-sensor-" + cr.Name
 
 	sensor := &argoeventsv1alpha1.Sensor{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "github-sensor-" + cr.Name,
+			Name:      sensorName,
 			Namespace: argoEventsNamespace,
 		},
 	}
 
-	p.Log.Info("provider.teardown: deleting sensor", "githubevent", cr.Name, "sensor", sensor.Name)
+	p.Log.Info(
+		"provider.teardown: deleting sensor",
+		"githubevent", client.ObjectKeyFromObject(cr).String(),
+		"sensor", sensorName,
+		"namespace", argoEventsNamespace,
+	)
 
-	if err := p.Client.Delete(ctx, sensor); err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("delete sensor %s: %w", sensor.Name, err)
+	err := p.Client.Delete(ctx, sensor, &client.DeleteOptions{
+		PropagationPolicy: ptrTo(metav1.DeletePropagationBackground),
+	})
+	if err != nil && !apierrors.IsNotFound(err) {
+		p.Log.Error(err, "provider.teardown: failed deleting sensor", "sensor", sensorName)
+		return fmt.Errorf("delete sensor %s: %w", sensorName, err)
+	}
+
+	if apierrors.IsNotFound(err) {
+		p.Log.V(1).Info("provider.teardown: sensor already absent", "sensor", sensorName)
 	}
 
 	return nil
+}
+
+func ptrTo[T any](v T) *T {
+	return &v
 }

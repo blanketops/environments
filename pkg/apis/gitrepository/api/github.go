@@ -28,6 +28,7 @@ import (
 
 	sourcesv1alpha1 "github.com/blanketops/environments-api/api/sources/v1alpha1"
 	"github.com/blanketops/environments/pkg/apis/gitrepository/domain"
+	"github.com/blanketops/environments/pkg/secrets/github/hookurl"
 )
 
 // Compile-time assertion — GitHubProvider must satisfy Provider.
@@ -124,9 +125,9 @@ func buildRepositoryWebhook(
 				Configuration: []RepositoryWebhookConfigurationParameters{
 					{
 						URLSecretRef: SecretKeyRef{
-							Name:      "hookurl",
+							Name:      hookurl.HookURLSecretName(cr.Name),
 							Namespace: cr.Namespace,
-							Key:       "url",
+							Key:       hookurl.HookURLSecretKey,
 						},
 					},
 				},
@@ -208,32 +209,29 @@ func ptr[T any](v T) *T { return &v }
 // leaves Crossplane managing a live GitHub repository and webhook forever.
 //
 // Idempotent — a missing Repository or RepositoryWebhook is not an error.
-func (p *GitHubProvider) Teardown(
-	ctx context.Context,
-	cr *sourcesv1alpha1.GitRepository,
-	spec domain.GitRepository,
-) error {
+func (p *GitHubProvider) Teardown(ctx context.Context, cr *sourcesv1alpha1.GitRepository, spec domain.GitRepository) error {
+	if cr == nil || cr.Name == "" {
+		return fmt.Errorf("teardown gitrepository: GitRepository CR or name is empty")
+	}
+
+	_ = spec
 	p.Log.Info(
 		"github.teardown: removing repository",
 		"gitrepository", ctrlclient.ObjectKeyFromObject(cr),
 	)
 
-	// 1. RepositoryWebhook first — release the hook before the repo it
-	//    targets, so Crossplane isn't left reconciling a webhook against a
-	//    Repository that's mid-deletion.
-	if len(spec.Webhooks) > 0 {
-		webhook := &RepositoryWebhook{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: SchemeGroupVersion.String(),
-				Kind:       "RepositoryWebhook",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: cr.Name + "-webhook",
-			},
-		}
-		if err := p.Client.Delete(ctx, webhook); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("delete repository webhook: %w", err)
-		}
+	// 1. RepositoryWebhook first — release the hook before the repo it targets.
+	webhook := &RepositoryWebhook{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: SchemeGroupVersion.String(),
+			Kind:       "RepositoryWebhook",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: cr.Name + "-webhook",
+		},
+	}
+	if err := p.Client.Delete(ctx, webhook); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("delete repository webhook: %w", err)
 	}
 
 	// 2. Repository.

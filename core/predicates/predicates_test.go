@@ -165,3 +165,24 @@ func TestMeaningfulChangePredicate_CreateDeleteGenericAlwaysPassThrough(t *testi
 		t.Fatal("expected Generic events to always pass through")
 	}
 }
+
+func TestMeaningfulChangePredicate_EnteringDeletion_Reconciles(t *testing.T) {
+	pred := MeaningfulChangePredicate()
+
+	// Identical spec; the only change is deletionTimestamp being set. A
+	// spec-only diff would drop this, stranding the finalizer-gated object,
+	// so entering deletion MUST reconcile.
+	raw := []byte(`{"provider":"github"}`)
+	old := &sourcesv1alpha1.GitRepository{
+		Spec: sourcesv1alpha1.GitRepositorySpec{Contract: runtime.RawExtension{Raw: raw}},
+	}
+	ts := metav1.Now()
+	newObj := &sourcesv1alpha1.GitRepository{
+		ObjectMeta: metav1.ObjectMeta{DeletionTimestamp: &ts},
+		Spec:       sourcesv1alpha1.GitRepositorySpec{Contract: runtime.RawExtension{Raw: raw}},
+	}
+
+	if !pred.Update(update(old, newObj)) {
+		t.Fatal("expected an object entering deletion to reconcile despite an unchanged spec")
+	}
+}

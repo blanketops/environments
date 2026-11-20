@@ -40,6 +40,26 @@ func TestGitHubProviderSecretReconciler_Reconcile_Creates(t *testing.T) {
 	if storeRef["name"] != "vault-store" || storeRef["kind"] != "ClusterSecretStore" {
 		t.Fatalf("unexpected secretStoreRef: %+v", storeRef)
 	}
+
+	// Regression: the remoteRef MUST set property=token. Without it, ESO
+	// returns the whole KV secret as a JSON blob, so the rendered
+	// credentials become {"token":"{\"token\":\"...\"}"} — unparseable by the
+	// Upjet GitHub provider ("cannot unmarshal github credentials as JSON").
+	data, ok := spec["data"].([]any)
+	if !ok || len(data) != 1 {
+		t.Fatalf("expected exactly one data entry, got %+v", spec["data"])
+	}
+	entry := data[0].(map[string]any)
+	if entry["secretKey"] != "token" {
+		t.Fatalf("expected secretKey=token, got %+v", entry["secretKey"])
+	}
+	remoteRef := entry["remoteRef"].(map[string]any)
+	if remoteRef["key"] != "/blanketops/environments/crossplane/github/token" {
+		t.Fatalf("unexpected remoteRef.key: %+v", remoteRef["key"])
+	}
+	if remoteRef["property"] != "token" {
+		t.Fatalf("remoteRef.property must be %q so ESO extracts the bare token, got %+v", "token", remoteRef["property"])
+	}
 }
 
 func TestGitHubProviderSecretReconciler_Reconcile_UpdatesOnDrift(t *testing.T) {

@@ -32,4 +32,8 @@ import (
 // The BackendSelector resolves the correct Provider from spec.contract.provider.
 type Provider interface {
 	Ensure(ctx context.Context, cr *sourcesv1alpha1.GitRepository, spec domain.GitRepository) (domain.Result, error)
+	// Teardown removes the provider-specific resources backing cr (the
+	// Crossplane Repository and RepositoryWebhook). Idempotent — a missing
+	// resource is not an error.
+	Teardown(ctx context.Context, cr *sourcesv1alpha1.GitRepository, spec domain.GitRepository) error
 }

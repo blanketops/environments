@@ -64,6 +64,14 @@ func (r *BuildGitSSHSecretReconciler) Reconcile(ctx context.Context, build *buil
 	secretName := source.CloneSecret
 	namespace := build.Build.Namespace
 
+	// A Build cloning over a public URL declares no CloneSecret. There is no
+	// SSH material to sync, and an ExternalSecret with an empty name is
+	// invalid ("resource name may not be empty"), so skip provisioning.
+	if secretName == "" {
+		r.Log.V(1).Info("no cloneSecret on build source; skipping git-ssh ExternalSecret", "build", build.Build.Name)
+		return nil
+	}
+
 	// -------------------------------------------------------------------------
 	// Desired ExternalSecret (UNSTRUCTURED)
 	// Keys are platform constants — never change regardless of provider.
@@ -98,19 +106,22 @@ func (r *BuildGitSSHSecretReconciler) Reconcile(ctx context.Context, build *buil
 					map[string]any{
 						"secretKey": "ssh-privatekey",
 						"remoteRef": map[string]any{
-							"key": "/blanketops/environments/git/ssh-privatekey",
+							"key":      "/blanketops/environments/git/ssh-privatekey",
+							"property": "value",
 						},
 					},
 					map[string]any{
 						"secretKey": "ssh-publickey",
 						"remoteRef": map[string]any{
-							"key": "/blanketops/environments/git/ssh-publickey",
+							"key":      "/blanketops/environments/git/ssh-publickey",
+							"property": "value",
 						},
 					},
 					map[string]any{
 						"secretKey": "known_hosts",
 						"remoteRef": map[string]any{
-							"key": "/blanketops/environments/git/known-hosts",
+							"key":      "/blanketops/environments/git/known-hosts",
+							"property": "value",
 						},
 					},
 				},
@@ -207,6 +218,13 @@ func (r *BuildGitSSHSecretReconciler) Reconcile(ctx context.Context, build *buil
 func (r *BuildGitSSHSecretReconciler) Delete(ctx context.Context, build *buildResolution.ResolvedBuild) error {
 	secretName := build.Spec.Source.CloneSecret
 	namespace := build.Build.Namespace
+
+	// Nothing is provisioned for a public clone (empty CloneSecret), and
+	// deleting an empty-named object errors ("resource name may not be
+	// empty"), so there is nothing to tear down.
+	if secretName == "" {
+		return nil
+	}
 
 	obj := &unstructured.Unstructured{}
 	obj.SetAPIVersion("external-secrets.io/v1")

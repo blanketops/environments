@@ -107,14 +107,7 @@ func (m *KustomizeStrategyProvider) BuildKustomize(
 // ReconcileKustomization is the GitOps path's public entrypoint: it renders
 // and commits manifests to repoURL, then ensures the Flux GitRepository and
 // Kustomization CRs that make the cluster apply them from ref/path.
-func (m *KustomizeStrategyProvider) ReconcileKustomization(
-	ctx context.Context,
-	cr *environmentv1alpha1.Deployment,
-	intent *intent.DeploymentIntent,
-	repoURL string,
-	ref string,
-	path string,
-) error {
+func (m *KustomizeStrategyProvider) ReconcileKustomization(ctx context.Context, cr *environmentv1alpha1.Deployment, intent *intent.DeploymentIntent, repoURL string, ref string, path string) error {
 
 	if cr == nil {
 		return fmt.Errorf("nil Deployment CR")
@@ -186,12 +179,7 @@ func (m *KustomizeStrategyProvider) ReconcileKustomization(
 // workload files first, then commits and pushes the result. repoPath must
 // already be a local clone (see ensureLocalClone); sshEnv authenticates
 // the push.
-func (m *KustomizeStrategyProvider) CommitAndPush(
-	repoPath string,
-	intent *intent.DeploymentIntent,
-	env string,
-	sshEnv []string,
-) error {
+func (m *KustomizeStrategyProvider) CommitAndPush(repoPath string, intent *intent.DeploymentIntent, env string, sshEnv []string) error {
 
 	if env == "" {
 		return fmt.Errorf("environment must not be empty")
@@ -370,10 +358,7 @@ func (m *KustomizeStrategyProvider) renderObject(
 // private key and known_hosts as temp files, so this process can perform
 // the same authenticated git operations Flux will later perform in-cluster.
 // The caller must invoke the returned cleanup func to remove the temp files.
-func (m *KustomizeStrategyProvider) resolveGitSSHEnv(
-	ctx context.Context,
-	cr *environmentv1alpha1.Deployment,
-) (env []string, cleanup func(), err error) {
+func (m *KustomizeStrategyProvider) resolveGitSSHEnv(ctx context.Context, cr *environmentv1alpha1.Deployment) (env []string, cleanup func(), err error) {
 
 	fluxSecret := fmt.Sprintf("%s-flux-ssh", cr.Name)
 
@@ -445,12 +430,7 @@ func ensureLocalClone(repoPath, repoURL, ref string, env []string) error {
 	return nil
 }
 
-func (m *KustomizeStrategyProvider) ensureGitRepository(
-	ctx context.Context,
-	cr *environmentv1alpha1.Deployment,
-	repoURL string,
-	ref string,
-) error {
+func (m *KustomizeStrategyProvider) ensureGitRepository(ctx context.Context, cr *environmentv1alpha1.Deployment, repoURL string, ref string) error {
 
 	fluxSecret := fmt.Sprintf("%s-flux-ssh", cr.Name)
 
@@ -513,11 +493,7 @@ func (m *KustomizeStrategyProvider) ensureGitRepository(
 	)
 }
 
-func (m *KustomizeStrategyProvider) ensureKustomization(
-	ctx context.Context,
-	cr *environmentv1alpha1.Deployment,
-	path string,
-) error {
+func (m *KustomizeStrategyProvider) ensureKustomization(ctx context.Context, cr *environmentv1alpha1.Deployment, path string) error {
 
 	kust := &kustomizev1.Kustomization{
 		TypeMeta: metav1.TypeMeta{
@@ -569,10 +545,11 @@ func (m *KustomizeStrategyProvider) ensureKustomization(
 // GitRepository and Kustomization are ownerRef'd (SetControllerReference),
 // so GC would eventually reclaim them — deleted explicitly here anyway for
 // determinism.
-func (m *KustomizeStrategyProvider) TeardownFluxResources(
-	ctx context.Context,
-	cr *environmentv1alpha1.Deployment,
-) error {
+func (m *KustomizeStrategyProvider) TeardownFluxResources(ctx context.Context, cr *environmentv1alpha1.Deployment) error {
+	if cr == nil {
+		return fmt.Errorf("nil Deployment CR")
+	}
+
 	kust := &kustomizev1.Kustomization{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-kustomize", cr.Name),
@@ -615,25 +592,30 @@ func (m *KustomizeStrategyProvider) TeardownFluxResources(
 // Deleting first, removing files second, is the safer order here since a
 // missing Kustomization simply stops reconciling rather than reconciling
 // a broken state.
-func (m *KustomizeStrategyProvider) Teardown(
-	ctx context.Context,
-	cr *environmentv1alpha1.Deployment,
-	intent *intent.DeploymentIntent,
-	repoURL string,
-	ref string,
-	env string,
-) error {
+func (m *KustomizeStrategyProvider) Teardown(ctx context.Context, cr *environmentv1alpha1.Deployment, intent *intent.DeploymentIntent, repoURL string, ref string, env string) error {
+	if cr == nil {
+		return fmt.Errorf("nil Deployment CR")
+	}
+
 	log := m.Log.WithValues("deployment", cr.Name, "namespace", cr.Namespace)
 
 	if err := m.TeardownFluxResources(ctx, cr); err != nil {
 		return err
 	}
 
-	// Ensure a local clone exists, then remove committed manifests from the
-	// external repo + push. Same clone/auth requirement as
-	// ReconcileKustomization: nothing else guarantees repoPath is a working
-	// git clone by the time we get here.
-	repoPath := filepath.Join(os.TempDir(), fmt.Sprintf("%s-manifests", cr.Name))
+	if intent == nil {
+		log.Info("Skipping manifest repo cleanup: nil DeploymentIntent")
+		return nil
+	}
+	if repoURL == "" {
+		return fmt.Errorf("repoURL required for manifest teardown")
+	}
+	if env == "" {
+		return fmt.Errorf("env required for manifest teardown")
+	}
+
+	repoPath := filepath.Join(os.TempDir(), fmt.Sprintf("%s-%s-manifests", cr.Namespace, cr.Name))
+	defer func() { _ = os.RemoveAll(repoPath) }()
 
 	sshEnv, cleanup, err := m.resolveGitSSHEnv(ctx, cr)
 	if err != nil {
@@ -654,27 +636,43 @@ func (m *KustomizeStrategyProvider) Teardown(
 }
 
 // removeAndPush removes cr's workload manifests from repoPath (already a
-// local clone — see Teardown) and pushes the result. sshEnv authenticates
-// the push.
-func (m *KustomizeStrategyProvider) removeAndPush(
-	repoPath string,
-	cr *environmentv1alpha1.Deployment,
-	intent *intent.DeploymentIntent,
-	env string,
-	sshEnv []string,
-) error {
+// local clone — see Teardown), updates kustomization.yaml to retain any
+// remaining workload manifests in the overlay, and pushes the result.
+func (m *KustomizeStrategyProvider) removeAndPush(repoPath string, cr *environmentv1alpha1.Deployment, intent *intent.DeploymentIntent, env string, sshEnv []string) error {
 	overlayPath := filepath.Join(repoPath, "overlays", env)
+	if _, err := os.Stat(overlayPath); os.IsNotExist(err) {
+		m.Log.Info("overlay directory absent, nothing to remove", "env", env)
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("stat overlay dir: %w", err)
+	}
 
 	for _, su := range intent.ServiceUnits {
 		for _, suffix := range []string{"-deployment.yaml", "-service.yaml"} {
 			f := filepath.Join(overlayPath, su.Name+suffix)
 			if err := os.Remove(f); err != nil && !os.IsNotExist(err) {
-				return err
+				return fmt.Errorf("remove manifest %s: %w", f, err)
 			}
 		}
 	}
 
-	// Regenerate kustomization.yaml without the removed entries.
+	entries, err := os.ReadDir(overlayPath)
+	if err != nil {
+		return fmt.Errorf("read overlay dir: %w", err)
+	}
+
+	var remainingWorkloads []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if strings.HasSuffix(name, "-deployment.yaml") || strings.HasSuffix(name, "-service.yaml") {
+			remainingWorkloads = append(remainingWorkloads, name)
+		}
+	}
+
+	// Regenerate kustomization.yaml retaining any surviving workload files.
 	kustFile := filepath.Join(overlayPath, "kustomization.yaml")
 	var kustContent bytes.Buffer
 	kustContent.WriteString("apiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\nresources:\n  - ../../base/manifests\n")
@@ -682,20 +680,29 @@ func (m *KustomizeStrategyProvider) removeAndPush(
 	if _, err := os.Stat(envFile); err == nil {
 		kustContent.WriteString("  - environment.yaml\n")
 	}
+	for _, name := range remainingWorkloads {
+		fmt.Fprintf(&kustContent, "  - %s\n", name)
+	}
 	if err := os.WriteFile(kustFile, kustContent.Bytes(), 0644); err != nil {
-		return err
+		return fmt.Errorf("write kustomization.yaml: %w", err)
 	}
 
 	if _, err := utils.RunGit(repoPath, "add", filepath.Join("overlays", env)); err != nil {
-		return err
+		return fmt.Errorf("git add overlay: %w", err)
 	}
 
 	cmd := exec.Command("git", "diff", "--cached", "--quiet")
 	cmd.Dir = repoPath
-	if err := cmd.Run(); err == nil {
+	if err := cmd.Run(); err != nil {
+		exitErr, ok := err.(*exec.ExitError)
+		if !ok || exitErr.ExitCode() != 1 {
+			return fmt.Errorf("git diff --cached: %w", err)
+		}
+	} else {
 		m.Log.Info("no manifest changes to remove", "env", env)
 		return nil
 	}
+
 	commitArgs := append(append([]string{}, gitCommitIdentity...),
 		"commit",
 		"-m",

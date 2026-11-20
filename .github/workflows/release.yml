@@ -37,9 +37,9 @@ on:
         required: true
 
 permissions:
-  contents: write     # create/update the GitHub Release
-  packages: read      # pull the vendor snapshot from GHCR
-  id-token: write     # Sigstore keyless OIDC (cosign) + attestation OIDC
+  contents: write # create/update the GitHub Release
+  packages: read # pull the vendor snapshot from GHCR
+  id-token: write # Sigstore keyless OIDC (cosign) + attestation OIDC
   attestations: write # GitHub build-provenance attestations (SLSA v1)
 
 env:
@@ -58,10 +58,6 @@ jobs:
           private-key: ${{ secrets.APP_ID_PRIVATE_KEY }}
           owner: blanketops
           repositories: environments
-
-      - name: Resolve version
-        id: version
-        run: echo "tag=${{ github.event.inputs.version || github.ref_name }}" >> "$GITHUB_OUTPUT"
 
       - name: Checkout
         uses: actions/checkout@v7
