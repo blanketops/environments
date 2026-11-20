@@ -169,7 +169,7 @@ jobs:
 
       - name: Create or update the GitHub Release
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           VERSION=${{ steps.version.outputs.tag }}
           FILES=(
