@@ -12,6 +12,7 @@
 - *(secrets/git)* Set remoteRef.property and guard empty cloneSecret
 - Skip packages without tests in coverage bundle
 - Filter empty lines from go list output in coverage bundle
+- Use xargs for coverage bundle package list
 
 ### 📚 Documentation
 
@@ -29,9 +30,12 @@
 - Sync develop with main after release/v0.9.2
 - *(release)* Update changelog for v0.9.2 (#614)
 - Sync develop with main after release/v0.9.2
+- *(release)* Update changelog for v0.9.2 (#616)
+- Sync develop with main after release/v0.9.2
 
 ### 💼 Other
 
+- Merge release/v0.9.2 into main
 - Merge release/v0.9.2 into main
 - Merge release/v0.9.2 into main
 - Merge release/v0.9.2 into main
