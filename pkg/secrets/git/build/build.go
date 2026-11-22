@@ -106,21 +106,21 @@ func (r *BuildGitSSHSecretReconciler) Reconcile(ctx context.Context, build *buil
 					map[string]any{
 						"secretKey": "ssh-privatekey",
 						"remoteRef": map[string]any{
-							"key":      "/blanketops/environments/git/ssh-privatekey",
+							"key":      "blanketops/environments/git/ssh-privatekey",
 							"property": "value",
 						},
 					},
 					map[string]any{
 						"secretKey": "ssh-publickey",
 						"remoteRef": map[string]any{
-							"key":      "/blanketops/environments/git/ssh-publickey",
+							"key":      "blanketops/environments/git/ssh-publickey",
 							"property": "value",
 						},
 					},
 					map[string]any{
 						"secretKey": "known_hosts",
 						"remoteRef": map[string]any{
-							"key":      "/blanketops/environments/git/known-hosts",
+							"key":      "blanketops/environments/git/known-hosts",
 							"property": "value",
 						},
 					},

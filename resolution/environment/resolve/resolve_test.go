@@ -314,7 +314,7 @@ func TestResolveEnvironment_ContractSecretStoreVaultMissingRole(t *testing.T) {
 }
 
 func TestResolveEnvironment_ContractSecretStoreNonVaultProviderNoVaultRequired(t *testing.T) {
-	e := envWithContract(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0","secretStore":{"provider":"aws"}}`)
+	e := envWithContract(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0","secretStore":{"provider":"aws","aws":{"region":"us-east-1"}}}`)
 	resolved, err := ResolveEnvironment(e)
 	if err != nil {
 		t.Fatalf("ResolveEnvironment: %v", err)
