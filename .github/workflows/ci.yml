@@ -276,6 +276,7 @@ jobs:
       - name: Build + Vet
         id: build
         continue-on-error: true
+        timeout-minutes: 15
         run: |
           go build -mod=vendor ./...
           go vet -mod=vendor ./...
@@ -292,18 +293,21 @@ jobs:
 
       - name: Build + Vet (retry)
         if: steps.build.outcome == 'failure'
+        timeout-minutes: 15
         run: |
           go build -mod=vendor ./...
           go vet -mod=vendor ./...
 
       - name: Lint
         uses: golangci/golangci-lint-action@v9
+        timeout-minutes: 10
         with:
           install-mode: none
-          skip-cache: true
+          skip-cache: false
           args: --timeout=5m
 
       - name: Test
+        timeout-minutes: 15
         run: go test -mod=vendor ./... \
           -skip 'TestKustomizeStrategyProvider_Teardown_RemovesCommittedManifests|TestSecretStoreReconciler_Reconcile_UnimplementedProvidersError|TestResolveEnvironment_ContractSecretStoreNonVaultProviderNoVaultRequired'
 
