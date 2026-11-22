@@ -455,7 +455,7 @@ jobs:
       # best-effort: a fork PR has no bot token, and this must never fail CI.
       - name: Install test-helper
         id: test-helper
-        if: always()
+        if: always() && github.ref != 'refs/heads/develop'
         continue-on-error: true
         run: |
           GOBIN="${RUNNER_TEMP}/bin" go install "github.com/blanketops/environments-bots/cmd/test-helper@${TEST_HELPER_REF}"
@@ -463,7 +463,7 @@ jobs:
 
       - name: Mint the developer bot's token
         id: bot-token
-        if: always() && steps.test-helper.outcome == 'success'
+        if: always() && steps.test-helper.outcome == 'success' && github.ref != 'refs/heads/develop'
         continue-on-error: true
         uses: actions/create-github-app-token@v3
         with:
@@ -473,7 +473,7 @@ jobs:
           repositories: environments
 
       - name: Open an issue per test file
-        if: always() && steps.test-helper.outcome == 'success'
+        if: always() && steps.test-helper.outcome == 'success' && github.ref != 'refs/heads/develop'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ steps.bot-token.outputs.token || secrets.GITHUB_TOKEN }}
@@ -482,12 +482,17 @@ jobs:
         run: test-helper sync -tests-dir . -exclude vendor -source "$SOURCE" ${PROJECT:+-project "$PROJECT"}
 
       - name: Post test results to the issues
-        if: always() && steps.test-helper.outcome == 'success'
+        if: always() && steps.test-helper.outcome == 'success' && github.ref != 'refs/heads/develop'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ steps.bot-token.outputs.token || secrets.GITHUB_TOKEN }}
           REF: "${{ github.event.pull_request.number && format('PR #{0}', github.event.pull_request.number) || github.ref_name }}"
-        run: test-helper report -tests-dir . -exclude vendor -go-json "${RUNNER_TEMP}/go-test.json" -ref "$REF"
+        run: |
+          for i in 1 2 3; do
+            test-helper report -tests-dir . -exclude vendor -go-json "${RUNNER_TEMP}/go-test.json" -ref "$REF" && break
+            echo "test-helper report attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
 
       - name: Fail the job if tests failed
         if: always()
