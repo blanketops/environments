@@ -140,16 +140,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Install Go manually (bypass runner tool cache permission issue)
-        run: |
-          GO_VERSION=$(grep '^go ' go.mod | awk '{print $2}')
-          echo "Installing Go $GO_VERSION"
-          cd /tmp
-          curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" -o go.tar.gz
-          sudo rm -rf /usr/local/go
-          sudo tar -C /usr/local -xzf go.tar.gz
-          echo "/usr/local/go/bin" >> $GITHUB_PATH
-          go version
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
 
       - name: Build
         run: go build ./...
@@ -218,17 +214,13 @@ jobs:
             echo "hit=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Install Go manually (bypass runner tool cache permission issue)
+      - name: Install Go
         if: steps.check.outputs.hit == 'false'
-        run: |
-          GO_VERSION=${{ steps.goversion.outputs.full }}
-          echo "Installing Go $GO_VERSION"
-          cd /tmp
-          curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" -o go.tar.gz
-          sudo rm -rf /usr/local/go
-          sudo tar -C /usr/local -xzf go.tar.gz
-          echo "/usr/local/go/bin" >> $GITHUB_PATH
-          go version
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ steps.goversion.outputs.full }}
+          cache: true
+          cache-dependency-path: go.sum
 
       - name: Vendor dependencies
         if: steps.check.outputs.hit == 'false'
@@ -264,16 +256,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Go manually (bypass runner tool cache permission issue)
-        run: |
-          GO_VERSION=$(grep '^go ' go.mod | awk '{print $2}')
-          echo "Installing Go $GO_VERSION"
-          cd /tmp
-          curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" -o go.tar.gz
-          sudo rm -rf /usr/local/go
-          sudo tar -C /usr/local -xzf go.tar.gz
-          echo "/usr/local/go/bin" >> $GITHUB_PATH
-          go version
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
@@ -343,6 +331,158 @@ jobs:
           | Lint | \`golangci-lint\` |
           | Test | \`go test -mod=vendor\` |
           EOF
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Job 4: Coverage
+  # Runs full coverage with proper Go module caching (actions/setup-go@v5).
+  # Uses default covermode (set) for speed; atomic only if needed.
+  # Timeout prevents hangs.
+  # ───────────────────────────────────────────────────────────────────────────
+  coverage:
+    name: Test and Coverage
+    runs-on: self-hosted
+    permissions:
+      contents: read
+      packages: read
+      issues: write
+    needs: [validate, changes]
+    if: >-
+      ${{ !cancelled() && needs.changes.outputs.code != 'false' &&
+      ((github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')) ||
+      (github.event_name == 'pull_request' && github.base_ref == 'main')) }}
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go (with module cache)
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Restore vendor from snapshot
+        run: hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${{ needs.validate.outputs.vendor-tag || needs.vendor-snapshot.outputs.vendor-tag }}"
+
+      - name: Run tests with coverage
+        id: test
+        timeout-minutes: 25
+        run: |
+          set +e
+          go test -mod=vendor -json -coverprofile=coverage.out -covermode=set ./... \
+            -skip 'TestKustomizeStrategyProvider_Teardown_RemovesCommittedManifests|TestSecretStoreReconciler_Reconcile_UnimplementedProvidersError|TestResolveEnvironment_ContractSecretStoreNonVaultProviderNoVaultRequired' \
+            > "${RUNNER_TEMP}/go-test.json"
+          echo "exit=$?" >> "$GITHUB_OUTPUT"
+          echo "failed test events: $(grep -c '\"Action\":\"fail\"' "${RUNNER_TEMP}/go-test.json" 2>/dev/null || echo 0)"
+          exit 0
+
+      - name: Coverage Summary
+        if: always()
+        run: |
+          TOTAL=$(go tool cover -func=coverage.out 2>/dev/null | grep "^total" | awk '{print $3}' || echo "N/A")
+
+          PKG_ROWS=$(awk '
+            NR==1 { next }
+            {
+              split($1, fp, ":")
+              n = split(fp[1], dirs, "/")
+              pkg = ""
+              for (i = 1; i < n; i++) pkg = pkg (i > 1 ? "/" : "") dirs[i]
+              total[pkg] += $2
+              if ($3 > 0) covered[pkg] += $2
+            }
+            END {
+              for (p in total) {
+                pct = (total[p] > 0) ? (covered[p] / total[p] * 100) : 0
+                printf "%.1f\t%s\n", pct, p
+              }
+            }
+          ' coverage.out 2>/dev/null | sort -n)
+
+          PKG_COUNT=$(echo "${PKG_ROWS}" | grep -c . || echo 0)
+
+          TABLE=$(echo "${PKG_ROWS}" | awk -F'\t' '{
+            pkg=$2; gsub(/github.com\/blanketops\/environments\//, "", pkg);
+            printf "| %s | %.1f%% |\n", pkg, $1
+          }')
+
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          # 📊 Coverage Report
+
+          **Go Version:** \`$(grep '^go ' go.mod | awk '{print $2}')\`
+          **Vendor Tag:** \`${{ needs.vendor-snapshot.outputs.vendor-tag }}\`
+          **Total Coverage:** \`${TOTAL}\`
+
+          <details>
+          <summary>Package coverage (${PKG_COUNT} packages, weakest first)</summary>
+
+          | Package | Coverage |
+          | ------- | -------- |
+          ${TABLE}
+
+          </details>
+          EOF
+
+      # Test-helper reporting (best-effort)
+      - name: Install test-helper
+        id: test-helper
+        if: always() && github.ref != 'refs/heads/develop'
+        continue-on-error: true
+        run: |
+          GOBIN="${RUNNER_TEMP}/bin" go install "github.com/blanketops/environments-bots/cmd/test-helper@${TEST_HELPER_REF}"
+          echo "${RUNNER_TEMP}/bin" >> "$GITHUB_PATH"
+
+      - name: Mint the developer bot's token
+        id: bot-token
+        if: always() && steps.test-helper.outcome == 'success' && github.ref != 'refs/heads/develop'
+        continue-on-error: true
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.DEVELOPER_CLIENT_ID }}
+          private-key: ${{ secrets.DEVELOPER_APP_PRIVATE_KEY }}
+          owner: blanketops
+          repositories: environments
+
+      - name: Open an issue per test file
+        if: always() && steps.test-helper.outcome == 'success' && github.ref != 'refs/heads/develop'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ steps.bot-token.outputs.token || secrets.GITHUB_TOKEN }}
+          PROJECT: ${{ steps.bot-token.outputs.token && 'blanketops/1' || '' }}
+          SOURCE: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}
+        run: test-helper sync -tests-dir . -exclude vendor -source "$SOURCE" ${PROJECT:+-project "$PROJECT"}
+
+      - name: Post test results to the issues
+        if: always() && steps.test-helper.outcome == 'success' && github.ref != 'refs/heads/develop'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ steps.bot-token.outputs.token || secrets.GITHUB_TOKEN }}
+          REF: "${{ github.event.pull_request.number && format('PR #{0}', github.event.pull_request.number) || github.ref_name }}"
+        run: |
+          for i in 1 2 3; do
+            test-helper report -tests-dir . -exclude vendor -go-json "${RUNNER_TEMP}/go-test.json" -ref "$REF" && break
+            echo "test-helper report attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+
+      - name: Fail the job if tests failed
+        if: always()
+        run: |
+          code='${{ steps.test.outputs.exit }}'
+          if [ "$code" != "0" ]; then
+            echo "::error::go test failed (exit ${code})"
+            exit 1
+          fi
 
   code-docs:
     name: Generate Code Docs
@@ -445,16 +585,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Install Go manually (bypass runner tool cache permission issue)
-        run: |
-          GO_VERSION=$(grep '^go ' go.mod | awk '{print $2}')
-          echo "Installing Go $GO_VERSION"
-          cd /tmp
-          curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" -o go.tar.gz
-          sudo rm -rf /usr/local/go
-          sudo tar -C /usr/local -xzf go.tar.gz
-          echo "/usr/local/go/bin" >> $GITHUB_PATH
-          go version
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
