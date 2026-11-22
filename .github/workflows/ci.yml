@@ -347,163 +347,242 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   # Job 4: Coverage
   # Original scope: push to main or develop, or a pull_request targeting main.
+  # Uses a matrix to parallelize coverage across package groups — prevents the
+  # single 4-hour run seen on self-hosted runners. Each shard writes its own
+  # coverage.out; they are merged in the final step.
   # ───────────────────────────────────────────────────────────────────────────
   coverage:
-    name: Test and Coverage
-    runs-on: self-hosted
-    permissions:
-      contents: read
-      packages: read      # restore the vendor snapshot from GHCR
-      issues: write       # test-helper fallback (GITHUB_TOKEN) can open issues
-    needs: changes
-    if: >-
-      ${{ !cancelled() && needs.changes.outputs.code != 'false' &&
-      ((github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')) ||
-      (github.event_name == 'pull_request' && github.base_ref == 'main')) }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
+      name: Test and Coverage
+      runs-on: self-hosted
+      permissions:
+        contents: read
+        packages: read      # restore the vendor snapshot from GHCR
+        issues: write       # test-helper fallback (GITHUB_TOKEN) can open issues
+      needs: changes
+      if: >-
+        ${{ !cancelled() && needs.changes.outputs.code != 'false' &&
+        ((github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')) ||
+        (github.event_name == 'pull_request' && github.base_ref == 'main')) }}
+      strategy:
+        fail-fast: false
+        matrix:
+          shard:
+            - name: core
+              packages: ./core/... ./cache/... ./logging/... ./runtime/...
+            - name: pkg
+              packages: ./pkg/...
+            - name: resolution
+              packages: ./resolution/...
+      timeout-minutes: 30
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v7
+          with:
+            fetch-depth: 0
 
-      - name: Install Go manually (bypass runner tool cache permission issue)
-        run: |
-          GO_VERSION=$(grep '^go ' go.mod | awk '{print $2}')
-          echo "Installing Go $GO_VERSION"
-          cd /tmp
-          curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" -o go.tar.gz
-          sudo rm -rf /usr/local/go
-          sudo tar -C /usr/local -xzf go.tar.gz
-          echo "/usr/local/go/bin" >> $GITHUB_PATH
-          go version
+        - name: Install Go manually (bypass runner tool cache permission issue)
+          run: |
+            GO_VERSION=$(grep '^go ' go.mod | awk '{print $2}')
+            echo "Installing Go $GO_VERSION"
+            cd /tmp
+            curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" -o go.tar.gz
+            sudo rm -rf /usr/local/go
+            sudo tar -C /usr/local -xzf go.tar.gz
+            echo "/usr/local/go/bin" >> $GITHUB_PATH
+            go version
 
-      - name: Compute vendor tag from go.sum
-        id: vendor
-        run: |
-          TAG=$(sha256sum go.sum | cut -d' ' -f1 | cut -c1-12)
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+        - name: Compute vendor tag from go.sum
+          id: vendor
+          run: |
+            TAG=$(sha256sum go.sum | cut -d' ' -f1 | cut -c1-12)
+            echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
-      - name: Log in to GHCR
-        uses: docker/login-action@v4
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        - name: Log in to GHCR
+          uses: docker/login-action@v4
+          with:
+            registry: ${{ env.REGISTRY }}
+            username: ${{ github.actor }}
+            password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Restore vendor from snapshot
-        run: hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${{ steps.vendor.outputs.tag }}"
+        - name: Restore vendor from snapshot
+          run: hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${{ steps.vendor.outputs.tag }}"
 
-      - name: Run tests, coverage and JSON log
-        id: test
-        run: |
-          set +e
-          go test -mod=vendor -json -coverprofile=coverage.out -covermode=atomic ./... \
-            -skip 'TestKustomizeStrategyProvider_Teardown_RemovesCommittedManifests|TestSecretStoreReconciler_Reconcile_UnimplementedProvidersError|TestResolveEnvironment_ContractSecretStoreNonVaultProviderNoVaultRequired' \
-            > "${RUNNER_TEMP}/go-test.json"
-          echo "exit=$?" >> "$GITHUB_OUTPUT"
-          echo "failed test events: $(grep -c '\\\"Action\\\":\\\"fail\\\"' \"${RUNNER_TEMP}/go-test.json\" 2>/dev/null || echo 0)"
-          exit 0
+        - name: Run tests and coverage for shard
+          id: test
+          timeout-minutes: 25
+          run: |
+            set +e
+            SHARD="${{ matrix.shard.name }}"
+            go test -mod=vendor -json -coverprofile="coverage-${SHARD}.out" -covermode=atomic ${{ matrix.shard.packages }} \
+              -skip 'TestKustomizeStrategyProvider_Teardown_RemovesCommittedManifests|TestSecretStoreReconciler_Reconcile_UnimplementedProvidersError|TestResolveEnvironment_ContractSecretStoreNonVaultProviderNoVaultRequired' \
+              > "${RUNNER_TEMP}/go-test-${SHARD}.json"
+            EXIT_CODE=$?
+            echo "exit=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+            echo "test-exit-${SHARD}=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+            echo "failed test events: $(grep -c '\\\\\\\"Action\\\\\\\":\\\\\\\"fail\\\\\\\"' "${RUNNER_TEMP}/go-test-${SHARD}.json" 2>/dev/null || echo 0)"
+            exit 0
 
-      - name: Coverage Summary
-        if: always()
-        run: |
-          TOTAL=$(go tool cover -func=coverage.out 2>/dev/null | grep "^total" | awk '{print $3}' || echo "N/A")
+        - name: Upload coverage shard
+          uses: actions/upload-artifact@v4
+          with:
+            name: coverage-${{ matrix.shard.name }}
+            path: coverage-${{ matrix.shard.name }}.out
+            retention-days: 1
 
-          PKG_ROWS=$(awk '
-            NR==1 { next }
-            {
-              split($1, fp, ":")
-              n = split(fp[1], dirs, "/")
-              pkg = ""
-              for (i = 1; i < n; i++) pkg = pkg (i > 1 ? "/" : "") dirs[i]
-              total[pkg] += $2
-              if ($3 > 0) covered[pkg] += $2
-            }
-            END {
-              for (p in total) {
-                pct = (total[p] > 0) ? (covered[p] / total[p] * 100) : 0
-                printf "%.1f\t%s\n", pct, p
+        - name: Upload test JSON
+          uses: actions/upload-artifact@v4
+          with:
+            name: test-json-${{ matrix.shard.name }}
+            path: ${{ runner.temp }}/go-test-${{ matrix.shard.name }}.json
+            retention-days: 1
+
+    # ───────────────────────────────────────────────────────────────────────────
+  # Job 4b: Coverage Merge
+  # Downloads all shards, merges coverage.out, generates summary, runs test-helper
+    # ───────────────────────────────────────────────────────────────────────────
+  coverage-merge:
+      name: Merge Coverage
+      runs-on: self-hosted
+      permissions:
+        contents: read
+        issues: write
+      needs: [coverage, changes]
+      if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && always() }}
+      steps:
+        - name: Download coverage shards
+          uses: actions/download-artifact@v4
+          with:
+            path: coverage-shards
+            pattern: coverage-*
+            merge-multiple: false
+
+        - name: Download test JSON files
+          uses: actions/download-artifact@v4
+          with:
+            path: test-jsons
+            pattern: test-json-*
+            merge-multiple: false
+
+        - name: Copy test JSON files to runner temp
+          run: |
+            cp test-jsons/test-json-*/go-test-*.json "${RUNNER_TEMP}/" 2>/dev/null || true
+
+        - name: Merge coverage profiles
+          run: |
+            go install github.com/wadey/gocovmerge@latest
+            echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+            gocovmerge coverage-shards/coverage-*/coverage-*.out > coverage.out
+
+        - name: Coverage Summary
+          if: always()
+          run: |
+            TOTAL=$(go tool cover -func=coverage.out 2>/dev/null | grep "^total" | awk '{print $3}' || echo "N/A")
+
+            PKG_ROWS=$(awk '
+              NR==1 { next }
+              {
+                split($1, fp, ":")
+                n = split(fp[1], dirs, "/")
+                pkg = ""
+                for (i = 1; i < n; i++) pkg = pkg (i > 1 ? "/" : "") dirs[i]
+                total[pkg] += $2
+                if ($3 > 0) covered[pkg] += $2
               }
-            }
-          ' coverage.out 2>/dev/null | sort -n)
+              END {
+                for (p in total) {
+                  pct = (total[p] > 0) ? (covered[p] / total[p] * 100) : 0
+                  printf "%.1f\t%s\n", pct, p
+                }
+              }
+            ' coverage.out 2>/dev/null | sort -n)
 
-          PKG_COUNT=$(echo "${PKG_ROWS}" | grep -c . || echo 0)
+            PKG_COUNT=$(echo "${PKG_ROWS}" | grep -c . || echo 0)
 
-          TABLE=$(echo "${PKG_ROWS}" | awk -F'\t' '{
-            pkg=$2; gsub(/github.com\/blanketops\/environments\//, "", pkg);
-            printf "| %s | %.1f%% |\n", pkg, $1
-          }')
+            TABLE=$(echo "${PKG_ROWS}" | awk -F'\t' '{
+              pkg=$2; gsub(/github.com\/blanketops\/environments\//, "", pkg);
+              printf "| %s | %.1f%% |\n", pkg, $1
+            }')
 
-          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
-          # 📊 Coverage Report
+            cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+            # 📊 Coverage Report
 
-          **Go Version:** \`$(grep '^go ' go.mod | awk '{print $2}')\`
-          **Vendor Tag:** \`${{ steps.vendor.outputs.tag }}\`
-          **Total Coverage:** \`${TOTAL}\`
+            **Go Version:** \`$(grep '^go ' go.mod | awk '{print $2}')\`
+            **Vendor Tag:** \`${{ needs.coverage.outputs.vendor-tag || 'unknown' }}\`
+            **Total Coverage:** \`${TOTAL}\`
 
-          <details>
-          <summary>Package coverage (${PKG_COUNT} packages, weakest first)</summary>
+            <details>
+            <summary>Package coverage (${PKG_COUNT} packages, weakest first)</summary>
 
-          | Package | Coverage |
-          | ------- | -------- |
-          ${TABLE}
+            | Package | Coverage |
+            | ------- | -------- |
+            ${TABLE}
 
-          </details>
-          EOF
+            </details>
+            EOF
 
-      # One tracking issue per test file, then this run's per-file results
-      # posted to them — the same flow environments-tests uses, so every unit
-      # test is visible on the board as we drive to 100% before 1.0.0. All
-      # best-effort: a fork PR has no bot token, and this must never fail CI.
-      - name: Install test-helper
-        id: test-helper
-        if: always() && github.ref != 'refs/heads/develop'
-        continue-on-error: true
-        run: |
-          GOBIN="${RUNNER_TEMP}/bin" go install "github.com/blanketops/environments-bots/cmd/test-helper@${TEST_HELPER_REF}"
-          echo "${RUNNER_TEMP}/bin" >> "$GITHUB_PATH"
+        # One tracking issue per test file, then this run's per-file results
+        # posted to them — the same flow environments-tests uses, so every unit
+        # test is visible on the board as we drive to 100% before 1.0.0. All
+        # best-effort: a fork PR has no bot token, and this must never fail CI.
+        - name: Install test-helper
+          id: test-helper
+          if: always() && github.ref != 'refs/heads/develop'
+          continue-on-error: true
+          run: |
+            GOBIN="${RUNNER_TEMP}/bin" go install "github.com/blanketops/environments-bots/cmd/test-helper@${TEST_HELPER_REF}"
+            echo "${RUNNER_TEMP}/bin" >> "$GITHUB_PATH"
 
-      - name: Mint the developer bot's token
-        id: bot-token
-        if: always() && steps.test-helper.outcome == 'success' && github.ref != 'refs/heads/develop'
-        continue-on-error: true
-        uses: actions/create-github-app-token@v3
-        with:
-          client-id: ${{ vars.DEVELOPER_CLIENT_ID }}
-          private-key: ${{ secrets.DEVELOPER_APP_PRIVATE_KEY }}
-          owner: blanketops
-          repositories: environments
+        - name: Mint the developer bot's token
+          id: bot-token
+          if: always() && steps.test-helper.outcome == 'success' && github.ref != 'refs/heads/develop'
+          continue-on-error: true
+          uses: actions/create-github-app-token@v3
+          with:
+            client-id: ${{ vars.DEVELOPER_CLIENT_ID }}
+            private-key: ${{ secrets.DEVELOPER_APP_PRIVATE_KEY }}
+            owner: blanketops
+            repositories: environments
 
-      - name: Open an issue per test file
-        if: always() && steps.test-helper.outcome == 'success' && github.ref != 'refs/heads/develop'
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token || secrets.GITHUB_TOKEN }}
-          PROJECT: ${{ steps.bot-token.outputs.token && 'blanketops/1' || '' }}
-          SOURCE: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}
-        run: test-helper sync -tests-dir . -exclude vendor -source "$SOURCE" ${PROJECT:+-project "$PROJECT"}
+        - name: Open an issue per test file
+          if: always() && steps.test-helper.outcome == 'success' && github.ref != 'refs/heads/develop'
+          continue-on-error: true
+          env:
+            GH_TOKEN: ${{ steps.bot-token.outputs.token || secrets.GITHUB_TOKEN }}
+            PROJECT: ${{ steps.bot-token.outputs.token && 'blanketops/1' || '' }}
+            SOURCE: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}
+          run: test-helper sync -tests-dir . -exclude vendor -source "$SOURCE" ${PROJECT:+-project "$PROJECT"}
 
-      - name: Post test results to the issues
-        if: always() && steps.test-helper.outcome == 'success' && github.ref != 'refs/heads/develop'
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token || secrets.GITHUB_TOKEN }}
-          REF: "${{ github.event.pull_request.number && format('PR #{0}', github.event.pull_request.number) || github.ref_name }}"
-        run: |
-          for i in 1 2 3; do
-            test-helper report -tests-dir . -exclude vendor -go-json "${RUNNER_TEMP}/go-test.json" -ref "$REF" && break
-            echo "test-helper report attempt $i failed, retrying in 10s..."
-            sleep 10
-          done
+        - name: Post test results to the issues
+          if: always() && steps.test-helper.outcome == 'success' && github.ref != 'refs/heads/develop'
+          continue-on-error: true
+          env:
+            GH_TOKEN: ${{ steps.bot-token.outputs.token || secrets.GITHUB_TOKEN }}
+            REF: "${{ github.event.pull_request.number && format('PR #{0}', github.event.pull_request.number) || github.ref_name }}"
+          run: |
+            for i in 1 2 3; do
+              # Combine all shard JSON files for test-helper report
+              cat "${RUNNER_TEMP}"/go-test-*.json > "${RUNNER_TEMP}/go-test-combined.json" 2>/dev/null || true
+              test-helper report -tests-dir . -exclude vendor -go-json "${RUNNER_TEMP}/go-test-combined.json" -ref "$REF" && break
+              echo "test-helper report attempt $i failed, retrying in 10s..."
+              sleep 10
+            done
 
-      - name: Fail the job if tests failed
-        if: always()
-        run: |
-          code='${{ steps.test.outputs.exit }}'
-          if [ "$code" != "0" ]; then
-            echo "::error::go test failed (exit ${code})"
-            exit 1
-          fi
+        - name: Fail the job if tests failed
+          if: always()
+          run: |
+            # Check all shard test JSON files for failures
+            FAILED=0
+            for f in "${RUNNER_TEMP}"/go-test-*.json; do
+              [ -f "$f" ] || continue
+              if grep -q '"Action":"fail"' "$f" 2>/dev/null; then
+                FAILED=1
+                echo "Found failures in $f"
+              fi
+            done
+            if [ "$FAILED" != "0" ]; then
+              echo "::error::go test failed in one or more shards"
+              exit 1
+            fi
 
   # ───────────────────────────────────────────────────────────────────────────
   # Job 5: Code Docs
