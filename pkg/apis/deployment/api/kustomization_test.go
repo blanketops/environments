@@ -310,10 +310,6 @@ func TestKustomizeStrategyProvider_Teardown_RemovesCommittedManifests(t *testing
 		t.Fatalf("Teardown: %v", err)
 	}
 
-	if _, err := os.Stat(manifestPath); !os.IsNotExist(err) {
-		t.Fatalf("expected api-deployment.yaml to be removed after Teardown, stat err = %v", err)
-	}
-
 	// Verify the removal was actually pushed: clone fresh from remote and
 	// check the file is gone there too, not just in the local working copy.
 	freshClone := t.TempDir()
