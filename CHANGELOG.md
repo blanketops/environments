@@ -1,3 +1,26 @@
+## [0.9.3] - 2026-11-22
+
+### 🐛 Bug Fixes
+
+- Remove leading slashes from all ExternalSecret remoteRef keys
+
+### 🧪 Testing
+
+- Fix 3 previously failing tests
+
+### ⚙️ Miscellaneous Tasks
+
+- Sync develop with main after release/v0.9.2
+- Install Go manually to bypass runner tool cache permission issue
+- Skip test-helper on develop pushes to avoid GitHub API rate limits
+- Skip known failing tests in validate and coverage jobs
+- Parallelize coverage with matrix shards + timeout
+- Remove coverage jobs, keep tests in validate
+- Restore coverage job with proper caching
+
+### 💼 Other
+
+- Merge release/v0.9.3 into main
 ## [0.9.2] - 2026-11-20
 
 ### 🚀 Features
@@ -56,6 +79,7 @@
 - Sync develop with main after release/v0.9.2
 - *(release)* Update changelog for v0.9.2 (#632)
 - Sync develop with main after release/v0.9.2
+- *(release)* Update changelog for v0.9.2 (#634)
 
 ### 💼 Other
 
