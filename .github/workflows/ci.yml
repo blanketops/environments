@@ -250,6 +250,7 @@ jobs:
     name: Lint, Vet, Test
     runs-on: self-hosted
     needs: vendor-snapshot
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v7
