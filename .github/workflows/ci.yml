@@ -272,7 +272,9 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Restore vendor from snapshot
-        run: hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${{ needs.vendor-snapshot.outputs.vendor-tag }}"
+        run: |
+          TAG=$(sha256sum go.sum | cut -d' ' -f1 | cut -c1-12)
+          hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${TAG}"
 
       - name: Build + Vet
         id: build
@@ -377,7 +379,9 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Restore vendor from snapshot
-        run: hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${{ needs.vendor-snapshot.outputs.vendor-tag }}"
+        run: |
+          TAG=$(sha256sum go.sum | cut -d' ' -f1 | cut -c1-12)
+          hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${TAG}"
 
       - name: Run tests with coverage
         id: test
