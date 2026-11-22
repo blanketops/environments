@@ -164,7 +164,7 @@ jobs:
 
   # ───────────────────────────────────────────────────────────────────────────
   # Job 2: Vendor Snapshot
-  # Original scope: push to main, or any pull_request.
+  # Original scope: push to main or develop, or any pull_request.
   # Builds and pushes the vendor image only when go.sum has changed.
   # ───────────────────────────────────────────────────────────────────────────
   vendor-snapshot:
@@ -173,7 +173,7 @@ jobs:
     needs: changes
     if: >-
       ${{ !cancelled() && needs.changes.outputs.code != 'false' &&
-      (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) }}
+      (github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'))) }}
     outputs:
       vendor-tag: ${{ steps.tag.outputs.tag }}
       cache-hit: ${{ steps.check.outputs.hit }}
