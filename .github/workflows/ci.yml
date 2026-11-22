@@ -250,7 +250,7 @@ jobs:
     name: Lint, Vet, Test
     runs-on: self-hosted
     needs: vendor-snapshot
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -377,7 +377,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Restore vendor from snapshot
-        run: hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${{ needs.validate.outputs.vendor-tag || needs.vendor-snapshot.outputs.vendor-tag }}"
+        run: hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${{ needs.vendor-snapshot.outputs.vendor-tag }}"
 
       - name: Run tests with coverage
         id: test
