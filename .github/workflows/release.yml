@@ -111,10 +111,8 @@ jobs:
       - name: Build coverage bundle
         run: |
           VERSION=${{ steps.version.outputs.tag }}
-          # Run tests without coverage on all packages except known failing ones
-          go test -mod=vendor ./... \
-            -skip 'TestKustomizeStrategyProvider_Teardown_RemovesCommittedManifests|TestSecretStoreReconciler_Reconcile_UnimplementedProvidersError|TestResolveEnvironment_ContractSecretStoreNonVaultProviderNoVaultRequired'
           # Generate coverage on a single representative package to create the artifact
+          # Full test suite already ran in validate job; skip redundant run
           go test -mod=vendor -v -coverprofile=coverage.out -covermode=atomic ./cache
           go tool cover -html=coverage.out -o coverage.html
           git clone --depth 1 --branch v1.2.1 https://github.com/axw/gocov.git /tmp/gocov-src
