@@ -236,9 +236,9 @@ func TestSecretStoreReconciler_Reconcile_UnimplementedProvidersError(t *testing.
 			})
 
 			err := r.Reconcile(context.Background(), env, "ClusterSecretStore")
-			if err == nil || !strings.Contains(err.Error(), "not yet implemented") {
-				t.Fatalf("expected not-yet-implemented error for provider %q, got: %v", tc.provider, err)
-			}
+					if err == nil || !strings.Contains(err.Error(), "not yet wired") {
+						t.Fatalf("expected not-yet-wired error for provider %q, got: %v", tc.provider, err)
+					}
 		})
 	}
 }
