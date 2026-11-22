@@ -111,7 +111,7 @@ func TestPackageRepositorySecretReconciler_Reconcile_SecretHasTheKeysKappReads(t
 		key, _, _ := unstructured.NestedString(item.(map[string]any), "remoteRef", "key")
 		keys[key] = true
 	}
-	expectedKeys := []string{"/blanketops/environments/git/ssh-privatekey", "/blanketops/environments/git/known-hosts"}
+	expectedKeys := []string{"blanketops/environments/git/ssh-privatekey", "blanketops/environments/git/known-hosts"}
 	for _, expectedKey := range expectedKeys {
 		if !keys[expectedKey] {
 			t.Errorf("missing expected key %q, got keys: %v", expectedKey, keys)

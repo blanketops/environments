@@ -54,7 +54,7 @@ func TestGitHubProviderSecretReconciler_Reconcile_Creates(t *testing.T) {
 		t.Fatalf("expected secretKey=token, got %+v", entry["secretKey"])
 	}
 	remoteRef := entry["remoteRef"].(map[string]any)
-	if remoteRef["key"] != "/blanketops/environments/crossplane/github/token" {
+	if remoteRef["key"] != "blanketops/environments/crossplane/github/token" {
 		t.Fatalf("unexpected remoteRef.key: %+v", remoteRef["key"])
 	}
 	if remoteRef["property"] != "token" {
