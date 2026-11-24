@@ -110,14 +110,31 @@ func (p RepositoryWebhookParameters) deepCopy() RepositoryWebhookParameters {
 	out := p
 	out.Events = append([]*string(nil), p.Events...)
 	out.Configuration = append([]RepositoryWebhookConfigurationParameters(nil), p.Configuration...)
+	for i := range out.Configuration {
+		if ct := out.Configuration[i].ContentType; ct != nil {
+			v := *ct
+			out.Configuration[i].ContentType = &v
+		}
+		if sr := out.Configuration[i].SecretSecretRef; sr != nil {
+			v := *sr
+			out.Configuration[i].SecretSecretRef = &v
+		}
+	}
 	return out
 }
 
 // RepositoryWebhookConfigurationParameters mirrors the Terraform configuration
 // block. URLSecretRef sources the hook URL from a Secret — Crossplane's native
-// pattern for sensitive fields.
+// pattern for sensitive fields. ContentType selects the webhook payload
+// encoding ("json" so Argo Events can address body.* fields as top-level JSON;
+// the GitHub default "form" wraps the payload and breaks that). SecretSecretRef
+// sources the HMAC secret GitHub signs deliveries with; without it GitHub sends
+// no X-Hub-Signature and a secret-configured Argo Events eventsource rejects the
+// delivery as "missing signature".
 type RepositoryWebhookConfigurationParameters struct {
-	URLSecretRef SecretKeyRef `json:"urlSecretRef"`
+	URLSecretRef    SecretKeyRef  `json:"urlSecretRef"`
+	ContentType     *string       `json:"contentType,omitempty"`
+	SecretSecretRef *SecretKeyRef `json:"secretSecretRef,omitempty"`
 }
 
 // ── Shared ────────────────────────────────────────────────────────────────────

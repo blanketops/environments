@@ -75,7 +75,15 @@ func MeaningfulChangePredicate() predicate.Funcs {
 				if !ok {
 					return true
 				}
-				return old.Annotations["build.blanketops.dev/retry-attempt"] != newObj.Annotations["build.blanketops.dev/retry-attempt"]
+				// Build is driven by annotation changes, not spec: the
+				// retry-attempt bump (applyRetry) and the trigger-sha stamp
+				// (applyTriggers, set when a matching GitHubEvent arrives via
+				// webhook) must each wake environments-build to dispatch a new
+				// BuildRun. The spec never changes for these, so compare both
+				// annotations — omitting trigger-sha strands webhook-triggered
+				// builds until a controller restart re-lists them as Creates.
+				return old.Annotations["build.blanketops.dev/retry-attempt"] != newObj.Annotations["build.blanketops.dev/retry-attempt"] ||
+					old.Annotations["build.blanketops.dev/trigger-sha"] != newObj.Annotations["build.blanketops.dev/trigger-sha"]
 
 			case *environmentsv1alpha1.Deployment:
 				newObj, ok := e.ObjectNew.(*environmentsv1alpha1.Deployment)
