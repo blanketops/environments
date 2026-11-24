@@ -45,7 +45,7 @@ import (
 )
 
 const fieldManager = "blanketops-kustomize-provider"
-const defaultGitBranch = "master"
+const defaultGitBranch = "main"
 
 // gitCommitIdentity is the author/committer identity for commits this
 // provider makes to the manifests repo. Set explicitly rather than relying
