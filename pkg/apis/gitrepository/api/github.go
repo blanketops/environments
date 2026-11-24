@@ -18,6 +18,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -313,19 +314,18 @@ func (p *GitHubProvider) Teardown(
 	// 1. RepositoryWebhook first — release the hook before the repo it
 	//    targets, so Crossplane isn't left reconciling a webhook against a
 	//    Repository that's mid-deletion.
-	if len(spec.Webhooks) > 0 {
-		webhook := &RepositoryWebhook{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: SchemeGroupVersion.String(),
-				Kind:       "RepositoryWebhook",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: cr.Name + "-webhook",
-			},
-		}
-		if err := p.Client.Delete(ctx, webhook); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("delete repository webhook: %w", err)
-		}
+	webhook := &RepositoryWebhook{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: SchemeGroupVersion.String(),
+			Kind:       "RepositoryWebhook",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: webhookResourceName(cr),
+		},
+	}
+	if err := p.deleteIfExists(ctx, webhook); err != nil {
+		p.recordEvent(cr, corev1.EventTypeWarning, "TeardownWebhookFailed", err.Error())
+		return fmt.Errorf("delete repository webhook: %w", err)
 	}
 
 	// 2. Repository.
@@ -343,7 +343,54 @@ func (p *GitHubProvider) Teardown(
 		return fmt.Errorf("delete repository: %w", err)
 	}
 
+	// 3. Gate finalizer removal on the Crossplane managed resources actually
+	//    being GONE. deleteIfExists only ISSUES the delete; Crossplane then
+	//    runs its own finalizer to delete the live GitHub repo/webhook, which
+	//    takes time and can fail (e.g. a provider token lacking delete_repo →
+	//    403 "Must have admin rights"). Returning nil now would let the
+	//    controller drop the GitRepository finalizer while the repo is still
+	//    live behind a terminating MR — a false-positive teardown that orphans
+	//    the repo. Report still-terminating so the finalizer is kept and the
+	//    reconcile retries until the MRs disappear.
+	pending, err := p.pendingManagedResources(ctx, cr)
+	if err != nil {
+		return err
+	}
+	if len(pending) > 0 {
+		p.Log.Info("github.teardown: waiting for crossplane managed resources to delete",
+			"gitrepository", ctrlclient.ObjectKeyFromObject(cr), "pending", strings.Join(pending, ", "))
+		return fmt.Errorf("waiting for crossplane managed resources to finish deleting: %s", strings.Join(pending, ", "))
+	}
+
 	p.Log.Info("github.teardown: complete", "repository", repositoryResourceName(cr))
 	p.recordEvent(cr, corev1.EventTypeNormal, "TeardownComplete", "GitHub repository resources deleted")
 	return nil
+}
+
+// pendingManagedResources returns the names of the Crossplane Repository /
+// RepositoryWebhook that still exist for cr (i.e. have been asked to delete
+// but Crossplane has not finished reclaiming the live GitHub resource yet).
+// An empty slice means teardown is genuinely complete.
+func (p *GitHubProvider) pendingManagedResources(ctx context.Context, cr *sourcesv1alpha1.GitRepository) ([]string, error) {
+	var pending []string
+
+	repo := &Repository{}
+	err := p.Client.Get(ctx, ctrlclient.ObjectKey{Name: repositoryResourceName(cr)}, repo)
+	switch {
+	case err == nil:
+		pending = append(pending, "Repository/"+repositoryResourceName(cr))
+	case !apierrors.IsNotFound(err):
+		return nil, fmt.Errorf("get repository: %w", err)
+	}
+
+	webhook := &RepositoryWebhook{}
+	err = p.Client.Get(ctx, ctrlclient.ObjectKey{Name: webhookResourceName(cr)}, webhook)
+	switch {
+	case err == nil:
+		pending = append(pending, "RepositoryWebhook/"+webhookResourceName(cr))
+	case !apierrors.IsNotFound(err):
+		return nil, fmt.Errorf("get repository webhook: %w", err)
+	}
+
+	return pending, nil
 }
