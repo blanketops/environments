@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/events"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -371,25 +372,36 @@ func (p *GitHubProvider) Teardown(
 // RepositoryWebhook that still exist for cr (i.e. have been asked to delete
 // but Crossplane has not finished reclaiming the live GitHub resource yet).
 // An empty slice means teardown is genuinely complete.
+//
+// Uses unstructured Gets rather than the typed Repository/RepositoryWebhook:
+// the controller-runtime cached client resolves a typed Get through the
+// informer cache, which requires the corresponding List kind
+// (RepositoryList/RepositoryWebhookList) to be registered in the scheme — and
+// the api package registers only the singular kinds. Unstructured Gets carry
+// their own GVK and avoid that requirement.
 func (p *GitHubProvider) pendingManagedResources(ctx context.Context, cr *sourcesv1alpha1.GitRepository) ([]string, error) {
 	var pending []string
 
-	repo := &Repository{}
-	err := p.Client.Get(ctx, ctrlclient.ObjectKey{Name: repositoryResourceName(cr)}, repo)
-	switch {
-	case err == nil:
-		pending = append(pending, "Repository/"+repositoryResourceName(cr))
-	case !apierrors.IsNotFound(err):
-		return nil, fmt.Errorf("get repository: %w", err)
+	check := func(kind, name string) error {
+		obj := &unstructured.Unstructured{}
+		obj.SetGroupVersionKind(SchemeGroupVersion.WithKind(kind))
+		err := p.Client.Get(ctx, ctrlclient.ObjectKey{Name: name}, obj)
+		switch {
+		case err == nil:
+			pending = append(pending, kind+"/"+name)
+			return nil
+		case apierrors.IsNotFound(err):
+			return nil
+		default:
+			return fmt.Errorf("get %s %s: %w", kind, name, err)
+		}
 	}
 
-	webhook := &RepositoryWebhook{}
-	err = p.Client.Get(ctx, ctrlclient.ObjectKey{Name: webhookResourceName(cr)}, webhook)
-	switch {
-	case err == nil:
-		pending = append(pending, "RepositoryWebhook/"+webhookResourceName(cr))
-	case !apierrors.IsNotFound(err):
-		return nil, fmt.Errorf("get repository webhook: %w", err)
+	if err := check("Repository", repositoryResourceName(cr)); err != nil {
+		return nil, err
+	}
+	if err := check("RepositoryWebhook", webhookResourceName(cr)); err != nil {
+		return nil, err
 	}
 
 	return pending, nil
