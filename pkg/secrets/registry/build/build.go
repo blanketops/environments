@@ -92,14 +92,22 @@ func (r *BuildRegistryExternalSecretReconciler) Reconcile(ctx context.Context, b
 				"target": map[string]any{
 					"name": secretName,
 					"template": map[string]any{
-						"type": "kubernetes.io/dockerconfigjson",
+						"type": "Opaque",
+						"data": map[string]any{
+							// kaniko build step reads DOCKER_CONFIG/config.json;
+							// Shipwright image-processing reads <secret-path>/.dockerconfigjson.
+							// Provide both keys so one secret satisfies both consumers.
+							"config.json":       "{{ index . \"config.json\" }}",
+							".dockerconfigjson": "{{ index . \"config.json\" }}",
+						},
 					},
 				},
 				"data": []any{
 					map[string]any{
-						"secretKey": ".dockerconfigjson",
+						"secretKey": "config.json",
 						"remoteRef": map[string]any{
-							"key": "blanketops/environments/registry/config",
+							"key":      "blanketops/environments/registry/config",
+							"property": "value",
 						},
 					},
 				},

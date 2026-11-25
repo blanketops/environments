@@ -43,4 +43,13 @@ type Provider interface {
 		resolved *githubeventResolution.ResolvedGitHubEvent,
 		event domain.GitHubEvent,
 	) (domain.GitHubEventResult, error)
+
+	// Teardown removes the per-CR infrastructure this provider created for
+	// the given GitHubEvent (the Sensor). Shared infrastructure (EventBus,
+	// EventSource, ServiceAccount, RBAC) is intentionally left intact.
+	// Idempotent: a missing resource is treated as success.
+	Teardown(
+		ctx context.Context,
+		resolved *githubeventResolution.ResolvedGitHubEvent,
+	) error
 }

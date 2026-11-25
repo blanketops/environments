@@ -18,10 +18,13 @@ package api
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/events"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,7 +32,10 @@ import (
 	sourcesv1alpha1 "github.com/blanketops/environments-api/api/sources/v1alpha1"
 	"github.com/blanketops/environments/pkg/apis/gitrepository/domain"
 	"github.com/blanketops/environments/pkg/secrets/github/hookurl"
+	"github.com/blanketops/environments/pkg/secrets/github/webhooksecret"
 )
+
+const fieldOwner = "blanketops"
 
 // Compile-time assertion — GitHubProvider must satisfy Provider.
 var _ Provider = (*GitHubProvider)(nil)
@@ -63,6 +69,21 @@ func NewGitHubProvider(
 
 // ── Builders ──────────────────────────────────────────────────────────────────
 
+func repositoryResourceName(cr *sourcesv1alpha1.GitRepository) string {
+	return cr.Name
+}
+
+func webhookResourceName(cr *sourcesv1alpha1.GitRepository) string {
+	return cr.Name + "-webhook"
+}
+
+func targetRepoName(cr *sourcesv1alpha1.GitRepository, spec domain.GitRepository) string {
+	if spec.Repository.Name != "" {
+		return spec.Repository.Name
+	}
+	return cr.Name
+}
+
 func buildRepository(
 	cr *sourcesv1alpha1.GitRepository,
 	spec domain.GitRepository,
@@ -73,7 +94,7 @@ func buildRepository(
 			Kind:       "Repository",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: cr.Name,
+			Name: repositoryResourceName(cr),
 			Labels: map[string]string{
 				"sources.blanketops.dev/gitrepository": cr.Name,
 				"sources.blanketops.dev/provider":      string(spec.Provider),
@@ -84,7 +105,7 @@ func buildRepository(
 				Name: "github-upjet",
 			},
 			ForProvider: RepositoryParameters{
-				Name:       ptr(spec.Repository.Name),
+				Name:       ptr(targetRepoName(cr, spec)),
 				Visibility: ptr("private"),
 			},
 		},
@@ -95,10 +116,19 @@ func buildRepositoryWebhook(
 	cr *sourcesv1alpha1.GitRepository,
 	spec domain.GitRepository,
 ) *RepositoryWebhook {
+	seen := make(map[string]struct{})
 	events := make([]*string, 0)
 	for _, wh := range spec.Webhooks {
 		for _, e := range wh.Events {
-			events = append(events, ptr(string(e)))
+			ev := string(e)
+			if ev == "" {
+				continue
+			}
+			if _, exists := seen[ev]; exists {
+				continue
+			}
+			seen[ev] = struct{}{}
+			events = append(events, ptr(ev))
 		}
 	}
 
@@ -108,7 +138,7 @@ func buildRepositoryWebhook(
 			Kind:       "RepositoryWebhook",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: cr.Name + "-webhook",
+			Name: webhookResourceName(cr),
 			Labels: map[string]string{
 				"sources.blanketops.dev/gitrepository": cr.Name,
 				"sources.blanketops.dev/provider":      string(spec.Provider),
@@ -121,13 +151,24 @@ func buildRepositoryWebhook(
 			ForProvider: RepositoryWebhookParameters{
 				Active:     ptr(true),
 				Events:     events,
-				Repository: ptr(cr.Name),
+				Repository: ptr(targetRepoName(cr, spec)),
 				Configuration: []RepositoryWebhookConfigurationParameters{
 					{
 						URLSecretRef: SecretKeyRef{
 							Name:      hookurl.HookURLSecretName(cr.Name),
 							Namespace: cr.Namespace,
 							Key:       hookurl.HookURLSecretKey,
+						},
+						// json so Argo Events can address body.* fields directly;
+						// GitHub's default "form" encoding wraps the payload.
+						ContentType: ptr("json"),
+						// HMAC secret so GitHub signs deliveries. Sourced from the
+						// same store key the eventsource validates against, so the
+						// signatures match. See pkg/secrets/github/webhooksecret.
+						SecretSecretRef: &SecretKeyRef{
+							Name:      webhooksecret.SecretName(cr.Name),
+							Namespace: cr.Namespace,
+							Key:       webhooksecret.SecretKey,
 						},
 					},
 				},
@@ -145,32 +186,56 @@ func (p *GitHubProvider) Ensure(
 	cr *sourcesv1alpha1.GitRepository,
 	spec domain.GitRepository,
 ) (domain.Result, error) {
+	if cr == nil || cr.Name == "" {
+		return domain.Failure("GitRepository CR or name is empty"), fmt.Errorf("ensure gitrepository: GitRepository CR or name is empty")
+	}
 
 	if err := spec.Validate(); err != nil {
+		p.recordEvent(cr, corev1.EventTypeWarning, "InvalidSpec", err.Error())
 		return domain.Failure(err.Error()), err
 	}
 
 	p.Log.Info(
 		"github.ensure: reconciling repository",
 		"gitrepository", ctrlclient.ObjectKeyFromObject(cr),
+		"repository", targetRepoName(cr, spec),
 	)
 
 	// 1. Repository
-	if err := p.apply(ctx, buildRepository(cr, spec)); err != nil {
+	repo := buildRepository(cr, spec)
+	if err := p.apply(ctx, repo); err != nil {
+		p.recordEvent(cr, corev1.EventTypeWarning, "EnsureRepositoryFailed", err.Error())
 		return domain.Failure(err.Error()), err
 	}
 
-	// 2. RepositoryWebhook — only when webhooks are declared
+	// 2. RepositoryWebhook — apply when declared, or remove if previously created and now empty.
 	if len(spec.Webhooks) > 0 {
-		if err := p.apply(ctx, buildRepositoryWebhook(cr, spec)); err != nil {
+		webhook := buildRepositoryWebhook(cr, spec)
+		if err := p.apply(ctx, webhook); err != nil {
+			p.recordEvent(cr, corev1.EventTypeWarning, "EnsureWebhookFailed", err.Error())
+			return domain.Failure(err.Error()), err
+		}
+	} else {
+		if err := p.deleteIfExists(ctx, &RepositoryWebhook{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: SchemeGroupVersion.String(),
+				Kind:       "RepositoryWebhook",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: webhookResourceName(cr),
+			},
+		}); err != nil {
+			p.recordEvent(cr, corev1.EventTypeWarning, "CleanupWebhookFailed", err.Error())
 			return domain.Failure(err.Error()), err
 		}
 	}
 
 	p.Log.Info(
 		"github.ensure: reconciliation complete",
-		"repository", cr.Name,
+		"gitrepository", ctrlclient.ObjectKeyFromObject(cr),
+		"repository", targetRepoName(cr, spec),
 	)
+	p.recordEvent(cr, corev1.EventTypeNormal, "Ensured", "GitHub repository resources reconciled")
 
 	return domain.Success(), nil
 }
@@ -180,26 +245,54 @@ func (p *GitHubProvider) Ensure(
 // NOTE: Crossplane-managed resources MUST be applied via SSA.
 // Never use Update() — it will race the Crossplane controllers.
 func (p *GitHubProvider) apply(ctx context.Context, obj ctrlclient.Object) error {
+	if obj == nil {
+		return fmt.Errorf("apply object: nil object")
+	}
+
 	p.Log.Info(
 		"github.apply: applying (ssa)",
 		"gvk", obj.GetObjectKind().GroupVersionKind(),
 		"name", obj.GetName(),
 	)
 
-	obj.SetManagedFields(nil)
+	// Clone before mutating metadata so the caller's struct isn't unexpectedly altered.
+	patchObj, ok := obj.DeepCopyObject().(ctrlclient.Object)
+	if !ok || patchObj == nil {
+		return fmt.Errorf("apply object %s: failed to deep copy object", obj.GetName())
+	}
+	patchObj.SetManagedFields(nil)
 
 	return p.Client.Patch(
 		ctx,
-		obj,
+		patchObj,
 		ctrlclient.Apply, //nolint:staticcheck
 		ctrlclient.ForceOwnership,
-		ctrlclient.FieldOwner("blanketops"),
+		ctrlclient.FieldOwner(fieldOwner),
 	)
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 func ptr[T any](v T) *T { return &v }
+
+func (p *GitHubProvider) recordEvent(
+	cr *sourcesv1alpha1.GitRepository,
+	eventType string,
+	reason string,
+	note string,
+) {
+	if p.Recorder == nil || cr == nil {
+		return
+	}
+	p.Recorder.Eventf(cr, nil, eventType, reason, reason, note)
+}
+
+func (p *GitHubProvider) deleteIfExists(ctx context.Context, obj ctrlclient.Object) error {
+	if err := p.Client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+	return nil
+}
 
 // Teardown deletes the Crossplane Repository and RepositoryWebhook this
 // provider created. Mandatory, not optional — Ensure links these objects to
@@ -209,28 +302,30 @@ func ptr[T any](v T) *T { return &v }
 // leaves Crossplane managing a live GitHub repository and webhook forever.
 //
 // Idempotent — a missing Repository or RepositoryWebhook is not an error.
-func (p *GitHubProvider) Teardown(ctx context.Context, cr *sourcesv1alpha1.GitRepository, spec domain.GitRepository) error {
-	if cr == nil || cr.Name == "" {
-		return fmt.Errorf("teardown gitrepository: GitRepository CR or name is empty")
-	}
-
-	_ = spec
+func (p *GitHubProvider) Teardown(
+	ctx context.Context,
+	cr *sourcesv1alpha1.GitRepository,
+	spec domain.GitRepository,
+) error {
 	p.Log.Info(
 		"github.teardown: removing repository",
 		"gitrepository", ctrlclient.ObjectKeyFromObject(cr),
 	)
 
-	// 1. RepositoryWebhook first — release the hook before the repo it targets.
+	// 1. RepositoryWebhook first — release the hook before the repo it
+	//    targets, so Crossplane isn't left reconciling a webhook against a
+	//    Repository that's mid-deletion.
 	webhook := &RepositoryWebhook{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: SchemeGroupVersion.String(),
 			Kind:       "RepositoryWebhook",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: cr.Name + "-webhook",
+			Name: webhookResourceName(cr),
 		},
 	}
-	if err := p.Client.Delete(ctx, webhook); err != nil && !apierrors.IsNotFound(err) {
+	if err := p.deleteIfExists(ctx, webhook); err != nil {
+		p.recordEvent(cr, corev1.EventTypeWarning, "TeardownWebhookFailed", err.Error())
 		return fmt.Errorf("delete repository webhook: %w", err)
 	}
 
@@ -241,13 +336,73 @@ func (p *GitHubProvider) Teardown(ctx context.Context, cr *sourcesv1alpha1.GitRe
 			Kind:       "Repository",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: cr.Name,
+			Name: repositoryResourceName(cr),
 		},
 	}
-	if err := p.Client.Delete(ctx, repo); err != nil && !apierrors.IsNotFound(err) {
+	if err := p.deleteIfExists(ctx, repo); err != nil {
+		p.recordEvent(cr, corev1.EventTypeWarning, "TeardownRepositoryFailed", err.Error())
 		return fmt.Errorf("delete repository: %w", err)
 	}
 
-	p.Log.Info("github.teardown: complete", "repository", cr.Name)
+	// 3. Gate finalizer removal on the Crossplane managed resources actually
+	//    being GONE. deleteIfExists only ISSUES the delete; Crossplane then
+	//    runs its own finalizer to delete the live GitHub repo/webhook, which
+	//    takes time and can fail (e.g. a provider token lacking delete_repo →
+	//    403 "Must have admin rights"). Returning nil now would let the
+	//    controller drop the GitRepository finalizer while the repo is still
+	//    live behind a terminating MR — a false-positive teardown that orphans
+	//    the repo. Report still-terminating so the finalizer is kept and the
+	//    reconcile retries until the MRs disappear.
+	pending, err := p.pendingManagedResources(ctx, cr)
+	if err != nil {
+		return err
+	}
+	if len(pending) > 0 {
+		p.Log.Info("github.teardown: waiting for crossplane managed resources to delete",
+			"gitrepository", ctrlclient.ObjectKeyFromObject(cr), "pending", strings.Join(pending, ", "))
+		return fmt.Errorf("waiting for crossplane managed resources to finish deleting: %s", strings.Join(pending, ", "))
+	}
+
+	p.Log.Info("github.teardown: complete", "repository", repositoryResourceName(cr))
+	p.recordEvent(cr, corev1.EventTypeNormal, "TeardownComplete", "GitHub repository resources deleted")
 	return nil
+}
+
+// pendingManagedResources returns the names of the Crossplane Repository /
+// RepositoryWebhook that still exist for cr (i.e. have been asked to delete
+// but Crossplane has not finished reclaiming the live GitHub resource yet).
+// An empty slice means teardown is genuinely complete.
+//
+// Uses unstructured Gets rather than the typed Repository/RepositoryWebhook:
+// the controller-runtime cached client resolves a typed Get through the
+// informer cache, which requires the corresponding List kind
+// (RepositoryList/RepositoryWebhookList) to be registered in the scheme — and
+// the api package registers only the singular kinds. Unstructured Gets carry
+// their own GVK and avoid that requirement.
+func (p *GitHubProvider) pendingManagedResources(ctx context.Context, cr *sourcesv1alpha1.GitRepository) ([]string, error) {
+	var pending []string
+
+	check := func(kind, name string) error {
+		obj := &unstructured.Unstructured{}
+		obj.SetGroupVersionKind(SchemeGroupVersion.WithKind(kind))
+		err := p.Client.Get(ctx, ctrlclient.ObjectKey{Name: name}, obj)
+		switch {
+		case err == nil:
+			pending = append(pending, kind+"/"+name)
+			return nil
+		case apierrors.IsNotFound(err):
+			return nil
+		default:
+			return fmt.Errorf("get %s %s: %w", kind, name, err)
+		}
+	}
+
+	if err := check("Repository", repositoryResourceName(cr)); err != nil {
+		return nil, err
+	}
+	if err := check("RepositoryWebhook", webhookResourceName(cr)); err != nil {
+		return nil, err
+	}
+
+	return pending, nil
 }

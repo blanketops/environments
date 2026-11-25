@@ -102,7 +102,8 @@ func (r *GitHubWebhookSecretReconciler) Reconcile(ctx context.Context, resolved 
 					map[string]any{
 						"secretKey": secretKey,
 						"remoteRef": map[string]any{
-							"key": "blanketops/environments/github/webhook/secret",
+							"key":      "blanketops/environments/github/webhook/secret",
+							"property": "value",
 						},
 					},
 				},

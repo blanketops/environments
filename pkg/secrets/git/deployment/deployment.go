@@ -22,7 +22,6 @@ package deployment
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -31,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/blanketops/environments/pkg/secrets/git/esmerge"
 	deploymentResolution "github.com/blanketops/environments/resolution/deployment/resolve"
 	environmentResolution "github.com/blanketops/environments/resolution/environment/resolve"
 )
@@ -135,8 +135,10 @@ func (r *DeploymentGitSSHSecretReconciler) Reconcile(ctx context.Context, deploy
 		return err
 	}
 
-	if !reflect.DeepEqual(existing.Object["spec"], desired.Object["spec"]) {
-		existing.Object["spec"] = desired.Object["spec"]
+	// Converge only the fields this reconciler owns; esmerge leaves ESO's
+	// defaulted target.* fields intact so the object doesn't flap (and so the
+	// Build/Deployment mediators that share this ExternalSecret don't fight).
+	if esmerge.ReconcileManagedSpec(&existing, desired) {
 		r.Log.Info("updating ExternalSecret for Git SSH",
 			"deployment", deployment.Deployment.Name,
 			"secret", secretName,

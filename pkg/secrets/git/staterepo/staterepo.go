@@ -24,7 +24,6 @@ package staterepo
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -33,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/blanketops/environments/pkg/secrets/git/esmerge"
 	packageResolution "github.com/blanketops/environments/resolution/packages/resolve"
 )
 
@@ -136,13 +136,7 @@ func (r *PackageStateRepositorySecretReconciler) Reconcile(ctx context.Context, 
 		return err
 	}
 
-	desiredSpec, _, _ := unstructured.NestedMap(desired.Object, "spec")
-	existingSpec, _, _ := unstructured.NestedMap(existing.Object, "spec")
-
-	if !reflect.DeepEqual(existingSpec, desiredSpec) {
-		if err := unstructured.SetNestedMap(existing.Object, desiredSpec, "spec"); err != nil {
-			return err
-		}
+	if esmerge.ReconcileManagedSpec(&existing, desired) {
 		r.Log.Info("updating ExternalSecret for package state repository",
 			"package", pkg.Name, "secret", secretName, "store", r.StoreName)
 		return r.Client.Update(ctx, &existing)

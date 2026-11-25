@@ -71,6 +71,13 @@ func (s *GitHubEventService) Reconcile(ctx context.Context, resolved *githubeven
 
 }
 
+// Teardown removes the per-CR Argo Events infrastructure the provider created
+// for this GitHubEvent (the Sensor). Shared infrastructure (EventBus,
+// EventSource, SA, RBAC) is intentionally left intact. Idempotent.
+func (s *GitHubEventService) Teardown(ctx context.Context, resolved *githubeventResolution.ResolvedGitHubEvent) error {
+	return s.backend.Default().Teardown(ctx, resolved)
+}
+
 // In your GitHubEventService (or a builder helper):
 func (s *GitHubEventService) buildConditions(result domain.GitHubEventResult, runErr error) []metav1.Condition {
 	now := metav1.NewTime(time.Now())

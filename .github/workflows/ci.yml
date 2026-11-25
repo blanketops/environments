@@ -164,7 +164,7 @@ jobs:
 
   # ───────────────────────────────────────────────────────────────────────────
   # Job 2: Vendor Snapshot
-  # Original scope: push to main, or any pull_request.
+  # Original scope: push to main or develop, or any pull_request.
   # Builds and pushes the vendor image only when go.sum has changed.
   # ───────────────────────────────────────────────────────────────────────────
   vendor-snapshot:
@@ -173,7 +173,7 @@ jobs:
     needs: changes
     if: >-
       ${{ !cancelled() && needs.changes.outputs.code != 'false' &&
-      (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) }}
+      (github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'))) }}
     outputs:
       vendor-tag: ${{ steps.tag.outputs.tag }}
       cache-hit: ${{ steps.check.outputs.hit }}
@@ -250,6 +250,7 @@ jobs:
     name: Lint, Vet, Test
     runs-on: self-hosted
     needs: vendor-snapshot
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -271,11 +272,14 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Restore vendor from snapshot
-        run: hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${{ needs.vendor-snapshot.outputs.vendor-tag }}"
+        run: |
+          TAG=$(sha256sum go.sum | cut -d' ' -f1 | cut -c1-12)
+          hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${TAG}"
 
       - name: Build + Vet
         id: build
         continue-on-error: true
+        timeout-minutes: 15
         run: |
           go build -mod=vendor ./...
           go vet -mod=vendor ./...
@@ -292,18 +296,21 @@ jobs:
 
       - name: Build + Vet (retry)
         if: steps.build.outcome == 'failure'
+        timeout-minutes: 15
         run: |
           go build -mod=vendor ./...
           go vet -mod=vendor ./...
 
       - name: Lint
         uses: golangci/golangci-lint-action@v9
+        timeout-minutes: 10
         with:
           install-mode: none
-          skip-cache: true
+          skip-cache: false
           args: --timeout=5m
 
       - name: Test
+        timeout-minutes: 15
         run: go test -mod=vendor ./... \
           -skip 'TestKustomizeStrategyProvider_Teardown_RemovesCommittedManifests|TestSecretStoreReconciler_Reconcile_UnimplementedProvidersError|TestResolveEnvironment_ContractSecretStoreNonVaultProviderNoVaultRequired'
 
@@ -372,7 +379,9 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Restore vendor from snapshot
-        run: hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${{ needs.validate.outputs.vendor-tag || needs.vendor-snapshot.outputs.vendor-tag }}"
+        run: |
+          TAG=$(sha256sum go.sum | cut -d' ' -f1 | cut -c1-12)
+          hack/vendor-snapshot.sh restore "${{ env.VENDOR_IMAGE }}" "${TAG}"
 
       - name: Run tests with coverage
         id: test
