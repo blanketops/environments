@@ -42,7 +42,7 @@ import (
 func newBareRemote(t *testing.T) string {
 	t.Helper()
 	remote := filepath.Join(t.TempDir(), "remote.git")
-	if out, err := utils.RunGit("", "init", "--bare", "-b", "main", remote); err != nil {
+	if out, err := utils.RunGit("", "init", "--bare", "-b", "dev", remote); err != nil {
 		t.Fatalf("git init --bare: %v: %s", err, out)
 	}
 	return remote
@@ -129,7 +129,7 @@ func TestEnsureLocalClone_ExistingCloneFetchesNewCommit(t *testing.T) {
 
 func TestEnsureLocalClone_EmptyRefUsesDefaultBranch(t *testing.T) {
 	remote := newBareRemote(t)
-	commitFile(t, remote, "a.txt", "on-main")
+	commitFile(t, remote, "a.txt", "on-dev")
 
 	repoPath := filepath.Join(t.TempDir(), "workdir")
 	if err := ensureLocalClone(repoPath, remote, "", nil); err != nil {
@@ -137,8 +137,8 @@ func TestEnsureLocalClone_EmptyRefUsesDefaultBranch(t *testing.T) {
 	}
 
 	got, err := os.ReadFile(filepath.Join(repoPath, "a.txt"))
-	if err != nil || string(got) != "on-main" {
-		t.Fatalf("a.txt = %q, %v; want %q from the default branch", got, err, "on-main")
+	if err != nil || string(got) != "on-dev" {
+		t.Fatalf("a.txt = %q, %v; want %q from the default branch", got, err, "on-dev")
 	}
 }
 

@@ -45,7 +45,12 @@ import (
 )
 
 const fieldManager = "blanketops-kustomize-provider"
-const defaultGitBranch = "main"
+
+// Manifests repos use environment branches (dev/int/qa/prd/...), never a
+// `main` branch. When the Deployment contract omits an explicit ref the deploy
+// phase tracks the dev environment branch, matching the bootstrap default in
+// the controller's manifests-repo mediator.
+const defaultGitBranch = "dev"
 
 // gitCommitIdentity is the author/committer identity for commits this
 // provider makes to the manifests repo. Set explicitly rather than relying
