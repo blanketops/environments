@@ -6,7 +6,7 @@ one, is described in [GOVERNANCE.md](GOVERNANCE.md).
 
 | Name | GitHub | Affiliation | Areas |
 |---|---|---|---|
-| Neo Tlaletsi | [@ntlaletsi70](https://github.com/ntlaletsi70) | BlanketOps | All repositories |
+| Neo Tlaletsi | [@blanketops](https://github.com/blanketops) | BlanketOps | All repositories |
 
 ## Emeritus maintainers
 
