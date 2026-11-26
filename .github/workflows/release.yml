@@ -48,7 +48,7 @@ env:
 
 jobs:
   release:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Extract version from tag
         id: version

@@ -44,7 +44,7 @@ env:
 jobs:
   codeql:
     name: CodeQL (Go)
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event.schedule == '0 7 * * 3'
@@ -140,7 +140,7 @@ jobs:
 
   scorecard:
     name: OpenSSF Scorecard
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event.schedule == '0 6 * * 0'
@@ -214,7 +214,7 @@ jobs:
 
   govulncheck:
     name: govulncheck
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event.schedule == '0 8 * * 1'
