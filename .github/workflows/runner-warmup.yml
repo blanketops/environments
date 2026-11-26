@@ -15,7 +15,7 @@ permissions:
 jobs:
   warmup:
     name: Warmup Runner
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 5
     steps:
       - name: Checkout (shallow)
