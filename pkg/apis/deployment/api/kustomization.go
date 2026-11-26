@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -28,6 +27,7 @@ import (
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
 	fluxmeta "github.com/fluxcd/pkg/apis/meta"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
+	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -40,8 +40,8 @@ import (
 
 	environmentv1alpha1 "github.com/blanketops/environments-api/api/environments/v1alpha1"
 	"github.com/blanketops/environments/pkg/apis/deployment/render/builders"
+	"github.com/blanketops/environments/pkg/gitops"
 	intent "github.com/blanketops/environments/pkg/intent/deployment"
-	"github.com/blanketops/environments/pkg/utils"
 )
 
 const fieldManager = "blanketops-kustomize-provider"
@@ -59,10 +59,12 @@ const defaultGitBranch = "dev"
 // without one. Passed via -c on each commit rather than a persistent
 // `git config` call, since repoPath's local git config shouldn't outlive
 // this provider's use of it.
-var gitCommitIdentity = []string{
-	"-c", "user.name=blanketops-kustomize-provider",
-	"-c", "user.email=noreply@blanketops.dev",
-}
+// gitAuthorName/gitAuthorEmail are the author+committer identity for the
+// in-process go-git commits this provider makes to the manifests repo.
+const (
+	gitAuthorName  = "blanketops-kustomize-provider"
+	gitAuthorEmail = "noreply@blanketops.dev"
+)
 
 // KustomizeStrategyProvider implements the GitOps deployment path: it
 // renders manifests, commits them to a repo, and ensures the Flux
@@ -145,18 +147,17 @@ func (m *KustomizeStrategyProvider) ReconcileKustomization(ctx context.Context, 
 	// with the same deploy key Flux uses. Nothing else in this method's
 	// call chain ever creates repoPath — every git operation below depends
 	// on it already existing as a working clone.
-	sshEnv, cleanup, err := m.resolveGitSSHEnv(ctx, cr)
+	auth, err := m.resolveGitAuth(ctx, cr)
 	if err != nil {
 		return fmt.Errorf("resolve git ssh credentials: %w", err)
 	}
-	defer cleanup()
 
-	if err := ensureLocalClone(repoPath, repoURL, ref, sshEnv); err != nil {
+	if err := ensureLocalClone(repoPath, repoURL, ref, auth); err != nil {
 		return fmt.Errorf("ensure local clone: %w", err)
 	}
 
 	// 1️⃣ Render + Commit
-	if err := m.CommitAndPush(repoPath, intent, env, sshEnv); err != nil {
+	if err := m.CommitAndPush(repoPath, intent, env, auth); err != nil {
 		return fmt.Errorf("commit and push failed: %w", err)
 	}
 
@@ -184,7 +185,7 @@ func (m *KustomizeStrategyProvider) ReconcileKustomization(ctx context.Context, 
 // workload files first, then commits and pushes the result. repoPath must
 // already be a local clone (see ensureLocalClone); sshEnv authenticates
 // the push.
-func (m *KustomizeStrategyProvider) CommitAndPush(repoPath string, intent *intent.DeploymentIntent, env string, sshEnv []string) error {
+func (m *KustomizeStrategyProvider) CommitAndPush(repoPath string, intent *intent.DeploymentIntent, env string, auth transport.AuthMethod) error {
 
 	if env == "" {
 		return fmt.Errorf("environment must not be empty")
@@ -292,51 +293,23 @@ resources:
 	}
 
 	// -----------------------------------------
-	// 4️⃣ Stage overlay directory
+	// 4️⃣ Stage, commit (if changed) and push the overlay
 	// -----------------------------------------
 
-	if _, err := utils.RunGit(repoPath, "add", filepath.Join("overlays", env)); err != nil {
+	committed, err := gitops.StageCommitPushPath(
+		repoPath, filepath.Join("overlays", env),
+		fmt.Sprintf("render(%s): update workloads", env),
+		defaultGitBranch, auth, gitAuthorName, gitAuthorEmail,
+	)
+	if err != nil {
 		return err
 	}
-
-	// -----------------------------------------
-	// 5️⃣ Commit only if changes exist
-	// -----------------------------------------
-
-	cmd := exec.Command("git", "diff", "--cached", "--quiet")
-	cmd.Dir = repoPath
-	err = cmd.Run()
-
-	if err == nil {
+	if !committed {
 		m.Log.Info("No changes detected, skipping commit", "env", env)
 		return nil
 	}
-
-	if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
-
-		commitArgs := append(append([]string{}, gitCommitIdentity...),
-			"commit",
-			"-m",
-			fmt.Sprintf("render(%s): update workloads", env),
-		)
-		if out, err := utils.RunGit(repoPath, commitArgs...); err != nil {
-			return fmt.Errorf("commit: %w: %s", err, out)
-		}
-
-		// ensureLocalClone leaves the working tree on a detached HEAD
-		// (checking out FETCH_HEAD is never a branch), so a bare `push`
-		// fails with "You are not currently on a branch" — the explicit
-		// HEAD:<branch> refspec pushes whatever commit HEAD points at
-		// regardless, landing it on the manifests repo's stable branch.
-		if out, err := utils.RunGitWithEnv(repoPath, sshEnv, "push", "origin", "HEAD:"+defaultGitBranch); err != nil {
-			return fmt.Errorf("push: %w: %s", err, out)
-		}
-
-		m.Log.Info("Changes committed and pushed", "env", env)
-		return nil
-	}
-
-	return err
+	m.Log.Info("Changes committed and pushed", "env", env)
+	return nil
 }
 
 func (m *KustomizeStrategyProvider) renderObject(
@@ -358,12 +331,11 @@ func (m *KustomizeStrategyProvider) renderObject(
 	return buffer.Bytes(), nil
 }
 
-// resolveGitSSHEnv fetches cr's Flux deploy-key Secret (the same one
-// ensureGitRepository validates and points Flux at) and materializes its
-// private key and known_hosts as temp files, so this process can perform
-// the same authenticated git operations Flux will later perform in-cluster.
-// The caller must invoke the returned cleanup func to remove the temp files.
-func (m *KustomizeStrategyProvider) resolveGitSSHEnv(ctx context.Context, cr *environmentv1alpha1.Deployment) (env []string, cleanup func(), err error) {
+// resolveGitAuth fetches cr's Flux deploy-key Secret (the same one
+// ensureGitRepository validates and points Flux at) and builds an in-memory
+// go-git SSH AuthMethod from its identity + known_hosts. Nothing is written to
+// disk, so this works under readOnlyRootFilesystem and needs no git/ssh binary.
+func (m *KustomizeStrategyProvider) resolveGitAuth(ctx context.Context, cr *environmentv1alpha1.Deployment) (transport.AuthMethod, error) {
 
 	fluxSecret := fmt.Sprintf("%s-flux-ssh", cr.Name)
 
@@ -373,64 +345,38 @@ func (m *KustomizeStrategyProvider) resolveGitSSHEnv(ctx context.Context, cr *en
 		client.ObjectKey{Name: fluxSecret, Namespace: cr.Namespace},
 		&secret,
 	); err != nil {
-		return nil, nil, fmt.Errorf(
+		return nil, fmt.Errorf(
 			"flux git secret %q not found in namespace %q: %w",
 			fluxSecret, cr.Namespace, err,
 		)
 	}
 
-	dir, err := os.MkdirTemp("", fmt.Sprintf("%s-git-ssh-", cr.Name))
+	auth, err := gitops.Auth(secret.Data["identity"], secret.Data["known_hosts"])
 	if err != nil {
-		return nil, nil, fmt.Errorf("create ssh material dir: %w", err)
+		return nil, fmt.Errorf("build git ssh auth: %w", err)
 	}
-	cleanup = func() { _ = os.RemoveAll(dir) }
-
-	keyPath := filepath.Join(dir, "identity")
-	if err := os.WriteFile(keyPath, secret.Data["identity"], 0600); err != nil {
-		cleanup()
-		return nil, nil, fmt.Errorf("write ssh key: %w", err)
-	}
-
-	knownHostsPath := filepath.Join(dir, "known_hosts")
-	if err := os.WriteFile(knownHostsPath, secret.Data["known_hosts"], 0600); err != nil {
-		cleanup()
-		return nil, nil, fmt.Errorf("write known_hosts: %w", err)
-	}
-
-	sshCmd := fmt.Sprintf(
-		"ssh -i %s -o UserKnownHostsFile=%s -o IdentitiesOnly=yes",
-		keyPath, knownHostsPath,
-	)
-	return []string{"GIT_SSH_COMMAND=" + sshCmd}, cleanup, nil
+	return auth, nil
 }
 
 // ensureLocalClone makes repoPath a local clone of repoURL checked out at
-// ref (a commit SHA — see reconciliation.go's caller). Clones fresh if
-// repoPath isn't a git repo yet, otherwise fetches and checks out in
-// place. Using fetch+FETCH_HEAD rather than a branch/tag-specific command
-// works uniformly whether ref is a branch, tag, or commit SHA. All network
-// operations authenticate via env (see resolveGitSSHEnv).
-func ensureLocalClone(repoPath, repoURL, ref string, env []string) error {
-	if _, statErr := os.Stat(filepath.Join(repoPath, ".git")); os.IsNotExist(statErr) {
-		if err := os.MkdirAll(filepath.Dir(repoPath), 0755); err != nil {
-			return fmt.Errorf("create parent dir: %w", err)
-		}
-		if out, err := utils.RunGitWithEnv("", env, "clone", repoURL, repoPath); err != nil {
-			return fmt.Errorf("clone %s: %w: %s", repoURL, err, out)
-		}
-	} else if statErr != nil {
-		return fmt.Errorf("stat repo path: %w", statErr)
+// ref (a commit SHA — see reconciliation.go's caller), via in-process go-git.
+// Clones fresh if repoPath isn't a git repo yet, otherwise opens it, then
+// fetches origin and checks out ref (branch, tag or commit SHA) as a detached
+// HEAD. All network operations authenticate via auth (see resolveGitAuth).
+func ensureLocalClone(repoPath, repoURL, ref string, auth transport.AuthMethod) error {
+	if err := os.MkdirAll(filepath.Dir(repoPath), 0755); err != nil {
+		return fmt.Errorf("create parent dir: %w", err)
 	}
-
+	repo, err := gitops.CloneOrOpen(repoPath, repoURL, auth)
+	if err != nil {
+		return err
+	}
 	checkoutRef := ref
 	if checkoutRef == "" {
 		checkoutRef = defaultGitBranch
 	}
-	if out, err := utils.RunGitWithEnv(repoPath, env, "fetch", "origin", checkoutRef); err != nil {
-		return fmt.Errorf("fetch %s: %w: %s", checkoutRef, err, out)
-	}
-	if out, err := utils.RunGitWithEnv(repoPath, env, "checkout", "FETCH_HEAD"); err != nil {
-		return fmt.Errorf("checkout %s: %w: %s", checkoutRef, err, out)
+	if err := gitops.FetchCheckout(repo, checkoutRef, auth); err != nil {
+		return fmt.Errorf("fetch/checkout %s: %w", checkoutRef, err)
 	}
 	return nil
 }
@@ -622,17 +568,16 @@ func (m *KustomizeStrategyProvider) Teardown(ctx context.Context, cr *environmen
 	repoPath := filepath.Join(os.TempDir(), fmt.Sprintf("%s-%s-manifests", cr.Namespace, cr.Name))
 	defer func() { _ = os.RemoveAll(repoPath) }()
 
-	sshEnv, cleanup, err := m.resolveGitSSHEnv(ctx, cr)
+	auth, err := m.resolveGitAuth(ctx, cr)
 	if err != nil {
 		return fmt.Errorf("resolve git ssh credentials: %w", err)
 	}
-	defer cleanup()
 
-	if err := ensureLocalClone(repoPath, repoURL, ref, sshEnv); err != nil {
+	if err := ensureLocalClone(repoPath, repoURL, ref, auth); err != nil {
 		return fmt.Errorf("ensure local clone: %w", err)
 	}
 
-	if err := m.removeAndPush(repoPath, cr, intent, env, sshEnv); err != nil {
+	if err := m.removeAndPush(repoPath, cr, intent, env, auth); err != nil {
 		return fmt.Errorf("remove manifests from gitops repo: %w", err)
 	}
 
@@ -643,7 +588,7 @@ func (m *KustomizeStrategyProvider) Teardown(ctx context.Context, cr *environmen
 // removeAndPush removes cr's workload manifests from repoPath (already a
 // local clone — see Teardown), updates kustomization.yaml to retain any
 // remaining workload manifests in the overlay, and pushes the result.
-func (m *KustomizeStrategyProvider) removeAndPush(repoPath string, cr *environmentv1alpha1.Deployment, intent *intent.DeploymentIntent, env string, sshEnv []string) error {
+func (m *KustomizeStrategyProvider) removeAndPush(repoPath string, cr *environmentv1alpha1.Deployment, intent *intent.DeploymentIntent, env string, auth transport.AuthMethod) error {
 	overlayPath := filepath.Join(repoPath, "overlays", env)
 	if _, err := os.Stat(overlayPath); os.IsNotExist(err) {
 		m.Log.Info("overlay directory absent, nothing to remove", "env", env)
@@ -692,34 +637,16 @@ func (m *KustomizeStrategyProvider) removeAndPush(repoPath string, cr *environme
 		return fmt.Errorf("write kustomization.yaml: %w", err)
 	}
 
-	if _, err := utils.RunGit(repoPath, "add", filepath.Join("overlays", env)); err != nil {
-		return fmt.Errorf("git add overlay: %w", err)
-	}
-
-	cmd := exec.Command("git", "diff", "--cached", "--quiet")
-	cmd.Dir = repoPath
-	if err := cmd.Run(); err != nil {
-		exitErr, ok := err.(*exec.ExitError)
-		if !ok || exitErr.ExitCode() != 1 {
-			return fmt.Errorf("git diff --cached: %w", err)
-		}
-	} else {
-		m.Log.Info("no manifest changes to remove", "env", env)
-		return nil
-	}
-
-	commitArgs := append(append([]string{}, gitCommitIdentity...),
-		"commit",
-		"-m",
+	committed, err := gitops.StageCommitPushPath(
+		repoPath, filepath.Join("overlays", env),
 		fmt.Sprintf("render(%s): remove workloads for %s", env, cr.Name),
+		defaultGitBranch, auth, gitAuthorName, gitAuthorEmail,
 	)
-	if out, err := utils.RunGit(repoPath, commitArgs...); err != nil {
-		return fmt.Errorf("commit: %w: %s", err, out)
+	if err != nil {
+		return err
 	}
-	// See CommitAndPush's push call for why this uses an explicit
-	// HEAD:<branch> refspec instead of a bare push.
-	if out, err := utils.RunGitWithEnv(repoPath, sshEnv, "push", "origin", "HEAD:"+defaultGitBranch); err != nil {
-		return fmt.Errorf("push: %w: %s", err, out)
+	if !committed {
+		m.Log.Info("no manifest changes to remove", "env", env)
 	}
 	return nil
 }

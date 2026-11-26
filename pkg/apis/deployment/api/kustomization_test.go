@@ -17,9 +17,16 @@ package api
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"golang.org/x/crypto/ssh"
 
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
@@ -163,66 +170,51 @@ func newDeploymentTestScheme(t *testing.T) *runtime.Scheme {
 	return scheme
 }
 
-func TestResolveGitSSHEnv_WritesKeyMaterialAndCleansUp(t *testing.T) {
+// validSSHSecretData returns a parseable SSH private key (PEM) and a
+// known_hosts entry, so resolveGitAuth can build a real in-memory AuthMethod.
+// The key is never used against a network remote in these tests (local file://
+// remotes ignore SSH auth), only parsed.
+func validSSHSecretData(t *testing.T) map[string][]byte {
+	t.Helper()
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatalf("generate rsa key: %v", err)
+	}
+	identity := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
+	_, hostPriv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("generate host key: %v", err)
+	}
+	signer, err := ssh.NewSignerFromKey(hostPriv)
+	if err != nil {
+		t.Fatalf("host signer: %v", err)
+	}
+	knownHosts := append([]byte("github.com "), ssh.MarshalAuthorizedKey(signer.PublicKey())...)
+	return map[string][]byte{"identity": identity, "known_hosts": knownHosts}
+}
+
+func TestResolveGitAuth_BuildsInMemoryAuth(t *testing.T) {
 	scheme := newDeploymentTestScheme(t)
 	cr := &environmentv1alpha1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{Name: "my-deploy", Namespace: "default"},
 	}
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: "my-deploy-flux-ssh", Namespace: "default"},
-		Data: map[string][]byte{
-			"identity":    []byte("fake-private-key"),
-			"known_hosts": []byte("fake-known-hosts"),
-		},
+		Data:       validSSHSecretData(t),
 	}
 	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(secret).Build()
 	m := &KustomizeStrategyProvider{Client: c, Scheme: scheme, Log: logr.Discard()}
 
-	env, cleanup, err := m.resolveGitSSHEnv(context.Background(), cr)
+	auth, err := m.resolveGitAuth(context.Background(), cr)
 	if err != nil {
-		t.Fatalf("resolveGitSSHEnv: %v", err)
+		t.Fatalf("resolveGitAuth: %v", err)
 	}
-	if len(env) != 1 {
-		t.Fatalf("env = %v, want exactly one GIT_SSH_COMMAND entry", env)
-	}
-
-	// Extract the key path the env var points at and verify its content and
-	// permissions before cleanup runs. Parses
-	// "GIT_SSH_COMMAND=ssh -i <key> -o UserKnownHostsFile=<known_hosts> ...".
-	var keyPath string
-	fields := splitFields(env[0])
-	for i, f := range fields {
-		if f == "-i" && i+1 < len(fields) {
-			keyPath = fields[i+1]
-		}
-	}
-	if keyPath == "" {
-		t.Fatalf("could not find -i <key> in %q", env[0])
-	}
-
-	data, err := os.ReadFile(keyPath)
-	if err != nil {
-		t.Fatalf("read key material: %v", err)
-	}
-	if string(data) != "fake-private-key" {
-		t.Fatalf("key content = %q, want %q", data, "fake-private-key")
-	}
-
-	info, err := os.Stat(keyPath)
-	if err != nil {
-		t.Fatalf("stat key: %v", err)
-	}
-	if perm := info.Mode().Perm(); perm != 0600 {
-		t.Fatalf("key file perms = %o, want 0600", perm)
-	}
-
-	cleanup()
-	if _, err := os.Stat(keyPath); !os.IsNotExist(err) {
-		t.Fatalf("expected key file to be removed after cleanup, stat err = %v", err)
+	if auth == nil {
+		t.Fatal("resolveGitAuth returned nil AuthMethod for a populated secret")
 	}
 }
 
-func TestResolveGitSSHEnv_SecretNotFound(t *testing.T) {
+func TestResolveGitAuth_SecretNotFound(t *testing.T) {
 	scheme := newDeploymentTestScheme(t)
 	cr := &environmentv1alpha1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{Name: "my-deploy", Namespace: "default"},
@@ -230,31 +222,9 @@ func TestResolveGitSSHEnv_SecretNotFound(t *testing.T) {
 	c := fake.NewClientBuilder().WithScheme(scheme).Build()
 	m := &KustomizeStrategyProvider{Client: c, Scheme: scheme, Log: logr.Discard()}
 
-	_, _, err := m.resolveGitSSHEnv(context.Background(), cr)
-	if err == nil {
+	if _, err := m.resolveGitAuth(context.Background(), cr); err == nil {
 		t.Fatal("expected an error when the flux-ssh secret does not exist")
 	}
-}
-
-// splitFields is a tiny whitespace splitter — avoids pulling in strings just
-// for one test helper's sake given the rest of the file doesn't need it.
-func splitFields(s string) []string {
-	var fields []string
-	var cur []rune
-	for _, r := range s {
-		if r == ' ' {
-			if len(cur) > 0 {
-				fields = append(fields, string(cur))
-				cur = nil
-			}
-			continue
-		}
-		cur = append(cur, r)
-	}
-	if len(cur) > 0 {
-		fields = append(fields, string(cur))
-	}
-	return fields
 }
 
 // TestKustomizeStrategyProvider_Teardown_RemovesCommittedManifests is a
@@ -271,10 +241,7 @@ func TestKustomizeStrategyProvider_Teardown_RemovesCommittedManifests(t *testing
 	}
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: "teardown-test-deploy-flux-ssh", Namespace: "default"},
-		Data: map[string][]byte{
-			"identity":    []byte("fake-private-key"),
-			"known_hosts": []byte("fake-known-hosts"),
-		},
+		Data:       validSSHSecretData(t),
 	}
 	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(secret).Build()
 	m := &KustomizeStrategyProvider{Client: c, Scheme: scheme, Log: logr.Discard()}
