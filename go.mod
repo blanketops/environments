@@ -29,6 +29,7 @@ require (
 	knative.dev/serving v0.51.0
 	sigs.k8s.io/controller-runtime v0.25.3
 )
+replace github.com/blanketops/environments-contract => ../environments-contract
 
 require (
 	carvel.dev/vendir v0.46.2 // indirect
