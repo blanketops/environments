@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package api builds the ESO SecretStore spec.provider.gcpsm block from ResolvedEnvironmentContract.
+
+See also:
+  - ./pkg/apis/environment/application/service.go — orchestrates reconciliation using this provider
+*/
 package api
 
 import (
@@ -125,3 +132,4 @@ func buildGCPAuthSpec(cfg gcpStoreConfig) (map[string]any, error) {
 func extractGCPStoreConfig(_ *environmentresolve.ResolvedEnvironmentContract) (gcpStoreConfig, error) {
 	return gcpStoreConfig{}, fmt.Errorf("gcp secretStore resolution is not yet wired on ResolvedEnvironmentContract")
 }
+

@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package domain defines the PackageError hierarchy: InvalidSpecError, RepositoryError, KappExecutionError, DiffRequiredError, DriftDetectedError.
+
+See also:
+  - ./pkg/apis/packages/application/mapper.go — maps resolved contracts to this domain model
+*/
 package domain
 
 import (
@@ -151,3 +158,4 @@ func (e DriftDetectedError) Reason() string {
 func (e DriftDetectedError) Retryable() bool {
 	return true
 }
+

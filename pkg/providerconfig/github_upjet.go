@@ -13,6 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package secrets converges the Crossplane ProviderConfig pointing upjet-github at its credentials Secret.
+*/
 package secrets
 
 import (
@@ -109,3 +113,4 @@ func (r *GitHubProviderConfigReconciler) Reconcile(ctx context.Context) error {
 		return r.Client.Update(ctx, desired)
 	}
 }
+

@@ -13,6 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package strategy dispatches Rolling/BlueGreen rollout strategies against the Kubernetes runtime via api.K8SProvider.
+*/
 package strategy
 
 import (
@@ -179,3 +183,4 @@ func deriveDeploymentPhase(
 
 	return domain.DeploymentPhase("Deploying")
 }
+

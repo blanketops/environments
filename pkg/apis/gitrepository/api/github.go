@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package api provisions GitHub webhook and repository registration via Crossplane upjet-github.
+
+See also:
+  - ./pkg/apis/gitrepository/application/service.go — orchestrates reconciliation using this provider
+*/
 package api
 
 import (
@@ -406,3 +413,4 @@ func (p *GitHubProvider) pendingManagedResources(ctx context.Context, cr *source
 
 	return pending, nil
 }
+

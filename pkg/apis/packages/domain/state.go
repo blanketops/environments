@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package domain defines PackageState, PackagePhase, DiffState, ApplicationPhase, ApplicationState.
+
+See also:
+  - ./pkg/apis/packages/application/mapper.go — maps resolved contracts to this domain model
+*/
 package domain
 
 import "time"
@@ -116,3 +123,4 @@ type ApplicationState struct {
 	DeployFinished bool
 	DeployExitCode *int
 }
+

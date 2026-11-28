@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package deployment builds DeploymentIntent from fully resolved inputs — the canonical constructor for DeploymentService.
+
+See also:
+  - ./pkg/intent/deployment/intent_builder.go/../resolution/.../adapter.go — produces resolved input for this intent
+*/
 package deployment
 
 import (
@@ -135,3 +142,4 @@ func newDeploymentIntent(
 		GeneratedAt: time.Now(),
 	}
 }
+

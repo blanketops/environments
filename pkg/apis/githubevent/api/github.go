@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package api provisions the Argo Events stack (EventBus, EventSource, Sensor, RBAC) for GitHubEvent CRs.
+
+See also:
+  - ./pkg/apis/githubevent/application/service.go — orchestrates reconciliation using this provider
+*/
 package api
 
 import (
@@ -376,3 +383,4 @@ func (p *GitHubProvider) Teardown(ctx context.Context, resolved *githubeventReso
 func ptrTo[T any](v T) *T {
 	return &v
 }
+

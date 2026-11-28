@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package api defines the Provider interface for GitRepository realization backends.
+
+See also:
+  - ./pkg/apis/gitrepository/application/service.go — orchestrates reconciliation using this provider
+*/
 package api
 
 import (
@@ -37,3 +44,4 @@ type Provider interface {
 	// resource is not an error.
 	Teardown(ctx context.Context, cr *sourcesv1alpha1.GitRepository, spec domain.GitRepository) error
 }
+

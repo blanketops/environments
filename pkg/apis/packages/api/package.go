@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package api executes Packages via kapp-controller App with corrected phase mapping (PackageProvider).
+
+See also:
+  - ./pkg/apis/packages/application/service.go — orchestrates reconciliation using this provider
+*/
 package api
 
 import (
@@ -159,3 +166,4 @@ func (p *PackageProvider) ObserveApplication(
 func (p *PackageProvider) Teardown(ctx context.Context, id domain.PackageID) error {
 	return DeleteApplication(ctx, p.Client, id)
 }
+

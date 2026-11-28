@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package domain defines PackageResult, KappResult, KappAction with explicit phase mapping from ApplicationState.
+
+See also:
+  - ./pkg/apis/packages/application/mapper.go — maps resolved contracts to this domain model
+*/
 package domain
 
 import "time"
@@ -97,3 +104,4 @@ const (
 	KappActionDiff  KappAction = "Diff"
 	KappActionApply KappAction = "Apply"
 )
+

@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package serviceunit defines WorkloadIntent pointing to the concrete runtime object created.
+
+See also:
+  - ./pkg/intent/serviceunit/workload.go/../resolution/.../adapter.go — produces resolved input for this intent
+*/
 package serviceunit
 
 // WorkloadIntent points to the concrete runtime object created
@@ -23,3 +30,4 @@ type WorkloadIntent struct {
 	Name       string
 	Namespace  string
 }
+

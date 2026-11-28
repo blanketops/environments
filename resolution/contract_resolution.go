@@ -13,6 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package resolution dispatches resolution for any supported CR type to its type-specific adapter.
+*/
 package resolution
 
 import (
@@ -99,3 +103,4 @@ func (a *Adapter) Resolve(ctx context.Context, obj client.Object) error {
 		)
 	}
 }
+

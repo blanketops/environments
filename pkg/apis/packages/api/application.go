@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package api executes Packages via kapp-controller App (legacy ApplicationProvider, superseded by package.go).
+
+See also:
+  - ./pkg/apis/packages/application/service.go — orchestrates reconciliation using this provider
+*/
 package api
 
 import (
@@ -370,3 +377,4 @@ func DeleteApplication(ctx context.Context, c client.Client, id domain.PackageID
 	}
 	return fmt.Errorf("kapp app %s/%s is still deleting: %w", id.Namespace, id.Name, domain.ErrTeardownInProgress)
 }
+

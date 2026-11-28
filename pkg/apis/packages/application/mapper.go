@@ -13,6 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package application maps resolved Package contracts into pure domain PackageSpec with explicit invariants.
+
+See also:
+  - ./pkg/apis/packages/api/provider.go — Provider interface implemented here
+  - ./pkg/apis/packages/domain/model.go — domain types consumed here
+*/
 package application
 
 import (
@@ -143,3 +151,4 @@ func (Mapper) MapResolvedToDomain(rp *pkgResolution.ResolvedPackage) (*domain.Pa
 		Strategy:    applyStrategy,
 	}, nil
 }
+

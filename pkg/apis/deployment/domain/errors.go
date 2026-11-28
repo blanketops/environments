@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package domain defines sentinel errors for the deployment domain (e.g., ErrServiceUnitNotFound, ErrInvalidDeployment).
+
+See also:
+  - ./pkg/apis/deployment/application/mapper.go — maps resolved contracts to this domain model
+*/
 package domain
 
 import (
@@ -62,3 +69,4 @@ func (r *DeploymentResult) Failure() error {
 		return ErrDeploymentFailed
 	}
 }
+

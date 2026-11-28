@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package deployment defines ServiceUnitResult and ServiceUnitPhase for deployment intent outcomes.
+
+See also:
+  - ./pkg/intent/deployment/result.go/../resolution/.../adapter.go — produces resolved input for this intent
+*/
 package deployment
 
 import "time"
@@ -43,3 +50,4 @@ const (
 	ServiceUnitReady     ServiceUnitPhase = "Ready"
 	ServiceUnitFailed    ServiceUnitPhase = "Failed"
 )
+

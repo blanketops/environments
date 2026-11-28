@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package serviceunit defines RouteRef and RouteIntent for serviceunit routing configuration.
+
+See also:
+  - ./pkg/intent/serviceunit/route.go/../resolution/.../adapter.go — produces resolved input for this intent
+*/
 package serviceunit
 
 // RouteIntent is a ServiceUnit's resolved routing configuration, carried on
@@ -23,3 +30,4 @@ type RouteIntent struct {
 	TLSEnabled bool
 	//Runtime    Runtime
 }
+

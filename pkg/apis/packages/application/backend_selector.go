@@ -13,6 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package application always selects kapp as the Package execution backend (no strategy selection).
+
+See also:
+  - ./pkg/apis/packages/api/provider.go — Provider interface implemented here
+  - ./pkg/apis/packages/domain/model.go — domain types consumed here
+*/
 package application
 
 import (
@@ -51,3 +59,4 @@ func (b *BackendSelector) ForIntent(
 
 	return b.Kapp, nil
 }
+

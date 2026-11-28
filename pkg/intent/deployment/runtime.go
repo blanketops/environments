@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package deployment defines Runtime and Strategy enums shared across deployment intent and domain.
+
+See also:
+  - ./pkg/intent/deployment/runtime.go/../resolution/.../adapter.go — produces resolved input for this intent
+*/
 package deployment
 
 // Runtime identifies which execution platform a ServiceUnit deploys to.
@@ -34,3 +41,4 @@ const (
 	StrategyBlueGreen Strategy = "BlueGreen"
 	StrategyCanary    Strategy = "Canary"
 )
+

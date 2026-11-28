@@ -13,6 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package tools declares build tool dependencies (mage, gomarkdoc, staticcheck) via //go:build tools.
+*/
 package tools
 
 import (
@@ -20,3 +24,4 @@ import (
 	_ "github.com/princjef/gomarkdoc/cmd/gomarkdoc"
 	_ "honnef.co/go/tools/cmd/staticcheck"
 )
+

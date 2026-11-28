@@ -13,6 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package application merges and persists ServiceUnit conditions to the CR status subresource.
+
+See also:
+  - ./pkg/apis/serviceunit/api/provider.go — Provider interface implemented here
+  - ./pkg/apis/serviceunit/domain/model.go — domain types consumed here
+*/
 package application
 
 import (
@@ -81,3 +89,4 @@ func mergeCondition(conds []metav1.Condition, newCond metav1.Condition) []metav1
 	}
 	return append(conds, newCond)
 }
+

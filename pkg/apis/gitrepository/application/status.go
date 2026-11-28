@@ -13,6 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.n
 */
 
+
+/*
+Package application derives and sets the Ready condition on GitRepository CR status in-memory.
+
+See also:
+  - ./pkg/apis/gitrepository/api/provider.go — Provider interface implemented here
+  - ./pkg/apis/gitrepository/domain/model.go — domain types consumed here
+*/
 package application
 
 import (
@@ -86,3 +94,4 @@ func (w *StatusWriter) Write(
 
 	return nil
 }
+

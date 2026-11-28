@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package deployment defines sentinel errors for deployment intent (ErrServiceUnitNotFound, ErrInvalidDeployment).
+
+See also:
+  - ./pkg/intent/deployment/errors.go/../resolution/.../adapter.go — produces resolved input for this intent
+*/
 package deployment
 
 import "fmt"
@@ -31,3 +38,4 @@ func ErrInvalidDeployment(reason string) error {
 		reason,
 	)
 }
+

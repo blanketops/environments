@@ -13,6 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package utils provides shared helpers: ComputeExecutionHash, CreateOrPatch, RunGit, ParseImage, PrintRepoTree.
+*/
 package utils
 
 import (
@@ -178,3 +182,4 @@ func RunGitWithEnv(dir string, env []string, args ...string) (string, error) {
 	out, err := cmd.CombinedOutput()
 	return string(out), err
 }
+

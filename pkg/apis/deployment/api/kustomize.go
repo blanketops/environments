@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package api provides Kustomize-specific helpers for manifest rendering.
+
+See also:
+  - ./pkg/apis/deployment/application/service.go — orchestrates reconciliation using this provider
+*/
 package api
 
 import (
@@ -40,3 +47,4 @@ func NewKustomizationProvider(c client.Client, scheme *runtime.Scheme, log logr.
 		Log:    log,
 	}
 }
+

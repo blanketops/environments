@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package api builds and applies kapp-controller App resources for Kustomize-based deployments.
+
+See also:
+  - ./pkg/apis/deployment/application/service.go — orchestrates reconciliation using this provider
+*/
 package api
 
 import (
@@ -650,3 +657,4 @@ func (m *KustomizeStrategyProvider) removeAndPush(repoPath string, cr *environme
 	}
 	return nil
 }
+

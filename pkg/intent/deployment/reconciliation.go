@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package deployment defines ReconciliationStrategy enum (Imperative, Kustomize, Helm).
+
+See also:
+  - ./pkg/intent/deployment/reconciliation.go/../resolution/.../adapter.go — produces resolved input for this intent
+*/
 package deployment
 
 // ReconciliationStrategy selects how a Deployment's manifests are applied
@@ -24,3 +31,4 @@ const (
 	ReconciliationKustomize  ReconciliationStrategy = "Kustomize"
 	ReconciliationHelm       ReconciliationStrategy = "Helm"
 )
+

@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package api builds the ESO SecretStore spec.provider.azurekv block from ResolvedEnvironmentContract.
+
+See also:
+  - ./pkg/apis/environment/application/service.go — orchestrates reconciliation using this provider
+*/
 package api
 
 import (
@@ -143,3 +150,4 @@ func buildAzureAuthSpec(cfg azureStoreConfig) (map[string]any, error) {
 func extractAzureStoreConfig(_ *environmentresolve.ResolvedEnvironmentContract) (azureStoreConfig, error) {
 	return azureStoreConfig{}, fmt.Errorf("azure secretStore resolution is not yet wired on ResolvedEnvironmentContract")
 }
+

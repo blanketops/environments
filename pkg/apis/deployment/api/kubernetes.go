@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package api implements the Kubernetes Deployment and Service apply/teardown for ServiceUnits via server-side apply.
+
+See also:
+  - ./pkg/apis/deployment/application/service.go — orchestrates reconciliation using this provider
+*/
 package api
 
 import (
@@ -264,3 +271,4 @@ func imagePullSecrets(name string) []corev1.LocalObjectReference {
 	}
 	return []corev1.LocalObjectReference{{Name: name}}
 }
+

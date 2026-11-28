@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package domain defines Result with State/Reason and Success/Pending/Failure constructors.
+
+See also:
+  - ./pkg/apis/gitrepository/application/mapper.go — maps resolved contracts to this domain model
+*/
 package domain
 
 // Result represents the outcome of attempting to realize
@@ -45,3 +52,4 @@ func Failure(reason string) Result {
 		Reason: reason,
 	}
 }
+

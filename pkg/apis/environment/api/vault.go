@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package api builds the ESO SecretStore spec.provider.vault block from ResolvedVaultConfig.
+
+See also:
+  - ./pkg/apis/environment/application/service.go — orchestrates reconciliation using this provider
+*/
 package api
 
 import (
@@ -50,3 +57,4 @@ func buildVaultProviderSpec(vault *environmentresolve.ResolvedVaultConfig) (map[
 		},
 	}, nil
 }
+

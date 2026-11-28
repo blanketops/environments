@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package api extracts trigger context (commit SHA, retry attempt, trigger type) from Build annotations for execution identity.
+
+See also:
+  - ./pkg/apis/build/application/service.go — orchestrates reconciliation using this provider
+*/
 package api
 
 import (
@@ -54,3 +61,4 @@ func ExtractTriggerContext(build *buildv1.Build) domain.TriggerContext {
 
 	return tc
 }
+

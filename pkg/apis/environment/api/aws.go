@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package api builds the ESO SecretStore spec.provider.aws block from ResolvedEnvironmentContract.
+
+See also:
+  - ./pkg/apis/environment/application/service.go — orchestrates reconciliation using this provider
+*/
 package api
 
 import (
@@ -145,3 +152,4 @@ func buildAWSAuthSpec(cfg awsStoreConfig) (map[string]any, error) {
 func extractAWSStoreConfig(_ *environmentresolve.ResolvedEnvironmentContract) (awsStoreConfig, error) {
 	return awsStoreConfig{}, fmt.Errorf("aws secretStore resolution is not yet wired on ResolvedEnvironmentContract")
 }
+

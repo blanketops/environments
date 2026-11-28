@@ -13,6 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package serviceaccounts converges the ClusterRoleBinding granting Package's ServiceAccount deploy permissions.
+*/
 package serviceaccounts
 
 import (
@@ -189,3 +193,4 @@ func (r *PackageDeployerBindingReconciler) Delete(
 
 	return nil
 }
+

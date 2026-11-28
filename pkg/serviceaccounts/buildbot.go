@@ -13,6 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package serviceaccounts converges the ServiceAccount a Build's execution runs as (with optional imagePullSecrets).
+*/
 package serviceaccounts
 
 import (
@@ -196,3 +200,4 @@ func (r *ServiceAccountReconciler) Delete(
 
 	return nil
 }
+

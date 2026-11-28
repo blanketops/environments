@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package domain defines sentinel errors for the GitRepository domain (ErrMissingProvider, ErrInvalidRepository, ErrInvalidWebhook).
+
+See also:
+  - ./pkg/apis/gitrepository/application/mapper.go — maps resolved contracts to this domain model
+*/
 package domain
 
 import "errors"
@@ -22,3 +29,4 @@ var (
 	ErrInvalidRepository = errors.New("invalid repository identity")
 	ErrInvalidWebhook    = errors.New("invalid webhook specification")
 )
+

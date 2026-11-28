@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package api defines Crossplane upjet-github managed resource types for repository and webhook.
+
+See also:
+  - ./pkg/apis/gitrepository/application/service.go — orchestrates reconciliation using this provider
+*/
 package api
 
 import (
@@ -150,3 +157,4 @@ type SecretKeyRef struct {
 	Namespace string `json:"namespace"`
 	Key       string `json:"key"`
 }
+

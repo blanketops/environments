@@ -13,6 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package application writes PackageResult back onto Package CR status.contract and merges Conditions.
+
+See also:
+  - ./pkg/apis/packages/api/provider.go — Provider interface implemented here
+  - ./pkg/apis/packages/domain/model.go — domain types consumed here
+*/
 package application
 
 import (
@@ -223,3 +231,4 @@ func mergeCondition(
 	}
 	return append(conds, newCond)
 }
+

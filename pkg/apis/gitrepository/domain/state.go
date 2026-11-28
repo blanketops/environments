@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package domain defines State enum (Pending, Ready, Error) with IsTerminal predicate.
+
+See also:
+  - ./pkg/apis/gitrepository/application/mapper.go — maps resolved contracts to this domain model
+*/
 package domain
 
 // State represents the lifecycle state of a GitRepository registration.
@@ -35,3 +42,4 @@ const (
 func (s State) IsTerminal() bool {
 	return s == StateReady || s == StateError
 }
+

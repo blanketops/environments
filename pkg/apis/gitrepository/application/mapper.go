@@ -13,6 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package application maps resolved GitRepository contracts into pure domain GitRepository.
+
+See also:
+  - ./pkg/apis/gitrepository/api/provider.go — Provider interface implemented here
+  - ./pkg/apis/gitrepository/domain/model.go — domain types consumed here
+*/
 package application
 
 import (
@@ -97,3 +105,4 @@ func (Mapper) MapResolvedToDomain(r *gitrepoResolution.ResolvedGitRepository) do
 		Webhooks: webhooks,
 	}
 }
+

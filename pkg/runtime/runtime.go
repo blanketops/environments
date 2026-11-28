@@ -13,6 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package runtime defines runtime identifiers shared across deployment strategies.
+*/
 package runtime
 
 import "os"
@@ -60,3 +64,4 @@ func getEnv(key, def string) string {
 	}
 	return def
 }
+

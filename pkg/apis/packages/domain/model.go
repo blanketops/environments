@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package domain defines PackageSpec, PackageSource, StateRepository, ApplyStrategy, Maintainer, PackageID.
+
+See also:
+  - ./pkg/apis/packages/application/mapper.go — maps resolved contracts to this domain model
+*/
 package domain
 
 import (
@@ -214,3 +221,4 @@ func ParseApplyStrategy(strategy string) (ApplyStrategy, error) {
 		return "", InvalidSpecError{Msg: fmt.Sprintf("unsupported apply strategy %q", strategy)}
 	}
 }
+

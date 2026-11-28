@@ -11,6 +11,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package application derives and sets the Ready condition on Route CR status in-memory.
+
+See also:
+  - ./pkg/apis/route/api/provider.go — Provider interface implemented here
+  - ./pkg/apis/route/domain/model.go — domain types consumed here
+*/
 package application
 
 import (
@@ -79,3 +87,4 @@ func mergeCondition(conds []metav1.Condition, newCond metav1.Condition) []metav1
 	}
 	return append(conds, newCond)
 }
+

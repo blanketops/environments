@@ -13,6 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package adapter provides the Redis backend implementation of core/cache.ExternalCache.
+*/
 package adapter
 
 import (
@@ -86,3 +90,4 @@ func (c *RedisCache) DelPrefix(ctx context.Context, prefix string) error {
 func (c *RedisCache) Ping(ctx context.Context) error {
 	return c.client.Ping(ctx).Err()
 }
+

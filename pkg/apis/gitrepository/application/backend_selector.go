@@ -13,6 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package application selects the GitHub provider for GitRepository realization (extensible for GitLab/Bitbucket).
+
+See also:
+  - ./pkg/apis/gitrepository/api/provider.go — Provider interface implemented here
+  - ./pkg/apis/gitrepository/domain/model.go — domain types consumed here
+*/
 package application
 
 import (
@@ -51,3 +59,4 @@ func (b *BackendSelector) ForRepository(
 		return b.GitHub
 	}
 }
+

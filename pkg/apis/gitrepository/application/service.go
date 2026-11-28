@@ -13,6 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package application orchestrates GitRepository realization: selects backend, executes, writes status.
+
+See also:
+  - ./pkg/apis/gitrepository/api/provider.go — Provider interface implemented here
+  - ./pkg/apis/gitrepository/domain/model.go — domain types consumed here
+*/
 package application
 
 import (
@@ -71,3 +79,4 @@ func (s *GitRepositoryService) Teardown(ctx context.Context, resolved *gitrepoRe
 	provider := s.backend.ForRepository(domainRepo)
 	return provider.Teardown(ctx, resolved.Repository, domainRepo)
 }
+

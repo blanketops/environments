@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package serviceunit defines sentinel errors for serviceunit intent (ErrBuildNotReady, ErrInvalidServiceUnit).
+
+See also:
+  - ./pkg/intent/serviceunit/errors.go/../resolution/.../adapter.go — produces resolved input for this intent
+*/
 package serviceunit
 
 import "fmt"
@@ -32,3 +39,4 @@ func ErrInvalidServiceUnit(name, reason string) error {
 		reason,
 	)
 }
+

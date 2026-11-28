@@ -13,6 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package application orchestrates Package reconciliation: selects backend, executes intent, writes authoritative status.
+
+See also:
+  - ./pkg/apis/packages/api/provider.go — Provider interface implemented here
+  - ./pkg/apis/packages/domain/model.go — domain types consumed here
+*/
 package application
 
 import (
@@ -91,3 +99,4 @@ func (s *PackageService) Teardown(ctx context.Context, id domain.PackageID) erro
 	}
 	return provider.Teardown(ctx, id)
 }
+

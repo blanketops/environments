@@ -13,6 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package serviceaccounts converges the ServiceAccount a Package's kapp App deploys as.
+*/
 package serviceaccounts
 
 import (
@@ -194,3 +198,4 @@ func packageID(pkg *packageResolution.ResolvedPackage) domain.PackageID {
 		Name:      pkg.Package.Name,
 	}
 }
+

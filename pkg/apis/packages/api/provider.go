@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package api defines the Provider interface for Package execution (Execute + Teardown).
+
+See also:
+  - ./pkg/apis/packages/application/service.go — orchestrates reconciliation using this provider
+*/
 package api
 
 import (
@@ -33,3 +40,4 @@ type Provider interface {
 	// domain.ErrTeardownInProgress; nil means it is gone.
 	Teardown(ctx context.Context, id domain.PackageID) error
 }
+

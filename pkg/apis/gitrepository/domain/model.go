@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package domain defines the pure domain model: Provider, EventType, RepositoryID, WebhookSpec, GitRepository.
+
+See also:
+  - ./pkg/apis/gitrepository/application/mapper.go — maps resolved contracts to this domain model
+*/
 package domain
 
 // Provider identifies a supported VCS provider.
@@ -80,3 +87,4 @@ func (g GitRepository) Validate() error {
 
 	return nil
 }
+

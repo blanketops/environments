@@ -13,6 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package strategy provides the ECS runtime backend placeholder (not yet implemented).
+*/
 package strategy
 
 import (
@@ -93,3 +97,4 @@ func (r *ECSReconciler) ensureService(
 	r.Log.Info("Ensuring ECS Service (stub)", "serviceUnit", su.Name)
 	return nil
 }
+

@@ -13,6 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+/*
+Package deployment provides the legacy ResolveDeploymentIntent (superseded by IntentBuilder.Build).
+
+See also:
+  - ./pkg/intent/deployment/resolve.go/../resolution/.../adapter.go — produces resolved input for this intent
+*/
 package deployment
 
 import (
@@ -61,3 +68,4 @@ func ResolveDeploymentIntent(
 
 	return intent, nil
 }
+
