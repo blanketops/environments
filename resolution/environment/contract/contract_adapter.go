@@ -174,6 +174,10 @@ func toSecretStoreProvider(p string) *commoncontractv1.SecretStoreProvider {
 		return &commoncontractv1.SecretStoreProvider{
 			SecretStoreProvider: commoncontractv1.SecretStoreProvider_SECRET_STORE_PROVIDER_AZURE,
 		}
+	case "SECRET_STORE_PROVIDER_LOCAL", "local":
+		return &commoncontractv1.SecretStoreProvider{
+			SecretStoreProvider: commoncontractv1.SecretStoreProvider_SECRET_STORE_PROVIDER_LOCAL,
+		}
 	default:
 		return &commoncontractv1.SecretStoreProvider{
 			SecretStoreProvider: commoncontractv1.SecretStoreProvider_SECRET_STORE_PROVIDER_UNSPECIFIED,

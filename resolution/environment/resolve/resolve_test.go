@@ -340,6 +340,63 @@ func TestResolveEnvironment_ContractSecretStoreMissingProvider(t *testing.T) {
 	}
 }
 
+func TestResolveEnvironment_ContractSecretStoreLocal(t *testing.T) {
+	e := envWithContract(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0","secretStore":{"provider":"local","storeName":"my-local-store"}}`)
+	resolved, err := ResolveEnvironment(e)
+	if err != nil {
+		t.Fatalf("ResolveEnvironment: %v", err)
+	}
+	if resolved.Spec.Contract == nil || resolved.Spec.Contract.SecretStore.Provider != "local" {
+		t.Fatalf("unexpected Contract: %+v", resolved.Spec.Contract)
+	}
+	local := resolved.Spec.Contract.SecretStore.Local
+	if local == nil {
+		t.Fatal("expected non-nil Local config")
+	}
+	if local.StoreName != "my-local-store" {
+		t.Fatalf("expected StoreName %q, got %q", "my-local-store", local.StoreName)
+	}
+	// Other provider configs should be nil
+	if resolved.Spec.Contract.SecretStore.Vault != nil {
+		t.Fatalf("expected nil Vault config for local provider, got %+v", resolved.Spec.Contract.SecretStore.Vault)
+	}
+	if resolved.Spec.Contract.SecretStore.AWS != nil {
+		t.Fatalf("expected nil AWS config for local provider, got %+v", resolved.Spec.Contract.SecretStore.AWS)
+	}
+	if resolved.Spec.Contract.SecretStore.Azure != nil {
+		t.Fatalf("expected nil Azure config for local provider, got %+v", resolved.Spec.Contract.SecretStore.Azure)
+	}
+	if resolved.Spec.Contract.SecretStore.GCP != nil {
+		t.Fatalf("expected nil GCP config for local provider, got %+v", resolved.Spec.Contract.SecretStore.GCP)
+	}
+}
+
+func TestResolveEnvironment_ContractSecretStoreLocalNoStoreName(t *testing.T) {
+	e := envWithContract(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0","secretStore":{"provider":"local"}}`)
+	resolved, err := ResolveEnvironment(e)
+	if err != nil {
+		t.Fatalf("ResolveEnvironment: %v", err)
+	}
+	if resolved.Spec.Contract == nil || resolved.Spec.Contract.SecretStore.Provider != "local" {
+		t.Fatalf("unexpected Contract: %+v", resolved.Spec.Contract)
+	}
+	local := resolved.Spec.Contract.SecretStore.Local
+	if local == nil {
+		t.Fatal("expected non-nil Local config")
+	}
+	if local.StoreName != "" {
+		t.Fatalf("expected empty StoreName, got %q", local.StoreName)
+	}
+}
+
+func TestResolveEnvironment_ContractSecretStoreLocalUnexpectedConfig(t *testing.T) {
+	e := envWithContract(`{"applicationName":"app","branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0","secretStore":{"provider":"local","local":{}}}`)
+	_, err := ResolveEnvironment(e)
+	if err == nil || !strings.Contains(err.Error(), "contract.secretStore.local: unexpected configuration object") {
+		t.Fatalf("expected contract.secretStore.local error, got %v", err)
+	}
+}
+
 func TestResolveEnvironment_ApplicationNameWrongType(t *testing.T) {
 	e := envWithContract(`{"applicationName":5,"branch":"main","gitOwner":"me","environmentType":"development","version":"1.0.0","secretStore":{"provider":"vault","vault":{"address":"https://vault:8200","path":"secret","role":"environments"}}}`)
 	_, err := ResolveEnvironment(e)

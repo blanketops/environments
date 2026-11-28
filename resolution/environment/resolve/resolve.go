@@ -90,6 +90,7 @@ type ResolvedSecretStore struct {
 	AWS       *ResolvedAWSConfig
 	Azure     *ResolvedAzureConfig
 	GCP       *ResolvedGCPConfig
+	Local     *ResolvedLocalConfig
 }
 
 // ResolvedVaultConfig is the Environment-declared HashiCorp Vault connection
@@ -162,6 +163,14 @@ type ResolvedGCPConfig struct {
 	// ServiceAccountNamespace optionally specifies the namespace of the
 	// ServiceAccount referenced above.
 	ServiceAccountNamespace string
+}
+
+// ResolvedLocalConfig is the Environment-declared in-cluster secret store
+// configuration for development environments. No external backend is required.
+type ResolvedLocalConfig struct {
+	// StoreName is the name of the in-cluster SecretStore/ClusterSecretStore CR.
+	// Required.
+	StoreName string
 }
 
 // -----------------------------------------------------------------------------
@@ -361,6 +370,13 @@ func ResolveEnvironment(environment *environmentv1alpha1.Environment) (*Resolved
 		}
 		secretStore.GCP = gcpCfg
 
+	case "local", "SECRET_STORE_PROVIDER_LOCAL":
+		localCfg, err := resolveLocalConfig(ssRaw, provider)
+		if err != nil {
+			return nil, err
+		}
+		secretStore.Local = localCfg
+
 	default:
 		return nil, fmt.Errorf("unsupported contract.secretStore.provider %q", provider)
 	}
@@ -473,6 +489,19 @@ func resolveGCPConfig(ssRaw map[string]any, provider string) (*ResolvedGCPConfig
 		ProjectID:               projectID,
 		ServiceAccountName:      optionalString(gcpRaw, "serviceAccountName"),
 		ServiceAccountNamespace: optionalString(gcpRaw, "serviceAccountNamespace"),
+	}, nil
+}
+
+func resolveLocalConfig(ssRaw map[string]any, provider string) (*ResolvedLocalConfig, error) {
+	// For local provider, only storeName is required (already captured in ResolvedSecretStore.StoreName).
+	// No additional provider-specific config needed.
+	// Validate that no unexpected provider-specific config is provided.
+	if _, ok := ssRaw["local"]; ok {
+		// Local provider doesn't use a nested config object
+		return nil, fmt.Errorf("contract.secretStore.local: unexpected configuration object for local provider")
+	}
+	return &ResolvedLocalConfig{
+		StoreName: optionalString(ssRaw, "storeName"),
 	}, nil
 }
 
